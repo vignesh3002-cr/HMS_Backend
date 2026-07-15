@@ -1,4 +1,6 @@
-{/*import * as DoctorRepository from "./doctor.repository";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+{ /*import * as DoctorRepository from "./doctor.repository";
 import prisma from "../../config/prisma";
 
 export const getDoctors = async () => {
@@ -170,6 +172,7 @@ if(!employee){
     }
 
 });
-//nst role_type 
+//nst role_type
 
-});}*/}
+});}*/
+}

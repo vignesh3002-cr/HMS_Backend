@@ -1,4 +1,6 @@
-{/*import { Router } from "express";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+{ /*import { Router } from "express";
 
 import * as DoctorController from "./doctor.controller";
 
@@ -13,4 +15,5 @@ router.get(
     DoctorController.getDoctorByEmployeeId
 );
 
-export default router;*/}
+export default router;*/
+}

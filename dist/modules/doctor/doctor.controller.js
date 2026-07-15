@@ -1,4 +1,6 @@
-{/*import { Request, Response } from "express";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+{ /*import { Request, Response } from "express";
 import * as DoctorService from "./doctor.service";
 
 export const getDoctors = async (
@@ -74,4 +76,5 @@ export const getDoctorByEmployeeId = async (
 
     }
 
-}*/}
+}*/
+}
