@@ -6,7 +6,7 @@ const userService = new user_service_1.UserService();
 class UserController {
     async createBranchAdmin(req, res) {
         try {
-            const result = await userService.createBranchAdmin(req.body, req.user.id);
+            const result = await userService.createBranchAdmin(req.body, req.user?.id);
             return res.status(201).json({
                 success: true,
                 message: result.message,

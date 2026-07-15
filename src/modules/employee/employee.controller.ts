@@ -1,16 +1,15 @@
 import {Request, Response } from "express";
-import { AuthRequest } from "../auth/auth.middleware";
 import { EmployeeService } from "./employee.service";
 
 const service = new EmployeeService();
 
 export class EmployeeController {
 
-    async createEmployee(req: AuthRequest, res: Response) {
+    async createEmployee(req: Request, res: Response) {
 
         try {
 
-            const createdBy = req.user!.role || "SYSTEM";
+            const createdBy = (req as any).user?.role || "SYSTEM";
 
             const employee = await service.createEmployee(
                 req.body,

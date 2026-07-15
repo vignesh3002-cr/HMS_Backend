@@ -6,7 +6,7 @@ const service = new employee_service_1.EmployeeService();
 class EmployeeController {
     async createEmployee(req, res) {
         try {
-            const createdBy = req.user.role || "SYSTEM";
+            const createdBy = req.user?.role || "SYSTEM";
             const employee = await service.createEmployee(req.body, createdBy);
             return res.status(201).json({
                 success: true,
