@@ -87,7 +87,7 @@ async softDeleteEmployee(req: Request, res: Response) {
     }
 
 }
-async getAllEmployees(req: Request, res: Response) {
+ async getAllEmployees(req: Request, res: Response) {
 
         try {
 
@@ -119,3 +119,5 @@ async getAllEmployees(req: Request, res: Response) {
         }
 
     }
+}
+}
