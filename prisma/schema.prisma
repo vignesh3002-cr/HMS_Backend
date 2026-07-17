@@ -43,6 +43,7 @@ model appointment_history {
   patient_bio_data     patient_bio_data   @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade, map: "fk_appointment_patient")
   user_table           user_table?        @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_appointment_user")
   patient_history      patient_history[]
+  pharmacy             pharmacy[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -77,6 +78,8 @@ model branch {
   employees           employees[]
   patient_bio_data    patient_bio_data[]
   patient_history     patient_history[]
+  pharmacy            pharmacy[]
+  pharmacy_master     pharmacy_master[]
   user_branch_mapping user_branch_mapping[]
   user_log            user_log[]
   user_table          user_table[]
@@ -272,6 +275,7 @@ model department_master {
   appointment_history appointment_history[]
   employees           employees[]
   patient_history     patient_history[]
+  pharmacy            pharmacy[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -337,6 +341,7 @@ model employees {
   department_master              department_master?    @relation(fields: [department_id], references: [department_id], onDelete: Cascade, map: "fk_employee_department")
   user_table                     user_table?           @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_employee_user")
   patient_history                patient_history[]
+  pharmacy                       pharmacy[]
   user_branch_mapping            user_branch_mapping[]
 }
 
@@ -478,36 +483,6 @@ model lab_tech_profile {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-<<<<<<< HEAD
-=======
-model patient_bio_data {
-  id                       BigInt                @id @default(autoincrement())
-  patient_id               String                @unique @db.VarChar(20)
-  user_id                  String?               @db.VarChar(20)
-  branch_id                String?               @db.VarChar(20)
-  patient_first_name       String                @db.VarChar(100)
-  patient_middle_name      String?               @db.VarChar(100)
-  patient_last_name        String?               @db.VarChar(100)
-  patient_gender           String?               @db.VarChar(20)
-  patient_dob              DateTime?             @db.Date
-  patient_age              Int?
-  patient_blood_group      String?               @db.VarChar(10)
-  patient_primary_mobile   String?               @db.VarChar(20)
-  patient_alternate_mobile String?               @db.VarChar(20)
-  patient_email            String?               @db.VarChar(150)
-  patient_marital_status   String?               @db.VarChar(30)
-  patient_nationality      String?               @db.VarChar(100)
-  patient_photo_url        String?
-  patient_type             String?               @db.VarChar(50)
-  patient_active           String?               @db.VarChar(20)
-  appointment_history      appointment_history[]
-  branch                   branch?               @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_patient_bio_branch")
-  user_table               user_table?           @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_patient_bio_user")
-  patient_history          patient_history[]
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
->>>>>>> 2cd63d230963ad49eb9f014a499b9c3710f788bb
 model patient_history {
   id                         BigInt               @id @default(autoincrement())
   mrn_no                     String?              @db.VarChar(30)
@@ -567,20 +542,15 @@ model patient_history {
   branch_id                  String?              @db.VarChar(20)
   department_id              String?              @db.VarChar(20)
   patient_history_id         String?              @unique @db.VarChar(20)
-  patient_id                 String?              @db.VarChar
+  patient_id                 String?              @unique(map: "uq_patient_history_patient_id") @db.VarChar
   doctor_employee_id         String?              @db.VarChar(20)
-<<<<<<< HEAD
   appointment_history        appointment_history? @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade, map: "fk_patienthistory_appointment")
   branch                     branch?              @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_patienthistory_branch")
   department_master          department_master?   @relation(fields: [department_id], references: [department_id], onDelete: Cascade, map: "fk_patienthistory_department")
-=======
-  appointment_history        appointment_history? @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade, map: "fk_patient_history_appointment")
-  branch                     branch?              @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_patient_history_branch")
-  department_master          department_master?   @relation(fields: [department_id], references: [department_id], onDelete: Cascade, map: "fk_patient_history_department")
->>>>>>> 2cd63d230963ad49eb9f014a499b9c3710f788bb
   employees                  employees?           @relation(fields: [doctor_employee_id], references: [employee_id], map: "fk_patient_history_doctor")
   patient_bio_data           patient_bio_data?    @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade, map: "fk_patient_history_patient")
   user_table                 user_table?          @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_patienthistory_user")
+  pharmacy                   pharmacy[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -659,6 +629,8 @@ model user_table {
   employees           employees?
   patient_bio_data    patient_bio_data[]
   patient_history     patient_history[]
+  pharmacy            pharmacy[]
+  pharmacy_master     pharmacy_master[]
   user_branch_mapping user_branch_mapping[]
   user_log            user_log[]
   branch              branch?               @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_user_branch")
@@ -688,5 +660,83 @@ model patient_bio_data {
   appointment_history      appointment_history[]
   branch                   branch?               @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_patient_bio_branch")
   user_table               user_table?           @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_patient_bio_user")
-  patient_history          patient_history[]
+  patient_history          patient_history?
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pharmacy {
+  id                  BigInt               @id @default(autoincrement())
+  pharmacy_id         String               @unique @db.VarChar(20)
+  invoice_no          String?              @db.VarChar(30)
+  bill_no             String?              @db.VarChar(30)
+  transaction_date    DateTime?            @default(now()) @db.Timestamp(6)
+  transaction_type    String?              @db.VarChar(30)
+  patient_id          String?              @db.VarChar(20)
+  appointment_id      String?              @db.VarChar(20)
+  doctor_employee_id  String?              @db.VarChar(20)
+  department_id       String?              @db.VarChar(20)
+  prescription_id     String?              @db.VarChar(20)
+  prescription_date   DateTime?            @db.Date
+  medicine_id         String?              @db.VarChar(20)
+  medicine_code       String?              @db.VarChar(50)
+  medicine_name       String?              @db.VarChar(200)
+  generic_name        String?              @db.VarChar(200)
+  batch_no            String?              @db.VarChar(50)
+  expiry_date         DateTime?            @db.Date
+  prescribed_qty      Int?
+  dispensed_qty       Int?
+  returned_qty        Int?
+  purchase_price      Decimal?             @db.Decimal(10, 2)
+  selling_price       Decimal?             @db.Decimal(10, 2)
+  mrp                 Decimal?             @db.Decimal(10, 2)
+  discount_percent    Decimal?             @db.Decimal(5, 2)
+  discount_amount     Decimal?             @db.Decimal(10, 2)
+  gst_percent         Decimal?             @db.Decimal(5, 2)
+  gst_amount          Decimal?             @db.Decimal(10, 2)
+  total_amount        Decimal?             @db.Decimal(10, 2)
+  net_amount          Decimal?             @db.Decimal(10, 2)
+  payment_mode        String?              @db.VarChar(30)
+  payment_status      String?              @db.VarChar(30)
+  dispensed_by        String?              @db.VarChar(20)
+  dispensed_datetime  DateTime?            @db.Timestamp(6)
+  pharmacist_notes    String?
+  pharmacy_status     String?              @db.VarChar(30)
+  user_id             String?              @db.VarChar(20)
+  branch_id           String?              @db.VarChar(10)
+  appointment_history appointment_history? @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade, map: "fk_pharmacy_appointment")
+  branch              branch?              @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_pharmacy_branch")
+  department_master   department_master?   @relation(fields: [department_id], references: [department_id], onDelete: Cascade, map: "fk_pharmacy_department")
+  employees           employees?           @relation(fields: [doctor_employee_id], references: [employee_id], onDelete: Cascade, map: "fk_pharmacy_doctor")
+  patient_history     patient_history?     @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade, map: "fk_pharmacy_patient")
+  user_table          user_table?          @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_pharmacy_user")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pharmacy_master {
+  id                      BigInt      @id @default(autoincrement())
+  pharmacy_id             String      @unique @db.VarChar(20)
+  medicine_code           String?     @unique @db.VarChar(50)
+  medicine_name           String      @db.VarChar(200)
+  generic_name            String?     @db.VarChar(200)
+  brand_name              String?     @db.VarChar(200)
+  medicine_category       String?     @db.VarChar(100)
+  dosage_form             String?     @db.VarChar(50)
+  strength                String?     @db.VarChar(50)
+  route_of_administration String?     @db.VarChar(50)
+  manufacturer_name       String?     @db.VarChar(200)
+  unit_of_measure         String?     @db.VarChar(50)
+  pack_size               String?     @db.VarChar(50)
+  purchase_price          Decimal?    @db.Decimal(10, 2)
+  selling_price           Decimal?    @db.Decimal(10, 2)
+  mrp                     Decimal?    @db.Decimal(10, 2)
+  gst_percentage          Decimal?    @db.Decimal(5, 2)
+  prescription_required   Boolean?    @default(true)
+  schedule_type           String?     @db.VarChar(20)
+  storage_condition       String?     @db.VarChar(100)
+  medicine_status         String?     @default("ACTIVE") @db.VarChar(20)
+  pharmacy_remarks        String?
+  user_id                 String?     @db.VarChar(20)
+  branch_id               String?     @db.VarChar(20)
+  branch                  branch?     @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_pharmacy_master_branch")
+  user_table              user_table? @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_pharmacy_master_user")
 }
