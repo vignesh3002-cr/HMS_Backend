@@ -120,4 +120,4 @@ async softDeleteEmployee(req: Request, res: Response) {
 
     }
 }
-}
+
