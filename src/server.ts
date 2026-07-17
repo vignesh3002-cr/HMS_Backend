@@ -9,6 +9,7 @@ import userRoutes from "./modules/auth/user/user.routes";
 import branchRoutes from "./modules/branch/branch.routes";
 import employeeRoutes from "./modules/employee/employee.routes";
 import departmentRoutes from "./modules/department/department.routes";
+import patientRoutes from "./modules/patient/patient.routes";
 import { hashPassword } from "./utils/bcrypt";
 
 // Fix BigInt serialization - Prisma returns BigInt types that JSON.stringify can't handle
@@ -32,6 +33,7 @@ app.use("/api/users", userRoutes);
 //app.use("/api/doctors", doctorRoutes);
 app.use("/api/branch", branchRoutes);
 app.use("/api/departments", departmentRoutes);
+app.use("/api/patients", patientRoutes);
 app.use("/api/hashpassword", async (req, res) => {
 
     const { password } = req.body;
