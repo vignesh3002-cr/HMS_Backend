@@ -12,7 +12,7 @@ export const findUsername = async (username: string) => {
 
 export const findMobile = async (mobile: string) => {
 
-    return prisma.patient_table.findFirst({
+    return prisma.patient_bio_data.findFirst({
         where: {
             alternate_mobile: mobile
         }
@@ -22,7 +22,7 @@ export const findMobile = async (mobile: string) => {
 
 export const findAadhaar = async (aadhaar: string) => {
 
-    return prisma.patient_table.findFirst({
+    return prisma.patient_bio_data.findFirst({
         where: {
             aadhaar_no: aadhaar
         }
