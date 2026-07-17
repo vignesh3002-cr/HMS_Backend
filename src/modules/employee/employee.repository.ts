@@ -204,6 +204,15 @@ const employees = await prisma.employees.findMany({
 
             }
 
+        },
+        department_master: {
+
+            select: {
+
+                department_name: true
+
+            }
+
         }
 
     },

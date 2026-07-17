@@ -5,6 +5,7 @@ import { CreateEmployeeDto,GetEmployeesQuery } from "./employee.types";
 import { generateId } from "../../utils/idGenerator";
 
 const repository = new EmployeeRepository();
+let employeeId: string;
 
 export class EmployeeService {
     async createEmployee(
@@ -110,10 +111,18 @@ const user = await tx.user_table.create({
     }
 
 });
-const employeeId = await generateId(
+if(data.role_type === "DOCTOR"){
+    employeeId = await generateId(
+    tx,
+    "DOCTOR"
+);
+}else{
+    employeeId = await generateId(
     tx,
     "EMPLOYEE"
 );
+}
+
 const employee = await tx.employees.create({
 
     data: {
