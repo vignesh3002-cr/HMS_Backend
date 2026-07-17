@@ -263,12 +263,85 @@ return {
         first_name: employee.first_name,
         middle_name: employee.middle_name,
     }
-
+    
 };
 
 });
+
 }
-  async getEmployees (
+
+
+async updateEmployee(
+    employeeId: string,
+    data: CreateEmployeeDto
+) {
+
+    const employee = await repository.findEmployeeById(employeeId);
+
+    if (!employee) {
+        throw new Error("Employee not found");
+    }
+
+    const department = await repository.findDepartment(
+        data.department_id
+    );
+
+    if (!department) {
+        throw new Error("Department not found");
+    }
+
+    const updatedEmployee = await repository.updateEmployee(
+        employeeId,
+        {
+            first_name: data.first_name,
+            middle_name: data.middle_name,
+            last_name: data.last_name,
+            email: data.email,
+            mobile_no: data.mobile_no,
+            blood_group: data.blood_group,
+            nationality: data.nationality,
+            marital_status: data.marital_status,
+            aadhaar_no: data.aadhaar_no,
+            pan_no: data.pan_no,
+            passport_no: data.passport_no,
+            parmanant_address: data.permanent_address,
+            current_address: data.current_address,
+            emergency_contact_name: data.emergency_contact_name,
+            emergency_contact_relationship: data.emergency_contact_relationship,
+            emergency_contact_number: data.emergency_contact_number,
+            department_id: data.department_id,
+            designation: data.designation,
+            joining_date: new Date(data.joining_date),
+            emp_status: data.emp_status
+        }
+    );
+
+    return {
+        employee_id: updatedEmployee.employee_id,
+        first_name: updatedEmployee.first_name,
+        middle_name: updatedEmployee.middle_name,
+        last_name: updatedEmployee.last_name,
+        email: updatedEmployee.email
+    };
+}
+async getAllEmployees() {
+    return repository.getAllEmployees();
+}
+async softDeleteEmployee(employeeId: string) {
+
+    const employee = await repository.findEmployeeById(employeeId);
+
+    if (!employee) {
+        throw new Error("Employee not found");
+    }
+
+    await repository.softDeleteEmployee(employeeId);
+
+    return {
+        message: "Employee deactivated successfully"
+    };
+}
+async getEmployees (
 
     query: GetEmployeesQuery
 
@@ -290,3 +363,4 @@ return {
 };
 
 }
+

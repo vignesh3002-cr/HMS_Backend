@@ -67,6 +67,38 @@ export class EmployeeRepository {
             }
         });
     }
+    async softDeleteEmployee(employeeId: string) {
+    return prisma.employees.update({
+        where: {
+            employee_id: employeeId
+        },
+        data: {
+            emp_status: false
+        }
+    });
+}
+    async findEmployeeById(employeeId: string) {
+    return prisma.employees.findUnique({
+        where: {
+            employee_id: employeeId
+        }
+    });
+}
+
+async updateEmployee(
+    employeeId: string,
+    data: any
+) {
+    return prisma.employees.update({
+        where: {
+            employee_id: employeeId
+        },
+        data
+    });
+}
+async getAllEmployees() {
+    return prisma.employees.findMany();
+}
     async getEmployees(query: GetEmployeesQuery) {
             const {
 
@@ -200,7 +232,8 @@ const employees = await prisma.employees.findMany({
 
             select: {
 
-                branch_name: true
+                branch_name: true,
+                branch_area: true
 
             }
 
@@ -268,9 +301,14 @@ async getEmployeeById(
 
                 user_table: true,
 
-                branch: true
+                branch: true,
 
+                    department_master: {
+        select: {
+            department_name: true
             }
+        
+        }}
 
         });
 
@@ -363,3 +401,7 @@ break;
 return response;
 }
 }
+
+
+ 
+

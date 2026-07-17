@@ -2,7 +2,7 @@ import { Request, Response, NextFunction, RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 
 export type AuthRequest = Request & {
-  user: any;
+  user:any;
 };
 
 export const authenticate: RequestHandler = (req, res, next) => {

@@ -39,98 +39,85 @@ export class EmployeeController {
         }
 
     }
-     async getEmployees(req: Request, res: Response) {
-        try {
+    async updateEmployee(req: Request, res: Response) {
+    try {
 
-        const employees =
-            await service.getEmployees({
 
-                roleType: req.query.roleType as string,
 
-                branchId: req.query.branchId as string,
+        const employee = await service.updateEmployee(
+            String(req.params.employeeId),
+            req.body
+        );
 
-                department: req.query.department as string,
-
-                search: req.query.search as string,
-
-                status:
-                    req.query.status !== undefined
-                        ? req.query.status === "true"
-                        : undefined,
-
-                page:
-                    Number(req.query.page || 1),
-
-                limit:
-                    Number(req.query.limit || 10)
-
-            });
-
-        res.json({
-
+        return res.status(200).json({
             success: true,
-
-            message:
-                "Employees fetched successfully",
-
-            data: employees
-
+            data: employee
         });
 
-    }
+    } catch (error: any) {
 
-    catch (error: any) {
-
-        res.status(500).json({
-
+        return res.status(400).json({
             success: false,
-
             message: error.message
-
         });
 
     }
-
-};
- async getEmployeeById (
-
-    req: Request,
-
-    res: Response
-
-) {
+    
+}
+async softDeleteEmployee(req: Request, res: Response) {
 
     try {
 
-        const employee =
-            await service.getEmployeeById(
-                req.params.employeeId as string
-            );
+        const result = await service.softDeleteEmployee(
+            String(req.params.employeeId)
+        );
 
-        res.json({
-
+        return res.status(200).json({
             success: true,
-
-            message:
-                "Employee fetched successfully",
-
-            data: employee
-
+            message: result.message
         });
 
-    }
+    } catch (error: any) {
 
-    catch (error: any) {
-
-        res.status(404).json({
-
+        return res.status(400).json({
             success: false,
-
             message: error.message
-
         });
 
     }
 
-};
+}
+ async getAllEmployees(req: Request, res: Response) {
+
+        try {
+
+            const query = {
+                roleType: req.query.roleType as string | undefined,
+                branchId: req.query.branchId as string | undefined,
+                department: req.query.department as string | undefined,
+                status: req.query.status !== undefined ? req.query.status === "true" : undefined,
+                search: req.query.search as string | undefined,
+                page: req.query.page ? Number(req.query.page) : 1,
+                limit: req.query.limit ? Number(req.query.limit) : 10,
+            };
+
+            const result = await service.getEmployees(query);
+
+            return res.status(200).json({
+                success: true,
+                message: "Employees fetched successfully",
+                data: result
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+}
 }

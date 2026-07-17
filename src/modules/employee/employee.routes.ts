@@ -11,10 +11,21 @@ router.post(
     authenticate,
     controller.createEmployee.bind(controller)
 );
-router.get("/", controller.getEmployees.bind(controller));
 router.get(
+    "/",
+    authenticate,
+    controller.getAllEmployees.bind(controller)
+);
+
+router.put(
     "/:employeeId",
-    controller.getEmployeeById.bind(controller)
+    authenticate,
+    controller.updateEmployee.bind(controller)
+);
+router.delete(
+    "/:employeeId",
+    authenticate,
+    controller.softDeleteEmployee.bind(controller)
 );
 
 export default router;
