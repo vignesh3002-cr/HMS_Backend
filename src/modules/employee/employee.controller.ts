@@ -87,15 +87,26 @@ async softDeleteEmployee(req: Request, res: Response) {
     }
 
 }
- async getAllEmployees(req: Request, res: Response) {
+async getAllEmployees(req: Request, res: Response) {
 
         try {
 
-            const employees = await service.getAllEmployees();
+            const query = {
+                roleType: req.query.roleType as string | undefined,
+                branchId: req.query.branchId as string | undefined,
+                department: req.query.department as string | undefined,
+                status: req.query.status !== undefined ? req.query.status === "true" : undefined,
+                search: req.query.search as string | undefined,
+                page: req.query.page ? Number(req.query.page) : 1,
+                limit: req.query.limit ? Number(req.query.limit) : 10,
+            };
+
+            const result = await service.getEmployees(query);
 
             return res.status(200).json({
                 success: true,
-                data: employees
+                message: "Employees fetched successfully",
+                data: result
             });
 
         } catch (error: any) {
@@ -108,6 +119,3 @@ async softDeleteEmployee(req: Request, res: Response) {
         }
 
     }
-
-}
-
