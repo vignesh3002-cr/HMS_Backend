@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { Request, Response } from "express";
+=======
+{/*import { Request, Response } from "express";
+>>>>>>> 8513f9342964d7350f5775a3b575ab03ee99de79
 import * as DoctorService from "./doctor.service";
 
 export const getDoctors = async (
@@ -74,4 +78,8 @@ export const getDoctorByEmployeeId = async (
 
     }
 
+<<<<<<< HEAD
 }
+=======
+}*/}
+>>>>>>> 8513f9342964d7350f5775a3b575ab03ee99de79

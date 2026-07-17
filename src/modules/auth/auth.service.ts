@@ -10,7 +10,6 @@ export class AuthService {
 
     const user =
       await this.authRepository.findUserByUsername(username);
-    console.log(user);
 
     if (!user) {
       throw new Error("Invalid username or password");
@@ -19,13 +18,9 @@ export class AuthService {
     if (user.user_status !== 0) {
       throw new Error("Account is inactive");
     }
-    console.log("Entered Password:", password);
-    console.log("Stored Password:", user.password);
 
     const passwordMatched =
       await comparePassword(password, user.password!);
-      
-    console.log("Password Matched:", passwordMatched);
 
     if (!passwordMatched) {
       throw new Error("Invalid username or password");
@@ -40,6 +35,7 @@ export class AuthService {
     return {
       token,
       user_details: {
+        user_id: user.user_id,
         username: user.username,
         role: user.role_type,
         hospital_id: user.branch?.hospital_id,

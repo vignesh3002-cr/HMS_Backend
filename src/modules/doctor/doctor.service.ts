@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import * as DoctorRepository from "./doctor.repository";
+=======
+{/*import * as DoctorRepository from "./doctor.repository";
+>>>>>>> 8513f9342964d7350f5775a3b575ab03ee99de79
 import prisma from "../../config/prisma";
 
 export const getDoctors = async () => {
@@ -22,7 +26,11 @@ export const getDoctors = async () => {
             doctor.doctor_profile[0]?.consultation_minutes,
 
         department:
+<<<<<<< HEAD
             doctor.department,
+=======
+            doctor.department_master,
+>>>>>>> 8513f9342964d7350f5775a3b575ab03ee99de79
 
         branch_name:
             doctor.branch?.branch_name,
@@ -69,7 +77,11 @@ export const getDoctorByEmployeeId = async (
 
             mobile_no: doctor.mobile_no,
 
+<<<<<<< HEAD
             department: doctor.department,
+=======
+            department: doctor.department_master,
+>>>>>>> 8513f9342964d7350f5775a3b575ab03ee99de79
 
             designation: doctor.designation,
 
@@ -172,4 +184,8 @@ if(!employee){
 });
 //nst role_type 
 
+<<<<<<< HEAD
 });}
+=======
+});}*/}
+>>>>>>> 8513f9342964d7350f5775a3b575ab03ee99de79

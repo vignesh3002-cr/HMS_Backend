@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import prisma from "../../config/prisma";
+=======
+{/*import prisma from "../../config/prisma";
+>>>>>>> 8513f9342964d7350f5775a3b575ab03ee99de79
 
 export const getDoctors = async () => {
     return prisma.employees.findMany({
@@ -11,7 +15,12 @@ export const getDoctors = async () => {
             user_table: true,
             doctor_profile: true,
             doctor_schedule: true,
+<<<<<<< HEAD
             branch: true
+=======
+            branch: true,
+            department_master: true
+>>>>>>> 8513f9342964d7350f5775a3b575ab03ee99de79
         },
         orderBy: {
             first_name: "asc"
@@ -34,6 +43,11 @@ export const getDoctorByEmployeeId = async (
 
             doctor_profile: true,
 
+<<<<<<< HEAD
+=======
+            department_master: true,
+
+>>>>>>> 8513f9342964d7350f5775a3b575ab03ee99de79
             branch: true,
 
             doctor_schedule: true,
@@ -48,4 +62,8 @@ export const getDoctorByEmployeeId = async (
 
     });
 
+<<<<<<< HEAD
 };
+=======
+};*/}
+>>>>>>> 8513f9342964d7350f5775a3b575ab03ee99de79

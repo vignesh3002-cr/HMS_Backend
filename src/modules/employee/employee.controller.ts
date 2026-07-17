@@ -1,16 +1,15 @@
-import { Response } from "express";
-import { AuthRequest } from "../auth/auth.middleware";
+import {Request, Response } from "express";
 import { EmployeeService } from "./employee.service";
 
 const service = new EmployeeService();
 
 export class EmployeeController {
 
-    async createEmployee(req: AuthRequest, res: Response) {
+    async createEmployee(req: Request, res: Response) {
 
         try {
 
-            const createdBy = req.user!.role || "SYSTEM";
+            const createdBy = (req as any).user?.role || "SYSTEM";
 
             const employee = await service.createEmployee(
                 req.body,
@@ -40,7 +39,7 @@ export class EmployeeController {
         }
 
     }
-    async updateEmployee(req: AuthRequest, res: Response) {
+    async updateEmployee(req: Request, res: Response) {
     try {
 
 
@@ -65,7 +64,7 @@ export class EmployeeController {
     }
     
 }
-async softDeleteEmployee(req: AuthRequest, res: Response) {
+async softDeleteEmployee(req: Request, res: Response) {
 
     try {
 
@@ -88,7 +87,7 @@ async softDeleteEmployee(req: AuthRequest, res: Response) {
     }
 
 }
- async getAllEmployees(req: AuthRequest, res: Response) {
+ async getAllEmployees(req: Request, res: Response) {
 
         try {
 
