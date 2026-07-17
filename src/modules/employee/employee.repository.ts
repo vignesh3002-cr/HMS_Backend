@@ -232,7 +232,8 @@ const employees = await prisma.employees.findMany({
 
             select: {
 
-                branch_name: true
+                branch_name: true,
+                branch_area: true
 
             }
 
@@ -300,9 +301,14 @@ async getEmployeeById(
 
                 user_table: true,
 
-                branch: true
+                branch: true,
 
+                    department_master: {
+        select: {
+            department_name: true
             }
+        
+        }}
 
         });
 
