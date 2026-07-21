@@ -187,6 +187,7 @@ for (const branchId of data.branch_ids) {
             user_id: user.user_id!,
 
             branch_id: branchId,
+            employee_id: employeeId,
 
             status: 1
 
