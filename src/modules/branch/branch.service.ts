@@ -121,4 +121,14 @@ const result = await prisma.$transaction(async (tx) => {
 return result;
 
 }
+async updateBranch(branchId: string, data: any) {
+    const updatedBranch = await repository.updateBranch(branchId, data);
+
+    return updatedBranch;
+}
+async deleteBranch(branchId: string) {
+    const deletedBranch = await repository.deleteBranch(branchId);
+
+    return deletedBranch;
+}
 }

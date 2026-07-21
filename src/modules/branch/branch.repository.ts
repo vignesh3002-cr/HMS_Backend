@@ -35,12 +35,32 @@ export class BranchRepository {
     }
         async getAllBranches() {
         return await prisma.branch.findMany({
-            orderBy: {
-                id: "desc"
+            where: {
+                  branch_status: "Active"
             },
             include: {
                 hospital: true
             }
         });
     }
+
+    async updateBranch(branchId: string, data: any) {
+          console.log("Repository Branch ID:", branchId);
+        return await prisma.branch.update({
+            where: {
+                branch_id: branchId
+            },
+            data
+        });
+    }
+    async deleteBranch(branchId: string) {
+    return await prisma.branch.update({
+        where: {
+            branch_id: branchId
+        },
+        data: {
+            branch_status: "Inactive"
         }
+    });
+}
+}
