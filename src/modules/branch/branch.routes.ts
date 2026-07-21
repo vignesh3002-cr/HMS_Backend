@@ -12,5 +12,13 @@ router.post(
     "/",
     controller.createBranch.bind(controller)
 );
+router.put(
+    "/:branchId",
+    controller.updateBranch.bind(controller)
+);
+router.delete(
+    "/:branchId",
+    controller.deleteBranch.bind(controller)
+);
 
 export default router;
