@@ -93,5 +93,13 @@ class BranchService {
         });
         return result;
     }
+    async updateBranch(branchId, data) {
+        const updatedBranch = await repository.updateBranch(branchId, data);
+        return updatedBranch;
+    }
+    async deleteBranch(branchId) {
+        const deletedBranch = await repository.deleteBranch(branchId);
+        return deletedBranch;
+    }
 }
 exports.BranchService = BranchService;

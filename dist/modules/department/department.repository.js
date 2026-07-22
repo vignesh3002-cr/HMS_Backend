@@ -13,5 +13,19 @@ class DepartmentRepository {
             }
         });
     }
+    // NEW METHOD 1
+    async findDepartmentByName(department_name) {
+        return await prisma_1.default.department_master.findFirst({
+            where: {
+                department_name
+            }
+        });
+    }
+    // NEW METHOD 2
+    async createDepartment(tx, data) {
+        return await tx.department_master.create({
+            data
+        });
+    }
 }
 exports.DepartmentRepository = DepartmentRepository;

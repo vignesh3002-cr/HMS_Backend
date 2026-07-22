@@ -62,6 +62,34 @@ class EmployeeRepository {
             }
         });
     }
+    async softDeleteEmployee(employeeId) {
+        return prisma_1.default.employees.update({
+            where: {
+                employee_id: employeeId
+            },
+            data: {
+                emp_status: false
+            }
+        });
+    }
+    async findEmployeeById(employeeId) {
+        return prisma_1.default.employees.findUnique({
+            where: {
+                employee_id: employeeId
+            }
+        });
+    }
+    async updateEmployee(employeeId, data) {
+        return prisma_1.default.employees.update({
+            where: {
+                employee_id: employeeId
+            },
+            data
+        });
+    }
+    async getAllEmployees() {
+        return prisma_1.default.employees.findMany();
+    }
     async getEmployees(query) {
         const { roleType, branchId, department, status, search, page = 1, limit = 10 } = query;
         const where = {};
@@ -124,7 +152,13 @@ class EmployeeRepository {
                 },
                 branch: {
                     select: {
-                        branch_name: true
+                        branch_name: true,
+                        branch_area: true
+                    }
+                },
+                department_master: {
+                    select: {
+                        department_name: true
                     }
                 }
             },
@@ -152,7 +186,12 @@ class EmployeeRepository {
             },
             include: {
                 user_table: true,
-                branch: true
+                branch: true,
+                department_master: {
+                    select: {
+                        department_name: true
+                    }
+                }
             }
         });
         if (!employee) {

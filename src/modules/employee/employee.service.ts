@@ -173,7 +173,7 @@ const employee = await tx.employees.create({
 
         joining_date: new Date(data.joining_date),
 
-        emp_status: data.emp_status
+        emp_status: true
 
     }
 

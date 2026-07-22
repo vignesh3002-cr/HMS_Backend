@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const patient_controller_1 = require("./patient.controller");
+const auth_middleware_1 = require("../auth/auth.middleware");
+const patient_validation_1 = require("./patient.validation");
+const router = (0, express_1.Router)();
+const controller = new patient_controller_1.PatientController();
+router.post("/create", auth_middleware_1.authenticate, patient_validation_1.createPatientValidation, controller.createPatient.bind(controller));
+router.get("/", controller.getPatients.bind(controller));
+router.get("/:patientId", controller.getPatientById.bind(controller));
+router.put("/:patientId", auth_middleware_1.authenticate, patient_validation_1.updatePatientValidation, controller.updatePatient.bind(controller));
+exports.default = router;

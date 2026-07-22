@@ -19,5 +19,20 @@ class DepartmentController {
             });
         }
     }
+    async createDepartment(req, res) {
+        try {
+            const department = await departmentService.createDepartment(req.body);
+            return res.status(201).json({
+                success: true,
+                data: department
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
 }
 exports.DepartmentController = DepartmentController;

@@ -26,6 +26,7 @@ class AuthService {
         return {
             token,
             user_details: {
+                user_id: user.user_id,
                 username: user.username,
                 role: user.role_type,
                 hospital_id: user.branch?.hospital_id,

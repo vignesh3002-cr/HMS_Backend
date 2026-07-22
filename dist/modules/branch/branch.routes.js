@@ -7,4 +7,6 @@ const controller = new branch_controller_1.BranchController();
 // ✅ Add this ONE line for BranchSelector to work
 router.get("/", controller.getAllBranches.bind(controller));
 router.post("/", controller.createBranch.bind(controller));
+router.put("/:branchId", controller.updateBranch.bind(controller));
+router.delete("/:branchId", controller.deleteBranch.bind(controller));
 exports.default = router;
