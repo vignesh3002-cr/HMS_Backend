@@ -16,6 +16,11 @@ router.get(
     authenticate,
     controller.getAllEmployees.bind(controller)
 );
+router.get(
+    "/:employeeId",
+    authenticate,
+    controller.getEmployeeById.bind(controller)
+);
 
 router.put(
     "/:employeeId",

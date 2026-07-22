@@ -34,3 +34,40 @@ export function formatTimeOfDay(time: Date): string {
 
     return `${hours}:${minutes}`;
 }
+
+export function timeStringToMinutes(time: string): number {
+    const [hours, minutes] = time.split(":").map(Number);
+    return hours * 60 + minutes;
+}
+
+// Slots only include start times that leave a full consultation before end_time,
+// so a shift never has a slot booked that would run past the doctor's working hours.
+export function generateTimeSlots(
+    startTime: Date,
+    endTime: Date,
+    consultationMinutes: number
+): string[] {
+
+    const slots: string[] = [];
+    const step = consultationMinutes > 0 ? consultationMinutes : 30;
+    const startMinutes = timeToMinutes(startTime);
+    const endMinutes = timeToMinutes(endTime);
+
+    for (
+        let minutes = startMinutes;
+        minutes + step <= endMinutes;
+        minutes += step
+    ) {
+
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+
+        slots.push(
+            `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`
+        );
+
+    }
+
+    return slots;
+
+}

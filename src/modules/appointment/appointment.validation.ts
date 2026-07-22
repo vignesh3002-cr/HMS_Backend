@@ -99,6 +99,24 @@ export const updateAppointmentStatusValidation = [
 
 ];
 
+export const getAvailableSlotsValidation = [
+
+    query("employeeId")
+        .notEmpty()
+        .withMessage("Doctor is required"),
+
+    query("branchId")
+        .notEmpty()
+        .withMessage("Branch is required"),
+
+    query("date")
+        .notEmpty()
+        .withMessage("Date is required")
+        .isISO8601()
+        .withMessage("Date must be a valid date (YYYY-MM-DD)")
+
+];
+
 export const getAppointmentsValidation = [
 
     query("page")

@@ -95,6 +95,45 @@ export class AppointmentController {
 
     }
 
+    async getAvailableSlots(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const slots = await service.getAvailableSlots(
+                req.query.employeeId as string,
+                req.query.branchId as string,
+                req.query.date as string
+            );
+
+            return res.json({
+                success: true,
+                message: "Available slots fetched successfully",
+                data: slots
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
     async getAppointmentByNumber(req: Request, res: Response) {
 
         try {

@@ -5,7 +5,8 @@ import {
     createAppointmentValidation,
     updateAppointmentValidation,
     updateAppointmentStatusValidation,
-    getAppointmentsValidation
+    getAppointmentsValidation,
+    getAvailableSlotsValidation
 } from "./appointment.validation";
 
 const router = Router();
@@ -24,6 +25,13 @@ router.get(
     authenticate,
     getAppointmentsValidation,
     controller.getAppointments.bind(controller)
+);
+
+router.get(
+    "/available-slots",
+    authenticate,
+    getAvailableSlotsValidation,
+    controller.getAvailableSlots.bind(controller)
 );
 
 router.get(

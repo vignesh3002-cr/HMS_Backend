@@ -13,12 +13,18 @@ import {
 import {
     toDayOfWeek,
     timeStringToDate,
+    timeStringToMinutes,
     timeToMinutes,
     formatTimeOfDay,
+    generateTimeSlots,
     parseDateOnly
 } from "./appointment.utils";
 
 const repository = new AppointmentRepository();
+
+type DoctorSchedule = Awaited<
+    ReturnType<AppointmentRepository["findActiveDoctorSchedules"]>
+>[number];
 
 interface BookingContext {
     employee: NonNullable<
@@ -30,9 +36,7 @@ interface BookingContext {
     department: Awaited<
         ReturnType<AppointmentRepository["findDepartment"]>
     > | null;
-    schedule: NonNullable<
-        Awaited<ReturnType<AppointmentRepository["findDoctorSchedule"]>>
-    >;
+    schedules: DoctorSchedule[];
 }
 
 export class AppointmentService {
@@ -87,47 +91,53 @@ export class AppointmentService {
 
         const dayOfWeek = toDayOfWeek(appointmentDate);
 
-        const schedule = await repository.findDoctorSchedule(
+        const schedules = await repository.findActiveDoctorSchedules(
             employeeId,
             branchId,
             dayOfWeek
         );
-        console.log("Schedule:", schedule);
 
-        if (!schedule) {
+        if (schedules.length === 0) {
             throw new Error(
                 `Doctor has no active schedule at this branch on ${dayOfWeek}`
             );
         }
 
-        return { employee, branch, department, schedule };
+        return { employee, branch, department, schedules };
 
     }
 
-    private assertWithinWorkingHours(
-        schedule: { start_time: Date | null; end_time: Date | null },
+    // Picks whichever of the doctor's (possibly multiple) shifts that day
+    // actually covers the requested time, instead of assuming a single shift.
+    private pickScheduleForTime(
+        schedules: DoctorSchedule[],
         appointmentTime: string
-    ) {
-
-        if (!schedule.start_time || !schedule.end_time) {
-            throw new Error(
-                "Doctor schedule has no working hours configured"
-            );
-        }
+    ): DoctorSchedule {
 
         const requestedMinutes = timeToMinutes(
             timeStringToDate(appointmentTime)
         );
 
-        const startMinutes = timeToMinutes(schedule.start_time);
-        const endMinutes = timeToMinutes(schedule.end_time);
-        console.log("Requested:", requestedMinutes, "Start:", startMinutes, "End:", endMinutes);
+        const match = schedules.find((schedule) => {
 
-        if (requestedMinutes < startMinutes || requestedMinutes >= endMinutes) {
+            if (!schedule.start_time || !schedule.end_time) {
+                return false;
+            }
+
+            const startMinutes = timeToMinutes(schedule.start_time);
+            const endMinutes = timeToMinutes(schedule.end_time);
+
+            return requestedMinutes >= startMinutes && requestedMinutes < endMinutes;
+
+        });
+
+        if (!match) {
             throw new Error(
                 "Selected time is outside the doctor's working hours"
             );
         }
+
+        return match;
 
     }
 
@@ -141,7 +151,7 @@ export class AppointmentService {
 
         const appointmentDate = parseDateOnly(data.appointment_date);
 
-        const { employee, department, schedule } =
+        const { employee, department, schedules } =
             await this.validateBookingContext(
                 data.employee_id,
                 data.branch_id,
@@ -149,7 +159,7 @@ export class AppointmentService {
                 appointmentDate
             );
 
-        this.assertWithinWorkingHours(schedule, data.appointment_time);
+        const schedule = this.pickScheduleForTime(schedules, data.appointment_time);
 
         const appointmentTime = timeStringToDate(data.appointment_time);
 
@@ -280,7 +290,7 @@ export class AppointmentService {
 
             if (scheduleChanged) {
 
-                const { employee, department, schedule } =
+                const { employee, department, schedules } =
                     await this.validateBookingContext(
                         employeeId,
                         branchId,
@@ -288,7 +298,7 @@ export class AppointmentService {
                         appointmentDate
                     );
 
-                this.assertWithinWorkingHours(schedule, appointmentTimeStr);
+                const schedule = this.pickScheduleForTime(schedules, appointmentTimeStr);
 
                 const appointmentTime = timeStringToDate(appointmentTimeStr);
 
@@ -368,6 +378,100 @@ export class AppointmentService {
             appointmentNo,
             APPOINTMENT_STATUS.CANCELLED
         );
+
+    }
+
+    async getAvailableSlots(
+        employeeId: string,
+        branchId: string,
+        dateStr: string
+    ) {
+
+        const employee = await repository.findEmployee(employeeId);
+
+        if (!employee) {
+            throw new Error("Doctor not found");
+        }
+
+        if (employee.user_table?.role_type !== "DOCTOR") {
+            throw new Error("Selected employee is not a doctor");
+        }
+
+        const branch = await repository.findBranch(branchId);
+
+        if (!branch) {
+            throw new Error("Branch not found");
+        }
+
+        if (branch.branch_status !== "Active") {
+            throw new Error("Selected branch is inactive");
+        }
+
+        const mapping = await repository.findDoctorBranchMapping(
+            employeeId,
+            branchId
+        );
+
+        if (!mapping) {
+            throw new Error("Doctor is not assigned to the selected branch");
+        }
+
+        const appointmentDate = parseDateOnly(dateStr);
+        const dayOfWeek = toDayOfWeek(appointmentDate);
+
+        const schedules = await repository.findActiveDoctorSchedules(
+            employeeId,
+            branchId,
+            dayOfWeek
+        );
+
+        if (schedules.length === 0) {
+            return { date: dateStr, day_of_week: dayOfWeek, slots: [] };
+        }
+
+        const bookedTimes = await repository.findBookedAppointmentTimes(
+            employeeId,
+            appointmentDate
+        );
+
+        const bookedSet = new Set(bookedTimes.map(formatTimeOfDay));
+
+        // "Past" only applies when the requested date is today, compared using
+        // the server's local wall-clock - the same convention HH:mm strings are
+        // entered and stored under (see the note in appointment.utils.ts).
+        const now = new Date();
+
+        const isToday =
+            appointmentDate.getUTCFullYear() === now.getFullYear() &&
+            appointmentDate.getUTCMonth() === now.getMonth() &&
+            appointmentDate.getUTCDate() === now.getDate();
+
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+        const slots = schedules.flatMap((schedule) => {
+
+            if (!schedule.start_time || !schedule.end_time) {
+                return [];
+            }
+
+            const times = generateTimeSlots(
+                schedule.start_time,
+                schedule.end_time,
+                schedule.consultation_minutes ?? 20
+            );
+
+            return times
+                .filter((time) => !isToday || timeStringToMinutes(time) > nowMinutes)
+                .map((time) => ({
+                    schedule_id: schedule.schedule_id,
+                    shift_name: schedule.shift_name,
+                    time,
+                    is_available: !bookedSet.has(time)
+                }));
+
+        });
+
+        return { date: dateStr, day_of_week: dayOfWeek, slots };
 
     }
 

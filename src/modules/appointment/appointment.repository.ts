@@ -111,20 +111,41 @@ export class AppointmentRepository {
 
     }
 
-    async findDoctorSchedule(
+    // A doctor can have more than one active shift on the same day_of_week
+    // (e.g. morning + evening), so this returns all of them, not just one.
+    async findActiveDoctorSchedules(
         employeeId: string,
         branchId: string,
         dayOfWeek: string
     ) {
 
-        return prisma.doctor_schedule.findFirst({
+        return prisma.doctor_schedule.findMany({
             where: {
                 employee_id: employeeId,
                 branch_id: branchId,
                 day_of_week: dayOfWeek,
                 is_active: true
-            }
+            },
+            orderBy: { start_time: "asc" }
         });
+
+    }
+
+    async findBookedAppointmentTimes(
+        employeeId: string,
+        appointmentDate: Date
+    ) {
+
+        const appointments = await prisma.appointment_history.findMany({
+            where: {
+                employee_id: employeeId,
+                appointment_date: appointmentDate,
+                status: { notIn: NON_BLOCKING_APPOINTMENT_STATUSES }
+            },
+            select: { appointment_time: true }
+        });
+
+        return appointments.map((appointment) => appointment.appointment_time);
 
     }
 

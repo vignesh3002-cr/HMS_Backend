@@ -119,5 +119,25 @@ async softDeleteEmployee(req: Request, res: Response) {
         }
 
     }
-}
+    async getEmployeeById(req: Request, res: Response) {
 
+        try {
+            console.log("Fetching employee by ID:", req.params.employeeId);
+            const employee = await service.getEmployeeById(String(req.params.employeeId));
+            
+            return res.status(200).json({
+                success: true,
+                data: employee
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+}
