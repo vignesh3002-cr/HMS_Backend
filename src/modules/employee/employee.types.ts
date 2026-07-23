@@ -51,6 +51,12 @@ export interface CreateEmployeeDto {
 
     permanent_address?: string;
     current_address?: string;
+    employee_photo_URL?: string;
+    employee_state?: string;
+    employee_district?: string;
+    employee_area?: string;
+    employee_pincode?:number;
+    employee_no_experence?: number;
 
     emergency_contact_name?: string;
     emergency_contact_relationship?: string;

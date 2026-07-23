@@ -65,7 +65,11 @@ class PatientService {
                     patient_nationality: data.nationality,
                     patient_photo_url: data.photo,
                     patient_type: data.patient_type,
-                    patient_active: "Active"
+                    patient_active: "Active",
+                    patient_state: data.patient_state,
+                    patient_district: data.patient_district,
+                    patient_area: data.patient_area,
+                    patient_pincode: data.patient_pincode
                 }
             });
             return {

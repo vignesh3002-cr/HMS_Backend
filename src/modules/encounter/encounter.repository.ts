@@ -94,7 +94,7 @@ export class EncounterRepository {
 
     async findDiagnosis(diagnosisId: string) {
 
-        return prisma.diagnosis_master.findUnique({
+        return prisma.diagnosis.findUnique({
             where: { diagnosis_id: diagnosisId }
         });
 

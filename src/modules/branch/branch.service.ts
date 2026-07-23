@@ -20,6 +20,16 @@ export class BranchService {
             hospital_id: branch.hospital?.hospital_id || "D002",
         }));
     }
+async getBranchById(branchId: string) {
+
+    const branch = await repository.getBranchById(branchId);
+
+    if (!branch) {
+        throw new Error("Branch not found");
+    }
+
+    return branch;
+}
 async createBranch(
     data: CreateBranchDto,
     createdBy: string,
