@@ -81,6 +81,13 @@ export class EmployeeRepository {
     return prisma.employees.findUnique({
         where: {
             employee_id: employeeId
+        },
+        include: {
+            user_table: {
+                select: {
+                    role_type: true
+                }
+            }
         }
     });
 }
