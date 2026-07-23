@@ -80,7 +80,7 @@ class EncounterRepository {
         });
     }
     async findDiagnosis(diagnosisId) {
-        return prisma_1.default.diagnosis_master.findUnique({
+        return prisma_1.default.diagnosis.findUnique({
             where: { diagnosis_id: diagnosisId }
         });
     }

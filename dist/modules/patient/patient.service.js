@@ -139,6 +139,10 @@ class PatientService {
             patient_photo_url: data.photo,
             patient_type: data.patient_type,
             patient_active: data.patient_active,
+            patient_state: data.patient_state,
+            patient_district: data.patient_district,
+            patient_area: data.patient_area,
+            patient_pincode: data.patient_pincode,
             branch: data.branch_id
                 ? {
                     connect: {

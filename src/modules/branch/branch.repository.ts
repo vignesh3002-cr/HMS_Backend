@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 
 export class BranchRepository {
@@ -55,8 +56,7 @@ export class BranchRepository {
         });
     }
 
-    async updateBranch(branchId: string, data: any) {
-          console.log("Repository Branch ID:", branchId);
+    async updateBranch(branchId: string, data: Prisma.branchUpdateInput) {
         return await prisma.branch.update({
             where: {
                 branch_id: branchId

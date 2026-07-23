@@ -2,7 +2,6 @@ import "dotenv/config";
 
 import express from "express";
 import cors from "cors";
-//import doctorRoutes from "./modules/doctor/doctor.routes";
 
 import authRoutes from "./modules/auth/auth.routes";
 import userRoutes from "./modules/auth/user/user.routes";
@@ -12,6 +11,7 @@ import departmentRoutes from "./modules/department/department.routes";
 import patientRoutes from "./modules/patient/patient.routes";
 import appointmentRoutes from "./modules/appointment/appointment.routes";
 import encounterRoutes from "./modules/encounter/encounter.routes";
+//import prescriptionRoutes from "./modules/prescription/prescription.routes";
 import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
 import { hashPassword } from "./utils/bcrypt";
 
@@ -33,12 +33,12 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/users", userRoutes);
-//app.use("/api/doctors", doctorRoutes);
 app.use("/api/branch", branchRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/patients", patientRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/encounters", encounterRoutes);
+//app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/hashpassword", async (req, res) => {
 

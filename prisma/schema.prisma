@@ -430,6 +430,7 @@ model encounter {
   doctor_schedule     doctor_schedule?     @relation(fields: [schedule_id], references: [schedule_id], onDelete: NoAction, map: "fk_encounter_schedule")
   user_table          user_table?          @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_encounter_user")
   lab_order           lab_order[]
+  prescription        prescription[]
 
   @@index([patient_id], map: "idx_encounter_patient")
 }
@@ -702,7 +703,7 @@ model patient_history {
   branch_id                  String?               @db.VarChar(20)
   department_id              String?               @db.VarChar(20)
   patient_history_id         String?               @unique @db.VarChar(20)
-  patient_id                 String?               @db.VarChar
+  patient_id                 String?               @unique @db.VarChar
   diagnosis_id               String?               @db.VarChar(20)
   prescribed_medicines       String?
   doctor_employee_id         String?               @db.VarChar(20)
@@ -771,6 +772,7 @@ model pharmacy {
 model prescription {
   id                  BigInt               @id @default(autoincrement())
   prescription_id     String               @unique @db.VarChar(20)
+  encounter_no        String               @db.VarChar(30)
   patient_id          String               @db.VarChar(20)
   patient_history_id  String?              @db.VarChar(20)
   department_id       String?              @db.VarChar(20)
@@ -780,10 +782,13 @@ model prescription {
   clinical_notes      String?
   advice              String?
   followup_date       DateTime?            @db.Date
-  status              String?              @db.VarChar(30)
+  status              String?              @default("DRAFT") @db.VarChar(30)
   branch_id           String?              @db.VarChar(10)
   user_id             String?              @db.VarChar(20)
+  created_by          String?              @db.VarChar(20)
+  updated_by          String?              @db.VarChar(20)
   created_at          DateTime?            @default(now()) @db.Timestamp(6)
+  updated_at          DateTime?            @updatedAt @db.Timestamp(6)
   appointment_id      String?              @db.VarChar(20)
   doctor_employee_id  String               @db.VarChar(20)
   pharmacy            pharmacy[]
@@ -792,10 +797,13 @@ model prescription {
   department_master   department_master?   @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction)
   diagnosis_master    diagnosis?           @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction)
   employees           employees            @relation(fields: [doctor_employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
+  encounter           encounter            @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_prescription_encounter")
   patient_history     patient_history?     @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: NoAction, onUpdate: NoAction)
   patient_bio_data    patient_bio_data     @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction)
   user_table          user_table?          @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
   prescription_items  prescription_items[]
+
+  @@index([encounter_no], map: "idx_prescription_encounter")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -804,15 +812,27 @@ model prescription_items {
   prescription_item_id String          @unique @db.VarChar(20)
   prescription_id      String          @db.VarChar(20)
   medicine_id          String          @db.VarChar(20)
+  medicine_name        String          @db.VarChar(200)
   dosage               String?         @db.VarChar(100)
-  frequency            String?         @db.VarChar(100)
-  duration             String?         @db.VarChar(100)
-  quantity             Int?
+  dosage_unit          String?         @db.VarChar(30)
+  strength             String?         @db.VarChar(50)
   route                String?         @db.VarChar(50)
-  before_after_food    String?         @db.VarChar(30)
-  instruction          String?
+  frequency            String?         @db.VarChar(30)
+  timing               String?         @db.VarChar(30)
+  duration_value       Int?
+  duration_unit        String?         @db.VarChar(20)
+  quantity             Int?
+  refill_count         Int?            @default(0)
+  instructions         String?
+  substitution_allowed Boolean?        @default(true)
+  dispense_status      String?         @default("PENDING") @db.VarChar(30)
+  notes                String?
+  created_at           DateTime?       @default(now()) @db.Timestamp(6)
+  updated_at           DateTime?       @updatedAt @db.Timestamp(6)
   medicine_master      medicine_master @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction)
   prescription         prescription    @relation(fields: [prescription_id], references: [prescription_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([prescription_id], map: "idx_prescription_items_prescription")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

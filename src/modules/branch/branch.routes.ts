@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { BranchController } from "./branch.controller";
+import { updateBranchValidation } from "./branch.validation";
 
 const router = Router();
 
@@ -19,6 +20,7 @@ router.post(
 );
 router.put(
     "/:branchId",
+    updateBranchValidation,
     controller.updateBranch.bind(controller)
 );
 router.delete(

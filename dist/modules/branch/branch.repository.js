@@ -44,8 +44,17 @@ class BranchRepository {
             }
         });
     }
+    async getBranchById(branchId) {
+        return await prisma_1.default.branch.findUnique({
+            where: {
+                branch_id: branchId
+            },
+            include: {
+                hospital: true
+            }
+        });
+    }
     async updateBranch(branchId, data) {
-        console.log("Repository Branch ID:", branchId);
         return await prisma_1.default.branch.update({
             where: {
                 branch_id: branchId

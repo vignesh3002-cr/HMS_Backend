@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { validationResult } from "express-validator";
 import { BranchService } from "./branch.service";
 
 const service = new BranchService();
@@ -77,6 +78,16 @@ export class BranchController {
     }
     async updateBranch(req: Request, res: Response) {
     try {
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: errors.array()[0].msg,
+                errors: errors.array()
+            });
+        }
+
         const branchId = String(req.params.branchId);
 
         const result = await service.updateBranch(
@@ -91,12 +102,14 @@ export class BranchController {
         });
 
     } catch (error: any) {
-        return res.status(400).json({
+        const statusCode = error.message === "Branch not found" ? 404 : 400;
+
+        return res.status(statusCode).json({
             success: false,
             message: error.message
         });
     }
-    
+
 }
 async deleteBranch(
     req: Request<{ branchId: string }>,

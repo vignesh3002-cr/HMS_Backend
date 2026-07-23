@@ -1,7 +1,37 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createBranchValidation = void 0;
+exports.createBranchValidation = exports.updateBranchValidation = void 0;
 const express_validator_1 = require("express-validator");
+exports.updateBranchValidation = [
+    (0, express_validator_1.body)("branch_name")
+        .optional()
+        .notEmpty()
+        .withMessage("Branch Name cannot be empty"),
+    (0, express_validator_1.body)("branch_type")
+        .optional()
+        .notEmpty()
+        .withMessage("Branch Type cannot be empty"),
+    (0, express_validator_1.body)("email")
+        .optional()
+        .isEmail()
+        .withMessage("Valid Branch Email is required"),
+    (0, express_validator_1.body)("pincode")
+        .optional()
+        .isInt()
+        .withMessage("Pincode must be a number"),
+    (0, express_validator_1.body)("total_beds")
+        .optional()
+        .isInt()
+        .withMessage("Total beds must be a number"),
+    (0, express_validator_1.body)("date_of_establish")
+        .optional()
+        .isISO8601()
+        .withMessage("Date of establish must be a valid date"),
+    (0, express_validator_1.body)("branch_status")
+        .optional()
+        .isIn(["Active", "Inactive"])
+        .withMessage("Branch status must be either Active or Inactive")
+];
 exports.createBranchValidation = [
     (0, express_validator_1.body)("branch_code")
         .notEmpty()

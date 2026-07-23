@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BranchController = void 0;
+const express_validator_1 = require("express-validator");
 const branch_service_1 = require("./branch.service");
 const service = new branch_service_1.BranchService();
 class BranchController {
@@ -17,6 +18,23 @@ class BranchController {
             return res.status(400).json({
                 success: false,
                 message: error.message,
+            });
+        }
+    }
+    async getBranchById(req, res) {
+        try {
+            const branchId = String(req.params.branchId);
+            const branch = await service.getBranchById(branchId);
+            return res.status(200).json({
+                success: true,
+                message: "Branch fetched successfully",
+                data: branch
+            });
+        }
+        catch (error) {
+            return res.status(404).json({
+                success: false,
+                message: error.message
             });
         }
     }
@@ -40,6 +58,14 @@ class BranchController {
     }
     async updateBranch(req, res) {
         try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
             const branchId = String(req.params.branchId);
             const result = await service.updateBranch(branchId, req.body);
             return res.status(200).json({
@@ -49,7 +75,8 @@ class BranchController {
             });
         }
         catch (error) {
-            return res.status(400).json({
+            const statusCode = error.message === "Branch not found" ? 404 : 400;
+            return res.status(statusCode).json({
                 success: false,
                 message: error.message
             });

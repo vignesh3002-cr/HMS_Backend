@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import prisma from "../../config/prisma";
 import { BranchRepository } from "./branch.repository";
-import { CreateBranchDto } from "./branch.types";
+import { CreateBranchDto, UpdateBranchDto } from "./branch.types";
 import { generateId } from "../../utils/idGenerator";
 
 const repository = new BranchRepository();
@@ -131,8 +131,46 @@ const result = await prisma.$transaction(async (tx) => {
 return result;
 
 }
-async updateBranch(branchId: string, data: any) {
-    const updatedBranch = await repository.updateBranch(branchId, data);
+async updateBranch(branchId: string, data: UpdateBranchDto) {
+    const existing = await repository.getBranchById(branchId);
+
+    if (!existing) {
+        throw new Error("Branch not found");
+    }
+
+    if (data.branch_code && data.branch_code !== existing.branch_code) {
+        const existingBranchCode = await repository.findBranchCode(data.branch_code);
+
+        if (existingBranchCode) {
+            throw new Error("Branch code already exists");
+        }
+    }
+
+    const updatedBranch = await repository.updateBranch(branchId, {
+        branch_type: data.branch_type,
+        branch_code: data.branch_code,
+        address: data.address,
+        district: data.district,
+        state_name: data.state_name,
+        country: data.country,
+        emergency_no: data.emergency_number,
+        branch_pincode: data.pincode,
+        branch_name: data.branch_name,
+        branch_status: data.branch_status,
+        branch_email: data.email,
+        gst_no: data.gst_no,
+        pan_no: data.pan_no,
+        branch_area: data.area,
+        date_of_establish: data.date_of_establish
+            ? new Date(data.date_of_establish)
+            : undefined,
+        website_address: data.website_address,
+        branch_license_no: data.license_number,
+        total_beds: data.total_beds,
+        total_no_emp: data.total_no_emp,
+        fax_no: data.fax_no,
+        medical_services: data.medical_services
+    });
 
     return updatedBranch;
 }
