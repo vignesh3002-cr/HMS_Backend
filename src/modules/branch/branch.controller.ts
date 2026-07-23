@@ -21,6 +21,31 @@ export class BranchController {
     }
   }
 
+    async getBranchById(req: Request, res: Response) {
+
+        try {
+
+            const branchId = String(req.params.branchId);
+
+            const branch = await service.getBranchById(branchId);
+
+            return res.status(200).json({
+                success: true,
+                message: "Branch fetched successfully",
+                data: branch
+            });
+
+        } catch (error: any) {
+
+            return res.status(404).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
     async createBranch(req: Request, res: Response) {
 
         try {

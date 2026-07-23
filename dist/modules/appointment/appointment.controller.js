@@ -66,6 +66,30 @@ class AppointmentController {
             });
         }
     }
+    async getAvailableSlots(req, res) {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+            const slots = await service.getAvailableSlots(req.query.employeeId, req.query.branchId, req.query.date);
+            return res.json({
+                success: true,
+                message: "Available slots fetched successfully",
+                data: slots
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
     async getAppointmentByNumber(req, res) {
         try {
             const appointment = await service.getAppointmentByNumber(req.params.appointmentNo);

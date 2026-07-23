@@ -30,6 +30,10 @@ export interface CreatePatientRequest {
     branch_id: string;
 
     created_by: string;
+    patient_state:string;
+    patient_district:string;
+    patient_area:string;
+    patient_pincode:number;
 }
 
 export interface UpdatePatientRequest {
@@ -58,6 +62,10 @@ export interface UpdatePatientRequest {
     photo?: string;
 
     branch_id?: string;
+    patient_state:string;
+    patient_district:string;
+    patient_area:string;
+    patient_pincode:number
 }
 
 export interface GetPatientsQuery {

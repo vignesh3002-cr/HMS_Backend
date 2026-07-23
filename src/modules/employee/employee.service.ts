@@ -173,7 +173,13 @@ const employee = await tx.employees.create({
 
         joining_date: new Date(data.joining_date),
 
-        emp_status: true
+        emp_status: true,
+        employee_photo_URL: data.employee_photo_URL,
+        employee_state: data.employee_state,
+        employee_district: data.employee_district,
+        employee_area: data.employee_area,
+        employee_pincode: data.employee_pincode,
+        employee_no_experence: data.employee_no_experence
 
     }
 
@@ -313,7 +319,13 @@ async updateEmployee(
             department_id: data.department_id,
             designation: data.designation,
             joining_date: new Date(data.joining_date),
-            emp_status: data.emp_status
+            emp_status: data.emp_status,
+            employee_photo_URL:data.employee_photo_URL,
+            employee_state:data.employee_state,
+            employee_district:data.employee_district,
+            employee_area:data.employee_area,
+            employee_pincode:data.employee_pincode,
+            employee_no_experence:data.employee_no_experence
         }
     );
 

@@ -76,5 +76,21 @@ class EmployeeController {
             });
         }
     }
+    async getEmployeeById(req, res) {
+        try {
+            console.log("Fetching employee by ID:", req.params.employeeId);
+            const employee = await service.getEmployeeById(String(req.params.employeeId));
+            return res.status(200).json({
+                success: true,
+                data: employee
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
 }
 exports.EmployeeController = EmployeeController;

@@ -7,6 +7,7 @@ const router = (0, express_1.Router)();
 const controller = new employee_controller_1.EmployeeController();
 router.post("/create", auth_middleware_1.authenticate, controller.createEmployee.bind(controller));
 router.get("/", auth_middleware_1.authenticate, controller.getAllEmployees.bind(controller));
+router.get("/:employeeId", auth_middleware_1.authenticate, controller.getEmployeeById.bind(controller));
 router.put("/:employeeId", auth_middleware_1.authenticate, controller.updateEmployee.bind(controller));
 router.delete("/:employeeId", auth_middleware_1.authenticate, controller.softDeleteEmployee.bind(controller));
 exports.default = router;
