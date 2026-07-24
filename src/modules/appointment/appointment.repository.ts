@@ -230,11 +230,15 @@ export class AppointmentRepository {
 
     }
 
-    async updateAppointmentStatus(appointmentId: string, status: string) {
+    async updateAppointmentStatus(
+        appointmentId: string,
+        status: string,
+        cancelReason?: string
+    ) {
 
         return prisma.appointment_history.update({
             where: { appointment_id: appointmentId },
-            data: { status }
+            data: { status, cancel_reason: cancelReason }
         });
 
     }

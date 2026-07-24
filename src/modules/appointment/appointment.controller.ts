@@ -215,7 +215,8 @@ export class AppointmentController {
 
             const appointment = await service.updateAppointmentStatus(
                 req.params.appointmentNo as string,
-                req.body.status
+                req.body.status,
+                req.body.cancel_reason
             );
 
             return res.json({
@@ -239,8 +240,21 @@ export class AppointmentController {
 
         try {
 
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
             const appointment = await service.cancelAppointment(
-                req.params.appointmentNo as string
+                req.params.appointmentNo as string,
+                req.body.cancel_reason
             );
 
             return res.json({

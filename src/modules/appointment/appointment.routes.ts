@@ -6,7 +6,8 @@ import {
     updateAppointmentValidation,
     updateAppointmentStatusValidation,
     getAppointmentsValidation,
-    getAvailableSlotsValidation
+    getAvailableSlotsValidation,
+    cancelAppointmentValidation
 } from "./appointment.validation";
 
 const router = Router();
@@ -58,6 +59,7 @@ router.patch(
 router.delete(
     "/:appointmentNo",
     authenticate,
+    cancelAppointmentValidation,
     controller.cancelAppointment.bind(controller)
 );
 
