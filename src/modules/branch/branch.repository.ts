@@ -61,7 +61,10 @@ export class BranchRepository {
             where: {
                 branch_id: branchId
             },
-            data
+            data: {
+                
+
+            }
         });
     }
     async deleteBranch(branchId: string) {
