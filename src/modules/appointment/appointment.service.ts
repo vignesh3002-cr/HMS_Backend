@@ -216,7 +216,7 @@ export class AppointmentService {
                 appointment_date: appointmentDate,
                 appointment_time: appointmentTime,
                 token_number: tokenNumber,
-                status: APPOINTMENT_STATUS.BOOKED,
+                status: APPOINTMENT_STATUS.SCHEDULED,
                 reason_for_visit: data.reason_for_visit,
                 referred_by: data.referred_by,
                 booking_source: data.booking_source ?? "STAFF",
@@ -346,6 +346,7 @@ export class AppointmentService {
                 updateData.token_number = tokenNumber;
                 updateData.doctor_name = doctorName;
                 updateData.department = departmentName;
+                updateData.status='RESCHEDULED';
             }
 
             return repository.updateAppointment(tx, appointmentNo, updateData);
