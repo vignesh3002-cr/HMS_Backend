@@ -30,7 +30,7 @@ export interface CreateEmployeeDto {
         | "NURSE"
         | "LAB_TECHNICIAN"
         | "PHARMACIST"
-        | "RECEPTIONIST";
+        | "Admin";
 
     // Personal
 

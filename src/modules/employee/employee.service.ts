@@ -155,7 +155,7 @@ const employee = await tx.employees.create({
 
         passport_no: data.passport_no,
 
-        parmanant_address: data.permanent_address,
+        parmanent_address: data.permanent_address,
 
         current_address: data.current_address,
 
@@ -310,7 +310,7 @@ async updateEmployee(
             aadhaar_no: data.aadhaar_no,
             pan_no: data.pan_no,
             passport_no: data.passport_no,
-            parmanant_address: data.permanent_address,
+parmanent_address: data.permanent_address,
             current_address: data.current_address,
             emergency_contact_name: data.emergency_contact_name,
             emergency_contact_relationship: data.emergency_contact_relationship,
