@@ -45,7 +45,7 @@ export class EmployeeRepository {
     }
 
     async findLicense(license: string) {
-        return prisma.doctor_profile.findFirst({
+        return prisma.employees.findFirst({
             where: {
                 license_no: license
             }

@@ -140,7 +140,7 @@ class AppointmentController {
                     errors: errors.array()
                 });
             }
-            const appointment = await service.updateAppointmentStatus(req.params.appointmentNo, req.body.status);
+            const appointment = await service.updateAppointmentStatus(req.params.appointmentNo, req.body.status, req.body.cancel_reason);
             return res.json({
                 success: true,
                 message: "Appointment status updated successfully",
@@ -156,7 +156,15 @@ class AppointmentController {
     }
     async cancelAppointment(req, res) {
         try {
-            const appointment = await service.cancelAppointment(req.params.appointmentNo);
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+            const appointment = await service.cancelAppointment(req.params.appointmentNo, req.body.cancel_reason);
             return res.json({
                 success: true,
                 message: "Appointment cancelled successfully",

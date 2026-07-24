@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAppointmentsValidation = exports.getAvailableSlotsValidation = exports.updateAppointmentStatusValidation = exports.updateAppointmentValidation = exports.createAppointmentValidation = void 0;
+exports.getAppointmentsValidation = exports.getAvailableSlotsValidation = exports.cancelAppointmentValidation = exports.updateAppointmentStatusValidation = exports.updateAppointmentValidation = exports.createAppointmentValidation = void 0;
 const express_validator_1 = require("express-validator");
 const appointment_constants_1 = require("./appointment.constants");
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -71,7 +71,21 @@ exports.updateAppointmentStatusValidation = [
         .notEmpty()
         .withMessage("Status is required")
         .isIn(appointment_constants_1.APPOINTMENT_STATUS_VALUES)
-        .withMessage(`Status must be one of: ${appointment_constants_1.APPOINTMENT_STATUS_VALUES.join(", ")}`)
+        .withMessage(`Status must be one of: ${appointment_constants_1.APPOINTMENT_STATUS_VALUES.join(", ")}`),
+    (0, express_validator_1.body)("cancel_reason")
+        .if((0, express_validator_1.body)("status").equals(appointment_constants_1.APPOINTMENT_STATUS.CANCELLED))
+        .notEmpty()
+        .withMessage("Cancellation reason is required when cancelling an appointment"),
+    (0, express_validator_1.body)("cancel_reason")
+        .optional()
+        .isString()
+];
+exports.cancelAppointmentValidation = [
+    (0, express_validator_1.param)("appointmentNo")
+        .notEmpty(),
+    (0, express_validator_1.body)("cancel_reason")
+        .notEmpty()
+        .withMessage("Cancellation reason is required")
 ];
 exports.getAvailableSlotsValidation = [
     (0, express_validator_1.query)("employeeId")

@@ -155,10 +155,10 @@ class AppointmentRepository {
             data
         });
     }
-    async updateAppointmentStatus(appointmentId, status) {
+    async updateAppointmentStatus(appointmentId, status, cancelReason) {
         return prisma_1.default.appointment_history.update({
             where: { appointment_id: appointmentId },
-            data: { status }
+            data: { status, cancel_reason: cancelReason }
         });
     }
     async getAppointmentByNumber(appointmentId) {

@@ -69,11 +69,11 @@ for (const branchId of data.branch_ids) {
 }
 if (
     data.role_type === "DOCTOR" &&
-    data.doc_license_no
+    data.license_no
 ) {
 
     const license = await repository.findLicense(
-        data.doc_license_no
+        data.license_no
     );
 
     if (license) {
@@ -172,7 +172,11 @@ const employee = await tx.employees.create({
         designation: data.designation,
 
         joining_date: new Date(data.joining_date),
+        specialization: data.specialization,
 
+        qualification: data.qualification,
+
+        license_no: data.license_no,
         emp_status: true,
         employee_photo_URL: data.employee_photo_URL,
         employee_state: data.employee_state,
@@ -209,12 +213,6 @@ if (data.role_type === "DOCTOR") {
         data: {
 
             employee_id: employee.employee_id!,
-
-            specialization: data.specialization,
-
-            qualification: data.qualification,
-
-            license_no: data.doc_license_no,
 
             consultation_minutes:
                 data.consultation_minutes ?? 20
@@ -269,6 +267,7 @@ return {
         employee_id: employee.employee_id,
         first_name: employee.first_name,
         middle_name: employee.middle_name,
+        license_no:employee.license_no
     }
     
 };
@@ -325,7 +324,10 @@ async updateEmployee(
             employee_district: data.employee_district,
             employee_area: data.employee_area,
             employee_pincode: data.employee_pincode,
-            employee_no_experence: data.employee_no_experence
+            employee_no_experence: data.employee_no_experence,
+            specialization: data.specialization,
+            qualification: data.qualification,
+            license_no: data.license_no,
         }
     );
 
