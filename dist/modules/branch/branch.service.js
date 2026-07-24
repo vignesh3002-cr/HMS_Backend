@@ -81,6 +81,7 @@ class BranchService {
                     user_status: 0,
                     user_id: userId,
                     branch_id: branchId,
+                    role_type: "ADMIN"
                 }
             });
             return {

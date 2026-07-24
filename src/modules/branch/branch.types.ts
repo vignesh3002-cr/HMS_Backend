@@ -27,6 +27,7 @@ export interface CreateBranchDto {
   // Branch Admin (user_table)
   username: string;
   password: string;
+  role_type:string;
 }
 
 // All fields optional — a caller only sends what it wants to change.

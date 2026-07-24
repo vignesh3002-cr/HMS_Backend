@@ -13,5 +13,5 @@ router.get("/:appointmentNo", auth_middleware_1.authenticate, controller.getAppo
 router.put("/:appointmentNo", auth_middleware_1.authenticate, appointment_validation_1.updateAppointmentValidation, controller.updateAppointment.bind(controller));
 router.patch("/:appointmentNo/status", auth_middleware_1.authenticate, appointment_validation_1.updateAppointmentStatusValidation, controller.updateAppointmentStatus.bind(controller));
 // Soft cancellation only - appointments are never physically deleted.
-router.delete("/:appointmentNo", auth_middleware_1.authenticate, controller.cancelAppointment.bind(controller));
+router.delete("/:appointmentNo", auth_middleware_1.authenticate, appointment_validation_1.cancelAppointmentValidation, controller.cancelAppointment.bind(controller));
 exports.default = router;

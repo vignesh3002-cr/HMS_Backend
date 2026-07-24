@@ -42,7 +42,7 @@ class EmployeeRepository {
         });
     }
     async findLicense(license) {
-        return prisma_1.default.doctor_profile.findFirst({
+        return prisma_1.default.employees.findFirst({
             where: {
                 license_no: license
             }
@@ -76,6 +76,13 @@ class EmployeeRepository {
         return prisma_1.default.employees.findUnique({
             where: {
                 employee_id: employeeId
+            },
+            include: {
+                user_table: {
+                    select: {
+                        role_type: true
+                    }
+                }
             }
         });
     }

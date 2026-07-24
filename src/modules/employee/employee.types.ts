@@ -73,7 +73,7 @@ export interface CreateEmployeeDto {
 
     specialization: string;
     qualification: string;
-    doc_license_no: string;
+    license_no: string;
     consultation_minutes: number;
 
     // Multi Branch
