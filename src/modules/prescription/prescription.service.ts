@@ -1,4 +1,4 @@
-{/*import prisma from "../../config/prisma";
+import prisma from "../../config/prisma";
 import { PrescriptionRepository } from "./prescription.repository";
 import {
     CreatePrescriptionDTO,
@@ -7,44 +7,45 @@ import {
     UpdatePrescriptionItemDTO,
     GetPrescriptionsQuery
 } from "./prescription.types";
-import {
-    PRESCRIPTION_STATUS,
-    FREQUENCY_DOSES_PER_DAY,
-    DURATION_UNIT_TO_DAYS
-} from "./prescription.constants";
+import { PRESCRIPTION_STATUS } from "./prescription.constants";
 import { ENCOUNTER_STATUS } from "../encounter/encounter.constants";
 
 const repository = new PrescriptionRepository();
 
 function computeQuantity(item: {
     quantity?: number;
-    frequency?: string;
-    duration_value?: number;
-    duration_unit?: string;
+    morning?: boolean;
+    afternoon?: boolean;
+    night?: boolean;
+    days?: number;
 }): number | undefined {
 
     if (item.quantity !== undefined && item.quantity !== null) {
         return item.quantity;
     }
 
-    if (!item.frequency || !item.duration_value || !item.duration_unit) {
+    if (!item.days) {
         return undefined;
     }
 
-    const dosesPerDay = FREQUENCY_DOSES_PER_DAY[item.frequency];
-    const daysPerUnit = DURATION_UNIT_TO_DAYS[item.duration_unit];
+    const dosesPerDay =
+        (item.morning ? 1 : 0) +
+        (item.afternoon ? 1 : 0) +
+        (item.night ? 1 : 0);
 
-    if (!dosesPerDay || !daysPerUnit) {
+    if (dosesPerDay === 0) {
         return undefined;
     }
 
-    return Math.ceil(item.duration_value * daysPerUnit * dosesPerDay);
+    return dosesPerDay * item.days;
 
 }
 
 export class PrescriptionService {
 
     async createPrescription(data: CreatePrescriptionDTO, createdBy: string) {
+
+        void createdBy; // no created_by column on prescription today - kept for interface symmetry
 
         const encounter = await repository.findEncounterForPrescription(data.encounter_no);
 
@@ -87,8 +88,6 @@ export class PrescriptionService {
         }
 
         const resolvedItems: Array<CreatePrescriptionItemDTO & {
-            medicine_name: string;
-            resolved_strength?: string;
             resolved_route?: string;
             resolved_quantity?: number;
         }> = [];
@@ -103,29 +102,61 @@ export class PrescriptionService {
 
             resolvedItems.push({
                 ...item,
-                medicine_name: medicine.medicine_name,
-                resolved_strength: item.strength ?? medicine.strength ?? undefined,
                 resolved_route: item.route ?? medicine.route ?? undefined,
                 resolved_quantity: computeQuantity(item)
             });
 
         }
 
+        const diagnosisId = data.diagnosis_id ?? encounter.diagnosis_id ?? undefined;
+
+        if (diagnosisId) {
+
+            const diagnosis = await repository.findDiagnosis(diagnosisId);
+
+            if (!diagnosis) {
+                throw new Error("Diagnosis not found");
+            }
+
+        }
+
         const prescriptionId = await prisma.$transaction(async (tx) => {
 
-            const prescriptionId = await repository.generatePrescriptionNumber(tx);
+            let patientHistory = encounter.appointment_id
+                ? await repository.findPatientHistoryByAppointment(encounter.appointment_id)
+                : null;
+
+            if (!patientHistory) {
+
+                const patientHistoryId = await repository.generatePatientHistoryId(tx);
+
+                patientHistory = await repository.createPatientHistory(tx, {
+
+                    patient_history_id: patientHistoryId,
+                    patient_id: encounter.patient_id,
+                    appointment_id: encounter.appointment_id,
+                    branch_id: encounter.branch_id,
+                    department_id: encounter.department_id,
+                    diagnosis_id: diagnosisId,
+                    employee_id: doctor.employee_id,
+                    visit_type: data.visit_type ?? encounter.encounter_type,
+                    visit_date: new Date(),
+                    visit_status: "IN_PROGRESS"
+
+                });
+
+            }
+
+            const generatedPrescriptionId = await repository.generatePrescriptionNumber(tx);
 
             const prescription = await repository.createPrescription(tx, {
 
-                prescription_id: prescriptionId,
-                encounter_no: encounter.encounter_no,
-                patient_id: encounter.patient_id,
+                prescription_id: generatedPrescriptionId,
+                employee_id: doctor.employee_id!,
                 department_id: encounter.department_id,
-                diagnosis_id: encounter.diagnosis_id,
-                appointment_id: encounter.appointment_id,
-                branch_id: encounter.branch_id,
-                doctor_employee_id: doctor.employee_id!,
-                user_id: doctor.user_id,
+                diagnosis_id: diagnosisId,
+                patient_history_id: patientHistory.patient_history_id,
+                visit_type: data.visit_type ?? encounter.encounter_type,
 
                 chief_complaint: data.chief_complaint ?? encounter.chief_complaint,
                 clinical_notes: data.clinical_notes ?? encounter.clinical_notes,
@@ -134,8 +165,9 @@ export class PrescriptionService {
                     ? new Date(data.followup_date)
                     : encounter.follow_up_date,
 
-                status: PRESCRIPTION_STATUS.DRAFT,
-                created_by: createdBy
+                prescription_status: PRESCRIPTION_STATUS.DRAFT,
+                branch_id: encounter.branch_id,
+                user_id: doctor.user_id
 
             });
 
@@ -148,20 +180,18 @@ export class PrescriptionService {
                     prescription_item_id: itemId,
                     prescription_id: prescription.prescription_id,
                     medicine_id: item.medicine_id,
-                    medicine_name: item.medicine_name,
                     dosage: item.dosage,
-                    dosage_unit: item.dosage_unit,
-                    strength: item.resolved_strength,
+                    unit: item.unit,
                     route: item.resolved_route,
                     frequency: item.frequency,
-                    timing: item.timing,
-                    duration_value: item.duration_value,
-                    duration_unit: item.duration_unit,
+                    before_after_food: item.before_after_food,
+                    morning: item.morning ?? false,
+                    afternoon: item.afternoon ?? false,
+                    night: item.night ?? false,
+                    days: item.days,
+                    duration: item.duration,
                     quantity: item.resolved_quantity,
-                    refill_count: item.refill_count,
-                    instructions: item.instructions,
-                    substitution_allowed: item.substitution_allowed,
-                    notes: item.notes
+                    instruction: item.instruction
 
                 });
 
@@ -196,7 +226,7 @@ export class PrescriptionService {
     async updatePrescription(
         prescriptionId: string,
         data: UpdatePrescriptionDTO,
-        updatedBy: string
+        actingRole: string
     ) {
 
         const existing = await repository.getPrescriptionById(prescriptionId);
@@ -207,29 +237,29 @@ export class PrescriptionService {
 
         const nextStatus = data.status;
 
-        if (nextStatus && nextStatus !== existing.status) {
+        if (nextStatus && nextStatus !== existing.prescription_status) {
 
             if (nextStatus === PRESCRIPTION_STATUS.FINALIZED) {
 
-                if (existing.status !== PRESCRIPTION_STATUS.DRAFT) {
+                if (existing.prescription_status !== PRESCRIPTION_STATUS.DRAFT) {
                     throw new Error("Only a draft prescription can be finalized");
                 }
 
             } else if (nextStatus === PRESCRIPTION_STATUS.DRAFT) {
 
-                if (existing.status !== PRESCRIPTION_STATUS.FINALIZED) {
+                if (existing.prescription_status !== PRESCRIPTION_STATUS.FINALIZED) {
                     throw new Error("Only a finalized prescription can be reopened");
                 }
 
                 // The JWT payload only carries the caller's role today (see
                 // auth.middleware.ts), so "authorized doctor" is enforced on role.
-                if (updatedBy !== "DOCTOR") {
+                if (actingRole !== "DOCTOR") {
                     throw new Error("Only a doctor can reopen a finalized prescription");
                 }
 
             } else if (nextStatus === PRESCRIPTION_STATUS.CANCELLED) {
 
-                if (existing.status === PRESCRIPTION_STATUS.CANCELLED) {
+                if (existing.prescription_status === PRESCRIPTION_STATUS.CANCELLED) {
                     throw new Error("Prescription is already cancelled");
                 }
 
@@ -239,13 +269,23 @@ export class PrescriptionService {
 
             }
 
-        } else if (existing.status === PRESCRIPTION_STATUS.FINALIZED) {
+        } else if (existing.prescription_status === PRESCRIPTION_STATUS.FINALIZED) {
 
             throw new Error("Prescription is finalized and read-only. Reopen it before editing.");
 
-        } else if (existing.status === PRESCRIPTION_STATUS.CANCELLED) {
+        } else if (existing.prescription_status === PRESCRIPTION_STATUS.CANCELLED) {
 
             throw new Error("Cannot edit a cancelled prescription");
+
+        }
+
+        if (data.diagnosis_id) {
+
+            const diagnosis = await repository.findDiagnosis(data.diagnosis_id);
+
+            if (!diagnosis) {
+                throw new Error("Diagnosis not found");
+            }
 
         }
 
@@ -258,14 +298,13 @@ export class PrescriptionService {
                 ? new Date(data.followup_date)
                 : undefined,
             diagnosis_id: data.diagnosis_id,
-            status: nextStatus ?? existing.status,
-            updated_by: updatedBy
+            prescription_status: nextStatus ?? existing.prescription_status
 
         });
 
     }
 
-    async deletePrescription(prescriptionId: string, updatedBy: string) {
+    async deletePrescription(prescriptionId: string) {
 
         const existing = await repository.getPrescriptionById(prescriptionId);
 
@@ -273,13 +312,12 @@ export class PrescriptionService {
             throw new Error("Prescription not found");
         }
 
-        if (existing.status === PRESCRIPTION_STATUS.CANCELLED) {
+        if (existing.prescription_status === PRESCRIPTION_STATUS.CANCELLED) {
             throw new Error("Prescription is already cancelled");
         }
 
         return repository.updatePrescription(prescriptionId, {
-            status: PRESCRIPTION_STATUS.CANCELLED,
-            updated_by: updatedBy
+            prescription_status: PRESCRIPTION_STATUS.CANCELLED
         });
 
     }
@@ -307,7 +345,7 @@ export class PrescriptionService {
             throw new Error("Prescription not found");
         }
 
-        if (existing.status !== PRESCRIPTION_STATUS.DRAFT) {
+        if (existing.prescription_status !== PRESCRIPTION_STATUS.DRAFT) {
             throw new Error("Cannot add items to a prescription that is not in draft status");
         }
 
@@ -337,20 +375,18 @@ export class PrescriptionService {
                 prescription_item_id: itemId,
                 prescription_id: prescriptionId,
                 medicine_id: data.medicine_id,
-                medicine_name: medicine.medicine_name,
                 dosage: data.dosage,
-                dosage_unit: data.dosage_unit,
-                strength: data.strength ?? medicine.strength ?? undefined,
+                unit: data.unit,
                 route: data.route ?? medicine.route ?? undefined,
                 frequency: data.frequency,
-                timing: data.timing,
-                duration_value: data.duration_value,
-                duration_unit: data.duration_unit,
+                before_after_food: data.before_after_food,
+                morning: data.morning ?? false,
+                afternoon: data.afternoon ?? false,
+                night: data.night ?? false,
+                days: data.days,
+                duration: data.duration,
                 quantity,
-                refill_count: data.refill_count,
-                instructions: data.instructions,
-                substitution_allowed: data.substitution_allowed,
-                notes: data.notes
+                instruction: data.instruction
 
             });
 
@@ -370,7 +406,7 @@ export class PrescriptionService {
             throw new Error("Prescription not found");
         }
 
-        if (existing.status !== PRESCRIPTION_STATUS.DRAFT) {
+        if (existing.prescription_status !== PRESCRIPTION_STATUS.DRAFT) {
             throw new Error("Cannot edit items on a prescription that is not in draft status");
         }
 
@@ -380,8 +416,6 @@ export class PrescriptionService {
             throw new Error("Prescription item not found");
         }
 
-        let medicineName = item.medicine_name;
-        let resolvedStrength = data.strength;
         let resolvedRoute = data.route;
 
         if (data.medicine_id && data.medicine_id !== item.medicine_id) {
@@ -402,37 +436,33 @@ export class PrescriptionService {
                 throw new Error("This medicine already exists in the prescription");
             }
 
-            medicineName = medicine.medicine_name;
-            resolvedStrength = data.strength ?? medicine.strength ?? undefined;
             resolvedRoute = data.route ?? medicine.route ?? undefined;
 
         }
 
         const quantity = computeQuantity({
             quantity: data.quantity,
-            frequency: data.frequency ?? item.frequency ?? undefined,
-            duration_value: data.duration_value ?? item.duration_value ?? undefined,
-            duration_unit: data.duration_unit ?? item.duration_unit ?? undefined
+            morning: data.morning ?? item.morning ?? undefined,
+            afternoon: data.afternoon ?? item.afternoon ?? undefined,
+            night: data.night ?? item.night ?? undefined,
+            days: data.days ?? item.days ?? undefined
         }) ?? item.quantity ?? undefined;
 
         return repository.updatePrescriptionItem(itemId, {
 
             medicine_id: data.medicine_id,
-            medicine_name: medicineName,
             dosage: data.dosage,
-            dosage_unit: data.dosage_unit,
-            strength: resolvedStrength,
+            unit: data.unit,
             route: resolvedRoute,
             frequency: data.frequency,
-            timing: data.timing,
-            duration_value: data.duration_value,
-            duration_unit: data.duration_unit,
+            before_after_food: data.before_after_food,
+            morning: data.morning,
+            afternoon: data.afternoon,
+            night: data.night,
+            days: data.days,
+            duration: data.duration,
             quantity,
-            refill_count: data.refill_count,
-            instructions: data.instructions,
-            substitution_allowed: data.substitution_allowed,
-            dispense_status: data.dispense_status,
-            notes: data.notes
+            instruction: data.instruction
 
         });
 
@@ -446,7 +476,7 @@ export class PrescriptionService {
             throw new Error("Prescription not found");
         }
 
-        if (existing.status !== PRESCRIPTION_STATUS.DRAFT) {
+        if (existing.prescription_status !== PRESCRIPTION_STATUS.DRAFT) {
             throw new Error("Cannot remove items from a prescription that is not in draft status");
         }
 
@@ -460,4 +490,16 @@ export class PrescriptionService {
 
     }
 
-}*/}
+    async getSuggestedMedicines(diagnosisId: string) {
+
+        const diagnosis = await repository.findDiagnosis(diagnosisId);
+
+        if (!diagnosis) {
+            throw new Error("Diagnosis not found");
+        }
+
+        return repository.getSuggestedMedicines(diagnosisId);
+
+    }
+
+}

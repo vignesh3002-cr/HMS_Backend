@@ -1,4 +1,4 @@
-{/*import { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { generateId } from "../../utils/idGenerator";
 import { GetPrescriptionsQuery } from "./prescription.types";
@@ -11,7 +11,8 @@ const prescriptionItemInclude = {
             medicine_code: true,
             medicine_name: true,
             generic_name: true,
-            dosage_form: true
+            dosage_form: true,
+            strength: true
         }
     }
 
@@ -19,14 +20,21 @@ const prescriptionItemInclude = {
 
 const prescriptionDetailInclude = {
 
-    patient_bio_data: {
+    patient_history: {
         select: {
-            patient_id: true,
-            patient_first_name: true,
-            patient_middle_name: true,
-            patient_last_name: true,
-            patient_gender: true,
-            patient_primary_mobile: true
+            patient_history_id: true,
+            appointment_id: true,
+            visit_date: true,
+            patient_bio_data: {
+                select: {
+                    patient_id: true,
+                    patient_first_name: true,
+                    patient_middle_name: true,
+                    patient_last_name: true,
+                    patient_gender: true,
+                    patient_primary_mobile: true
+                }
+            }
         }
     },
 
@@ -55,21 +63,11 @@ const prescriptionDetailInclude = {
         }
     },
 
-    diagnosis_master: {
+    diagnosis: {
         select: {
             diagnosis_id: true,
             diagnosis_name: true,
             icd_code: true
-        }
-    },
-
-    encounter: {
-        select: {
-            encounter_no: true,
-            encounter_ts: true,
-            encounter_type: true,
-            status: true,
-            chief_complaint: true
         }
     },
 
@@ -91,10 +89,17 @@ export class PrescriptionRepository {
                 patient_bio_data: true,
                 employees: true,
                 branch: true,
-                department_master: true,
-                diagnosis_master: true
+                department_master: true
             }
 
+        });
+
+    }
+
+    async findDiagnosis(diagnosisId: string) {
+
+        return prisma.diagnosis.findUnique({
+            where: { diagnosis_id: diagnosisId }
         });
 
     }
@@ -104,6 +109,29 @@ export class PrescriptionRepository {
         return prisma.medicine_master.findUnique({
             where: { medicine_id: medicineId }
         });
+
+    }
+
+    async findPatientHistoryByAppointment(appointmentId: string) {
+
+        return prisma.patient_history.findFirst({
+            where: { appointment_id: appointmentId }
+        });
+
+    }
+
+    async generatePatientHistoryId(tx: Prisma.TransactionClient) {
+
+        return generateId(tx, "PATIENT_HISTORY");
+
+    }
+
+    async createPatientHistory(
+        tx: Prisma.TransactionClient,
+        data: Prisma.patient_historyUncheckedCreateInput
+    ) {
+
+        return tx.patient_history.create({ data });
 
     }
 
@@ -133,7 +161,10 @@ export class PrescriptionRepository {
         data: Prisma.prescription_itemsUncheckedCreateInput
     ) {
 
-        return tx.prescription_items.create({ data });
+        return tx.prescription_items.create({
+            data,
+            include: prescriptionItemInclude
+        });
 
     }
 
@@ -219,13 +250,39 @@ export class PrescriptionRepository {
 
     }
 
+    async getSuggestedMedicines(diagnosisId: string) {
+
+        return prisma.diagnosis_medicine_mapping.findMany({
+
+            where: { diagnosis_id: diagnosisId },
+
+            include: {
+                medicine_master: {
+                    select: {
+                        medicine_id: true,
+                        medicine_name: true,
+                        generic_name: true,
+                        dosage_form: true,
+                        strength: true,
+                        route: true
+                    }
+                }
+            },
+
+            orderBy: [{ is_primary: "desc" }]
+
+        });
+
+    }
+
     async getPrescriptions(query: GetPrescriptionsQuery) {
 
         const {
             branchId,
             doctorId,
-            patientId,
-            encounterId,
+            patientHistoryId,
+            appointmentId,
+            diagnosisId,
             status,
             date,
             dateFrom,
@@ -240,10 +297,14 @@ export class PrescriptionRepository {
         const where: Prisma.prescriptionWhereInput = {};
 
         if (branchId) where.branch_id = branchId;
-        if (doctorId) where.doctor_employee_id = doctorId;
-        if (patientId) where.patient_id = patientId;
-        if (encounterId) where.encounter_no = encounterId;
-        if (status) where.status = status;
+        if (doctorId) where.employee_id = doctorId;
+        if (patientHistoryId) where.patient_history_id = patientHistoryId;
+        if (diagnosisId) where.diagnosis_id = diagnosisId;
+        if (status) where.prescription_status = status;
+
+        if (appointmentId) {
+            where.patient_history = { appointment_id: appointmentId };
+        }
 
         if (date) {
 
@@ -265,13 +326,14 @@ export class PrescriptionRepository {
 
             where.OR = [
                 { prescription_id: { contains: search, mode: "insensitive" } },
-                { encounter_no: { contains: search, mode: "insensitive" } },
                 {
-                    patient_bio_data: {
-                        OR: [
-                            { patient_first_name: { contains: search, mode: "insensitive" } },
-                            { patient_last_name: { contains: search, mode: "insensitive" } }
-                        ]
+                    patient_history: {
+                        patient_bio_data: {
+                            OR: [
+                                { patient_first_name: { contains: search, mode: "insensitive" } },
+                                { patient_last_name: { contains: search, mode: "insensitive" } }
+                            ]
+                        }
                     }
                 },
                 {
@@ -290,7 +352,7 @@ export class PrescriptionRepository {
             sortBy === "created_at"
                 ? { created_at: sortOrder }
                 : sortBy === "status"
-                ? { status: sortOrder }
+                ? { prescription_status: sortOrder }
                 : { prescription_date: sortOrder };
 
         const [prescriptions, total] = await Promise.all([
@@ -330,4 +392,3 @@ function startOfNextDay(date: string): Date {
     day.setUTCDate(day.getUTCDate() + 1);
     return day;
 }
-*/}

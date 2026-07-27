@@ -1,25 +1,26 @@
-{/*export interface CreatePrescriptionItemDTO {
+export interface CreatePrescriptionItemDTO {
 
     medicine_id: string;
     dosage?: string;
-    dosage_unit?: string;
-    strength?: string;
+    unit?: string;
     route?: string;
     frequency?: string;
-    timing?: string;
-    duration_value?: number;
-    duration_unit?: string;
+    before_after_food?: string;
+    morning?: boolean;
+    afternoon?: boolean;
+    night?: boolean;
+    days?: number;
+    duration?: string;
     quantity?: number;
-    refill_count?: number;
-    instructions?: string;
-    substitution_allowed?: boolean;
-    notes?: string;
+    instruction?: string;
 
 }
 
 export interface CreatePrescriptionDTO {
 
     encounter_no: string;
+    diagnosis_id?: string;
+    visit_type?: string;
     chief_complaint?: string;
     clinical_notes?: string;
     advice?: string;
@@ -30,34 +31,30 @@ export interface CreatePrescriptionDTO {
 
 export interface UpdatePrescriptionDTO {
 
+    diagnosis_id?: string;
     chief_complaint?: string;
     clinical_notes?: string;
     advice?: string;
     followup_date?: string; // YYYY-MM-DD
-    diagnosis_id?: string;
     status?: "DRAFT" | "FINALIZED" | "CANCELLED";
 
 }
-
-export interface CreatePrescriptionItemRequestDTO extends CreatePrescriptionItemDTO {}
 
 export interface UpdatePrescriptionItemDTO {
 
     medicine_id?: string;
     dosage?: string;
-    dosage_unit?: string;
-    strength?: string;
+    unit?: string;
     route?: string;
     frequency?: string;
-    timing?: string;
-    duration_value?: number;
-    duration_unit?: string;
+    before_after_food?: string;
+    morning?: boolean;
+    afternoon?: boolean;
+    night?: boolean;
+    days?: number;
+    duration?: string;
     quantity?: number;
-    refill_count?: number;
-    instructions?: string;
-    substitution_allowed?: boolean;
-    dispense_status?: string;
-    notes?: string;
+    instruction?: string;
 
 }
 
@@ -65,8 +62,9 @@ export interface GetPrescriptionsQuery {
 
     branchId?: string;
     doctorId?: string;
-    patientId?: string;
-    encounterId?: string;
+    patientHistoryId?: string;
+    appointmentId?: string;
+    diagnosisId?: string;
     status?: string;
 
     date?: string;
@@ -82,4 +80,3 @@ export interface GetPrescriptionsQuery {
     limit?: number;
 
 }
-*/}

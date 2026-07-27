@@ -295,9 +295,7 @@ async updateEmployee(
     if (!department) {
         throw new Error("Department not found");
     }
-
-    const updatedEmployee = await repository.updateEmployee(
-        employeeId,
+     const updatedEmployee=await repository.updateEmployee(employeeId,  
         {
             first_name: data.first_name,
             middle_name: data.middle_name,
@@ -327,9 +325,60 @@ async updateEmployee(
             employee_no_experence: data.employee_no_experence,
             specialization: data.specialization,
             qualification: data.qualification,
-            license_no: data.license_no,
+            license_no: data.license_no
         }
     );
+
+    await prisma.$transaction(async (tx) => {
+        await tx.user_branch_mapping.deleteMany({
+            where: {
+                user_id: employee.user_table?.user_id!
+            }
+        });
+
+        for (const branchId of data.branch_ids) {
+            await tx.user_branch_mapping.create({
+                data: {
+                    user_id: employee.user_table?.user_id!,
+                    branch_id: branchId,
+                    employee_id: employeeId,
+                    status: 1
+                }
+            });
+        }
+
+        if (data.role_type === "DOCTOR") {
+            await tx.doctor_profile.update({
+                where: {
+                    employee_id: employeeId
+                },
+                data: {
+                    consultation_minutes: data.consultation_minutes ?? 20
+                }
+            });
+        }
+
+        await tx.doctor_schedule.deleteMany({
+            where: {
+                employee_id: employeeId
+            }
+        });
+
+        for (const schedule of data.working_hours ?? []) {
+            await tx.doctor_schedule.create({
+                data: {
+                    employee_id: employeeId,
+                    branch_id: schedule.branch_id,
+                    day_of_week: schedule.day_of_week,
+                    shift_name: schedule.shift_name,
+                    start_time: new Date(`1970-01-01T${schedule.start_time}:00`),
+                    end_time: new Date(`1970-01-01T${schedule.end_time}:00`),
+                    consultation_minutes: data.consultation_minutes ?? 20,
+                    is_active: true
+                }
+            });
+        }
+    });
 
     return {
         employee_id: updatedEmployee.employee_id,

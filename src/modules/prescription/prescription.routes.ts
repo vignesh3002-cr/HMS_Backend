@@ -1,4 +1,4 @@
-{/*import { Router } from "express";
+import { Router } from "express";
 import { PrescriptionController } from "./prescription.controller";
 import { authenticate } from "../auth/auth.middleware";
 import {
@@ -10,7 +10,8 @@ import {
     addPrescriptionItemValidation,
     updatePrescriptionItemValidation,
     deletePrescriptionItemValidation,
-    getPrescriptionItemsValidation
+    getPrescriptionItemsValidation,
+    getSuggestedMedicinesValidation
 } from "./prescription.validation";
 
 const router = Router();
@@ -29,6 +30,13 @@ router.get(
     authenticate,
     getPrescriptionsValidation,
     controller.getPrescriptions.bind(controller)
+);
+
+router.get(
+    "/suggestions/:diagnosisId",
+    authenticate,
+    getSuggestedMedicinesValidation,
+    controller.getSuggestedMedicines.bind(controller)
 );
 
 router.get(
@@ -80,4 +88,4 @@ router.delete(
     controller.deletePrescription.bind(controller)
 );
 
-export default router;*/}
+export default router;

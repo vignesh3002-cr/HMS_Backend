@@ -11,7 +11,7 @@ import departmentRoutes from "./modules/department/department.routes";
 import patientRoutes from "./modules/patient/patient.routes";
 import appointmentRoutes from "./modules/appointment/appointment.routes";
 import encounterRoutes from "./modules/encounter/encounter.routes";
-//import prescriptionRoutes from "./modules/prescription/prescription.routes";
+import prescriptionRoutes from "./modules/prescription/prescription.routes";
 import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
 import { hashPassword } from "./utils/bcrypt";
 
@@ -38,7 +38,7 @@ app.use("/api/departments", departmentRoutes);
 app.use("/api/patients", patientRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/encounters", encounterRoutes);
-//app.use("/api/prescriptions", prescriptionRoutes);
+app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/hashpassword", async (req, res) => {
 

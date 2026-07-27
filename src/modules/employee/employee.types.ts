@@ -81,7 +81,7 @@ export interface CreateEmployeeDto {
     branch_ids: string[];
 
     // Doctor Schedule
-
+    user_id:string;
     working_hours?: WorkingHourDto[];
 }
 
