@@ -1,37 +1,41 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-{ /*import { Prisma } from "@prisma/client";
-import prisma from "../../config/prisma";
-import { generateId } from "../../utils/idGenerator";
-import { GetPrescriptionsQuery } from "./prescription.types";
-
+exports.PrescriptionRepository = void 0;
+const prisma_1 = __importDefault(require("../../config/prisma"));
+const idGenerator_1 = require("../../utils/idGenerator");
 const prescriptionItemInclude = {
-
     medicine_master: {
         select: {
             medicine_id: true,
             medicine_code: true,
             medicine_name: true,
             generic_name: true,
-            dosage_form: true
+            dosage_form: true,
+            strength: true
         }
     }
-
-} satisfies Prisma.prescription_itemsInclude;
-
+};
 const prescriptionDetailInclude = {
-
-    patient_bio_data: {
+    patient_history: {
         select: {
-            patient_id: true,
-            patient_first_name: true,
-            patient_middle_name: true,
-            patient_last_name: true,
-            patient_gender: true,
-            patient_primary_mobile: true
+            patient_history_id: true,
+            appointment_id: true,
+            visit_date: true,
+            patient_bio_data: {
+                select: {
+                    patient_id: true,
+                    patient_first_name: true,
+                    patient_middle_name: true,
+                    patient_last_name: true,
+                    patient_gender: true,
+                    patient_primary_mobile: true
+                }
+            }
         }
     },
-
     employees: {
         select: {
             employee_id: true,
@@ -41,7 +45,6 @@ const prescriptionDetailInclude = {
             specialization: true
         }
     },
-
     branch: {
         select: {
             branch_id: true,
@@ -49,136 +52,94 @@ const prescriptionDetailInclude = {
             branch_area: true
         }
     },
-
     department_master: {
         select: {
             department_id: true,
             department_name: true
         }
     },
-
-    diagnosis_master: {
+    diagnosis: {
         select: {
             diagnosis_id: true,
             diagnosis_name: true,
             icd_code: true
         }
     },
-
-    encounter: {
-        select: {
-            encounter_no: true,
-            encounter_ts: true,
-            encounter_type: true,
-            status: true,
-            chief_complaint: true
-        }
-    },
-
     prescription_items: {
         include: prescriptionItemInclude
     }
-
-} satisfies Prisma.prescriptionInclude;
-
-export class PrescriptionRepository {
-
-    async findEncounterForPrescription(encounterNo: string) {
-
-        return prisma.encounter.findUnique({
-
+};
+class PrescriptionRepository {
+    async findEncounterForPrescription(encounterNo) {
+        return prisma_1.default.encounter.findUnique({
             where: { encounter_no: encounterNo },
-
             include: {
                 patient_bio_data: true,
                 employees: true,
                 branch: true,
-                department_master: true,
-                diagnosis_master: true
+                department_master: true
             }
-
         });
-
     }
-
-    async findMedicine(medicineId: string) {
-
-        return prisma.medicine_master.findUnique({
+    async findDiagnosis(diagnosisId) {
+        return prisma_1.default.diagnosis.findUnique({
+            where: { diagnosis_id: diagnosisId }
+        });
+    }
+    async findMedicine(medicineId) {
+        return prisma_1.default.medicine_master.findUnique({
             where: { medicine_id: medicineId }
         });
-
     }
-
-    async generatePrescriptionNumber(tx: Prisma.TransactionClient) {
-
-        return generateId(tx, "PRESCRIPTION");
-
+    async findPatientHistoryByAppointment(appointmentId) {
+        return prisma_1.default.patient_history.findFirst({
+            where: { appointment_id: appointmentId }
+        });
     }
-
-    async generatePrescriptionItemId(tx: Prisma.TransactionClient) {
-
-        return generateId(tx, "PRESCRIPTION_ITEM");
-
+    async generatePatientHistoryId(tx) {
+        return (0, idGenerator_1.generateId)(tx, "PATIENT_HISTORY");
     }
-
-    async createPrescription(
-        tx: Prisma.TransactionClient,
-        data: Prisma.prescriptionUncheckedCreateInput
-    ) {
-
+    async createPatientHistory(tx, data) {
+        return tx.patient_history.create({ data });
+    }
+    async generatePrescriptionNumber(tx) {
+        return (0, idGenerator_1.generateId)(tx, "PRESCRIPTION");
+    }
+    async generatePrescriptionItemId(tx) {
+        return (0, idGenerator_1.generateId)(tx, "PRESCRIPTION_ITEM");
+    }
+    async createPrescription(tx, data) {
         return tx.prescription.create({ data });
-
     }
-
-    async createPrescriptionItem(
-        tx: Prisma.TransactionClient,
-        data: Prisma.prescription_itemsUncheckedCreateInput
-    ) {
-
-        return tx.prescription_items.create({ data });
-
+    async createPrescriptionItem(tx, data) {
+        return tx.prescription_items.create({
+            data,
+            include: prescriptionItemInclude
+        });
     }
-
-    async getPrescriptionById(prescriptionId: string) {
-
-        return prisma.prescription.findUnique({
+    async getPrescriptionById(prescriptionId) {
+        return prisma_1.default.prescription.findUnique({
             where: { prescription_id: prescriptionId },
             include: prescriptionDetailInclude
         });
-
     }
-
-    async updatePrescription(
-        prescriptionId: string,
-        data: Prisma.prescriptionUncheckedUpdateInput
-    ) {
-
-        return prisma.prescription.update({
+    async updatePrescription(prescriptionId, data) {
+        return prisma_1.default.prescription.update({
             where: { prescription_id: prescriptionId },
             data,
             include: prescriptionDetailInclude
         });
-
     }
-
-    async findPrescriptionItem(prescriptionId: string, itemId: string) {
-
-        return prisma.prescription_items.findFirst({
+    async findPrescriptionItem(prescriptionId, itemId) {
+        return prisma_1.default.prescription_items.findFirst({
             where: {
                 prescription_item_id: itemId,
                 prescription_id: prescriptionId
             }
         });
-
     }
-
-    async findDuplicateMedicineItem(
-        prescriptionId: string,
-        medicineId: string,
-        excludeItemId?: string
-    ) {
-
-        return prisma.prescription_items.findFirst({
+    async findDuplicateMedicineItem(prescriptionId, medicineId, excludeItemId) {
+        return prisma_1.default.prescription_items.findFirst({
             where: {
                 prescription_id: prescriptionId,
                 medicine_id: medicineId,
@@ -187,93 +148,83 @@ export class PrescriptionRepository {
                     : {})
             }
         });
-
     }
-
-    async getPrescriptionItems(prescriptionId: string) {
-
-        return prisma.prescription_items.findMany({
+    async getPrescriptionItems(prescriptionId) {
+        return prisma_1.default.prescription_items.findMany({
             where: { prescription_id: prescriptionId },
             include: prescriptionItemInclude,
             orderBy: { id: "asc" }
         });
-
     }
-
-    async updatePrescriptionItem(
-        itemId: string,
-        data: Prisma.prescription_itemsUncheckedUpdateInput
-    ) {
-
-        return prisma.prescription_items.update({
+    async updatePrescriptionItem(itemId, data) {
+        return prisma_1.default.prescription_items.update({
             where: { prescription_item_id: itemId },
             data,
             include: prescriptionItemInclude
         });
-
     }
-
-    async deletePrescriptionItem(itemId: string) {
-
-        return prisma.prescription_items.delete({
+    async deletePrescriptionItem(itemId) {
+        return prisma_1.default.prescription_items.delete({
             where: { prescription_item_id: itemId }
         });
-
     }
-
-    async getPrescriptions(query: GetPrescriptionsQuery) {
-
-        const {
-            branchId,
-            doctorId,
-            patientId,
-            encounterId,
-            status,
-            date,
-            dateFrom,
-            dateTo,
-            search,
-            sortBy = "prescription_date",
-            sortOrder = "desc",
-            page = 1,
-            limit = 10
-        } = query;
-
-        const where: Prisma.prescriptionWhereInput = {};
-
-        if (branchId) where.branch_id = branchId;
-        if (doctorId) where.doctor_employee_id = doctorId;
-        if (patientId) where.patient_id = patientId;
-        if (encounterId) where.encounter_no = encounterId;
-        if (status) where.status = status;
-
+    async getSuggestedMedicines(diagnosisId) {
+        return prisma_1.default.diagnosis_medicine_mapping.findMany({
+            where: { diagnosis_id: diagnosisId },
+            include: {
+                medicine_master: {
+                    select: {
+                        medicine_id: true,
+                        medicine_name: true,
+                        generic_name: true,
+                        dosage_form: true,
+                        strength: true,
+                        route: true
+                    }
+                }
+            },
+            orderBy: [{ is_primary: "desc" }]
+        });
+    }
+    async getPrescriptions(query) {
+        const { branchId, doctorId, patientHistoryId, appointmentId, diagnosisId, status, date, dateFrom, dateTo, search, sortBy = "prescription_date", sortOrder = "desc", page = 1, limit = 10 } = query;
+        const where = {};
+        if (branchId)
+            where.branch_id = branchId;
+        if (doctorId)
+            where.employee_id = doctorId;
+        if (patientHistoryId)
+            where.patient_history_id = patientHistoryId;
+        if (diagnosisId)
+            where.diagnosis_id = diagnosisId;
+        if (status)
+            where.prescription_status = status;
+        if (appointmentId) {
+            where.patient_history = { appointment_id: appointmentId };
+        }
         if (date) {
-
             where.prescription_date = {
                 gte: startOfDay(date),
                 lt: startOfNextDay(date)
             };
-
-        } else if (dateFrom || dateTo) {
-
+        }
+        else if (dateFrom || dateTo) {
             where.prescription_date = {
                 ...(dateFrom ? { gte: startOfDay(dateFrom) } : {}),
                 ...(dateTo ? { lt: startOfNextDay(dateTo) } : {})
             };
-
         }
-
         if (search) {
-
             where.OR = [
                 { prescription_id: { contains: search, mode: "insensitive" } },
-                { encounter_no: { contains: search, mode: "insensitive" } },
                 {
-                    patient_bio_data: {
-                        OR: [
-                            { patient_first_name: { contains: search, mode: "insensitive" } },
-                            { patient_last_name: { contains: search, mode: "insensitive" } }
-                        ]
+                    patient_history: {
+                        patient_bio_data: {
+                            OR: [
+                                { patient_first_name: { contains: search, mode: "insensitive" } },
+                                { patient_last_name: { contains: search, mode: "insensitive" } }
+                            ]
+                        }
                     }
                 },
                 {
@@ -285,52 +236,37 @@ export class PrescriptionRepository {
                     }
                 }
             ];
-
         }
-
-        const orderBy: Prisma.prescriptionOrderByWithRelationInput =
-            sortBy === "created_at"
-                ? { created_at: sortOrder }
-                : sortBy === "status"
-                ? { status: sortOrder }
+        const orderBy = sortBy === "created_at"
+            ? { created_at: sortOrder }
+            : sortBy === "status"
+                ? { prescription_status: sortOrder }
                 : { prescription_date: sortOrder };
-
         const [prescriptions, total] = await Promise.all([
-
-            prisma.prescription.findMany({
+            prisma_1.default.prescription.findMany({
                 where,
                 include: prescriptionDetailInclude,
                 orderBy,
                 skip: (page - 1) * limit,
                 take: limit
             }),
-
-            prisma.prescription.count({ where })
-
+            prisma_1.default.prescription.count({ where })
         ]);
-
         return {
-
             total,
             page,
             limit,
             totalPages: Math.ceil(total / limit),
             prescriptions
-
         };
-
     }
-
 }
-
-function startOfDay(date: string): Date {
+exports.PrescriptionRepository = PrescriptionRepository;
+function startOfDay(date) {
     return new Date(`${date}T00:00:00.000Z`);
 }
-
-function startOfNextDay(date: string): Date {
+function startOfNextDay(date) {
     const day = startOfDay(date);
     day.setUTCDate(day.getUTCDate() + 1);
     return day;
-}
-*/
 }

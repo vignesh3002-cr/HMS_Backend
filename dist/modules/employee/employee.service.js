@@ -69,6 +69,9 @@ class EmployeeService {
             if (data.role_type === "DOCTOR") {
                 employeeId = await (0, idGenerator_1.generateId)(tx, "DOCTOR");
             }
+            else if (data.role_type === "BRANCH_ADMIN") {
+                employeeId = await (0, idGenerator_1.generateId)(tx, "BRANCH_ADMIN");
+            }
             else {
                 employeeId = await (0, idGenerator_1.generateId)(tx, "EMPLOYEE");
             }
@@ -161,11 +164,37 @@ class EmployeeService {
         if (!employee) {
             throw new Error("Employee not found");
         }
-        const department = await repository.findDepartment(data.department_id);
-        if (!department) {
-            throw new Error("Department not found");
+        if (data.department_id) {
+            const department = await repository.findDepartment(data.department_id);
+            if (!department) {
+                throw new Error("Department not found");
+            }
         }
-        const updatedEmployee = await repository.updateEmployee(employeeId, {
+        if (data.username && employee.user_id) {
+            const existingUsername = await repository.findUsername(data.username);
+            if (existingUsername && existingUsername.user_id !== employee.user_id) {
+                throw new Error("Username already exists");
+            }
+        }
+        const hashedPassword = data.password
+            ? await bcrypt_1.default.hash(data.password, Number(process.env.BCRYPT_SALT_ROUNDS))
+            : undefined;
+        // Login credentials + active/inactive status live on user_table, not
+        // employees — only touch it when the caller actually changed one of these.
+        const userUpdateData = {};
+        if (data.username)
+            userUpdateData.username = data.username;
+        if (hashedPassword)
+            userUpdateData.password = hashedPassword;
+        if (data.emp_status !== undefined)
+            userUpdateData.user_status = data.emp_status ? 1 : 0;
+        // A Branch Admin's branch_id is a real assignment — deactivating them
+        // must release that branch rather than leaving a stale branch_id on an
+        // inactive admin. Every other role's branch_id is just their home branch
+        // and is left untouched regardless of active/inactive status.
+        const isBranchAdmin = employee.user_table?.role_type === "BRANCH_ADMIN";
+        const shouldReleaseBranch = isBranchAdmin && data.emp_status === false;
+        const employeeUpdateData = {
             first_name: data.first_name,
             middle_name: data.middle_name,
             last_name: data.last_name,
@@ -184,7 +213,7 @@ class EmployeeService {
             emergency_contact_number: data.emergency_contact_number,
             department_id: data.department_id,
             designation: data.designation,
-            joining_date: new Date(data.joining_date),
+            joining_date: data.joining_date ? new Date(data.joining_date) : undefined,
             emp_status: data.emp_status,
             employee_photo_URL: data.employee_photo_URL,
             employee_state: data.employee_state,
@@ -195,6 +224,92 @@ class EmployeeService {
             specialization: data.specialization,
             qualification: data.qualification,
             license_no: data.license_no,
+        };
+        if (shouldReleaseBranch) {
+            employeeUpdateData.branch_id = null;
+        }
+        const hasUserUpdate = Object.keys(userUpdateData).length > 0 && !!employee.user_id;
+        const isDoctor = data.role_type === "DOCTOR" || employee.user_table?.role_type === "DOCTOR";
+        const [updatedEmployee] = await prisma_1.default.$transaction([
+            prisma_1.default.employees.update({
+                where: { employee_id: employeeId },
+                data: employeeUpdateData,
+            }),
+            ...(hasUserUpdate
+                ? [
+                    prisma_1.default.user_table.update({
+                        where: { user_id: employee.user_id },
+                        data: userUpdateData,
+                    }),
+                ]
+                : []),
+            // Deactivating a Branch Admin also releases whichever branch's
+            // active mapping they hold — getAssignableAdmins/getBranchById's
+            // "current admin" lookups key off user_branch_mapping.status, not
+            // employees.branch_id, so both must be released together or the
+            // branch would still show this now-inactive admin as current.
+            ...(shouldReleaseBranch && employee.user_id
+                ? [
+                    prisma_1.default.user_branch_mapping.updateMany({
+                        where: { user_id: employee.user_id, status: 1 },
+                        data: { status: 0, is_primary_branch: false },
+                    }),
+                ]
+                : []),
+        ]);
+        await prisma_1.default.$transaction(async (tx) => {
+            if (data.branch_ids) {
+                await tx.user_branch_mapping.deleteMany({
+                    where: {
+                        user_id: employee.user_table?.user_id
+                    }
+                });
+                for (const branchId of data.branch_ids) {
+                    await tx.user_branch_mapping.create({
+                        data: {
+                            user_id: employee.user_table?.user_id,
+                            branch_id: branchId,
+                            employee_id: employeeId,
+                            status: 1
+                        }
+                    });
+                }
+            }
+            if (isDoctor) {
+                await tx.doctor_profile.upsert({
+                    where: {
+                        employee_id: employeeId
+                    },
+                    update: {
+                        consultation_minutes: data.consultation_minutes ?? 20
+                    },
+                    create: {
+                        employee_id: employeeId,
+                        consultation_minutes: data.consultation_minutes ?? 20
+                    }
+                });
+            }
+            if (data.working_hours) {
+                await tx.doctor_schedule.deleteMany({
+                    where: {
+                        employee_id: employeeId
+                    }
+                });
+                for (const schedule of data.working_hours) {
+                    await tx.doctor_schedule.create({
+                        data: {
+                            employee_id: employeeId,
+                            branch_id: schedule.branch_id,
+                            day_of_week: schedule.day_of_week,
+                            shift_name: schedule.shift_name,
+                            start_time: new Date(`1970-01-01T${schedule.start_time}:00`),
+                            end_time: new Date(`1970-01-01T${schedule.end_time}:00`),
+                            consultation_minutes: data.consultation_minutes ?? 20,
+                            is_active: true
+                        }
+                    });
+                }
+            }
         });
         return {
             employee_id: updatedEmployee.employee_id,
