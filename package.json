@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "ts-node src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "db:seed": "ts-node prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
@@ -28,7 +29,7 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.0.1",
-    "prisma": "^7.9.0",
+    "prisma": "^7.8.0",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
   },

@@ -307,7 +307,18 @@ async getEmployeeById(
 
             include: {
 
-                user_table: true,
+                // Never include the raw user_table row here — it carries the
+                // hashed password. Select only the safe fields the UI needs.
+                user_table: {
+                    select: {
+                        user_id: true,
+                        role_type: true,
+                        username: true,
+                        user_status: true,
+                        branch_id: true,
+                        created_at: true,
+                    },
+                },
 
                 branch: true,
 
@@ -315,7 +326,7 @@ async getEmployeeById(
         select: {
             department_name: true
             }
-        
+
         }}
 
         });
@@ -349,12 +360,17 @@ const response:any={
 
     user:employee.user_table,
 
+    // status is included so callers can tell an active assignment (1) apart
+    // from a deactivated/historical one (0) — e.g. resolving "which branch
+    // is this admin currently on" without a second, privileged API call.
     branches:
         branches.map(x=>({
 
             branch_id:x.branch.branch_id,
 
-            branch_name:x.branch.branch_name
+            branch_name:x.branch.branch_name,
+
+            status:x.status
 
         }))
 

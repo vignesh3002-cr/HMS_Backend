@@ -9,6 +9,21 @@ export class EmployeeController {
 
         try {
 
+            // Log incoming (non-sensitive) request body for debugging
+            try {
+                const safeBody = {
+                    username: req.body?.username,
+                    email: req.body?.email,
+                    mobile_no: req.body?.mobile_no,
+                    department_id: req.body?.department_id,
+                    branch_ids: Array.isArray(req.body?.branch_ids) ? req.body.branch_ids : undefined,
+                    role_type: req.body?.role_type,
+                };
+                console.info("createEmployee request", safeBody);
+            } catch (logErr) {
+                console.error("Failed to log createEmployee request", logErr);
+            }
+
             const createdBy = (req as any).user?.role || "SYSTEM";
 
             const employee = await service.createEmployee(
@@ -28,13 +43,25 @@ export class EmployeeController {
 
         } catch (error: any) {
 
-            return res.status(400).json({
+                // Log a minimal, non-sensitive subset of the request body to aid debugging.
+                // Avoid logging passwords or other sensitive fields.
+                try {
+                    const safeBody = {
+                        username: req.body?.username,
+                        email: req.body?.email,
+                        mobile_no: req.body?.mobile_no,
+                        department_id: req.body?.department_id,
+                        branch_ids: Array.isArray(req.body?.branch_ids) ? req.body.branch_ids : undefined,
+                    };
+                    console.error("Failed to create employee", { error: error?.message, body: safeBody });
+                } catch (logErr) {
+                    console.error("Failed to log createEmployee error", logErr);
+                }
 
-                success: false,
-
-                message: error.message
-
-            });
+                return res.status(400).json({
+                    success: false,
+                    message: error.message,
+                });
 
         }
 

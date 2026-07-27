@@ -6,6 +6,21 @@ const service = new employee_service_1.EmployeeService();
 class EmployeeController {
     async createEmployee(req, res) {
         try {
+            // Log incoming (non-sensitive) request body for debugging
+            try {
+                const safeBody = {
+                    username: req.body?.username,
+                    email: req.body?.email,
+                    mobile_no: req.body?.mobile_no,
+                    department_id: req.body?.department_id,
+                    branch_ids: Array.isArray(req.body?.branch_ids) ? req.body.branch_ids : undefined,
+                    role_type: req.body?.role_type,
+                };
+                console.info("createEmployee request", safeBody);
+            }
+            catch (logErr) {
+                console.error("Failed to log createEmployee request", logErr);
+            }
             const createdBy = req.user?.role || "SYSTEM";
             const employee = await service.createEmployee(req.body, createdBy);
             return res.status(201).json({
@@ -15,9 +30,24 @@ class EmployeeController {
             });
         }
         catch (error) {
+            // Log a minimal, non-sensitive subset of the request body to aid debugging.
+            // Avoid logging passwords or other sensitive fields.
+            try {
+                const safeBody = {
+                    username: req.body?.username,
+                    email: req.body?.email,
+                    mobile_no: req.body?.mobile_no,
+                    department_id: req.body?.department_id,
+                    branch_ids: Array.isArray(req.body?.branch_ids) ? req.body.branch_ids : undefined,
+                };
+                console.error("Failed to create employee", { error: error?.message, body: safeBody });
+            }
+            catch (logErr) {
+                console.error("Failed to log createEmployee error", logErr);
+            }
             return res.status(400).json({
                 success: false,
-                message: error.message
+                message: error.message,
             });
         }
     }
