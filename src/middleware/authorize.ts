@@ -17,7 +17,10 @@ export const authorize = (...roles: string[]): RequestHandler => {
       });
     }
 
-    if (!roles.includes(authReq.user.role)) {
+    const userRole = String(authReq.user.role ?? "").toLowerCase();
+    const allowed = roles.some((r) => r.toLowerCase() === userRole);
+
+    if (!allowed) {
       console.log("Role Not Matched");
 
       return res.status(403).json({

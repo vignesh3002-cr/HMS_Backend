@@ -1,104 +1,123 @@
-import { body } from "express-validator";
-
-export const updateBranchValidation = [
-
-    body("branch_name")
-        .optional()
-        .notEmpty()
-        .withMessage("Branch Name cannot be empty"),
-
-    body("branch_type")
-        .optional()
-        .notEmpty()
-        .withMessage("Branch Type cannot be empty"),
-
-    body("email")
-        .optional()
-        .isEmail()
-        .withMessage("Valid Branch Email is required"),
-
-    body("pincode")
-        .optional()
-        .isInt()
-        .withMessage("Pincode must be a number"),
-
-    body("total_beds")
-        .optional()
-        .isInt()
-        .withMessage("Total beds must be a number"),
-
-    body("date_of_establish")
-        .optional()
-        .isISO8601()
-        .withMessage("Date of establish must be a valid date"),
-
-    body("branch_status")
-        .optional()
-        .isIn(["Active", "Inactive"])
-        .withMessage("Branch status must be either Active or Inactive")
-
-];
+import { body, query } from "express-validator";
 
 export const createBranchValidation = [
+  body("branch_code")
+    .optional()
+    .notEmpty()
+    .withMessage("Branch Code cannot be empty"),
 
-    body("branch_code")
-        .notEmpty()
-        .withMessage("Branch Code is required"),
+  body("branch_name")
+    .notEmpty()
+    .withMessage("Branch Name is required"),
 
-    body("name")
-        .notEmpty()
-        .withMessage("Branch Name is required"),
+  body("branch_type")
+    .notEmpty()
+    .withMessage("Branch Type is required"),
 
-    body("branch_type")
-        .notEmpty()
-        .withMessage("Branch Type is required"),
+  body("email")
+    .optional()
+    .isEmail()
+    .withMessage("Valid Branch Email is required"),
 
-    body("phone")
-        .notEmpty()
-        .withMessage("Phone Number is required"),
+  body("pincode")
+    .optional()
+    .isInt()
+    .withMessage("Pincode must be a number"),
 
-    body("email")
-        .isEmail()
-        .withMessage("Valid Branch Email is required"),
+  body("total_beds")
+    .optional()
+    .isInt()
+    .withMessage("Total beds must be a number"),
 
-    body("address_line1")
-        .notEmpty()
-        .withMessage("Address is required"),
+  body("date_of_establish")
+    .optional()
+    .isISO8601()
+    .withMessage("Date of establish must be a valid date"),
 
-    body("city")
-        .notEmpty()
-        .withMessage("City is required"),
+  // Admin Mode validation
+  body("admin_mode")
+    .notEmpty()
+    .withMessage("Admin mode is required")
+    .isIn(["EXISTING", "NEW"])
+    .withMessage("Admin mode must be EXISTING or NEW"),
 
-    body("state_name")
-        .notEmpty()
-        .withMessage("State is required"),
+  body("admin_user_id")
+    .if(body("admin_mode").equals("EXISTING"))
+    .notEmpty()
+    .withMessage("Admin User ID is required when admin_mode is EXISTING"),
 
-    body("country_code")
-        .notEmpty()
-        .withMessage("Country Code is required"),
+  body("admin.first_name")
+    .if(body("admin_mode").equals("NEW"))
+    .notEmpty()
+    .withMessage("Admin First Name is required when admin_mode is NEW"),
 
-    //------------------------------------
-    // Branch Admin Details
-    //------------------------------------
+  body("admin.email")
+    .if(body("admin_mode").equals("NEW"))
+    .isEmail()
+    .withMessage("Valid Admin Email is required when admin_mode is NEW"),
 
-    body("admin_name")
-        .notEmpty()
-        .withMessage("Branch Admin Name is required"),
+  body("admin.mobile_no")
+    .if(body("admin_mode").equals("NEW"))
+    .notEmpty()
+    .withMessage("Admin Mobile is required when admin_mode is NEW"),
 
-    body("username")
-        .notEmpty()
-        .withMessage("Username is required"),
+  body("admin.username")
+    .if(body("admin_mode").equals("NEW"))
+    .notEmpty()
+    .withMessage("Admin Username is required when admin_mode is NEW"),
 
-    body("password")
-        .isLength({ min: 8 })
-        .withMessage("Password should contain minimum 8 characters"),
+  body("admin.password")
+    .if(body("admin_mode").equals("NEW"))
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters"),
+];
 
-    body("mobile")
-        .notEmpty()
-        .withMessage("Mobile Number is required"),
+export const updateBranchValidation = [
+  body("branch_name")
+    .optional()
+    .notEmpty()
+    .withMessage("Branch Name cannot be empty"),
 
-    body("admin_email")
-        .isEmail()
-        .withMessage("Valid Admin Email is required")
+  body("branch_type")
+    .optional()
+    .notEmpty()
+    .withMessage("Branch Type cannot be empty"),
 
+  body("email")
+    .optional()
+    .isEmail()
+    .withMessage("Valid Branch Email is required"),
+
+  body("pincode")
+    .optional()
+    .isInt()
+    .withMessage("Pincode must be a number"),
+
+  body("total_beds")
+    .optional()
+    .isInt()
+    .withMessage("Total beds must be a number"),
+
+  body("date_of_establish")
+    .optional()
+    .isISO8601()
+    .withMessage("Date of establish must be a valid date"),
+
+  body("branch_status")
+    .optional()
+    .isIn(["Active", "Inactive"])
+    .withMessage("Branch status must be either Active or Inactive"),
+];
+
+export const getAssignableAdminsValidation = [
+  query("search")
+    .optional()
+    .isString()
+    .trim(),
+];
+
+export const assignAdminValidation = [
+  body("user_id")
+    .notEmpty()
+    .withMessage("User ID is required"),
 ];

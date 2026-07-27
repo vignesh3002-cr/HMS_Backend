@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import prisma from "../../config/prisma";
 import { EmployeeRepository } from "./employee.repository";
-import { CreateEmployeeDto,GetEmployeesQuery } from "./employee.types";
+import { CreateEmployeeDto, UpdateEmployeeDto, GetEmployeesQuery } from "./employee.types";
 import { generateId } from "../../utils/idGenerator";
 
 const repository = new EmployeeRepository();
@@ -115,6 +115,11 @@ if(data.role_type === "DOCTOR"){
     employeeId = await generateId(
     tx,
     "DOCTOR"
+);
+}else if(data.role_type === "BRANCH_ADMIN"){
+    employeeId = await generateId(
+    tx,
+    "BRANCH_ADMIN"
 );
 }else{
     employeeId = await generateId(
@@ -279,7 +284,7 @@ return {
 
 async updateEmployee(
     employeeId: string,
-    data: CreateEmployeeDto
+    data: UpdateEmployeeDto
 ) {
 
     const employee = await repository.findEmployeeById(employeeId);
@@ -288,48 +293,111 @@ async updateEmployee(
         throw new Error("Employee not found");
     }
 
-    const department = await repository.findDepartment(
-        data.department_id
-    );
+    if (data.department_id) {
 
-    if (!department) {
-        throw new Error("Department not found");
+        const department = await repository.findDepartment(
+            data.department_id
+        );
+
+        if (!department) {
+            throw new Error("Department not found");
+        }
+
     }
 
-    const updatedEmployee = await repository.updateEmployee(
-        employeeId,
-        {
-            first_name: data.first_name,
-            middle_name: data.middle_name,
-            last_name: data.last_name,
-            email: data.email,
-            mobile_no: data.mobile_no,
-            blood_group: data.blood_group,
-            nationality: data.nationality,
-            marital_status: data.marital_status,
-            aadhaar_no: data.aadhaar_no,
-            pan_no: data.pan_no,
-            passport_no: data.passport_no,
-parmanent_address: data.permanent_address,
-            current_address: data.current_address,
-            emergency_contact_name: data.emergency_contact_name,
-            emergency_contact_relationship: data.emergency_contact_relationship,
-            emergency_contact_number: data.emergency_contact_number,
-            department_id: data.department_id,
-            designation: data.designation,
-            joining_date: new Date(data.joining_date),
-            emp_status: data.emp_status,
-            employee_photo_URL: data.employee_photo_URL,
-            employee_state: data.employee_state,
-            employee_district: data.employee_district,
-            employee_area: data.employee_area,
-            employee_pincode: data.employee_pincode,
-            employee_no_experence: data.employee_no_experence,
-            specialization: data.specialization,
-            qualification: data.qualification,
-            license_no: data.license_no,
+    if (data.username && employee.user_id) {
+
+        const existingUsername = await repository.findUsername(data.username);
+
+        if (existingUsername && existingUsername.user_id !== employee.user_id) {
+            throw new Error("Username already exists");
         }
-    );
+
+    }
+
+    const hashedPassword = data.password
+        ? await bcrypt.hash(data.password, Number(process.env.BCRYPT_SALT_ROUNDS))
+        : undefined;
+
+    // Login credentials + active/inactive status live on user_table, not
+    // employees — only touch it when the caller actually changed one of these.
+    const userUpdateData: { username?: string; password?: string; user_status?: number } = {};
+    if (data.username) userUpdateData.username = data.username;
+    if (hashedPassword) userUpdateData.password = hashedPassword;
+    if (data.emp_status !== undefined) userUpdateData.user_status = data.emp_status ? 1 : 0;
+
+    // A Branch Admin's branch_id is a real assignment — deactivating them
+    // must release that branch rather than leaving a stale branch_id on an
+    // inactive admin. Every other role's branch_id is just their home branch
+    // and is left untouched regardless of active/inactive status.
+    const isBranchAdmin = employee.user_table?.role_type === "BRANCH_ADMIN";
+    const shouldReleaseBranch = isBranchAdmin && data.emp_status === false;
+
+    const employeeUpdateData: Record<string, unknown> = {
+        first_name: data.first_name,
+        middle_name: data.middle_name,
+        last_name: data.last_name,
+        email: data.email,
+        mobile_no: data.mobile_no,
+        blood_group: data.blood_group,
+        nationality: data.nationality,
+        marital_status: data.marital_status,
+        aadhaar_no: data.aadhaar_no,
+        pan_no: data.pan_no,
+        passport_no: data.passport_no,
+        parmanent_address: data.permanent_address,
+        current_address: data.current_address,
+        emergency_contact_name: data.emergency_contact_name,
+        emergency_contact_relationship: data.emergency_contact_relationship,
+        emergency_contact_number: data.emergency_contact_number,
+        department_id: data.department_id,
+        designation: data.designation,
+        joining_date: data.joining_date ? new Date(data.joining_date) : undefined,
+        emp_status: data.emp_status,
+        employee_photo_URL: data.employee_photo_URL,
+        employee_state: data.employee_state,
+        employee_district: data.employee_district,
+        employee_area: data.employee_area,
+        employee_pincode: data.employee_pincode,
+        employee_no_experence: data.employee_no_experence,
+        specialization: data.specialization,
+        qualification: data.qualification,
+        license_no: data.license_no,
+    };
+
+    if (shouldReleaseBranch) {
+        employeeUpdateData.branch_id = null;
+    }
+
+    const hasUserUpdate = Object.keys(userUpdateData).length > 0 && !!employee.user_id;
+
+    const [updatedEmployee] = await prisma.$transaction([
+        prisma.employees.update({
+            where: { employee_id: employeeId },
+            data: employeeUpdateData,
+        }),
+        ...(hasUserUpdate
+            ? [
+                prisma.user_table.update({
+                    where: { user_id: employee.user_id! },
+                    data: userUpdateData,
+                }),
+            ]
+            : []),
+        // Deactivating a Branch Admin also releases whichever branch's
+        // active mapping they hold — getAssignableAdmins/getBranchById's
+        // "current admin" lookups key off user_branch_mapping.status, not
+        // employees.branch_id, so both must be released together or the
+        // branch would still show this now-inactive admin as current.
+        ...(shouldReleaseBranch && employee.user_id
+            ? [
+                prisma.user_branch_mapping.updateMany({
+                    where: { user_id: employee.user_id, status: 1 },
+                    data: { status: 0, is_primary_branch: false },
+                }),
+            ]
+            : []),
+    ]);
 
     return {
         employee_id: updatedEmployee.employee_id,
