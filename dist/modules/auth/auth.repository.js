@@ -12,8 +12,19 @@ class AuthRepository {
                 username: username,
             },
             include: {
-                branch: true
-            }
+                branch: true,
+                employees: {
+                    include: {
+                        branch: true,
+                    },
+                },
+                user_branch_mapping: {
+                    where: { status: 1 },
+                    include: {
+                        branch: true,
+                    },
+                },
+            },
         });
     }
 }

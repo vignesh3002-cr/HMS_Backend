@@ -1,5 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 
+declare const process: { exit(code?: number): void };
+
 const prisma = new PrismaClient();
 
 async function main() {
