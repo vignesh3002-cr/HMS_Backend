@@ -1,9 +1,16 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const auth_repository_1 = require("./auth.repository");
 const bcrypt_1 = require("../../utils/bcrypt");
 const jwt_1 = require("../../utils/jwt");
+const prisma_1 = __importDefault(require("../../config/prisma"));
+const idGenerator_1 = require("../../utils/idGenerator");
+const crypto_1 = require("crypto");
+const mail_1 = require("../../utils/mail");
 const BRANCH_SCOPED_ROLES = [
     "BRANCH_ADMIN",
     "DOCTOR",
@@ -21,6 +28,47 @@ class AuthService {
         const passwordMatched = await (0, bcrypt_1.comparePassword)(password, user.password);
         if (!passwordMatched) {
             throw new Error("Invalid username or password");
+        }
+        const previousOtp = await prisma_1.default.login_otp.findFirst({
+            where: {
+                user_id: user.user_id,
+                is_verified: true
+            },
+            orderBy: {
+                created_at: "desc"
+            }
+        });
+        const now = new Date();
+        const otpRequired = !previousOtp ||
+            previousOtp.created_at.getTime() + (7 * 24 * 60 * 60 * 1000) < now.getTime();
+        if (otpRequired) {
+            const otp = (0, crypto_1.randomInt)(100000, 999999).toString();
+            const otpId = await (0, idGenerator_1.generateId)(prisma_1.default, "LOGIN_OTP");
+            const expiry = new Date(Date.now() + 5 * 60 * 1000);
+            await prisma_1.default.login_otp.create({
+                data: {
+                    otp_id: otpId,
+                    user_id: user.user_id,
+                    user_type: user.role_type === "PATIENT" ? "PATIENT" : "EMPLOYEE",
+                    otp_code: otp,
+                    expires_at: expiry
+                }
+            });
+            let email;
+            if (user.role_type === "PATIENT") {
+                email = user.patient_bio_data?.[0]?.patient_email ?? undefined;
+            }
+            else {
+                email = user.employees?.email ?? undefined;
+            }
+            if (!email) {
+                throw new Error("Email address not found");
+            }
+            await (0, mail_1.sendOtpEmail)(email, otp);
+            return {
+                otp_required: true,
+                message: "OTP sent successfully"
+            };
         }
         const role = user.role_type;
         const employee = user.employees;
@@ -57,6 +105,57 @@ class AuthService {
                 branch_area: primaryBranch?.branch_area || null,
                 emp_status: employee?.emp_status ?? null,
             },
+        };
+    }
+    async verifyOtp(username, otp) {
+        const user = await this.authRepository.findUserByUsername(username);
+        if (!user) {
+            throw new Error("User not found");
+        }
+        const otpRecord = await prisma_1.default.login_otp.findFirst({
+            where: {
+                user_id: user.user_id,
+                is_verified: false
+            },
+            orderBy: {
+                created_at: "desc"
+            }
+        });
+        if (!otpRecord) {
+            throw new Error("OTP not found");
+        }
+        if (otpRecord.otp_code !== otp) {
+            throw new Error("Invalid OTP");
+        }
+        if (otpRecord.expires_at < new Date()) {
+            throw new Error("OTP has expired");
+        }
+        await prisma_1.default.login_otp.update({
+            where: {
+                id: otpRecord.id
+            },
+            data: {
+                is_verified: true
+            }
+        });
+        const token = (0, jwt_1.generateToken)({
+            username: user.username,
+            role: user.role_type,
+            hospital_id: user.branch?.hospital_id
+        });
+        return {
+            token,
+            user_details: {
+                user_id: user.user_id,
+                username: user.username,
+                role: user.role_type,
+                hospital_id: user.branch?.hospital_id
+            },
+            branch: {
+                branch_id: user.branch_id,
+                branch_name: user.branch?.branch_name,
+                branch_area: user.branch?.branch_area
+            }
         };
     }
 }

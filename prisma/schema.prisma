@@ -980,7 +980,6 @@ model patient_history {
   branch                     branch?               @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_patienthistory_branch")
   department_master          department_master?    @relation(fields: [department_id], references: [department_id], onDelete: Cascade, map: "fk_patienthistory_department")
   user_table                 user_table?           @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_patienthistory_user")
-  diagnosis                  diagnosis?            @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: Cascade, map: "fk_patient_history_diagnosis")
   employees                  employees?            @relation(fields: [employee_id], references: [employee_id])
   prescription               prescription[]
 }
@@ -1010,6 +1009,28 @@ model prescription {
   user_table          user_table?          @relation(fields: [user_id], references: [user_id], onDelete: Restrict, map: "fk_prescription_user")
   patient_history     patient_history?     @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: Cascade)
   prescription_items  prescription_items[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model prescription_items {
+  id                   BigInt          @id @default(autoincrement())
+  prescription_item_id String          @unique @db.VarChar(20)
+  prescription_id      String          @db.VarChar(20)
+  medicine_id          String          @db.VarChar(20)
+  dosage               String?         @db.VarChar(100)
+  frequency            String?         @db.VarChar(100)
+  days                 Int?
+  unit                 String?         @db.VarChar(20)
+  duration             String?         @db.VarChar(50)
+  quantity             Int?
+  route                String?         @db.VarChar(50)
+  before_after_food    String?         @db.VarChar(30)
+  morning              Boolean?        @default(false)
+  afternoon            Boolean?        @default(false)
+  night                Boolean?        @default(false)
+  instruction          String?
+  medicine_master      medicine_master @relation(fields: [medicine_id], references: [medicine_id], map: "fk_prescription_items_medicine")
+  prescription         prescription    @relation(fields: [prescription_id], references: [prescription_id], onDelete: Cascade, map: "fk_prescription_items_prescription")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
