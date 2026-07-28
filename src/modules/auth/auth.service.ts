@@ -79,6 +79,8 @@ if (!email) {
 }
 
 await sendOtpEmail(email, otp);
+console.log("Sending OTP to:", email);
+console.log("OTP:", otp);
 
   
 
