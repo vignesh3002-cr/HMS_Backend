@@ -11,6 +11,13 @@ export class AuthController {
 
             const { username, password } = req.body;
 
+            if (!username || !password) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Username and password are required"
+                });
+            }
+
             const result = await authService.login(
                 username,
                 password
@@ -18,7 +25,7 @@ export class AuthController {
 
             return res.status(200).json({
                 success: true,
-                message: "Login Successful",
+                message: "Credentials verified",
                 data: result
             });
 
@@ -32,15 +39,56 @@ export class AuthController {
         }
 
     }
+
+    async sendOtp(req: Request, res: Response) {
+
+        try {
+
+            const { username } = req.body;
+
+            if (!username) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Username is required"
+                });
+            }
+
+            const result = await authService.sendOtp(username);
+
+            return res.status(200).json({
+                success: true,
+                message: "OTP sent",
+                data: result
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
     async verifyOtp(req: Request, res: Response) {
 
     try {
 
-        const { username, otp } = req.body;
+        const { username, code, otp } = req.body;
+        const otpCode = code ?? otp;
+
+        if (!username || !otpCode) {
+            return res.status(400).json({
+                success: false,
+                message: "Username and OTP code are required"
+            });
+        }
 
         const result = await authService.verifyOtp(
             username,
-            otp
+            otpCode
         );
 
         return res.status(200).json({

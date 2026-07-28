@@ -625,6 +625,7 @@ model employees {
   employee_area                                                                      String?                       @db.VarChar
   employee_pincode                                                                   BigInt?
   employee_no_experence                                                              BigInt?
+  emp_gender                                                                         String?                       @db.VarChar
   appointment_history                                                                appointment_history[]
   chemotherapy_administration_chemotherapy_administration_verified_byToemployees     chemotherapy_administration[] @relation("chemotherapy_administration_verified_byToemployees")
   chemotherapy_administration_chemotherapy_administration_administered_byToemployees chemotherapy_administration[] @relation("chemotherapy_administration_administered_byToemployees")
@@ -688,7 +689,6 @@ model encounter {
   patient_bio_data    patient_bio_data     @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade, map: "fk_encounter_patient")
   doctor_schedule     doctor_schedule?     @relation(fields: [schedule_id], references: [schedule_id], onDelete: NoAction, map: "fk_encounter_schedule")
   user_table          user_table?          @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_encounter_user")
-  lab_order           lab_order[]
 
   @@index([patient_id], map: "idx_encounter_patient")
 }
@@ -783,44 +783,6 @@ model lab_history {
   patient_history              patient_history?     @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: Cascade, map: "fk_lab_patient_history")
   user_table                   user_table?          @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_lab_user")
   employees                    employees?           @relation(fields: [employee_id], references: [employee_id], onDelete: Cascade)
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model lab_order {
-  lab_order_id BigInt       @id @default(autoincrement())
-  encounter_id BigInt
-  ordered_by   BigInt
-  branch_id    String       @db.VarChar(10)
-  order_status String       @default("ORDERED") @db.VarChar(20)
-  ordered_at   DateTime     @default(now()) @db.Timestamptz(6)
-  notes        String?
-  encounter    encounter    @relation(fields: [encounter_id], references: [encounter_id], onDelete: Cascade, onUpdate: NoAction)
-  lab_result   lab_result[]
-
-  @@index([encounter_id], map: "idx_lab_order")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model lab_result {
-  lab_result_id BigInt    @id @default(autoincrement())
-  lab_order_id  BigInt
-  test_code     String    @db.VarChar(50)
-  test_name     String    @db.VarChar(150)
-  result_value  String?   @db.VarChar(150)
-  unit_name     String?   @db.VarChar(50)
-  normal_range  String?   @db.VarChar(100)
-  result_status String    @default("FINAL") @db.VarChar(20)
-  resulted_at   DateTime? @db.Timestamptz(6)
-  lab_order     lab_order @relation(fields: [lab_order_id], references: [lab_order_id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@unique([lab_order_id, test_code])
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model lab_tech_profile {
-  employee_id      BigInt  @id
-  certification_no String? @db.VarChar(50)
-  skill_notes      String?
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

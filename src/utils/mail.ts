@@ -1,21 +1,39 @@
 import nodemailer from "nodemailer";
 
-const transporter = nodemailer.createTransport({
-  host: process.env.MAIL_HOST,
-  port: Number(process.env.MAIL_PORT),
-  secure: false,
-  auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS,
-  },
-});
+let transporter: nodemailer.Transporter | null = null;
+
+const isSmtpConfigured = () =>
+  Boolean(process.env.MAIL_HOST && process.env.MAIL_USER && process.env.MAIL_PASS);
+
+const getTransporter = () => {
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      host: process.env.MAIL_HOST,
+      port: Number(process.env.MAIL_PORT) || 587,
+      secure: Number(process.env.MAIL_PORT) === 465,
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+      },
+    });
+  }
+
+  return transporter;
+};
 
 export const sendOtpEmail = async (
   to: string,
   otp: string
 ) => {
-  await transporter.sendMail({
-    from: process.env.MAIL_FROM,
+  if (!isSmtpConfigured()) {
+    console.warn(
+      `[dev] SMTP not configured (set MAIL_HOST/MAIL_USER/MAIL_PASS) - OTP for ${to}: ${otp}`
+    );
+    return;
+  }
+
+  await getTransporter().sendMail({
+    from: process.env.MAIL_FROM || process.env.MAIL_USER,
     to,
     subject: "Your Login OTP",
     html: `

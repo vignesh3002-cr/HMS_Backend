@@ -230,10 +230,7 @@ class EmployeeService {
             employeeUpdateData.branch_id = null;
         }
         const hasUserUpdate = Object.keys(userUpdateData).length > 0 && !!employee.user_id;
-<<<<<<< HEAD
-=======
         const isDoctor = data.role_type === "DOCTOR" || employee.user_table?.role_type === "DOCTOR";
->>>>>>> 698f85553b9223274efcd233300a6a8ff7fb67e8
         const [updatedEmployee] = await prisma_1.default.$transaction([
             prisma_1.default.employees.update({
                 where: { employee_id: employeeId },
@@ -261,8 +258,6 @@ class EmployeeService {
                 ]
                 : []),
         ]);
-<<<<<<< HEAD
-=======
         await prisma_1.default.$transaction(async (tx) => {
             if (data.branch_ids) {
                 await tx.user_branch_mapping.deleteMany({
@@ -318,7 +313,6 @@ class EmployeeService {
                 }
             }
         });
->>>>>>> 698f85553b9223274efcd233300a6a8ff7fb67e8
         return {
             employee_id: updatedEmployee.employee_id,
             first_name: updatedEmployee.first_name,
