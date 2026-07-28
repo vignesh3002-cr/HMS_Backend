@@ -355,7 +355,11 @@ export class AppointmentService {
 
     }
 
-    async updateAppointmentStatus(appointmentNo: string, status: string) {
+    async updateAppointmentStatus(
+        appointmentNo: string,
+        status: string,
+        cancelReason?: string
+    ) {
 
         const existing = await repository.getAppointmentByNumber(appointmentNo);
 
@@ -369,15 +373,20 @@ export class AppointmentService {
             );
         }
 
-        return repository.updateAppointmentStatus(appointmentNo, status);
+        if (status === APPOINTMENT_STATUS.CANCELLED && !cancelReason) {
+            throw new Error("Cancellation reason is required when cancelling an appointment");
+        }
+
+        return repository.updateAppointmentStatus(appointmentNo, status, cancelReason);
 
     }
 
-    async cancelAppointment(appointmentNo: string) {
+    async cancelAppointment(appointmentNo: string, cancelReason: string) {
 
         return this.updateAppointmentStatus(
             appointmentNo,
-            APPOINTMENT_STATUS.CANCELLED
+            APPOINTMENT_STATUS.CANCELLED,
+            cancelReason
         );
 
     }

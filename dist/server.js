@@ -14,7 +14,7 @@ const department_routes_1 = __importDefault(require("./modules/department/depart
 const patient_routes_1 = __importDefault(require("./modules/patient/patient.routes"));
 const appointment_routes_1 = __importDefault(require("./modules/appointment/appointment.routes"));
 const encounter_routes_1 = __importDefault(require("./modules/encounter/encounter.routes"));
-//import prescriptionRoutes from "./modules/prescription/prescription.routes";
+const prescription_routes_1 = __importDefault(require("./modules/prescription/prescription.routes"));
 const chemotherapy_routes_1 = __importDefault(require("./modules/chemotherapy/chemotherapy.routes"));
 const bcrypt_1 = require("./utils/bcrypt");
 // Fix BigInt serialization - Prisma returns BigInt types that JSON.stringify can't handle
@@ -35,7 +35,7 @@ app.use("/api/departments", department_routes_1.default);
 app.use("/api/patients", patient_routes_1.default);
 app.use("/api/appointments", appointment_routes_1.default);
 app.use("/api/encounters", encounter_routes_1.default);
-//app.use("/api/prescriptions", prescriptionRoutes);
+app.use("/api/prescriptions", prescription_routes_1.default);
 app.use("/api/chemotherapy", chemotherapy_routes_1.default);
 app.use("/api/hashpassword", async (req, res) => {
     const { password } = req.body;

@@ -1,86 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-{ /*import { Router } from "express";
-import { PrescriptionController } from "./prescription.controller";
-import { authenticate } from "../auth/auth.middleware";
-import {
-    createPrescriptionValidation,
-    getPrescriptionsValidation,
-    getPrescriptionByIdValidation,
-    updatePrescriptionValidation,
-    deletePrescriptionValidation,
-    addPrescriptionItemValidation,
-    updatePrescriptionItemValidation,
-    deletePrescriptionItemValidation,
-    getPrescriptionItemsValidation
-} from "./prescription.validation";
-
-const router = Router();
-
-const controller = new PrescriptionController();
-
-router.post(
-    "/",
-    authenticate,
-    createPrescriptionValidation,
-    controller.createPrescription.bind(controller)
-);
-
-router.get(
-    "/",
-    authenticate,
-    getPrescriptionsValidation,
-    controller.getPrescriptions.bind(controller)
-);
-
-router.get(
-    "/:prescriptionId/items",
-    authenticate,
-    getPrescriptionItemsValidation,
-    controller.getPrescriptionItems.bind(controller)
-);
-
-router.post(
-    "/:prescriptionId/items",
-    authenticate,
-    addPrescriptionItemValidation,
-    controller.addPrescriptionItem.bind(controller)
-);
-
-router.put(
-    "/:prescriptionId/items/:itemId",
-    authenticate,
-    updatePrescriptionItemValidation,
-    controller.updatePrescriptionItem.bind(controller)
-);
-
-router.delete(
-    "/:prescriptionId/items/:itemId",
-    authenticate,
-    deletePrescriptionItemValidation,
-    controller.deletePrescriptionItem.bind(controller)
-);
-
-router.get(
-    "/:prescriptionId",
-    authenticate,
-    getPrescriptionByIdValidation,
-    controller.getPrescriptionById.bind(controller)
-);
-
-router.put(
-    "/:prescriptionId",
-    authenticate,
-    updatePrescriptionValidation,
-    controller.updatePrescription.bind(controller)
-);
-
-router.delete(
-    "/:prescriptionId",
-    authenticate,
-    deletePrescriptionValidation,
-    controller.deletePrescription.bind(controller)
-);
-
-export default router;*/
-}
+const express_1 = require("express");
+const prescription_controller_1 = require("./prescription.controller");
+const auth_middleware_1 = require("../auth/auth.middleware");
+const prescription_validation_1 = require("./prescription.validation");
+const router = (0, express_1.Router)();
+const controller = new prescription_controller_1.PrescriptionController();
+router.post("/", auth_middleware_1.authenticate, prescription_validation_1.createPrescriptionValidation, controller.createPrescription.bind(controller));
+router.get("/", auth_middleware_1.authenticate, prescription_validation_1.getPrescriptionsValidation, controller.getPrescriptions.bind(controller));
+router.get("/suggestions/:diagnosisId", auth_middleware_1.authenticate, prescription_validation_1.getSuggestedMedicinesValidation, controller.getSuggestedMedicines.bind(controller));
+router.get("/:prescriptionId/items", auth_middleware_1.authenticate, prescription_validation_1.getPrescriptionItemsValidation, controller.getPrescriptionItems.bind(controller));
+router.post("/:prescriptionId/items", auth_middleware_1.authenticate, prescription_validation_1.addPrescriptionItemValidation, controller.addPrescriptionItem.bind(controller));
+router.put("/:prescriptionId/items/:itemId", auth_middleware_1.authenticate, prescription_validation_1.updatePrescriptionItemValidation, controller.updatePrescriptionItem.bind(controller));
+router.delete("/:prescriptionId/items/:itemId", auth_middleware_1.authenticate, prescription_validation_1.deletePrescriptionItemValidation, controller.deletePrescriptionItem.bind(controller));
+router.get("/:prescriptionId", auth_middleware_1.authenticate, prescription_validation_1.getPrescriptionByIdValidation, controller.getPrescriptionById.bind(controller));
+router.put("/:prescriptionId", auth_middleware_1.authenticate, prescription_validation_1.updatePrescriptionValidation, controller.updatePrescription.bind(controller));
+router.delete("/:prescriptionId", auth_middleware_1.authenticate, prescription_validation_1.deletePrescriptionValidation, controller.deletePrescription.bind(controller));
+exports.default = router;

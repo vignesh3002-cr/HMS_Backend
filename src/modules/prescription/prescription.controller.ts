@@ -1,4 +1,4 @@
-{/*import { Request, Response } from "express";
+import { Request, Response } from "express";
 import { validationResult } from "express-validator";
 import { PrescriptionService } from "./prescription.service";
 
@@ -63,8 +63,9 @@ export class PrescriptionController {
 
                 branchId: req.query.branchId as string,
                 doctorId: req.query.doctorId as string,
-                patientId: req.query.patientId as string,
-                encounterId: req.query.encounterId as string,
+                patientHistoryId: req.query.patientHistoryId as string,
+                appointmentId: req.query.appointmentId as string,
+                diagnosisId: req.query.diagnosisId as string,
                 status: req.query.status as string,
                 date: req.query.date as string,
                 dateFrom: req.query.dateFrom as string,
@@ -135,12 +136,12 @@ export class PrescriptionController {
 
             }
 
-            const updatedBy = (req as any).user?.role || "SYSTEM";
+            const actingRole = (req as any).user?.role || "SYSTEM";
 
             const prescription = await service.updatePrescription(
                 req.params.prescriptionId as string,
                 req.body,
-                updatedBy
+                actingRole
             );
 
             return res.json({
@@ -164,11 +165,8 @@ export class PrescriptionController {
 
         try {
 
-            const updatedBy = (req as any).user?.role || "SYSTEM";
-
             const prescription = await service.deletePrescription(
-                req.params.prescriptionId as string,
-                updatedBy
+                req.params.prescriptionId as string
             );
 
             return res.json({
@@ -315,5 +313,29 @@ export class PrescriptionController {
 
     }
 
+    async getSuggestedMedicines(req: Request, res: Response) {
+
+        try {
+
+            const medicines = await service.getSuggestedMedicines(
+                req.params.diagnosisId as string
+            );
+
+            return res.json({
+                success: true,
+                message: "Suggested medicines fetched successfully",
+                data: medicines
+            });
+
+        } catch (error: any) {
+
+            return res.status(404).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
 }
-*/}

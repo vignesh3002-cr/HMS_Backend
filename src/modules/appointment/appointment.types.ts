@@ -41,7 +41,6 @@ export interface UpdateAppointmentDTO {
 export interface UpdateAppointmentStatusDTO {
 
     status: string;
-
 }
 
 export interface GetAppointmentsQuery {

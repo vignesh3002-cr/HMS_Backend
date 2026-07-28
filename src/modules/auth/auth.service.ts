@@ -6,6 +6,14 @@ import { generateId } from "../../utils/idGenerator";
 import { randomInt } from "crypto";
 import { sendOtpEmail } from "../../utils/mail";
 
+const BRANCH_SCOPED_ROLES = [
+  "BRANCH_ADMIN",
+  "DOCTOR",
+  "NURSE",
+  "PHARMACIST",
+  "STAFF",
+];
+
 export class AuthService {
 
   private authRepository = new AuthRepository();
@@ -17,10 +25,6 @@ export class AuthService {
 
     if (!user) {
       throw new Error("Invalid username or password");
-    }
-
-    if (user.user_status !== 0) {
-      throw new Error("Account is inactive");
     }
 
     const passwordMatched =
@@ -65,7 +69,7 @@ if (otpRequired) {
   let email: string | undefined;
 
 if (user.role_type === "PATIENT") {
-  email = user.patient_bio_data?.[0]?.patient_email ?? undefined;
+  email = (user as any).patient_bio_data?.[0]?.patient_email ?? undefined;
 } else {
   email = user.employees?.email ?? undefined;
 }
@@ -85,11 +89,39 @@ await sendOtpEmail(email, otp);
 }
 
 
- const token = generateToken({
-  username: user.username,
-  role: user.role_type,
-  hospital_id: user.branch?.hospital_id,
-});
+    const role = user.role_type;
+    const employee = user.employees;
+
+    if (role !== "HEAD_ADMIN") {
+
+      if (!employee) {
+        throw new Error("Employee profile not found. Please contact the administrator.");
+      }
+
+      if (employee.emp_status !== true) {
+        throw new Error("Account is inactive. Please contact your administrator.");
+      }
+
+      const activeMappings = user.user_branch_mapping?.filter(
+        (m) => m.status === 1
+      );
+
+      if (!activeMappings || activeMappings.length === 0) {
+        throw new Error("No branch has been assigned to your account. Please contact the Head Admin.");
+      }
+
+    }
+
+    const primaryBranch = employee?.branch || user.branch || null;
+    const primaryBranchId =
+      employee?.branch_id || user.branch_id || null;
+
+    const token = generateToken({
+      username: user.username,
+      role: user.role_type,
+      user_id: user.user_id,
+      hospital_id: primaryBranch?.hospital_id,
+    });
 
     return {
       token,
@@ -97,15 +129,15 @@ await sendOtpEmail(email, otp);
         user_id: user.user_id,
         username: user.username,
         role: user.role_type,
-        hospital_id: user.branch?.hospital_id,
+        role_type: user.role_type,
+        hospital_id: primaryBranch?.hospital_id,
+        branch_id: primaryBranchId,
+        branch_name: primaryBranch?.branch_name || null,
+        branch_area: primaryBranch?.branch_area || null,
+        emp_status: employee?.emp_status ?? null,
       },
-      branch: {
-        branch_id: user.branch_id,
-        branch_name: user.branch?.branch_name,
-        branch_area: user.branch?.branch_area,
-  }
     };
-    
+
   }
   async verifyOtp(username: string, otp: string) {
 

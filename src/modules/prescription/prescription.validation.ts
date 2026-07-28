@@ -1,9 +1,7 @@
-{/*import { body, param, query } from "express-validator";
+import { body, param, query } from "express-validator";
 import {
     PRESCRIPTION_STATUS_VALUES,
-    TIMING_VALUES,
-    DURATION_UNIT_VALUES,
-    DISPENSE_STATUS_VALUES
+    BEFORE_AFTER_FOOD_VALUES
 } from "./prescription.constants";
 
 const medicineItemValidation = (prefix: string) => {
@@ -13,18 +11,17 @@ const medicineItemValidation = (prefix: string) => {
     return [
         body(field("medicine_id")).notEmpty().withMessage("Medicine is required"),
         body(field("dosage")).optional().isString(),
-        body(field("dosage_unit")).optional().isString(),
-        body(field("strength")).optional().isString(),
+        body(field("unit")).optional().isString(),
         body(field("route")).optional().isString(),
         body(field("frequency")).optional().isString(),
-        body(field("timing")).optional().isIn(TIMING_VALUES),
-        body(field("duration_value")).optional().isInt({ min: 1 }),
-        body(field("duration_unit")).optional().isIn(DURATION_UNIT_VALUES),
+        body(field("before_after_food")).optional().isIn(BEFORE_AFTER_FOOD_VALUES),
+        body(field("morning")).optional().isBoolean(),
+        body(field("afternoon")).optional().isBoolean(),
+        body(field("night")).optional().isBoolean(),
+        body(field("days")).optional().isInt({ min: 1 }),
+        body(field("duration")).optional().isString(),
         body(field("quantity")).optional().isInt({ min: 1 }),
-        body(field("refill_count")).optional().isInt({ min: 0 }),
-        body(field("instructions")).optional().isString(),
-        body(field("substitution_allowed")).optional().isBoolean(),
-        body(field("notes")).optional().isString()
+        body(field("instruction")).optional().isString()
     ];
 
 };
@@ -32,10 +29,15 @@ const medicineItemValidation = (prefix: string) => {
 export const createPrescriptionValidation = [
 
     body("encounter_no").notEmpty().withMessage("Encounter is required"),
+    body("diagnosis_id").optional().notEmpty(),
+    body("visit_type").optional().isString(),
     body("chief_complaint").optional().isString(),
     body("clinical_notes").optional().isString(),
     body("advice").optional().isString(),
-    body("followup_date").optional().isISO8601().withMessage("Follow-up date must be a valid date (YYYY-MM-DD)"),
+    body("followup_date")
+        .optional()
+        .isISO8601()
+        .withMessage("Follow-up date must be a valid date (YYYY-MM-DD)"),
     body("medicines").isArray({ min: 1 }).withMessage("At least one medicine is required"),
     ...medicineItemValidation("medicines.*")
 
@@ -61,16 +63,25 @@ export const getPrescriptionByIdValidation = [
 export const updatePrescriptionValidation = [
 
     param("prescriptionId").notEmpty(),
+    body("diagnosis_id").optional().notEmpty(),
     body("chief_complaint").optional().isString(),
     body("clinical_notes").optional().isString(),
     body("advice").optional().isString(),
-    body("followup_date").optional().isISO8601().withMessage("Follow-up date must be a valid date (YYYY-MM-DD)"),
-    body("diagnosis_id").optional().notEmpty(),
+    body("followup_date")
+        .optional()
+        .isISO8601()
+        .withMessage("Follow-up date must be a valid date (YYYY-MM-DD)"),
     body("status").optional().isIn(PRESCRIPTION_STATUS_VALUES)
 
 ];
 
 export const deletePrescriptionValidation = [
+
+    param("prescriptionId").notEmpty()
+
+];
+
+export const getPrescriptionItemsValidation = [
 
     param("prescriptionId").notEmpty()
 
@@ -89,19 +100,17 @@ export const updatePrescriptionItemValidation = [
     param("itemId").notEmpty(),
     body("medicine_id").optional().notEmpty(),
     body("dosage").optional().isString(),
-    body("dosage_unit").optional().isString(),
-    body("strength").optional().isString(),
+    body("unit").optional().isString(),
     body("route").optional().isString(),
     body("frequency").optional().isString(),
-    body("timing").optional().isIn(TIMING_VALUES),
-    body("duration_value").optional().isInt({ min: 1 }),
-    body("duration_unit").optional().isIn(DURATION_UNIT_VALUES),
+    body("before_after_food").optional().isIn(BEFORE_AFTER_FOOD_VALUES),
+    body("morning").optional().isBoolean(),
+    body("afternoon").optional().isBoolean(),
+    body("night").optional().isBoolean(),
+    body("days").optional().isInt({ min: 1 }),
+    body("duration").optional().isString(),
     body("quantity").optional().isInt({ min: 1 }),
-    body("refill_count").optional().isInt({ min: 0 }),
-    body("instructions").optional().isString(),
-    body("substitution_allowed").optional().isBoolean(),
-    body("dispense_status").optional().isIn(DISPENSE_STATUS_VALUES),
-    body("notes").optional().isString()
+    body("instruction").optional().isString()
 
 ];
 
@@ -112,8 +121,8 @@ export const deletePrescriptionItemValidation = [
 
 ];
 
-export const getPrescriptionItemsValidation = [
+export const getSuggestedMedicinesValidation = [
 
-    param("prescriptionId").notEmpty()
+    param("diagnosisId").notEmpty()
 
-];*/}
+];

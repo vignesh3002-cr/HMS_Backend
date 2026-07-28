@@ -1,5 +1,5 @@
 import { body, param, query } from "express-validator";
-import { APPOINTMENT_STATUS_VALUES } from "./appointment.constants";
+import { APPOINTMENT_STATUS, APPOINTMENT_STATUS_VALUES } from "./appointment.constants";
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -95,7 +95,27 @@ export const updateAppointmentStatusValidation = [
         .isIn(APPOINTMENT_STATUS_VALUES)
         .withMessage(
             `Status must be one of: ${APPOINTMENT_STATUS_VALUES.join(", ")}`
-        )
+        ),
+
+    body("cancel_reason")
+        .if(body("status").equals(APPOINTMENT_STATUS.CANCELLED))
+        .notEmpty()
+        .withMessage("Cancellation reason is required when cancelling an appointment"),
+
+    body("cancel_reason")
+        .optional()
+        .isString()
+
+];
+
+export const cancelAppointmentValidation = [
+
+    param("appointmentNo")
+        .notEmpty(),
+
+    body("cancel_reason")
+        .notEmpty()
+        .withMessage("Cancellation reason is required")
 
 ];
 

@@ -99,7 +99,7 @@ class AppointmentService {
                 appointment_date: appointmentDate,
                 appointment_time: appointmentTime,
                 token_number: tokenNumber,
-                status: appointment_constants_1.APPOINTMENT_STATUS.BOOKED,
+                status: appointment_constants_1.APPOINTMENT_STATUS.SCHEDULED,
                 reason_for_visit: data.reason_for_visit,
                 referred_by: data.referred_by,
                 booking_source: data.booking_source ?? "STAFF",
@@ -173,11 +173,12 @@ class AppointmentService {
                 updateData.token_number = tokenNumber;
                 updateData.doctor_name = doctorName;
                 updateData.department = departmentName;
+                updateData.status = 'RESCHEDULED';
             }
             return repository.updateAppointment(tx, appointmentNo, updateData);
         });
     }
-    async updateAppointmentStatus(appointmentNo, status) {
+    async updateAppointmentStatus(appointmentNo, status, cancelReason) {
         const existing = await repository.getAppointmentByNumber(appointmentNo);
         if (!existing) {
             throw new Error("Appointment not found");
@@ -185,10 +186,13 @@ class AppointmentService {
         if (appointment_constants_1.TERMINAL_APPOINTMENT_STATUSES.includes(existing.status ?? "")) {
             throw new Error(`Cannot change status of an appointment that is already ${existing.status}`);
         }
-        return repository.updateAppointmentStatus(appointmentNo, status);
+        if (status === appointment_constants_1.APPOINTMENT_STATUS.CANCELLED && !cancelReason) {
+            throw new Error("Cancellation reason is required when cancelling an appointment");
+        }
+        return repository.updateAppointmentStatus(appointmentNo, status, cancelReason);
     }
-    async cancelAppointment(appointmentNo) {
-        return this.updateAppointmentStatus(appointmentNo, appointment_constants_1.APPOINTMENT_STATUS.CANCELLED);
+    async cancelAppointment(appointmentNo, cancelReason) {
+        return this.updateAppointmentStatus(appointmentNo, appointment_constants_1.APPOINTMENT_STATUS.CANCELLED, cancelReason);
     }
     async getAvailableSlots(employeeId, branchId, dateStr) {
         const employee = await repository.findEmployee(employeeId);
