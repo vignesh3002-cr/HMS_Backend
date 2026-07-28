@@ -22,16 +22,7 @@ export class DrugRepository {
                 drug_id: drugId
             },
 
-            include: {
-                medicine_master: {
-                    select: {
-                        medicine_id: true,
-                        medicine_name: true,
-                        mrp: true,
-                        is_active: true
-                    }
-                }
-            }
+            
 
         });
 

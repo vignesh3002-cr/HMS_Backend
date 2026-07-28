@@ -60,13 +60,8 @@ export class DrugService {
 
                 is_high_alert: data.is_high_alert,
 
-                medicine_master: data.linked_medicine_id
-                    ? {
-                          connect: {
-                              medicine_id: data.linked_medicine_id
-                         }
-                      }
-                      : undefined,
+                linked_medicine_id: data.linked_medicine_id,
+                    
 
                 created_by: createdBy
 
@@ -146,13 +141,8 @@ export class DrugService {
 
             is_high_alert: data.is_high_alert,
 
-            medicine_master: data.linked_medicine_id
-                ? {
-                      connect: {
-                          medicine_id: data.linked_medicine_id
-                     }
-                  }
-                  : undefined,
+            linked_medicine_id: data.linked_medicine_id,
+               
 
             is_active: data.is_active,
 

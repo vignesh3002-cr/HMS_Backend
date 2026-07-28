@@ -12,6 +12,10 @@ router.post(
     "/login",
     authController.login.bind(authController)
 );
+router.post(
+    "/verify-otp",
+    authController.verifyOtp.bind(authController)
+);
 router.get(
     "/me",
     authenticate,

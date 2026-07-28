@@ -9,7 +9,23 @@ export class AuthRepository {
         username: username,
       },
       include: {
-          branch: true
+        branch: true,
+
+        employees: {
+          select: {
+            employee_id: true,
+            email: true,
+            first_name: true
+          }
+        },
+
+        patient_bio_data: {
+          select: {
+            patient_id: true,
+            patient_email: true,
+            patient_first_name: true
+          }
+        }
       }
     });
 
