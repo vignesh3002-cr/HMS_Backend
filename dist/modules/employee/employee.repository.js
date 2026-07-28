@@ -80,7 +80,8 @@ class EmployeeRepository {
             include: {
                 user_table: {
                     select: {
-                        role_type: true
+                        role_type: true,
+                        user_id: true
                     }
                 }
             }

@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const histomorphology_controller_1 = require("./histomorphology.controller");
+const auth_middleware_1 = require("../auth/auth.middleware");
+const authorize_1 = require("../../middleware/authorize");
+const histomorphology_validation_1 = require("./histomorphology.validation");
+const router = (0, express_1.Router)();
+const controller = new histomorphology_controller_1.HistomorphologyController();
+router.get("/", auth_middleware_1.authenticate, controller.getHistomorphologies.bind(controller));
+router.get("/:histomorphologyId", auth_middleware_1.authenticate, controller.getHistomorphologyById.bind(controller));
+router.post("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR"), histomorphology_validation_1.createHistomorphologyValidation, controller.createHistomorphology.bind(controller));
+router.put("/:histomorphologyId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR"), histomorphology_validation_1.updateHistomorphologyValidation, controller.updateHistomorphology.bind(controller));
+router.delete("/:histomorphologyId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.deleteHistomorphology.bind(controller));
+router.patch("/:histomorphologyId/restore", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.restoreHistomorphology.bind(controller));
+exports.default = router;

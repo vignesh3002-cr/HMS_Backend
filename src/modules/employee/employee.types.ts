@@ -82,7 +82,7 @@ export interface CreateEmployeeDto {
     branch_ids: string[];
 
     // Doctor Schedule
-
+    user_id:string;
     working_hours?: WorkingHourDto[];
 }
 
@@ -128,6 +128,16 @@ export interface UpdateEmployeeDto {
     specialization?: string;
     qualification?: string;
     license_no?: string;
+    role_type?:
+        | "DOCTOR"
+        | "NURSE"
+        | "LAB_TECHNICIAN"
+        | "PHARMACIST"
+        | "BRANCH_ADMIN"
+        | "Admin";
+    consultation_minutes?: number;
+    branch_ids?: string[];
+    working_hours?: WorkingHourDto[];
 }
 
 export interface GetEmployeesQuery {

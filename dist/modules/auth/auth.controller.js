@@ -21,5 +21,22 @@ class AuthController {
             });
         }
     }
+    async verifyOtp(req, res) {
+        try {
+            const { username, otp } = req.body;
+            const result = await authService.verifyOtp(username, otp);
+            return res.status(200).json({
+                success: true,
+                message: "OTP verified successfully",
+                data: result
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
 }
 exports.AuthController = AuthController;

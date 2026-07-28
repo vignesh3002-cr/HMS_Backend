@@ -219,6 +219,8 @@ if (data.role_type === "DOCTOR") {
 
             employee_id: employee.employee_id!,
 
+            specialization: data.specialization,
+
             consultation_minutes:
                 data.consultation_minutes ?? 20
 
@@ -370,6 +372,7 @@ async updateEmployee(
     }
 
     const hasUserUpdate = Object.keys(userUpdateData).length > 0 && !!employee.user_id;
+    const isDoctor = data.role_type === "DOCTOR" || employee.user_table?.role_type === "DOCTOR";
 
     const [updatedEmployee] = await prisma.$transaction([
         prisma.employees.update({
@@ -398,6 +401,66 @@ async updateEmployee(
             ]
             : []),
     ]);
+
+    await prisma.$transaction(async (tx) => {
+        if (data.branch_ids) {
+            await tx.user_branch_mapping.deleteMany({
+                where: {
+                    user_id: employee.user_table?.user_id!
+                }
+            });
+
+            for (const branchId of data.branch_ids) {
+                await tx.user_branch_mapping.create({
+                    data: {
+                        user_id: employee.user_table?.user_id!,
+                        branch_id: branchId,
+                        employee_id: employeeId,
+                        status: 1
+                    }
+                });
+            }
+        }
+
+        if (isDoctor) {
+            await tx.doctor_profile.upsert({
+                where: {
+                    employee_id: employeeId
+                },
+                update: {
+                    consultation_minutes: data.consultation_minutes ?? 20
+                },
+                create: {
+                    employee_id: employeeId,
+                    specialization: data.specialization ?? "",
+                    consultation_minutes: data.consultation_minutes ?? 20
+                }
+            });
+        }
+
+        if (data.working_hours) {
+            await tx.doctor_schedule.deleteMany({
+                where: {
+                    employee_id: employeeId
+                }
+            });
+
+            for (const schedule of data.working_hours) {
+                await tx.doctor_schedule.create({
+                    data: {
+                        employee_id: employeeId,
+                        branch_id: schedule.branch_id,
+                        day_of_week: schedule.day_of_week,
+                        shift_name: schedule.shift_name,
+                        start_time: new Date(`1970-01-01T${schedule.start_time}:00`),
+                        end_time: new Date(`1970-01-01T${schedule.end_time}:00`),
+                        consultation_minutes: data.consultation_minutes ?? 20,
+                        is_active: true
+                    }
+                });
+            }
+        }
+    });
 
     return {
         employee_id: updatedEmployee.employee_id,
