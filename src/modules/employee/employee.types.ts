@@ -42,6 +42,8 @@ export interface CreateEmployeeDto {
     email: string;
     mobile_no: string;
 
+    dob?: string;
+    gender?: string;
     blood_group?: string;
     nationality?: string;
     marital_status?: string;
@@ -99,6 +101,8 @@ export interface UpdateEmployeeDto {
     email?: string;
     mobile_no?: string;
 
+    dob?: string;
+    gender?: string;
     blood_group?: string;
     nationality?: string;
     marital_status?: string;
