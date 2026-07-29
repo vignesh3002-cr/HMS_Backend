@@ -125,6 +125,7 @@ class EmployeeService {
                 await tx.doctor_profile.create({
                     data: {
                         employee_id: employee.employee_id,
+                        specialization: data.specialization,
                         consultation_minutes: data.consultation_minutes ?? 20
                     }
                 });
@@ -285,6 +286,7 @@ class EmployeeService {
                     },
                     create: {
                         employee_id: employeeId,
+                        specialization: data.specialization ?? "",
                         consultation_minutes: data.consultation_minutes ?? 20
                     }
                 });

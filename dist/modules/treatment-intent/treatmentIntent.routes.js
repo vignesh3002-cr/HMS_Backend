@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const treatmentIntent_controller_1 = require("./treatmentIntent.controller");
+const auth_middleware_1 = require("../auth/auth.middleware");
+const authorize_1 = require("../../middleware/authorize");
+const treatmentIntent_validation_1 = require("./treatmentIntent.validation");
+const router = (0, express_1.Router)();
+const controller = new treatmentIntent_controller_1.TreatmentIntentController();
+router.get("/", auth_middleware_1.authenticate, controller.getTreatmentIntents.bind(controller));
+router.get("/:treatmentIntentId", auth_middleware_1.authenticate, controller.getTreatmentIntentById.bind(controller));
+router.post("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR"), treatmentIntent_validation_1.createTreatmentIntentValidation, controller.createTreatmentIntent.bind(controller));
+router.put("/:treatmentIntentId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR"), treatmentIntent_validation_1.updateTreatmentIntentValidation, controller.updateTreatmentIntent.bind(controller));
+router.delete("/:treatmentIntentId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.deleteTreatmentIntent.bind(controller));
+router.patch("/:treatmentIntentId/restore", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.restoreTreatmentIntent.bind(controller));
+exports.default = router;

@@ -1,0 +1,20 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const chemoProtocol_controller_1 = require("./chemoProtocol.controller");
+const auth_middleware_1 = require("../auth/auth.middleware");
+const authorize_1 = require("../../middleware/authorize");
+const chemoProtocol_validation_1 = require("./chemoProtocol.validation");
+const router = (0, express_1.Router)();
+const controller = new chemoProtocol_controller_1.ChemoProtocolController();
+router.get("/", auth_middleware_1.authenticate, controller.getProtocols.bind(controller));
+router.get("/:protocolId", auth_middleware_1.authenticate, controller.getProtocolById.bind(controller));
+router.post("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR"), chemoProtocol_validation_1.createProtocolValidation, controller.createProtocol.bind(controller));
+router.put("/:protocolId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR"), chemoProtocol_validation_1.updateProtocolValidation, controller.updateProtocol.bind(controller));
+router.delete("/:protocolId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.deleteProtocol.bind(controller));
+router.patch("/:protocolId/restore", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.restoreProtocol.bind(controller));
+// ---- Protocol <-> Drug bridge (chemo_protocol_drug) ----
+router.post("/:protocolId/drugs", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR"), chemoProtocol_validation_1.addProtocolDrugValidation, controller.addDrugToProtocol.bind(controller));
+router.put("/drugs/:protocolDrugId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR"), chemoProtocol_validation_1.updateProtocolDrugValidation, controller.updateProtocolDrug.bind(controller));
+router.delete("/drugs/:protocolDrugId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR"), controller.removeDrugFromProtocol.bind(controller));
+exports.default = router;
