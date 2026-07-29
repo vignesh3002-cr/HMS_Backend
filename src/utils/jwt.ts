@@ -5,10 +5,24 @@ const JWT_SECRET: Secret = process.env.JWT_SECRET!;
 const JWT_EXPIRES_IN: SignOptions["expiresIn"] =
   (process.env.JWT_EXPIRES_IN || "1h") as SignOptions["expiresIn"];
 
-export const generateToken = (payload: object): string => {
-  return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRES_IN,
-  });
+export const generateToken = (
+ user:any,
+ rememberMe:boolean=false
+)=>{
+
+ return jwt.sign(
+ {
+   id:user.id,
+   username:user.username
+ },
+ process.env.JWT_SECRET!,
+ {
+   expiresIn: rememberMe 
+      ? "12h"
+      : "5m"
+ }
+ );
+
 };
 
 export const verifyToken = (token: string) => {

@@ -87,7 +87,7 @@ export class AuthService {
 
   }
 
-  async login(username: string, password: string) {
+  async login(username: string, password: string, rememberMe: boolean) {
 
     const user =
       await this.authRepository.findUserByUsername(username);

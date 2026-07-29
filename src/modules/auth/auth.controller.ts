@@ -9,7 +9,8 @@ export class AuthController {
 
         try {
 
-            const { username, password } = req.body;
+            const { username, password, rememberMe } = req.body;
+            console.log("Remember Me:", rememberMe);
 
             if (!username || !password) {
                 return res.status(400).json({
@@ -20,7 +21,8 @@ export class AuthController {
 
             const result = await authService.login(
                 username,
-                password
+                password,
+                rememberMe
             );
 
             return res.status(200).json({
@@ -76,7 +78,8 @@ export class AuthController {
 
     try {
 
-        const { username, code, otp } = req.body;
+        const { username, code, otp, rememberMe } = req.body;
+        console.log("Remember Me in Verify OTP:", rememberMe);
         const otpCode = code ?? otp;
 
         if (!username || !otpCode) {
@@ -90,12 +93,21 @@ export class AuthController {
             username,
             otpCode
         );
+        res.cookie("token", result.token, {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        maxAge: 12 * 60 * 60 * 1000
+        
+   });
 
         return res.status(200).json({
             success: true,
             message: "OTP verified successfully",
-            data: result
-        });
+            data: {
+                user: result.user
+            }
+    });
 
     } catch (error: any) {
 
