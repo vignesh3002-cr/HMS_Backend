@@ -7,6 +7,7 @@ const authorize_1 = require("../../middleware/authorize");
 const router = (0, express_1.Router)();
 const authController = new auth_controller_1.AuthController();
 router.post("/login", authController.login.bind(authController));
+router.post("/send-otp", authController.sendOtp.bind(authController));
 router.post("/verify-otp", authController.verifyOtp.bind(authController));
 router.get("/me", auth_middleware_1.authenticate, (req, res) => {
     return res.json({

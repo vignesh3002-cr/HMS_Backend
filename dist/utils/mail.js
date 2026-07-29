@@ -5,18 +5,29 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendOtpEmail = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
-const transporter = nodemailer_1.default.createTransport({
-    host: process.env.MAIL_HOST,
-    port: Number(process.env.MAIL_PORT),
-    secure: false,
-    auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
-    },
-});
+let transporter = null;
+const isSmtpConfigured = () => Boolean(process.env.MAIL_HOST && process.env.MAIL_USER && process.env.MAIL_PASS);
+const getTransporter = () => {
+    if (!transporter) {
+        transporter = nodemailer_1.default.createTransport({
+            host: process.env.MAIL_HOST,
+            port: Number(process.env.MAIL_PORT) || 587,
+            secure: Number(process.env.MAIL_PORT) === 465,
+            auth: {
+                user: process.env.MAIL_USER,
+                pass: process.env.MAIL_PASS,
+            },
+        });
+    }
+    return transporter;
+};
 const sendOtpEmail = async (to, otp) => {
-    await transporter.sendMail({
-        from: process.env.MAIL_FROM,
+    if (!isSmtpConfigured()) {
+        console.warn(`[dev] SMTP not configured (set MAIL_HOST/MAIL_USER/MAIL_PASS) - OTP for ${to}: ${otp}`);
+        return;
+    }
+    await getTransporter().sendMail({
+        from: process.env.MAIL_FROM || process.env.MAIL_USER,
         to,
         subject: "Your Login OTP",
         html: `
