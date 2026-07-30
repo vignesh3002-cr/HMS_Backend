@@ -157,6 +157,7 @@ const employee = await tx.employees.create({
         aadhaar_no: data.aadhaar_no,
 
         pan_no: data.pan_no,
+        emp_gender:data.gender,
 
         passport_no: data.passport_no,
 
@@ -180,7 +181,9 @@ const employee = await tx.employees.create({
         specialization: data.specialization,
 
         qualification: data.qualification,
-
+        permanent_employee_state:data.permanent_employee_state,
+        permanent_employee_district:data.permanent_employee_district,
+        permanent_employee_area:data.permanent_employee_area,
         license_no: data.license_no,
         emp_status: true,
         employee_photo_URL: data.employee_photo_URL,
@@ -295,6 +298,34 @@ async updateEmployee(
         throw new Error("Employee not found");
     }
 
+    // A doctor's branch is tied to their doctor_schedule/user_branch_mapping
+    // rows, which future appointments point at. Changing it here would hit
+    // the destructive deleteMany/create block below and silently orphan any
+    // future appointment still on the old schedule. Branch changes for a
+    // doctor must go through the transfer workflow instead, which checks for
+    // future appointments and closes old rows rather than deleting them.
+    if (employee.user_table?.role_type === "DOCTOR" && data.branch_ids) {
+
+        const activeMappings = await prisma.user_branch_mapping.findMany({
+            where: { employee_id: employeeId, status: 1 },
+            select: { branch_id: true }
+        });
+
+        const currentBranchIds = activeMappings.map((mapping) => mapping.branch_id);
+        const requestedBranchIds = data.branch_ids;
+
+        const isBranchChange =
+            requestedBranchIds.some((id) => !currentBranchIds.includes(id)) ||
+            currentBranchIds.some((id) => !requestedBranchIds.includes(id));
+
+        if (isBranchChange) {
+            throw new Error(
+                "Doctor branch changes must go through POST /api/doctors/:employeeId/transfer to preserve appointment history"
+            );
+        }
+
+    }
+
     if (data.department_id) {
 
         const department = await repository.findDepartment(
@@ -340,12 +371,14 @@ async updateEmployee(
         middle_name: data.middle_name,
         last_name: data.last_name,
         email: data.email,
+        gender:data.gender,
         mobile_no: data.mobile_no,
         blood_group: data.blood_group,
         nationality: data.nationality,
         marital_status: data.marital_status,
         aadhaar_no: data.aadhaar_no,
         pan_no: data.pan_no,
+        age:data.age,
         passport_no: data.passport_no,
         parmanent_address: data.permanent_address,
         current_address: data.current_address,
@@ -365,6 +398,9 @@ async updateEmployee(
         specialization: data.specialization,
         qualification: data.qualification,
         license_no: data.license_no,
+        permanent_employee_state:data.permanent_employee_state,
+        permanent_employee_district:data.permanent_employee_district,
+        permanent_employee_area:data.permanent_employee_area,
     };
 
     if (shouldReleaseBranch) {

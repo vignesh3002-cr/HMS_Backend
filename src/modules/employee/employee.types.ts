@@ -22,7 +22,6 @@ export interface WorkingHourDto {
 export interface CreateEmployeeDto {
 
     // Login
-
     username: string;
     password: string;
     role_type:
@@ -38,7 +37,8 @@ export interface CreateEmployeeDto {
     first_name: string;
     middle_name?: string;
     last_name: string;
-
+    gender?:string;
+    age?:number;
     email: string;
     mobile_no: string;
 
@@ -49,7 +49,9 @@ export interface CreateEmployeeDto {
     aadhaar_no?: string;
     pan_no?: string;
     passport_no?: string;
-
+    permanent_employee_state?: string;
+    permanent_employee_district?: string;
+    permanent_employee_area? : string;
     permanent_address?: string;
     current_address?: string;
     employee_photo_URL?: string;
@@ -91,7 +93,8 @@ export interface UpdateEmployeeDto {
     // Login — optional; only touched when the caller wants to change them
     username?: string;
     password?: string;
-
+    gender?:string;
+    age?:number;
     first_name?: string;
     middle_name?: string;
     last_name?: string;
@@ -115,6 +118,9 @@ export interface UpdateEmployeeDto {
     employee_area?: string;
     employee_pincode?: number;
     employee_no_experence?: number;
+    permanent_employee_state?: string;
+    permanent_employee_district?: string;
+    permanent_employee_area? : string;
 
     emergency_contact_name?: string;
     emergency_contact_relationship?: string;
