@@ -738,6 +738,10 @@ model hospital {
   hospital_type       String?  @db.VarChar(50)
   hospital_license_no String?  @db.VarChar(50)
   id                  BigInt   @id @default(autoincrement())
+  hospital_country    String?  @default("India") @db.VarChar
+  hospital_state      String?  @default("Tamil nadu") @db.VarChar
+  hospital_district   String?  @default("Chennai") @db.VarChar
+  hospital_area       String?  @default("Tambaram") @db.VarChar
   branch              branch[]
 }
 
