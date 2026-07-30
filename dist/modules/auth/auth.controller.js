@@ -6,19 +6,35 @@ const authService = new auth_service_1.AuthService();
 class AuthController {
     async login(req, res) {
         try {
-            const { username, password } = req.body;
+            const { username, password, rememberMe } = req.body;
+            console.log("Remember Me:", rememberMe);
             if (!username || !password) {
                 return res.status(400).json({
                     success: false,
                     message: "Username and password are required"
                 });
             }
-            const result = await authService.login(username, password);
+            const result = await authService.login(username, password, rememberMe);
+            // OTP flow temporarily disabled - issuing the session cookie directly on login
+            res.cookie("token", result.token, {
+                httpOnly: true,
+                secure: false,
+                sameSite: "lax",
+                maxAge: 12 * 60 * 60 * 1000
+            });
             return res.status(200).json({
                 success: true,
-                message: "Credentials verified",
-                data: result
+                message: "Login successful",
+                data: {
+                    token: result.token,
+                    user: result.user
+                }
             });
+            // return res.status(200).json({
+            //     success: true,
+            //     message: "Credentials verified",
+            //     data: result
+            // });
         }
         catch (error) {
             return res.status(401).json({
@@ -52,7 +68,8 @@ class AuthController {
     }
     async verifyOtp(req, res) {
         try {
-            const { username, code, otp } = req.body;
+            const { username, code, otp, rememberMe } = req.body;
+            console.log("Remember Me in Verify OTP:", rememberMe);
             const otpCode = code ?? otp;
             if (!username || !otpCode) {
                 return res.status(400).json({
@@ -61,10 +78,18 @@ class AuthController {
                 });
             }
             const result = await authService.verifyOtp(username, otpCode);
+            res.cookie("token", result.token, {
+                httpOnly: true,
+                secure: false,
+                sameSite: "lax",
+                maxAge: 12 * 60 * 60 * 1000
+            });
             return res.status(200).json({
                 success: true,
                 message: "OTP verified successfully",
-                data: result
+                data: {
+                    user: result.user
+                }
             });
         }
         catch (error) {

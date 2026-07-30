@@ -7,9 +7,14 @@ exports.verifyToken = exports.generateToken = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "1h");
-const generateToken = (payload) => {
-    return jsonwebtoken_1.default.sign(payload, JWT_SECRET, {
-        expiresIn: JWT_EXPIRES_IN,
+const generateToken = (user, rememberMe = false) => {
+    return jsonwebtoken_1.default.sign({
+        id: user.id,
+        username: user.username
+    }, process.env.JWT_SECRET, {
+        expiresIn: rememberMe
+            ? "12h"
+            : "5m"
     });
 };
 exports.generateToken = generateToken;
