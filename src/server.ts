@@ -11,8 +11,8 @@ import departmentRoutes from "./modules/department/department.routes";
 import patientRoutes from "./modules/patient/patient.routes";
 import appointmentRoutes from "./modules/appointment/appointment.routes";
 import encounterRoutes from "./modules/encounter/encounter.routes";
-import prescriptionRoutes from "./modules/prescription/prescription.routes";
-import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
+//import prescriptionRoutes from "./modules/prescription/prescription.routes";
+//import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
 import doctorTransferRoutes from "./modules/doctor-transfer/doctorTransfer.routes";
 import { hashPassword } from "./utils/bcrypt";
 
@@ -23,7 +23,26 @@ import { hashPassword } from "./utils/bcrypt";
 
 const app = express();
 
-app.use(cors());
+const FRONTEND_ORIGIN = process.env.FRONTEND_URL || "http://localhost:5173";
+
+app.use(
+    cors({
+            origin: FRONTEND_ORIGIN,
+            credentials: true,
+            methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            allowedHeaders: [
+                "Content-Type",
+                "Authorization",
+                "X-Requested-With",
+                "Cache-Control",
+                "Accept",
+                "Origin",
+                "Referer",
+                "User-Agent",
+            ],
+        optionsSuccessStatus: 200,
+    })
+);
 
 app.use(express.json());
 
@@ -39,8 +58,8 @@ app.use("/api/departments", departmentRoutes);
 app.use("/api/patients", patientRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/encounters", encounterRoutes);
-app.use("/api/prescriptions", prescriptionRoutes);
-app.use("/api/chemotherapy", chemotherapyRoutes);
+//app.use("/api/prescriptions", prescriptionRoutes);
+//app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/doctors", doctorTransferRoutes);
 app.use("/api/hashpassword", async (req, res) => {
 
