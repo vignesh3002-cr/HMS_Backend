@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const node_dns_1 = __importDefault(require("node:dns"));
 require("dotenv/config");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
@@ -14,6 +15,7 @@ const department_routes_1 = __importDefault(require("./modules/department/depart
 const patient_routes_1 = __importDefault(require("./modules/patient/patient.routes"));
 const appointment_routes_1 = __importDefault(require("./modules/appointment/appointment.routes"));
 const bcrypt_1 = require("./utils/bcrypt");
+node_dns_1.default.setDefaultResultOrder("ipv4first");
 // Fix BigInt serialization - Prisma returns BigInt types that JSON.stringify can't handle
 BigInt.prototype.toJSON = function () {
     return this.toString();
