@@ -1,3 +1,4 @@
+import dns from "node:dns";
 import "dotenv/config";
 
 import express from "express";
@@ -15,7 +16,7 @@ import labTestMasterRoutes from "./modules/lab-test-master/lab-test-master.route
 import labOrderRoutes from "./modules/lab-order/lab-order-routes";
 import cookieParser from "cookie-parser";
 import { hashPassword } from "./utils/bcrypt";
-
+dns.setDefaultResultOrder("ipv4first");
 // Fix BigInt serialization - Prisma returns BigInt types that JSON.stringify can't handle
 (BigInt.prototype as any).toJSON = function () {
     return this.toString();
