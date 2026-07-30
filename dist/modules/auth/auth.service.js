@@ -67,7 +67,7 @@ class AuthService {
             },
         };
     }
-    async login(username, password) {
+    async login(username, password, rememberMe) {
         const user = await this.authRepository.findUserByUsername(username);
         if (!user) {
             throw new Error("Invalid username or password");
@@ -77,9 +77,11 @@ class AuthService {
             throw new Error("Invalid username or password");
         }
         this.assertAccountUsable(user);
-        return {
-            username: user.username,
-        };
+        // OTP flow temporarily disabled - logging in directly after password check
+        // return {
+        //   username: user.username,
+        // };
+        return this.buildAuthPayload(user);
     }
     async sendOtp(username) {
         const user = await this.authRepository.findUserByUsername(username);
@@ -113,32 +115,33 @@ class AuthService {
         if (!user) {
             throw new Error("User not found");
         }
-        const otpRecord = await prisma_1.default.login_otp.findFirst({
-            where: {
-                user_id: user.user_id,
-                is_verified: false
-            },
-            orderBy: {
-                created_at: "desc"
-            }
-        });
-        if (!otpRecord) {
-            throw new Error("OTP not found. Please request a new one.");
-        }
-        if (otpRecord.otp_code !== code) {
-            throw new Error("Invalid OTP");
-        }
-        if (otpRecord.expires_at < new Date()) {
-            throw new Error("OTP has expired");
-        }
-        await prisma_1.default.login_otp.update({
-            where: {
-                id: otpRecord.id
-            },
-            data: {
-                is_verified: true
-            }
-        });
+        // OTP verification temporarily disabled
+        // const otpRecord = await prisma.login_otp.findFirst({
+        //   where: {
+        //     user_id: user.user_id!,
+        //     is_verified: false
+        //   },
+        //   orderBy: {
+        //     created_at: "desc"
+        //   }
+        // });
+        // if (!otpRecord) {
+        //   throw new Error("OTP not found. Please request a new one.");
+        // }
+        // if (otpRecord.otp_code !== code) {
+        //   throw new Error("Invalid OTP");
+        // }
+        // if (otpRecord.expires_at < new Date()) {
+        //   throw new Error("OTP has expired");
+        // }
+        // await prisma.login_otp.update({
+        //   where: {
+        //     id: otpRecord.id
+        //   },
+        //   data: {
+        //     is_verified: true
+        //   }
+        // });
         return this.buildAuthPayload(user);
     }
 }

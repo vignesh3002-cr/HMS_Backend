@@ -9,7 +9,8 @@ async function testLogin() {
 
     const result = await authService.login(
       "admin",
-      "Admin@123"
+      "Admin@123",
+      false
     );
 
     console.log(result);

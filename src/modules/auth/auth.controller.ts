@@ -9,7 +9,8 @@ export class AuthController {
 
         try {
 
-            const { username, password } = req.body;
+            const { username, password, rememberMe } = req.body;
+            console.log("Remember Me:", rememberMe);
 
             if (!username || !password) {
                 return res.status(400).json({
@@ -20,14 +21,32 @@ export class AuthController {
 
             const result = await authService.login(
                 username,
-                password
+                password,
+                rememberMe
             );
+
+            // OTP flow temporarily disabled - issuing the session cookie directly on login
+            res.cookie("token", result.token, {
+                httpOnly: true,
+                secure: false,
+                sameSite: "lax",
+                maxAge: 12 * 60 * 60 * 1000
+            });
 
             return res.status(200).json({
                 success: true,
-                message: "Credentials verified",
-                data: result
+                message: "Login successful",
+                data: {
+                    token: result.token,
+                    user: result.user
+                }
             });
+
+            // return res.status(200).json({
+            //     success: true,
+            //     message: "Credentials verified",
+            //     data: result
+            // });
 
         } catch (error: any) {
 
@@ -76,7 +95,8 @@ export class AuthController {
 
     try {
 
-        const { username, code, otp } = req.body;
+        const { username, code, otp, rememberMe } = req.body;
+        console.log("Remember Me in Verify OTP:", rememberMe);
         const otpCode = code ?? otp;
 
         if (!username || !otpCode) {
@@ -90,12 +110,21 @@ export class AuthController {
             username,
             otpCode
         );
+        res.cookie("token", result.token, {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        maxAge: 12 * 60 * 60 * 1000
+        
+   });
 
         return res.status(200).json({
             success: true,
             message: "OTP verified successfully",
-            data: result
-        });
+            data: {
+                user: result.user
+            }
+    });
 
     } catch (error: any) {
 
