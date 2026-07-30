@@ -105,9 +105,7 @@ export class AuthService {
 
     this.assertAccountUsable(user);
 
-    return {
-      username: user.username,
-    };
+    return this.buildAuthPayload(user);
 
   }
 
