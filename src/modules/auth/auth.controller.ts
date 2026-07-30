@@ -25,11 +25,28 @@ export class AuthController {
                 rememberMe
             );
 
+            // OTP flow temporarily disabled - issuing the session cookie directly on login
+            res.cookie("token", result.token, {
+                httpOnly: true,
+                secure: false,
+                sameSite: "lax",
+                maxAge: 12 * 60 * 60 * 1000
+            });
+
             return res.status(200).json({
                 success: true,
-                message: "Credentials verified",
-                data: result
+                message: "Login successful",
+                data: {
+                    token: result.token,
+                    user: result.user
+                }
             });
+
+            // return res.status(200).json({
+            //     success: true,
+            //     message: "Credentials verified",
+            //     data: result
+            // });
 
         } catch (error: any) {
 

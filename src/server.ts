@@ -10,6 +10,9 @@ import employeeRoutes from "./modules/employee/employee.routes";
 import departmentRoutes from "./modules/department/department.routes";
 import patientRoutes from "./modules/patient/patient.routes";
 import appointmentRoutes from "./modules/appointment/appointment.routes";
+import labTestCategoryRoutes from "./modules/lab-test-category/lab-test-category.routes";
+import labTestMasterRoutes from "./modules/lab-test-master/lab-test-master.routes";
+import labOrderRoutes from "./modules/lab-order/lab-order-routes";
 import cookieParser from "cookie-parser";
 import { hashPassword } from "./utils/bcrypt";
 
@@ -43,6 +46,9 @@ app.use("/api/users", userRoutes);
 app.use("/api/branch", branchRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/patients", patientRoutes);
+app.use("/api/lab-test-categories", labTestCategoryRoutes);
+app.use("/api/lab-test-master", labTestMasterRoutes);
+app.use("/api/lab-order", labOrderRoutes);
 app.use("/api/appointments", appointmentRoutes);
 
 app.use("/api/hashpassword", async (req, res) => {

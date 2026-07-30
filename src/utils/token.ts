@@ -28,7 +28,7 @@ export const getToken = () => {
 };
 
 
-export const removeToken = () => {
+export const remove = () => {
 
   localStorage.removeItem("token");
   sessionStorage.removeItem("token");

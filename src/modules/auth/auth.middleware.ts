@@ -11,9 +11,12 @@ export const authenticate: RequestHandler = (req, res, next) => {
 
   try {
 
+    // Prefer the Authorization header over the cookie - the frontend keeps
+    // the header in sync on every request, whereas a stale/expired "token"
+    // cookie from an earlier session can otherwise shadow a fresh login.
     const token =
-      authReq.cookies?.token ||
-      authReq.headers.authorization?.split(" ")[1];
+      authReq.headers.authorization?.split(" ")[1] ||
+      authReq.cookies?.token;
 
 
     if (!token) {

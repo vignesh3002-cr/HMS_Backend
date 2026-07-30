@@ -7,10 +7,16 @@ class AuthController {
     async login(req, res) {
         try {
             const { username, password } = req.body;
+            if (!username || !password) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Username and password are required"
+                });
+            }
             const result = await authService.login(username, password);
             return res.status(200).json({
                 success: true,
-                message: "Login Successful",
+                message: "Credentials verified",
                 data: result
             });
         }
@@ -21,10 +27,40 @@ class AuthController {
             });
         }
     }
+    async sendOtp(req, res) {
+        try {
+            const { username } = req.body;
+            if (!username) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Username is required"
+                });
+            }
+            const result = await authService.sendOtp(username);
+            return res.status(200).json({
+                success: true,
+                message: "OTP sent",
+                data: result
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
     async verifyOtp(req, res) {
         try {
-            const { username, otp } = req.body;
-            const result = await authService.verifyOtp(username, otp);
+            const { username, code, otp } = req.body;
+            const otpCode = code ?? otp;
+            if (!username || !otpCode) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Username and OTP code are required"
+                });
+            }
+            const result = await authService.verifyOtp(username, otpCode);
             return res.status(200).json({
                 success: true,
                 message: "OTP verified successfully",
