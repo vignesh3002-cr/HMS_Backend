@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const cancerStage_controller_1 = require("./cancerStage.controller");
+const auth_middleware_1 = require("../auth/auth.middleware");
+const authorize_1 = require("../../middleware/authorize");
+const cancerStage_validation_1 = require("./cancerStage.validation");
+const router = (0, express_1.Router)();
+const controller = new cancerStage_controller_1.CancerStageController();
+router.get("/", auth_middleware_1.authenticate, controller.getCancerStages.bind(controller));
+router.get("/:cancerStageId", auth_middleware_1.authenticate, controller.getCancerStageById.bind(controller));
+router.post("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR"), cancerStage_validation_1.createCancerStageValidation, controller.createCancerStage.bind(controller));
+router.put("/:cancerStageId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR"), cancerStage_validation_1.updateCancerStageValidation, controller.updateCancerStage.bind(controller));
+router.delete("/:cancerStageId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.deleteCancerStage.bind(controller));
+router.patch("/:cancerStageId/restore", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.restoreCancerStage.bind(controller));
+exports.default = router;

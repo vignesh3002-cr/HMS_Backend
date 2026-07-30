@@ -2,11 +2,17 @@ import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
+<<<<<<< HEAD
 const prisma = new PrismaClient({
   adapter: new PrismaPg({
     connectionString: process.env.DATABASE_URL,
   }),
 });
+=======
+declare const process: { exit(code?: number): void };
+
+const prisma = new PrismaClient();
+>>>>>>> 858bd7b36aafe89064e9fd23520f5ae3df7178ed
 
 async function main() {
   console.log("Seeding id_sequences...");

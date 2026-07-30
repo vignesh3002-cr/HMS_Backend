@@ -14,6 +14,7 @@ export class AuthRepository {
             branch: true,
           },
         },
+        patient_bio_data: true,
         user_branch_mapping: {
           where: { status: 1 },
           include: {

@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const icdCode_controller_1 = require("./icdCode.controller");
+const auth_middleware_1 = require("../auth/auth.middleware");
+const authorize_1 = require("../../middleware/authorize");
+const icdCode_validation_1 = require("./icdCode.validation");
+const router = (0, express_1.Router)();
+const controller = new icdCode_controller_1.IcdCodeController();
+router.get("/", auth_middleware_1.authenticate, controller.getIcdCodes.bind(controller));
+router.get("/:icdCodeId", auth_middleware_1.authenticate, controller.getIcdCodeById.bind(controller));
+router.post("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR"), icdCode_validation_1.createIcdCodeValidation, controller.createIcdCode.bind(controller));
+router.put("/:icdCodeId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR"), icdCode_validation_1.updateIcdCodeValidation, controller.updateIcdCode.bind(controller));
+router.delete("/:icdCodeId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.deleteIcdCode.bind(controller));
+router.patch("/:icdCodeId/restore", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.restoreIcdCode.bind(controller));
+exports.default = router;

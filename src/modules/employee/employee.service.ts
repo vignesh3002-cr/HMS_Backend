@@ -222,6 +222,8 @@ if (data.role_type === "DOCTOR") {
 
             employee_id: employee.employee_id!,
 
+            specialization: data.specialization,
+
             consultation_minutes:
                 data.consultation_minutes ?? 20
 
@@ -466,6 +468,7 @@ async updateEmployee(
                 },
                 create: {
                     employee_id: employeeId,
+                    specialization: data.specialization ?? "",
                     consultation_minutes: data.consultation_minutes ?? 20
                 }
             });
