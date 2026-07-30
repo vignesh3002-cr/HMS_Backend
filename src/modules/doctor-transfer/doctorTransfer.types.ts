@@ -2,8 +2,6 @@ import { WorkingHourDto } from "../employee/employee.types";
 
 export interface InitiateTransferDto {
 
-    old_branch_id?: string; // defaults to the doctor's current active branch
-
     new_branch_id: string;
 
     new_department_id?: string;
@@ -49,6 +47,14 @@ export interface RescheduleQueueActionDto {
     appointment_time?: string; // HH:mm
 
     reason?: string;
+
+}
+
+export interface EligibleReplacementDoctor {
+
+    employee_id: string;
+
+    name: string;
 
 }
 

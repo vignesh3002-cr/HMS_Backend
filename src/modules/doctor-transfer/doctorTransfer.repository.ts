@@ -88,10 +88,41 @@ export class DoctorTransferRepository {
 
     }
 
-    async findActiveDoctorSchedulesAtBranch(employeeId: string, branchId: string) {
+    async findAllActiveSchedules(employeeId: string) {
 
         return prisma.doctor_schedule.findMany({
-            where: { employee_id: employeeId, branch_id: branchId, is_active: true }
+            where: { employee_id: employeeId, is_active: true }
+        });
+
+    }
+
+    // Doctors, other than the one being transferred, currently working this
+    // exact branch/day/department - candidates the service filters further
+    // by time overlap with the specific appointment slot.
+    async findEligibleReplacementCandidates(
+        branchId: string,
+        departmentId: string,
+        excludeEmployeeId: string,
+        dayOfWeek: string
+    ) {
+
+        return prisma.doctor_schedule.findMany({
+            where: {
+                branch_id: branchId,
+                day_of_week: dayOfWeek,
+                is_active: true,
+                employee_id: { not: excludeEmployeeId },
+                employees: {
+                    department_id: departmentId,
+                    emp_status: { not: false },
+                    user_table: { role_type: "DOCTOR" }
+                }
+            },
+            include: {
+                employees: {
+                    select: { employee_id: true, first_name: true, last_name: true }
+                }
+            }
         });
 
     }
@@ -143,11 +174,65 @@ export class DoctorTransferRepository {
 
     }
 
-    async findAllFutureAppointmentsForTransfer(tx: Prisma.TransactionClient, employeeId: string, effectiveDate: Date) {
+    // Scoped to the specific schedule rows being closed (not "any future
+    // appointment this employee has anywhere") - a branch/time-slot conflict
+    // must never flag appointments at a branch that isn't actually affected.
+    async findFutureAppointmentsByScheduleIds(
+        scheduleIds: bigint[],
+        effectiveDate: Date,
+        page = 1,
+        limit = 200
+    ) {
+
+        const where: Prisma.appointment_historyWhereInput = {
+            schedule_id: { in: scheduleIds },
+            appointment_date: { gte: effectiveDate },
+            status: { notIn: TERMINAL_APPOINTMENT_STATUSES }
+        };
+
+        const [appointments, total] = await Promise.all([
+
+            prisma.appointment_history.findMany({
+                where,
+                select: {
+                    appointment_id: true,
+                    patient_id: true,
+                    branch_id: true,
+                    department_id: true,
+                    schedule_id: true,
+                    appointment_date: true,
+                    appointment_time: true,
+                    status: true,
+                    patient_bio_data: {
+                        select: {
+                            patient_first_name: true,
+                            patient_last_name: true,
+                            patient_primary_mobile: true
+                        }
+                    }
+                },
+                orderBy: { appointment_date: "asc" },
+                skip: (page - 1) * limit,
+                take: limit
+            }),
+
+            prisma.appointment_history.count({ where })
+
+        ]);
+
+        return { appointments, total };
+
+    }
+
+    async findAllFutureAppointmentsForTransferByScheduleIds(
+        tx: Prisma.TransactionClient,
+        scheduleIds: bigint[],
+        effectiveDate: Date
+    ) {
 
         return tx.appointment_history.findMany({
             where: {
-                employee_id: employeeId,
+                schedule_id: { in: scheduleIds },
                 appointment_date: { gte: effectiveDate },
                 status: { notIn: TERMINAL_APPOINTMENT_STATUSES }
             },
@@ -239,16 +324,36 @@ export class DoctorTransferRepository {
 
     }
 
-    async closeDoctorSchedules(
+    async findSchedulesByIds(tx: Prisma.TransactionClient, scheduleIds: bigint[]) {
+
+        return tx.doctor_schedule.findMany({
+            where: { schedule_id: { in: scheduleIds } },
+            select: { schedule_id: true, branch_id: true }
+        });
+
+    }
+
+    async closeSchedulesByIds(
         tx: Prisma.TransactionClient,
-        employeeId: string,
-        branchId: string,
+        scheduleIds: bigint[],
         effectiveTo: Date
     ) {
 
         await tx.doctor_schedule.updateMany({
-            where: { employee_id: employeeId, branch_id: branchId, is_active: true },
+            where: { schedule_id: { in: scheduleIds } },
             data: { is_active: false, effective_to: effectiveTo }
+        });
+
+    }
+
+    async countActiveSchedulesAtBranch(
+        tx: Prisma.TransactionClient,
+        employeeId: string,
+        branchId: string
+    ) {
+
+        return tx.doctor_schedule.count({
+            where: { employee_id: employeeId, branch_id: branchId, is_active: true }
         });
 
     }
