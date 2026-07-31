@@ -11,6 +11,10 @@ import employeeRoutes from "./modules/employee/employee.routes";
 import departmentRoutes from "./modules/department/department.routes";
 import patientRoutes from "./modules/patient/patient.routes";
 import appointmentRoutes from "./modules/appointment/appointment.routes";
+import encounterRoutes from "./modules/encounter/encounter.routes";
+//import prescriptionRoutes from "./modules/prescription/prescription.routes";
+//import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
+import doctorTransferRoutes from "./modules/doctor-transfer/doctorTransfer.routes";
 import labTestCategoryRoutes from "./modules/lab-test-category/lab-test-category.routes";
 import labTestMasterRoutes from "./modules/lab-test-master/lab-test-master.routes";
 import labOrderRoutes from "./modules/lab-order/lab-order-routes";
@@ -28,12 +32,50 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
+const configuredOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+const allowedOrigins = new Set([
+    ...configuredOrigins,
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]);
+
 app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true
-  })
+    cors({
+        origin: (origin, callback) => {
+            if (!origin) {
+                callback(null, true);
+                return;
+            }
+
+            if (allowedOrigins.has(origin)) {
+                callback(null, true);
+                return;
+            }
+
+            callback(new Error(`CORS blocked for origin: ${origin}`));
+        },
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allowedHeaders: [
+            "Content-Type",
+            "Authorization",
+            "X-Requested-With",
+            "Cache-Control",
+            "Accept",
+            "Origin",
+            "Referer",
+            "User-Agent",
+        ],
+        optionsSuccessStatus: 200,
+    })
 );
+
 app.use(cookieParser());
 
 app.use(express.json());
@@ -55,7 +97,10 @@ app.use("/api/lab-order", labOrderRoutes);
 app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/appointments", appointmentRoutes);
-
+app.use("/api/encounters", encounterRoutes);
+//app.use("/api/prescriptions", prescriptionRoutes);
+//app.use("/api/chemotherapy", chemotherapyRoutes);
+app.use("/api/doctors", doctorTransferRoutes);
 app.use("/api/hashpassword", async (req, res) => {
 
     const { password } = req.body;
