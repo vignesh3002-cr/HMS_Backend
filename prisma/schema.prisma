@@ -752,6 +752,11 @@ model employees {
   employee_no_experence                                                              BigInt?
   emp_gender                                                                         String?                       @db.VarChar
   emp_DOB                                                                            String?                       @db.VarChar
+  permanent_employee_state                                                           String?                       @db.VarChar
+  permanent_employee_district                                                        String?                       @db.VarChar
+  permanent_employee_area                                                            String?                       @db.VarChar
+  permanent_employee_pincode                                                         BigInt?
+  age                                                                                BigInt?
   appointment_history                                                                appointment_history[]
   chemotherapy_administration_chemotherapy_administration_verified_byToemployees     chemotherapy_administration[] @relation("chemotherapy_administration_verified_byToemployees")
   chemotherapy_administration_chemotherapy_administration_administered_byToemployees chemotherapy_administration[] @relation("chemotherapy_administration_administered_byToemployees")

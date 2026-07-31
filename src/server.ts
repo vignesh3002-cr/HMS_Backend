@@ -20,7 +20,48 @@ dns.setDefaultResultOrder("ipv4first");
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    process.env.FRONTEND_URL,
+].filter(Boolean) as string[];
+ 
+const isAllowedOrigin = (origin: string | undefined) => {
+    if (!origin) return true;
+ 
+    if (allowedOrigins.includes(origin)) return true;
+ 
+    return /^https:\/\/.*\.vercel\.app$/i.test(origin);
+};
+ 
+app.use(
+    cors({
+        origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+            if (isAllowedOrigin(origin)) {
+                callback(null, true);
+                return;
+            }
+ 
+            callback(new Error(`Not allowed by CORS: ${origin}`));
+        },
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allowedHeaders: [
+            "Content-Type",
+            "Authorization",
+            "x-branch-id",
+            "X-Requested-With",
+            "Cache-Control",
+            "Accept",
+            "Origin",
+            "Referer",
+            "User-Agent",
+        ],
+        optionsSuccessStatus: 200,
+    })
+);
 
 app.use(express.json());
 

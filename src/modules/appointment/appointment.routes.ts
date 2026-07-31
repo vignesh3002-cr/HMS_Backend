@@ -7,6 +7,8 @@ import {
     updateAppointmentStatusValidation,
     getAppointmentsValidation,
     getAvailableSlotsValidation,
+    getDoctorSlotSummaryValidation,
+    getDoctorWeekSlotSummaryValidation,
     cancelAppointmentValidation
 } from "./appointment.validation";
 
@@ -33,6 +35,20 @@ router.get(
     authenticate,
     getAvailableSlotsValidation,
     controller.getAvailableSlots.bind(controller)
+);
+
+router.get(
+    "/doctor-slot-summary",
+    authenticate,
+    getDoctorSlotSummaryValidation,
+    controller.getDoctorSlotSummary.bind(controller)
+);
+
+router.get(
+    "/doctor-week-slot-summary",
+    authenticate,
+    getDoctorWeekSlotSummaryValidation,
+    controller.getDoctorWeekSlotSummary.bind(controller)
 );
 
 router.get(
