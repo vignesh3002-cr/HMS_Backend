@@ -3,7 +3,7 @@ import * as chemotherapyController from "./chemotherapy.controller";
 
 const router = Router();
 
-console.log("🔥 CHEMOTHERAPY ROUTE FILE LOADED");
+
 
 router.get("/cancer-types", chemotherapyController.getCancerTypes);
 

@@ -14,7 +14,7 @@ const generateToken = (user, rememberMe = false) => {
     }, process.env.JWT_SECRET, {
         expiresIn: rememberMe
             ? "12h"
-            : "5m"
+            : "12h"
     });
 };
 exports.generateToken = generateToken;
