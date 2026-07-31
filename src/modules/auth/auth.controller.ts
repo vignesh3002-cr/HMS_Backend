@@ -26,11 +26,15 @@ export class AuthController {
             );
 
             // OTP flow temporarily disabled - issuing the session cookie directly on login
+            // Cookie lifetime must match the JWT's own expiry (see utils/jwt.ts:
+            // 12h when rememberMe is on, 5m otherwise) - otherwise the cookie
+            // outlives the token (or vice versa) and requests start failing
+            // with 401s well before the user expects to be logged out.
             res.cookie("token", result.token, {
                 httpOnly: true,
                 secure: false,
                 sameSite: "lax",
-                maxAge: 12 * 60 * 60 * 1000
+                maxAge: rememberMe ? 12 * 60 * 60 * 1000 : 5 * 60 * 1000
             });
 
             return res.status(200).json({
@@ -108,14 +112,15 @@ export class AuthController {
 
         const result = await authService.verifyOtp(
             username,
-            otpCode
+            otpCode,
+            rememberMe
         );
         res.cookie("token", result.token, {
         httpOnly: true,
         secure: false,
         sameSite: "lax",
-        maxAge: 12 * 60 * 60 * 1000
-        
+        maxAge: rememberMe ? 12 * 60 * 60 * 1000 : 5 * 60 * 1000
+
    });
 
         return res.status(200).json({

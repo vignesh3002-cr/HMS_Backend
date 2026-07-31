@@ -18,6 +18,7 @@ const lab_test_category_routes_1 = __importDefault(require("./modules/lab-test-c
 const lab_test_master_routes_1 = __importDefault(require("./modules/lab-test-master/lab-test-master.routes"));
 const lab_order_routes_1 = __importDefault(require("./modules/lab-order/lab-order-routes"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const chemotherapy_routes_1 = __importDefault(require("./modules/chemotherapy/chemotherapy.routes"));
 const bcrypt_1 = require("./utils/bcrypt");
 node_dns_1.default.setDefaultResultOrder("ipv4first");
 // Fix BigInt serialization - Prisma returns BigInt types that JSON.stringify can't handle
@@ -46,6 +47,7 @@ app.use("/api/patients", patient_routes_1.default);
 app.use("/api/lab-test-categories", lab_test_category_routes_1.default);
 app.use("/api/lab-test-master", lab_test_master_routes_1.default);
 app.use("/api/lab-order", lab_order_routes_1.default);
+app.use("/api/chemotherapy", chemotherapy_routes_1.default);
 app.use("/api/appointments", appointment_routes_1.default);
 app.use("/api/hashpassword", async (req, res) => {
     const { password } = req.body;

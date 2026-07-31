@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const chemotherapyController = __importStar(require("./chemotherapy.controller"));
 const router = (0, express_1.Router)();
+console.log("🔥 CHEMOTHERAPY ROUTE FILE LOADED");
 router.get("/cancer-types", chemotherapyController.getCancerTypes);
 router.post("/cancer-type", chemotherapyController.addCancerType);
 exports.default = router;

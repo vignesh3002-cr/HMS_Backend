@@ -57,7 +57,7 @@ export class AuthService {
 
   }
 
-  private buildAuthPayload(user: AuthUser) {
+  private buildAuthPayload(user: AuthUser, rememberMe: boolean = false) {
 
     const employee = user.employees;
     const primaryBranch = employee?.branch || user.branch || null;
@@ -68,7 +68,7 @@ export class AuthService {
       role: user.role_type,
       user_id: user.user_id,
       hospital_id: primaryBranch?.hospital_id,
-    });
+    }, rememberMe);
 
     return {
       token,
@@ -110,7 +110,7 @@ export class AuthService {
     //   username: user.username,
     // };
 
-    return this.buildAuthPayload(user);
+    return this.buildAuthPayload(user, rememberMe);
 
   }
 
@@ -155,7 +155,7 @@ export class AuthService {
 
   }
 
-  async verifyOtp(username: string, code: string) {
+  async verifyOtp(username: string, code: string, rememberMe: boolean = false) {
 
     const user = await this.authRepository.findUserByUsername(username);
 
@@ -195,7 +195,7 @@ export class AuthService {
     //   }
     // });
 
-    return this.buildAuthPayload(user);
+    return this.buildAuthPayload(user, rememberMe);
 
   }
 

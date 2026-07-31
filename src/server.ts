@@ -15,6 +15,8 @@ import labTestCategoryRoutes from "./modules/lab-test-category/lab-test-category
 import labTestMasterRoutes from "./modules/lab-test-master/lab-test-master.routes";
 import labOrderRoutes from "./modules/lab-order/lab-order-routes";
 import cookieParser from "cookie-parser";
+import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
+import prescriptionRoutes from "./modules/prescription/prescription.routes";
 import { hashPassword } from "./utils/bcrypt";
 dns.setDefaultResultOrder("ipv4first");
 // Fix BigInt serialization - Prisma returns BigInt types that JSON.stringify can't handle
@@ -50,6 +52,8 @@ app.use("/api/patients", patientRoutes);
 app.use("/api/lab-test-categories", labTestCategoryRoutes);
 app.use("/api/lab-test-master", labTestMasterRoutes);
 app.use("/api/lab-order", labOrderRoutes);
+app.use("/api/prescriptions", prescriptionRoutes);
+app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/appointments", appointmentRoutes);
 
 app.use("/api/hashpassword", async (req, res) => {
