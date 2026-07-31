@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { EmployeeController } from "./employee.controller";
 import { authenticate } from "../../modules/auth/auth.middleware";
-
+ 
 const router = Router();
-
+ 
 const controller = new EmployeeController();
-
+ 
 router.post(
     "/create",
     authenticate,
@@ -21,7 +21,7 @@ router.get(
     authenticate,
     controller.getEmployeeById.bind(controller)
 );
-
+ 
 router.put(
     "/:employeeId",
     authenticate,
@@ -32,5 +32,5 @@ router.delete(
     authenticate,
     controller.softDeleteEmployee.bind(controller)
 );
-
+ 
 export default router;

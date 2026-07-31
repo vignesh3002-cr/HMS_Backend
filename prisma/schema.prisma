@@ -8,7 +8,6 @@ datasource db {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model appointment_history {
-<<<<<<< HEAD
   appointment_id                  String                            @unique(map: "uq_appointment_id") @db.VarChar(20)
   patient_id                      String                            @db.VarChar(20)
   doctor_name                     String                            @db.VarChar(100)
@@ -61,155 +60,113 @@ model appointment_history {
   lab_history                     lab_history[]
   lab_order                       lab_order[]
   patient_history                 patient_history[]
-=======
-  appointment_id       String              @unique(map: "uq_appointment_id") @db.VarChar(20)
-  patient_id           String              @db.VarChar(20)
-  doctor_name          String              @db.VarChar(100)
-  department           String?             @db.VarChar(100)
-  appointment_date     DateTime            @db.Date
-  appointment_time     DateTime            @db.Time(6)
-  token_number         Int?
-  booking_source       String?             @db.VarChar(30)
-  appointment_status   String?             @db.VarChar(30)
-  chief_complaint      String?
-  symptoms             String?
-  lab_test_details     String?
-  scan_details         String?
-  consultation_fee     Decimal?            @db.Decimal(10, 2)
-  bill_amount          Decimal?            @db.Decimal(10, 2)
-  payment_status       String?             @db.VarChar(20)
-  payment_mode         String?             @db.VarChar(30)
-  checkin_time         DateTime?           @db.Timestamp(6)
-  checkout_time        DateTime?           @db.Timestamp(6)
-  id                   BigInt              @id @default(autoincrement())
-  branch_id            String?             @db.VarChar(10)
-  department_id        String?             @db.VarChar(20)
-  user_id              String?             @db.VarChar(20)
-  assigned_doctor      String?             @db.VarChar(50)
-  reason_for_visit     String?             @db.VarChar(500)
-  referred_by          String?             @db.VarChar(100)
-  employee_id          String?             @db.VarChar(20)
-  created_by           String?             @db.VarChar
-  created_at           DateTime?           @default(now()) @db.Timestamp(6)
-  status               String?             @db.VarChar
-  schedule_id          BigInt?
-  diagnosis_id         String?             @db.VarChar(20)
-  diagnosis_text       String?
-  prescription_details String?
-  cancel_reason        String?             @db.VarChar
-  employees            employees?          @relation(fields: [employee_id], references: [employee_id], onDelete: Cascade)
-  doctor_schedule      doctor_schedule?    @relation(fields: [schedule_id], references: [schedule_id], onDelete: NoAction, onUpdate: NoAction)
-  branch               branch?             @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_appointment_branch")
-  department_master    department_master?  @relation(fields: [department_id], references: [department_id], onDelete: Cascade, map: "fk_appointment_department")
-  patient_bio_data     patient_bio_data    @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade, map: "fk_appointment_patient")
-  user_table           user_table?         @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_appointment_user")
-  chemotherapy_plan    chemotherapy_plan[]
-  encounter            encounter?
-  lab_history          lab_history[]
-  lab_order            lab_order[]
-  patient_history      patient_history[]
->>>>>>> 858bd7b36aafe89064e9fd23520f5ae3df7178ed
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model appointment_notification {
+  id                  BigInt              @id @default(autoincrement())
+  notification_id     String              @unique @db.VarChar(20)
+  appointment_id      String              @db.VarChar(20)
+  channel             String              @db.VarChar(20)
+  notification_type   String              @db.VarChar(40)
+  recipient           String?             @db.VarChar(150)
+  status              String              @default("PENDING") @db.VarChar(20)
+  created_at          DateTime            @default(now()) @db.Timestamp(6)
+  appointment_history appointment_history @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model appointment_reschedule_action_log {
+  id                           BigInt                       @id @default(autoincrement())
+  queue_id                     String                       @db.VarChar(20)
+  action                       String                       @db.VarChar(20)
+  performed_by                 String                       @db.VarChar(20)
+  notes                        String?
+  created_at                   DateTime                     @default(now()) @db.Timestamp(6)
+  appointment_reschedule_queue appointment_reschedule_queue @relation(fields: [queue_id], references: [queue_id], onDelete: Cascade)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model appointment_reschedule_queue {
+  id                                BigInt                              @id @default(autoincrement())
+  queue_id                          String                              @unique @db.VarChar(20)
+  appointment_id                    String                              @db.VarChar(20)
+  patient_id                        String                              @db.VarChar(20)
+  employee_id                       String                              @db.VarChar(20)
+  branch_id                         String                              @db.VarChar(10)
+  department_id                     String?                             @db.VarChar(20)
+  old_schedule_id                   BigInt?
+  old_appointment_date              DateTime                            @db.Date
+  old_appointment_time              DateTime                            @db.Time(6)
+  transfer_id                       String?                             @db.VarChar(20)
+  priority                          String                              @default("NORMAL") @db.VarChar(20)
+  reason                            String?
+  status                            String                              @default("PENDING") @db.VarChar(20)
+  assigned_employee_id              String?                             @db.VarChar(20)
+  assigned_branch_id                String?                             @db.VarChar(10)
+  assigned_schedule_id              BigInt?
+  assigned_date                     DateTime?                           @db.Date
+  assigned_time                     DateTime?                           @db.Time(6)
+  created_by                        String                              @db.VarChar(20)
+  created_at                        DateTime                            @default(now()) @db.Timestamp(6)
+  updated_at                        DateTime?                           @db.Timestamp(6)
+  appointment_reschedule_action_log appointment_reschedule_action_log[]
+  appointment_history               appointment_history                 @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade)
+  branch                            branch                              @relation(fields: [branch_id], references: [branch_id])
+  patient_bio_data                  patient_bio_data                    @relation(fields: [patient_id], references: [patient_id])
+  doctor_transfer                   doctor_transfer?                    @relation(fields: [transfer_id], references: [transfer_id])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model branch {
-<<<<<<< HEAD
-  branch_id                                             String                         @unique(map: "uq_branch_branch_id") @default(dbgenerated("nextval('branch_branch_id_seq'::regclass)")) @db.VarChar(10)
-  branch_type                                           String                         @db.VarChar(20)
-  district                                              String?                        @db.VarChar(100)
-  state_name                                            String?                        @db.VarChar(100)
-  branch_code                                           String?                        @db.VarChar(20)
-  country                                               String?                        @db.VarChar(50)
-  total_beds                                            Int?
-  branch_status                                         String?                        @default("Active") @db.VarChar(20)
-  date_of_establish                                     DateTime?                      @db.Date
-  medical_services                                      String?                        @db.VarChar(100)
-  id                                                    BigInt                         @id @default(autoincrement())
-  branch_name                                           String?                        @db.VarChar(50)
-  branch_area                                           String?                        @db.VarChar(50)
-  address                                               String?                        @db.VarChar(500)
-  emergency_no                                          String?                        @db.VarChar(20)
-  hospital_id                                           String?                        @db.VarChar(20)
-  branch_license_no                                     String?                        @db.VarChar(20)
-  website_address                                       String?                        @db.VarChar(100)
-  pan_no                                                String?                        @db.VarChar(20)
-  gst_no                                                String?                        @db.VarChar(20)
-  total_no_emp                                          String?                        @db.VarChar(500)
-  branch_email                                          String?                        @db.VarChar(100)
-  fax_no                                                String?                        @db.VarChar(20)
-  branch_pincode                                        Int?
-  branch_photo_url                                      String?                        @db.VarChar
-  appointment_history                                   appointment_history[]
-  appointment_reschedule_queue                          appointment_reschedule_queue[]
-  hospital                                              hospital?                      @relation(fields: [hospital_id], references: [hospital_id], onDelete: Cascade, map: "fk_branch_hospital")
-  chemotherapy_master                                   chemotherapy_master[]
-  chemotherapy_plan                                     chemotherapy_plan[]
-  doctor_schedule                                       doctor_schedule[]
-  doctor_transfer_new                                   doctor_transfer[]              @relation("DoctorTransferNewBranch")
-  employees                                             employees[]
-  encounter                                             encounter[]
-  lab_history                                           lab_history[]
-  lab_order                                             lab_order[]
-  lab_order_item                                        lab_order_item[]
-  lab_report                                            lab_report[]
-  lab_result                                            lab_result[]
-  lab_test_category                                     lab_test_category[]
-  lab_test_master                                       lab_test_master[]
-  patient_bio_data                                      patient_bio_data[]
-  patient_history                                       patient_history[]
-  prescription                                          prescription[]
-  sample_collection                                     sample_collection[]
-  user_branch_mapping                                   user_branch_mapping[]
-  user_log                                              user_log[]
-  user_table                                            user_table[]
-=======
-  branch_id           String                @unique(map: "uq_branch_branch_id") @default(dbgenerated("nextval('branch_branch_id_seq'::regclass)")) @db.VarChar(10)
-  branch_type         String                @db.VarChar(20)
-  district            String?               @db.VarChar(100)
-  state_name          String?               @db.VarChar(100)
-  branch_code         String?               @db.VarChar(20)
-  country             String?               @db.VarChar(50)
-  total_beds          Int?
-  branch_status       String?               @default("Active") @db.VarChar(20)
-  date_of_establish   DateTime?             @db.Date
-  medical_services    String?               @db.VarChar(100)
-  id                  BigInt                @id @default(autoincrement())
-  branch_name         String?               @db.VarChar(50)
-  branch_area         String?               @db.VarChar(50)
-  address             String?               @db.VarChar(500)
-  emergency_no        String?               @db.VarChar(20)
-  hospital_id         String?               @db.VarChar(20)
-  branch_license_no   String?               @db.VarChar(20)
-  website_address     String?               @db.VarChar(100)
-  pan_no              String?               @db.VarChar(20)
-  gst_no              String?               @db.VarChar(20)
-  total_no_emp        String?               @db.VarChar(500)
-  branch_email        String?               @db.VarChar(100)
-  fax_no              String?               @db.VarChar(20)
-  branch_pincode      Int?
-  branch_photo_url    String?               @db.VarChar
-  appointment_history appointment_history[]
-  hospital            hospital?             @relation(fields: [hospital_id], references: [hospital_id], onDelete: Cascade, map: "fk_branch_hospital")
-  chemotherapy_master chemotherapy_master[]
-  chemotherapy_plan   chemotherapy_plan[]
-  doctor_schedule     doctor_schedule[]
-  employees           employees[]
-  encounter           encounter[]
-  lab_history         lab_history[]
-  lab_order           lab_order[]
-  lab_order_item      lab_order_item[]
-  lab_report          lab_report[]
-  lab_result          lab_result[]
-  lab_test_category   lab_test_category[]
-  lab_test_master     lab_test_master[]
-  patient_bio_data    patient_bio_data[]
-  patient_history     patient_history[]
-  prescription        prescription[]
-  sample_collection   sample_collection[]
-  user_branch_mapping user_branch_mapping[]
-  user_log            user_log[]
-  user_table          user_table[]
->>>>>>> 858bd7b36aafe89064e9fd23520f5ae3df7178ed
+  branch_id                    String                         @unique(map: "uq_branch_branch_id") @default(dbgenerated("nextval('branch_branch_id_seq'::regclass)")) @db.VarChar(10)
+  branch_type                  String                         @db.VarChar(20)
+  district                     String?                        @db.VarChar(100)
+  state_name                   String?                        @db.VarChar(100)
+  branch_code                  String?                        @db.VarChar(20)
+  country                      String?                        @db.VarChar(50)
+  total_beds                   Int?
+  branch_status                String?                        @default("Active") @db.VarChar(20)
+  date_of_establish            DateTime?                      @db.Date
+  medical_services             String?                        @db.VarChar(100)
+  id                           BigInt                         @id @default(autoincrement())
+  branch_name                  String?                        @db.VarChar(50)
+  branch_area                  String?                        @db.VarChar(50)
+  address                      String?                        @db.VarChar(500)
+  emergency_no                 String?                        @db.VarChar(20)
+  hospital_id                  String?                        @db.VarChar(20)
+  branch_license_no            String?                        @db.VarChar(20)
+  website_address              String?                        @db.VarChar(100)
+  pan_no                       String?                        @db.VarChar(20)
+  gst_no                       String?                        @db.VarChar(20)
+  total_no_emp                 String?                        @db.VarChar(500)
+  branch_email                 String?                        @db.VarChar(100)
+  fax_no                       String?                        @db.VarChar(20)
+  branch_pincode               Int?
+  branch_photo_url             String?                        @db.VarChar
+  appointment_history          appointment_history[]
+  appointment_reschedule_queue appointment_reschedule_queue[]
+  hospital                     hospital?                      @relation(fields: [hospital_id], references: [hospital_id], onDelete: Cascade, map: "fk_branch_hospital")
+  chemotherapy_master          chemotherapy_master[]
+  chemotherapy_plan            chemotherapy_plan[]
+  doctor_schedule              doctor_schedule[]
+  doctor_transfer              doctor_transfer[]
+  employees                    employees[]
+  encounter                    encounter[]
+  lab_history                  lab_history[]
+  lab_order                    lab_order[]
+  lab_order_item               lab_order_item[]
+  lab_report                   lab_report[]
+  lab_result                   lab_result[]
+  lab_test_category            lab_test_category[]
+  lab_test_master              lab_test_master[]
+  patient_bio_data             patient_bio_data[]
+  patient_history              patient_history[]
+  prescription                 prescription[]
+  sample_collection            sample_collection[]
+  user_branch_mapping          user_branch_mapping[]
+  user_log                     user_log[]
+  user_table                   user_table[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -708,6 +665,55 @@ model doctor_schedule {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model doctor_transfer {
+  id                                                           BigInt                            @id @default(autoincrement())
+  transfer_id                                                  String                            @unique @db.VarChar(20)
+  employee_id                                                  String                            @db.VarChar(20)
+  new_branch_id                                                String                            @db.VarChar(10)
+  old_department_id                                            String?                           @db.VarChar(20)
+  new_department_id                                            String?                           @db.VarChar(20)
+  effective_date                                               DateTime                          @db.Date
+  new_schedule                                                 Json
+  transfer_reason                                              String
+  status                                                       String                            @default("PENDING_CONFIRMATION") @db.VarChar(30)
+  action_taken                                                 String?                           @db.VarChar(20)
+  affected_appointment_count                                   Int                               @default(0)
+  replacement_employee_id                                      String?                           @db.VarChar(20)
+  requested_by                                                 String                            @db.VarChar(20)
+  requested_at                                                 DateTime                          @default(now()) @db.Timestamp(6)
+  confirmed_by                                                 String?                           @db.VarChar(20)
+  confirmed_at                                                 DateTime?                         @db.Timestamp(6)
+  completed_at                                                 DateTime?                         @db.Timestamp(6)
+  closing_schedule_ids                                         BigInt[]
+  appointment_reschedule_queue                                 appointment_reschedule_queue[]
+  employees_doctor_transfer_employee_idToemployees             employees                         @relation("doctor_transfer_employee_idToemployees", fields: [employee_id], references: [employee_id])
+  branch                                                       branch                            @relation(fields: [new_branch_id], references: [branch_id])
+  employees_doctor_transfer_replacement_employee_idToemployees employees?                        @relation("doctor_transfer_replacement_employee_idToemployees", fields: [replacement_employee_id], references: [employee_id])
+  doctor_transfer_appointment_log                              doctor_transfer_appointment_log[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model doctor_transfer_appointment_log {
+  id                   BigInt              @id @default(autoincrement())
+  transfer_id          String              @db.VarChar(20)
+  appointment_id       String              @db.VarChar(20)
+  action               String              @db.VarChar(20)
+  old_employee_id      String              @db.VarChar(20)
+  old_branch_id        String              @db.VarChar(10)
+  old_schedule_id      BigInt?
+  old_appointment_date DateTime            @db.Date
+  old_appointment_time DateTime            @db.Time(6)
+  new_employee_id      String?             @db.VarChar(20)
+  new_branch_id        String?             @db.VarChar(10)
+  new_schedule_id      BigInt?
+  result_status        String              @db.VarChar(20)
+  notes                String?
+  created_at           DateTime            @default(now()) @db.Timestamp(6)
+  appointment_history  appointment_history @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade)
+  doctor_transfer      doctor_transfer     @relation(fields: [transfer_id], references: [transfer_id], onDelete: Cascade)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model employees {
   id                                                                                 BigInt                        @id @default(autoincrement())
   user_id                                                                            String?                       @unique(map: "uq_employees_user_id") @db.VarChar(20)
@@ -744,14 +750,11 @@ model employees {
   employee_no_experence                                                              BigInt?
   emp_gender                                                                         String?                       @db.VarChar
   emp_DOB                                                                            String?                       @db.VarChar
-<<<<<<< HEAD
   permanent_employee_state                                                           String?                       @db.VarChar
   permanent_employee_district                                                        String?                       @db.VarChar
   permanent_employee_area                                                            String?                       @db.VarChar
   permanent_employee_pincode                                                         BigInt?
   age                                                                                BigInt?
-=======
->>>>>>> 858bd7b36aafe89064e9fd23520f5ae3df7178ed
   appointment_history                                                                appointment_history[]
   chemotherapy_administration_chemotherapy_administration_verified_byToemployees     chemotherapy_administration[] @relation("chemotherapy_administration_verified_byToemployees")
   chemotherapy_administration_chemotherapy_administration_administered_byToemployees chemotherapy_administration[] @relation("chemotherapy_administration_administered_byToemployees")
@@ -763,8 +766,8 @@ model employees {
   chemotherapy_vitals                                                                chemotherapy_vitals[]
   doctor_profile                                                                     doctor_profile?
   doctor_schedule                                                                    doctor_schedule[]
-  doctor_transfer_as_doctor                                                          doctor_transfer[]             @relation("DoctorTransferDoctor")
-  doctor_transfer_as_replacement                                                     doctor_transfer[]             @relation("DoctorTransferReplacement")
+  doctor_transfer_doctor_transfer_employee_idToemployees                             doctor_transfer[]             @relation("doctor_transfer_employee_idToemployees")
+  doctor_transfer_doctor_transfer_replacement_employee_idToemployees                 doctor_transfer[]             @relation("doctor_transfer_replacement_employee_idToemployees")
   branch                                                                             branch?                       @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_employee_branch")
   department_master                                                                  department_master?            @relation(fields: [department_id], references: [department_id], onDelete: Cascade, map: "fk_employee_department")
   user_table                                                                         user_table?                   @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_employee_user")
@@ -932,8 +935,6 @@ model lab_order {
   user_table            user_table?          @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_lab_order_user")
   lab_order_item        lab_order_item[]
   lab_report            lab_report[]
-<<<<<<< HEAD
-=======
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -985,7 +986,6 @@ model lab_report {
   employees          employees?    @relation(fields: [approved_by], references: [employee_id], onDelete: Restrict, map: "fk_lab_report_employee")
   lab_order          lab_order     @relation(fields: [lab_order_id], references: [lab_order_id], onDelete: Cascade, map: "fk_lab_report_order")
   user_table         user_table?   @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_lab_report_user")
->>>>>>> 858bd7b36aafe89064e9fd23520f5ae3df7178ed
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1011,8 +1011,6 @@ model lab_result {
   lab_order_item       lab_order_item    @relation(fields: [lab_order_item_id], references: [lab_order_item_id], onDelete: Cascade, map: "fk_lab_result_order_item")
   sample_collection    sample_collection @relation(fields: [sample_collection_id], references: [sample_collection_id], onDelete: Cascade, map: "fk_lab_result_sample")
   user_table           user_table?       @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_lab_result_user")
-<<<<<<< HEAD
-=======
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1055,7 +1053,6 @@ model lab_test_master {
   branch               branch?           @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_lab_test_branch")
   lab_test_category    lab_test_category @relation(fields: [lab_test_category_id], references: [lab_test_category_id], map: "fk_lab_test_category")
   user_table           user_table?       @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_lab_test_user")
->>>>>>> 858bd7b36aafe89064e9fd23520f5ae3df7178ed
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1366,229 +1363,4 @@ model user_table {
   user_branch_mapping user_branch_mapping[]
   user_log            user_log[]
   branch              branch?               @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_user_branch")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model lab_order_item {
-  id                BigInt              @id @default(autoincrement())
-  lab_order_item_id String              @unique @db.VarChar(20)
-  lab_order_id      String              @db.VarChar(20)
-  lab_test_id       String              @db.VarChar(20)
-  quantity          Int?                @default(1)
-  price             Decimal?            @default(0.00) @db.Decimal(10, 2)
-  discount          Decimal?            @default(0.00) @db.Decimal(10, 2)
-  net_amount        Decimal?            @default(0.00) @db.Decimal(10, 2)
-  item_status       String?             @default("Ordered") @db.VarChar(30)
-  remarks           String?
-  created_at        DateTime?           @default(now()) @db.Timestamp(6)
-  updated_at        DateTime?           @default(now()) @db.Timestamp(6)
-  branch_id         String?             @db.VarChar(10)
-  user_id           String?             @db.VarChar(20)
-  lab_history       lab_history[]
-  branch            branch?             @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_lab_order_item_branch")
-  lab_order         lab_order           @relation(fields: [lab_order_id], references: [lab_order_id], onDelete: Cascade, map: "fk_lab_order_item_order")
-  lab_test_master   lab_test_master     @relation(fields: [lab_test_id], references: [lab_test_id], map: "fk_lab_order_item_test")
-  user_table        user_table?         @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_lab_order_item_user")
-  lab_result        lab_result[]
-  sample_collection sample_collection[]
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model lab_report {
-  id                 BigInt        @id @default(autoincrement())
-  lab_report_id      String        @unique @db.VarChar(20)
-  lab_order_id       String        @db.VarChar(20)
-  report_number      String?       @unique @db.VarChar(50)
-  generated_datetime DateTime?     @default(now()) @db.Timestamp(6)
-  approved_by        String?       @db.VarChar(20)
-  approved_datetime  DateTime?     @db.Timestamp(6)
-  report_status      String?       @default("Generated") @db.VarChar(30)
-  report_file        String?
-  digital_signature  String?
-  report_comment     String?
-  delivered_to       String?       @db.VarChar(150)
-  delivered_datetime DateTime?     @db.Timestamp(6)
-  branch_id          String?       @db.VarChar(10)
-  user_id            String?       @db.VarChar(20)
-  created_at         DateTime?     @default(now()) @db.Timestamp(6)
-  updated_at         DateTime?     @default(now()) @db.Timestamp(6)
-  lab_history        lab_history[]
-  branch             branch?       @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_lab_report_branch")
-  employees          employees?    @relation(fields: [approved_by], references: [employee_id], onDelete: Restrict, map: "fk_lab_report_employee")
-  lab_order          lab_order     @relation(fields: [lab_order_id], references: [lab_order_id], onDelete: Cascade, map: "fk_lab_report_order")
-  user_table         user_table?   @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_lab_report_user")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model lab_test_category {
-  id                   BigInt            @id @default(autoincrement())
-  lab_test_category_id String            @unique @db.VarChar(20)
-  category_name        String            @unique @db.VarChar(100)
-  category_code        String?           @unique @db.VarChar(20)
-  description          String?
-  display_order        Int?              @default(1)
-  category_status      Int?              @default(1) @db.SmallInt
-  created_at           DateTime?         @default(now()) @db.Timestamp(6)
-  updated_at           DateTime?         @default(now()) @db.Timestamp(6)
-  branch_id            String?           @db.VarChar(10)
-  user_id              String?           @db.VarChar(20)
-  branch               branch?           @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_lab_category_branch")
-  user_table           user_table?       @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_lab_category_user")
-  lab_test_master      lab_test_master[]
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model lab_test_master {
-  id                   BigInt            @id @default(autoincrement())
-  lab_test_id          String            @unique @db.VarChar(20)
-  lab_test_category_id String            @db.VarChar(20)
-  test_name            String            @db.VarChar(200)
-  test_code            String            @unique @db.VarChar(50)
-  sample_type          String?           @db.VarChar(100)
-  required_volume      String?           @db.VarChar(50)
-  unit                 String?           @db.VarChar(50)
-  reference_range      String?           @db.VarChar(100)
-  price                Decimal?          @db.Decimal(10, 2)
-  tat_hours            Int?
-  test_status          Int?              @default(1) @db.SmallInt
-  branch_id            String?           @db.VarChar(10)
-  user_id              String?           @db.VarChar(20)
-  created_at           DateTime?         @default(now()) @db.Timestamp(6)
-  updated_at           DateTime?         @default(now()) @db.Timestamp(6)
-  lab_order_item       lab_order_item[]
-  branch               branch?           @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_lab_test_branch")
-  lab_test_category    lab_test_category @relation(fields: [lab_test_category_id], references: [lab_test_category_id], map: "fk_lab_test_category")
-  user_table           user_table?       @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_lab_test_user")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model sample_collection {
-  id                   BigInt         @id @default(autoincrement())
-  sample_collection_id String         @unique @db.VarChar(20)
-  lab_order_item_id    String         @db.VarChar(20)
-  barcode              String?        @unique @db.VarChar(100)
-  container_type       String?        @db.VarChar(100)
-  collection_datetime  DateTime?      @default(now()) @db.Timestamp(6)
-  collected_by         String?        @db.VarChar(20)
-  collection_site      String?        @db.VarChar(150)
-  collected_volume     String?        @db.VarChar(50)
-  collection_status    String?        @default("Collected") @db.VarChar(30)
-  rejection_reason     String?
-  remarks              String?
-  branch_id            String?        @db.VarChar(10)
-  user_id              String?        @db.VarChar(20)
-  created_at           DateTime?      @default(now()) @db.Timestamp(6)
-  updated_at           DateTime?      @default(now()) @db.Timestamp(6)
-  lab_history          lab_history[]
-  lab_result           lab_result[]
-  branch               branch?        @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_sample_collection_branch")
-  employees            employees?     @relation(fields: [collected_by], references: [employee_id], onDelete: Restrict, map: "fk_sample_collection_employee")
-  lab_order_item       lab_order_item @relation(fields: [lab_order_item_id], references: [lab_order_item_id], onDelete: Cascade, map: "fk_sample_collection_order_item")
-  user_table           user_table?    @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_sample_collection_user")
-}
-
-// A transfer no longer means "close branch A, open branch B" - a doctor can
-// be active at several branches at once. new_branch_id/new_schedule is the
-// assignment being requested; closing_schedule_ids is the set of the
-// doctor's OTHER currently-active doctor_schedule rows (any branch) whose
-// day/time actually overlaps the requested hours - only those get closed.
-model doctor_transfer {
-  id                          BigInt    @id @default(autoincrement())
-  transfer_id                 String    @unique @db.VarChar(20)
-  employee_id                 String    @db.VarChar(20)
-  new_branch_id                String    @db.VarChar(10)
-  old_department_id            String?   @db.VarChar(20)
-  new_department_id            String?   @db.VarChar(20)
-  effective_date               DateTime  @db.Date
-  new_schedule                 Json
-  closing_schedule_ids          BigInt[]
-  transfer_reason              String
-  status                       String    @default("PENDING_CONFIRMATION") @db.VarChar(30)
-  action_taken                 String?   @db.VarChar(20)
-  affected_appointment_count   Int       @default(0)
-  replacement_employee_id      String?   @db.VarChar(20)
-  requested_by                 String    @db.VarChar(20)
-  requested_at                 DateTime  @default(now()) @db.Timestamp(6)
-  confirmed_by                 String?   @db.VarChar(20)
-  confirmed_at                 DateTime? @db.Timestamp(6)
-  completed_at                 DateTime? @db.Timestamp(6)
-
-  employees            employees  @relation("DoctorTransferDoctor", fields: [employee_id], references: [employee_id])
-  replacement_employee employees? @relation("DoctorTransferReplacement", fields: [replacement_employee_id], references: [employee_id])
-  new_branch           branch     @relation("DoctorTransferNewBranch", fields: [new_branch_id], references: [branch_id])
-
-  doctor_transfer_appointment_log doctor_transfer_appointment_log[]
-  appointment_reschedule_queue    appointment_reschedule_queue[]
-}
-
-model doctor_transfer_appointment_log {
-  id                   BigInt              @id @default(autoincrement())
-  transfer_id          String              @db.VarChar(20)
-  appointment_id       String              @db.VarChar(20)
-  action               String              @db.VarChar(20)
-  old_employee_id      String              @db.VarChar(20)
-  old_branch_id        String              @db.VarChar(10)
-  old_schedule_id      BigInt?
-  old_appointment_date DateTime            @db.Date
-  old_appointment_time DateTime            @db.Time(6)
-  new_employee_id      String?             @db.VarChar(20)
-  new_branch_id        String?             @db.VarChar(10)
-  new_schedule_id      BigInt?
-  result_status        String              @db.VarChar(20)
-  notes                String?
-  created_at           DateTime            @default(now()) @db.Timestamp(6)
-  appointment_history  appointment_history @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade)
-  doctor_transfer      doctor_transfer     @relation(fields: [transfer_id], references: [transfer_id], onDelete: Cascade)
-}
-
-model appointment_reschedule_queue {
-  id                                BigInt                              @id @default(autoincrement())
-  queue_id                          String                              @unique @db.VarChar(20)
-  appointment_id                    String                              @db.VarChar(20)
-  patient_id                        String                              @db.VarChar(20)
-  employee_id                       String                              @db.VarChar(20)
-  branch_id                         String                              @db.VarChar(10)
-  department_id                     String?                             @db.VarChar(20)
-  old_schedule_id                   BigInt?
-  old_appointment_date              DateTime                            @db.Date
-  old_appointment_time              DateTime                            @db.Time(6)
-  transfer_id                       String?                             @db.VarChar(20)
-  priority                          String                              @default("NORMAL") @db.VarChar(20)
-  reason                            String?
-  status                            String                              @default("PENDING") @db.VarChar(20)
-  assigned_employee_id              String?                             @db.VarChar(20)
-  assigned_branch_id                String?                             @db.VarChar(10)
-  assigned_schedule_id              BigInt?
-  assigned_date                     DateTime?                           @db.Date
-  assigned_time                     DateTime?                           @db.Time(6)
-  created_by                        String                              @db.VarChar(20)
-  created_at                        DateTime                            @default(now()) @db.Timestamp(6)
-  updated_at                        DateTime?                           @updatedAt @db.Timestamp(6)
-  appointment_reschedule_action_log appointment_reschedule_action_log[]
-  appointment_history               appointment_history                 @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade)
-  branch                            branch                              @relation(fields: [branch_id], references: [branch_id])
-  patient_bio_data                  patient_bio_data                    @relation(fields: [patient_id], references: [patient_id])
-  doctor_transfer                   doctor_transfer?                    @relation(fields: [transfer_id], references: [transfer_id])
-}
-
-model appointment_reschedule_action_log {
-  id                           BigInt                       @id @default(autoincrement())
-  queue_id                     String                       @db.VarChar(20)
-  action                       String                       @db.VarChar(20)
-  performed_by                 String                       @db.VarChar(20)
-  notes                        String?
-  created_at                   DateTime                     @default(now()) @db.Timestamp(6)
-  appointment_reschedule_queue appointment_reschedule_queue @relation(fields: [queue_id], references: [queue_id], onDelete: Cascade)
-}
-
-model appointment_notification {
-  id                  BigInt              @id @default(autoincrement())
-  notification_id     String              @unique @db.VarChar(20)
-  appointment_id      String              @db.VarChar(20)
-  channel             String              @db.VarChar(20)
-  notification_type   String              @db.VarChar(40)
-  recipient           String?             @db.VarChar(150)
-  status              String              @default("PENDING") @db.VarChar(20)
-  created_at          DateTime            @default(now()) @db.Timestamp(6)
-  appointment_history appointment_history @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade)
 }
