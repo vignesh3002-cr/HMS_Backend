@@ -96,7 +96,6 @@ model branch {
   chemotherapy_plan                                     chemotherapy_plan[]
   doctor_schedule                                       doctor_schedule[]
   doctor_transfer_doctor_transfer_new_branch_idTobranch doctor_transfer[]              @relation("doctor_transfer_new_branch_idTobranch")
-  doctor_transfer_doctor_transfer_old_branch_idTobranch doctor_transfer[]              @relation("doctor_transfer_old_branch_idTobranch")
   employees                                             employees[]
   encounter                                             encounter[]
   lab_history                                           lab_history[]
@@ -1322,7 +1321,6 @@ model doctor_transfer {
   id                                                           BigInt                            @id @default(autoincrement())
   transfer_id                                                  String                            @unique @db.VarChar(20)
   employee_id                                                  String                            @db.VarChar(20)
-  old_branch_id                                                String                            @db.VarChar(10)
   new_branch_id                                                String                            @db.VarChar(10)
   old_department_id                                            String?                           @db.VarChar(20)
   new_department_id                                            String?                           @db.VarChar(20)
@@ -1338,10 +1336,10 @@ model doctor_transfer {
   confirmed_by                                                 String?                           @db.VarChar(20)
   confirmed_at                                                 DateTime?                         @db.Timestamp(6)
   completed_at                                                 DateTime?                         @db.Timestamp(6)
+  closing_schedule_ids                                         BigInt[]
   appointment_reschedule_queue                                 appointment_reschedule_queue[]
   employees_doctor_transfer_employee_idToemployees             employees                         @relation("doctor_transfer_employee_idToemployees", fields: [employee_id], references: [employee_id])
   branch_doctor_transfer_new_branch_idTobranch                 branch                            @relation("doctor_transfer_new_branch_idTobranch", fields: [new_branch_id], references: [branch_id])
-  branch_doctor_transfer_old_branch_idTobranch                 branch                            @relation("doctor_transfer_old_branch_idTobranch", fields: [old_branch_id], references: [branch_id])
   employees_doctor_transfer_replacement_employee_idToemployees employees?                        @relation("doctor_transfer_replacement_employee_idToemployees", fields: [replacement_employee_id], references: [employee_id])
   doctor_transfer_appointment_log                              doctor_transfer_appointment_log[]
 }

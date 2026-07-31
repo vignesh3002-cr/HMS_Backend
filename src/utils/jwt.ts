@@ -19,7 +19,7 @@ export const generateToken = (
  {
    expiresIn: rememberMe 
       ? "12h"
-      : "5m"
+      : "12h"
  }
  );
 
