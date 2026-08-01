@@ -298,13 +298,12 @@ async updateEmployee(
     employeeId: string,
     data: UpdateEmployeeDto
 ) {
- 
     const employee = await repository.findEmployeeById(employeeId);
- 
+
     if (!employee) {
         throw new Error("Employee not found");
     }
- 
+
     // A doctor's branch is tied to their doctor_schedule/user_branch_mapping
     // rows, which future appointments point at. Changing it here would hit
     // the destructive deleteMany/create block below and silently orphan any
@@ -312,73 +311,64 @@ async updateEmployee(
     // doctor must go through the transfer workflow instead, which checks for
     // future appointments and closes old rows rather than deleting them.
     if (employee.user_table?.role_type === "DOCTOR" && data.branch_ids) {
- 
         const activeMappings = await prisma.user_branch_mapping.findMany({
             where: { employee_id: employeeId, status: 1 },
-            select: { branch_id: true }
+            select: { branch_id: true },
         });
- 
+
         const currentBranchIds = activeMappings.map((mapping) => mapping.branch_id);
         const requestedBranchIds = data.branch_ids;
- 
         const isBranchChange =
             requestedBranchIds.some((id) => !currentBranchIds.includes(id)) ||
             currentBranchIds.some((id) => !requestedBranchIds.includes(id));
- 
+
         if (isBranchChange) {
             throw new Error(
                 "Doctor branch changes must go through POST /api/doctors/:employeeId/transfer to preserve appointment history"
             );
         }
- 
     }
- 
+
     if (data.department_id) {
- 
-        const department = await repository.findDepartment(
-            data.department_id
-        );
- 
+        const department = await repository.findDepartment(data.department_id);
+
         if (!department) {
             throw new Error("Department not found");
         }
- 
     }
- 
+
     if (data.username && employee.user_id) {
- 
         const existingUsername = await repository.findUsername(data.username);
- 
+
         if (existingUsername && existingUsername.user_id !== employee.user_id) {
             throw new Error("Username already exists");
         }
- 
     }
- 
+
     const hashedPassword = data.password
         ? await bcrypt.hash(data.password, Number(process.env.BCRYPT_SALT_ROUNDS))
         : undefined;
- 
+
     // Login credentials + active/inactive status live on user_table, not
     // employees — only touch it when the caller actually changed one of these.
     const userUpdateData: { username?: string; password?: string; user_status?: number } = {};
     if (data.username) userUpdateData.username = data.username;
     if (hashedPassword) userUpdateData.password = hashedPassword;
     if (data.emp_status !== undefined) userUpdateData.user_status = data.emp_status ? 1 : 0;
- 
+
     // A Branch Admin's branch_id is a real assignment — deactivating them
     // must release that branch rather than leaving a stale branch_id on an
     // inactive admin. Every other role's branch_id is just their home branch
     // and is left untouched regardless of active/inactive status.
     const isBranchAdmin = employee.user_table?.role_type === "BRANCH_ADMIN";
     const shouldReleaseBranch = isBranchAdmin && data.emp_status === false;
- 
+
     const employeeUpdateData: Record<string, unknown> = {
         first_name: data.first_name,
         middle_name: data.middle_name,
         last_name: data.last_name,
         email: data.email,
-        emp_gender:data.gender,
+        emp_gender: data.gender,
         emp_DOB: data.dob,
         mobile_no: data.mobile_no,
         blood_group: data.blood_group,
@@ -386,7 +376,7 @@ async updateEmployee(
         marital_status: data.marital_status,
         aadhaar_no: data.aadhaar_no,
         pan_no: data.pan_no,
-        age:data.age,
+        age: data.age,
         passport_no: data.passport_no,
         parmanent_address: data.permanent_address,
         current_address: data.current_address,
@@ -406,88 +396,85 @@ async updateEmployee(
         specialization: data.specialization,
         qualification: data.qualification,
         license_no: data.license_no,
-        permanent_employee_state:data.permanent_employee_state,
-        permanent_employee_district:data.permanent_employee_district,
-        permanent_employee_area:data.permanent_employee_area,
+        permanent_employee_state: data.permanent_employee_state,
+        permanent_employee_district: data.permanent_employee_district,
+        permanent_employee_area: data.permanent_employee_area,
     };
- 
+
     if (shouldReleaseBranch) {
         employeeUpdateData.branch_id = null;
     }
- 
+
     const hasUserUpdate = Object.keys(userUpdateData).length > 0 && !!employee.user_id;
     const isDoctor = data.role_type === "DOCTOR" || employee.user_table?.role_type === "DOCTOR";
- 
-    const [updatedEmployee] = await prisma.$transaction([
-        prisma.employees.update({
+    const userId = employee.user_id ?? employee.user_table?.user_id;
+
+    const updatedEmployee = await prisma.$transaction(async (tx) => {
+        const result = await tx.employees.update({
             where: { employee_id: employeeId },
             data: employeeUpdateData,
-        }),
-        ...(hasUserUpdate
-            ? [
-                prisma.user_table.update({
-                    where: { user_id: employee.user_id! },
-                    data: userUpdateData,
-                }),
-            ]
-            : []),
+        });
+
+        if (hasUserUpdate && userId) {
+            await tx.user_table.update({
+                where: { user_id: userId },
+                data: userUpdateData,
+            });
+        }
+
         // Deactivating a Branch Admin also releases whichever branch's
         // active mapping they hold — getAssignableAdmins/getBranchById's
         // "current admin" lookups key off user_branch_mapping.status, not
         // employees.branch_id, so both must be released together or the
         // branch would still show this now-inactive admin as current.
-        ...(shouldReleaseBranch && employee.user_id
-            ? [
-                prisma.user_branch_mapping.updateMany({
-                    where: { user_id: employee.user_id, status: 1 },
-                    data: { status: 0, is_primary_branch: false },
-                }),
-            ]
-            : []),
-    ]);
- 
-    await prisma.$transaction(async (tx) => {
+        if (shouldReleaseBranch && userId) {
+            await tx.user_branch_mapping.updateMany({
+                where: { user_id: userId, status: 1 },
+                data: { status: 0, is_primary_branch: false },
+            });
+        }
+
         if (data.branch_ids) {
             await tx.user_branch_mapping.deleteMany({
                 where: {
-                    user_id: employee.user_table?.user_id!
-                }
+                    user_id: userId!,
+                },
             });
- 
+
             for (const branchId of data.branch_ids) {
                 await tx.user_branch_mapping.create({
                     data: {
-                        user_id: employee.user_table?.user_id!,
+                        user_id: userId!,
                         branch_id: branchId,
                         employee_id: employeeId,
-                        status: 1
-                    }
+                        status: 1,
+                    },
                 });
             }
         }
- 
+
         if (isDoctor) {
             await tx.doctor_profile.upsert({
                 where: {
-                    employee_id: employeeId
+                    employee_id: employeeId,
                 },
                 update: {
-                    consultation_minutes: data.consultation_minutes ?? 20
+                    consultation_minutes: data.consultation_minutes ?? 20,
                 },
                 create: {
                     employee_id: employeeId,
-                    consultation_minutes: data.consultation_minutes ?? 20
-                }
+                    consultation_minutes: data.consultation_minutes ?? 20,
+                },
             });
         }
- 
+
         if (data.working_hours) {
             await tx.doctor_schedule.deleteMany({
                 where: {
-                    employee_id: employeeId
-                }
+                    employee_id: employeeId,
+                },
             });
- 
+
             for (const schedule of data.working_hours) {
                 await tx.doctor_schedule.create({
                     data: {
@@ -498,57 +485,47 @@ async updateEmployee(
                         start_time: timeStringToUtcDate(schedule.start_time),
                         end_time: timeStringToUtcDate(schedule.end_time),
                         consultation_minutes: data.consultation_minutes ?? 20,
-                        is_active: true
-                    }
+                        is_active: true,
+                    },
                 });
             }
         }
+
+        return {
+            employee_id: result.employee_id,
+            first_name: result.first_name,
+            middle_name: result.middle_name,
+            last_name: result.last_name,
+            email: result.email,
+        };
     });
- 
-    return {
-        employee_id: updatedEmployee.employee_id,
-        first_name: updatedEmployee.first_name,
-        middle_name: updatedEmployee.middle_name,
-        last_name: updatedEmployee.last_name,
-        email: updatedEmployee.email
-    };
+
+    return updatedEmployee;
 }
+
 async getAllEmployees() {
     return repository.getAllEmployees();
 }
+
 async softDeleteEmployee(employeeId: string) {
- 
     const employee = await repository.findEmployeeById(employeeId);
- 
+
     if (!employee) {
         throw new Error("Employee not found");
     }
- 
+
     await repository.softDeleteEmployee(employeeId);
- 
+
     return {
-        message: "Employee deactivated successfully"
+        message: "Employee deactivated successfully",
     };
 }
-async getEmployees (
- 
-    query: GetEmployeesQuery
- 
-) {
- 
+
+async getEmployees(query: GetEmployeesQuery) {
     return repository.getEmployees(query);
- 
-};
- async getEmployeeById(
- 
-    employeeId: string
- 
-){
- 
-    return repository.getEmployeeById(
-        employeeId
-    );
- 
-};
- 
+}
+
+async getEmployeeById(employeeId: string) {
+    return repository.getEmployeeById(employeeId);
+}
 }

@@ -123,6 +123,7 @@ export interface UpdateEmployeeDto {
     permanent_employee_state?: string;
     permanent_employee_district?: string;
     permanent_employee_area? : string;
+
  
     emergency_contact_name?: string;
     emergency_contact_relationship?: string;
