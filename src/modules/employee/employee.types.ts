@@ -53,6 +53,7 @@ export interface CreateEmployeeDto {
     permanent_employee_state?: string;
     permanent_employee_district?: string;
     permanent_employee_area? : string;
+    permanent_employee_pincode?: number;
     permanent_address?: string;
     current_address?: string;
     employee_photo_URL?: string;
@@ -123,7 +124,7 @@ export interface UpdateEmployeeDto {
     permanent_employee_state?: string;
     permanent_employee_district?: string;
     permanent_employee_area? : string;
-
+    permanent_employee_pincode?: number;
  
     emergency_contact_name?: string;
     emergency_contact_relationship?: string;

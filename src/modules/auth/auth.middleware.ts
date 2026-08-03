@@ -1,5 +1,6 @@
 import { Request, RequestHandler } from "express";
 import jwt from "jsonwebtoken";
+import { LOGIN_ENABLED_ROLES } from "../../permissions/roles";
 
 export type AuthRequest = Request & {
   user?: any;
@@ -34,6 +35,17 @@ export const authenticate: RequestHandler = (req, res, next) => {
 
 
     authReq.user = decoded;
+
+    // Check if role is allowed to login
+    const userRole = String(authReq.user?.role ?? "").toLowerCase();
+    const isAllowed = LOGIN_ENABLED_ROLES.some((r) => r.toLowerCase() === userRole);
+
+    if (!isAllowed) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden. Your role is not authorized to access this system.",
+      });
+    }
 
     next();
 

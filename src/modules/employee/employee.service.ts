@@ -3,7 +3,8 @@ import prisma from "../../config/prisma";
 import { EmployeeRepository } from "./employee.repository";
 import { CreateEmployeeDto, UpdateEmployeeDto, GetEmployeesQuery } from "./employee.types";
 import { generateId } from "../../utils/idGenerator";
- 
+import { TOP_LEVEL_ADMIN_ROLES, BRANCH_ADMIN, ADMIN } from "../../permissions/roles";
+
 const repository = new EmployeeRepository();
 let employeeId: string;
 
@@ -18,13 +19,65 @@ function timeStringToUtcDate(time: string): Date {
     const [hours, minutes] = time.split(":").map(Number);
     return new Date(Date.UTC(1970, 0, 1, hours, minutes, 0, 0));
 }
- 
+
 export class EmployeeService {
     async createEmployee(
     data: CreateEmployeeDto,
     createdBy: string
 ) {
+    // Get creator's role to enforce creation permissions
+    const creator = await prisma.user_table.findUnique({
+        where: { user_id: createdBy },
+        select: { role_type: true }
+    });
+
+    const creatorRole = creator?.role_type?.toUpperCase() ?? "";
+    const isTopLevelAdmin = TOP_LEVEL_ADMIN_ROLES.some(r => r === creatorRole);
+    const isBranchAdmin = creatorRole === BRANCH_ADMIN;
+    const isStaffAdmin = creatorRole === ADMIN;
+
+    // Validate role creation permissions
+    const targetRole = data.role_type?.toUpperCase() ?? "";
+    
+    if (isBranchAdmin) {
+        // BRANCH_ADMIN can create all roles except BRANCH_ADMIN
+        if (targetRole === BRANCH_ADMIN) {
+            throw new Error("Branch Admin cannot create another Branch Admin");
+        }
+    }
+    
+    if (isStaffAdmin) {
+        // STAFF_ADMIN can only create PATIENT role
+        if (targetRole !== "PATIENT") {
+            throw new Error("Staff Admin can only create Patient records");
+        }
+    }
+
+    // For BRANCH_ADMIN and STAFF_ADMIN, force branch to their assigned branch
+    let allowedBranchIds: string[] = data.branch_ids;
+    if (isBranchAdmin || isStaffAdmin) {
+        const mappings = await prisma.user_branch_mapping.findMany({
+            where: { user_id: createdBy, status: 1 },
+            select: { branch_id: true }
+        });
+        const userBranchIds = mappings.map(m => m.branch_id);
+        
+        if (userBranchIds.length === 0) {
+            throw new Error("No branch assigned to your account");
+        }
+        
+        // Force single branch - use first assigned branch
+        allowedBranchIds = [userBranchIds[0]];
+        
+        // Validate that the requested branch is within their allowed branches
+        const invalidBranches = data.branch_ids.filter(b => !userBranchIds.includes(b));
+        if (invalidBranches.length > 0) {
+            throw new Error("You can only create employees in your assigned branch(es)");
+        }
+    }
+
     const username = await repository.findUsername(data.username);
+    // ... rest of the existing validation
  
 if (username) {
     throw new Error("Username already exists");
@@ -68,16 +121,16 @@ if (!department) {
     throw new Error("Department not found");
  
 }
-for (const branchId of data.branch_ids) {
- 
+for (const branchId of allowedBranchIds) {
+
     const branch = await repository.findBranch(branchId);
- 
+
     if (!branch) {
- 
+
         throw new Error(`Branch ${branchId} not found`);
- 
+
     }
- 
+
 }
 if (
     data.role_type === "DOCTOR" &&
@@ -141,15 +194,15 @@ if(data.role_type === "DOCTOR"){
 }
  
 const employee = await tx.employees.create({
- 
+
     data: {
- 
+
         employee_id: employeeId,
- 
+
         user_id: user.user_id,
- 
-        branch_id: data.branch_ids[0],
- 
+
+        branch_id: allowedBranchIds[0],
+
         first_name: data.first_name,
  
         middle_name: data.middle_name,
@@ -197,6 +250,7 @@ const employee = await tx.employees.create({
         permanent_employee_state:data.permanent_employee_state,
         permanent_employee_district:data.permanent_employee_district,
         permanent_employee_area:data.permanent_employee_area,
+        permanent_employee_pincode: data.permanent_employee_pincode,
         license_no: data.license_no,
         emp_status: true,
         employee_photo_URL: data.employee_photo_URL,
@@ -209,23 +263,23 @@ const employee = await tx.employees.create({
     }
  
 });
-for (const branchId of data.branch_ids) {
- 
+for (const branchId of allowedBranchIds) {
+
     await tx.user_branch_mapping.create({
- 
+
         data: {
- 
+
             user_id: user.user_id!,
- 
+
             branch_id: branchId,
             employee_id: employeeId,
- 
+
             status: 1
- 
+
         }
- 
+
     });
- 
+
 }
 if (data.role_type === "DOCTOR") {
  
@@ -296,12 +350,45 @@ return {
  
 async updateEmployee(
     employeeId: string,
-    data: UpdateEmployeeDto
+    data: UpdateEmployeeDto,
+    updatedBy: string
 ) {
+    // Get caller's role to enforce field-level permissions
+    const caller = await prisma.user_table.findUnique({
+        where: { user_id: updatedBy },
+        select: { role_type: true }
+    });
+
+    const callerRole = caller?.role_type?.toUpperCase() ?? "";
+    const isTopLevelAdmin = TOP_LEVEL_ADMIN_ROLES.some(r => r === callerRole);
+    const isBranchAdmin = callerRole === BRANCH_ADMIN;
+    const isStaffAdmin = callerRole === ADMIN;
+
     const employee = await repository.findEmployeeById(employeeId);
 
     if (!employee) {
         throw new Error("Employee not found");
+    }
+
+    // STAFF_ADMIN field-level restrictions: read-only fields
+    if (isStaffAdmin) {
+        const restrictedFields = [
+            'role_type', 'branch_ids', 'password', 'user_status', 
+            'username', 'employee_id', 'user_id'
+        ];
+        for (const field of restrictedFields) {
+            if (data[field as keyof UpdateEmployeeDto] !== undefined) {
+                throw new Error(`Staff Admin cannot modify ${field}`);
+            }
+        }
+    }
+
+    // BRANCH_ADMIN cannot change role to BRANCH_ADMIN or DOCTOR
+    if (isBranchAdmin && data.role_type) {
+        const targetRole = data.role_type.toUpperCase();
+        if (targetRole === BRANCH_ADMIN || targetRole === "DOCTOR") {
+            throw new Error("Branch Admin cannot assign Branch Admin or Doctor roles");
+        }
     }
 
     // A doctor's branch is tied to their doctor_schedule/user_branch_mapping
@@ -354,14 +441,14 @@ async updateEmployee(
     const userUpdateData: { username?: string; password?: string; user_status?: number } = {};
     if (data.username) userUpdateData.username = data.username;
     if (hashedPassword) userUpdateData.password = hashedPassword;
-    if (data.emp_status !== undefined) userUpdateData.user_status = data.emp_status ? 1 : 0;
+    if (data.emp_status !== undefined) userUpdateData.user_status = data.emp_status ? 0 : 1;
 
     // A Branch Admin's branch_id is a real assignment — deactivating them
     // must release that branch rather than leaving a stale branch_id on an
     // inactive admin. Every other role's branch_id is just their home branch
     // and is left untouched regardless of active/inactive status.
-    const isBranchAdmin = employee.user_table?.role_type === "BRANCH_ADMIN";
-    const shouldReleaseBranch = isBranchAdmin && data.emp_status === false;
+    const isBranchAdminTarget = employee.user_table?.role_type === "BRANCH_ADMIN";
+    const shouldReleaseBranch = isBranchAdminTarget && data.emp_status === false;
 
     const employeeUpdateData: Record<string, unknown> = {
         first_name: data.first_name,
@@ -399,6 +486,7 @@ async updateEmployee(
         permanent_employee_state: data.permanent_employee_state,
         permanent_employee_district: data.permanent_employee_district,
         permanent_employee_area: data.permanent_employee_area,
+        permanent_employee_pincode: data.permanent_employee_pincode,
     };
 
     if (shouldReleaseBranch) {

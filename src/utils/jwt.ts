@@ -12,8 +12,11 @@ export const generateToken = (
 
  return jwt.sign(
  {
-   id:user.id,
-   username:user.username
+   id:user.user_id ?? user.id,
+   user_id:user.user_id,
+   username:user.username,
+   role:user.role,
+   hospital_id:user.hospital_id
  },
  process.env.JWT_SECRET!,
  {

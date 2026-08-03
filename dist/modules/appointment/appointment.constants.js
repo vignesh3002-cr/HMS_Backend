@@ -8,7 +8,11 @@ exports.APPOINTMENT_STATUS = {
     IN_CONSULTATION: "IN_CONSULTATION",
     COMPLETED: "COMPLETED",
     CANCELLED: "CANCELLED",
-    NO_SHOW: "NO_SHOW"
+    NO_SHOW: "NO_SHOW",
+    // Set only by the doctor-transfer workflow (see modules/doctor-transfer) -
+    // not reachable through the generic PATCH /:appointmentNo/status endpoint.
+    TRANSFER_REVIEW_REQUIRED: "TRANSFER_REVIEW_REQUIRED",
+    RESCHEDULE_REQUIRED: "RESCHEDULE_REQUIRED"
 };
 exports.APPOINTMENT_STATUS_VALUES = Object.values(exports.APPOINTMENT_STATUS);
 // Once an appointment lands in one of these, it is closed for

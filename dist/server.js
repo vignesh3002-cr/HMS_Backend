@@ -14,6 +14,10 @@ const employee_routes_1 = __importDefault(require("./modules/employee/employee.r
 const department_routes_1 = __importDefault(require("./modules/department/department.routes"));
 const patient_routes_1 = __importDefault(require("./modules/patient/patient.routes"));
 const appointment_routes_1 = __importDefault(require("./modules/appointment/appointment.routes"));
+const encounter_routes_1 = __importDefault(require("./modules/encounter/encounter.routes"));
+//import prescriptionRoutes from "./modules/prescription/prescription.routes";
+//import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
+const doctorTransfer_routes_1 = __importDefault(require("./modules/doctor-transfer/doctorTransfer.routes"));
 const lab_test_category_routes_1 = __importDefault(require("./modules/lab-test-category/lab-test-category.routes"));
 const lab_test_master_routes_1 = __importDefault(require("./modules/lab-test-master/lab-test-master.routes"));
 const lab_order_routes_1 = __importDefault(require("./modules/lab-order/lab-order-routes"));
@@ -27,7 +31,44 @@ BigInt.prototype.toJSON = function () {
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cookie_parser_1.default)());
-app.use((0, cors_1.default)());
+const configuredOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+const allowedOrigins = new Set([
+    ...configuredOrigins,
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]);
+app.use((0, cors_1.default)({
+    origin: (origin, callback) => {
+        if (!origin) {
+            callback(null, true);
+            return;
+        }
+        if (allowedOrigins.has(origin)) {
+            callback(null, true);
+            return;
+        }
+        callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "Cache-Control",
+        "Accept",
+        "Origin",
+        "Referer",
+        "User-Agent",
+        "x-branch-id",
+    ],
+    optionsSuccessStatus: 200,
+}));
 app.use((0, cookie_parser_1.default)());
 app.use(express_1.default.json());
 app.get("/api/health", (_req, res) => {
@@ -44,6 +85,10 @@ app.use("/api/lab-test-categories", lab_test_category_routes_1.default);
 app.use("/api/lab-test-master", lab_test_master_routes_1.default);
 app.use("/api/lab-order", lab_order_routes_1.default);
 app.use("/api/appointments", appointment_routes_1.default);
+app.use("/api/encounters", encounter_routes_1.default);
+//app.use("/api/prescriptions", prescriptionRoutes);
+//app.use("/api/chemotherapy", chemotherapyRoutes);
+app.use("/api/doctors", doctorTransfer_routes_1.default);
 app.use("/api/hashpassword", async (req, res) => {
     const { password } = req.body;
     const hashedPassword = await (0, bcrypt_1.hashPassword)(password);

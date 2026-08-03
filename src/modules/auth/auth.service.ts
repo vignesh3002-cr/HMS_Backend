@@ -5,14 +5,7 @@ import prisma from "../../config/prisma";
 import { generateId } from "../../utils/idGenerator";
 import { randomInt } from "crypto";
 import { sendOtpEmail } from "../../utils/mail";
-
-const BRANCH_SCOPED_ROLES = [
-  "BRANCH_ADMIN",
-  "DOCTOR",
-  "NURSE",
-  "PHARMACIST",
-  "STAFF",
-];
+import { TOP_LEVEL_ADMIN_ROLES } from "../../permissions/roles";
 
 type AuthUser = NonNullable<Awaited<ReturnType<AuthRepository["findUserByUsername"]>>>;
 
@@ -25,7 +18,11 @@ export class AuthService {
     const role = user.role_type;
     const employee = user.employees;
 
-    if (role !== "HEAD_ADMIN") {
+    const isTopLevelAdmin = TOP_LEVEL_ADMIN_ROLES.some(
+      (r) => r.toLowerCase() === String(role ?? "").toLowerCase()
+    );
+
+    if (!isTopLevelAdmin) {
 
       if (!employee) {
         throw new Error("Employee profile not found. Please contact the administrator.");
