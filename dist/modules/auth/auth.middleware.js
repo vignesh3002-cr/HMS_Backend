@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.authenticate = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const roles_1 = require("../../permissions/roles");
 const authenticate = (req, res, next) => {
     const authReq = req;
     try {
@@ -21,6 +22,15 @@ const authenticate = (req, res, next) => {
         }
         const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
         authReq.user = decoded;
+        // Check if role is allowed to login
+        const userRole = String(authReq.user?.role ?? "").toLowerCase();
+        const isAllowed = roles_1.LOGIN_ENABLED_ROLES.some((r) => r.toLowerCase() === userRole);
+        if (!isAllowed) {
+            return res.status(403).json({
+                success: false,
+                message: "Forbidden. Your role is not authorized to access this system.",
+            });
+        }
         next();
     }
     catch (error) {

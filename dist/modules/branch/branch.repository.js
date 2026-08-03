@@ -116,7 +116,7 @@ class BranchRepository {
     async getAssignableAdmins(search) {
         const where = {
             role_type: "BRANCH_ADMIN",
-            user_status: 1, // active users
+            user_status: 0, // active users (0 = Active, 1 = Inactive)
             ...(search && {
                 OR: [
                     { username: { contains: search, mode: "insensitive" } },
@@ -152,7 +152,7 @@ class BranchRepository {
             where: {
                 user_id: userId,
                 role_type: "BRANCH_ADMIN",
-                user_status: 1,
+                user_status: 0,
             },
         });
     }

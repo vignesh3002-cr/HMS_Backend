@@ -1,13 +1,32 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authorize = void 0;
-const authorize = (...roles) => {
+exports.authorizeRoles = exports.authorize = void 0;
+const permission_service_1 = require("../modules/permission/permission.service");
+const authorize = (permissionKey) => {
+    return async (req, res, next) => {
+        const authReq = req;
+        if (!authReq.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+            });
+        }
+        const userRole = String(authReq.user.role ?? "").toUpperCase();
+        const hasPermission = await permission_service_1.permissionService.hasPermission(userRole, permissionKey);
+        if (!hasPermission) {
+            return res.status(403).json({
+                success: false,
+                message: `Forbidden. Required permission: ${permissionKey}`,
+                required_permission: permissionKey,
+            });
+        }
+        next();
+    };
+};
+exports.authorize = authorize;
+const authorizeRoles = (...roles) => {
     return (req, res, next) => {
         const authReq = req;
-        console.log("Allowed Roles:", roles);
-        console.log("User:", authReq.user);
-        console.log("User Role:", authReq.user?.role);
-        console.log("Hospital ID:", authReq.user?.hospital_id);
         if (!authReq.user) {
             return res.status(401).json({
                 success: false,
@@ -17,14 +36,12 @@ const authorize = (...roles) => {
         const userRole = String(authReq.user.role ?? "").toLowerCase();
         const allowed = roles.some((r) => r.toLowerCase() === userRole);
         if (!allowed) {
-            console.log("Role Not Matched");
             return res.status(403).json({
                 success: false,
                 message: "Forbidden. You don't have permission.",
             });
         }
-        console.log("Role Matched");
         next();
     };
 };
-exports.authorize = authorize;
+exports.authorizeRoles = authorizeRoles;

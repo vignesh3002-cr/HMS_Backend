@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { AppointmentController } from "./appointment.controller";
 import { authenticate } from "../auth/auth.middleware";
-import { authorize } from "../../middleware/authorize";
+import { authorize, authorizeRoles } from "../../middleware/authorize";
+import { branchScope } from "../../middleware/branchScope";
 import {
     createAppointmentValidation,
     updateAppointmentValidation,
@@ -31,7 +32,7 @@ const transferController = new DoctorTransferController();
 router.get(
     "/reschedule-queue",
     authenticate,
-    authorize(...DOCTOR_TRANSFER_ROLES),
+    authorizeRoles(...DOCTOR_TRANSFER_ROLES),
     getRescheduleQueueValidation,
     transferController.getRescheduleQueue.bind(transferController)
 );
@@ -39,7 +40,7 @@ router.get(
 router.put(
     "/reschedule/:appointmentId",
     authenticate,
-    authorize(...DOCTOR_TRANSFER_ROLES),
+    authorizeRoles(...DOCTOR_TRANSFER_ROLES),
     processRescheduleActionValidation,
     transferController.processRescheduleAction.bind(transferController)
 );
@@ -47,7 +48,7 @@ router.put(
 router.post(
     "/transfer-preview",
     authenticate,
-    authorize(...DOCTOR_TRANSFER_ROLES),
+    authorizeRoles(...DOCTOR_TRANSFER_ROLES),
     transferPreviewValidation,
     transferController.transferPreview.bind(transferController)
 );
@@ -55,6 +56,7 @@ router.post(
 router.post(
     "/",
     authenticate,
+    authorize("appointment.create"),
     createAppointmentValidation,
     controller.createAppointment.bind(controller)
 );
@@ -62,6 +64,8 @@ router.post(
 router.get(
     "/",
     authenticate,
+    authorize("appointment.read"),
+    branchScope,
     getAppointmentsValidation,
     controller.getAppointments.bind(controller)
 );
@@ -69,6 +73,7 @@ router.get(
 router.get(
     "/available-slots",
     authenticate,
+    authorize("appointment.read"),
     getAvailableSlotsValidation,
     controller.getAvailableSlots.bind(controller)
 );
@@ -90,12 +95,14 @@ router.get(
 router.get(
     "/:appointmentNo",
     authenticate,
+    authorize("appointment.read"),
     controller.getAppointmentByNumber.bind(controller)
 );
 
 router.put(
     "/:appointmentNo",
     authenticate,
+    authorize("appointment.update"),
     updateAppointmentValidation,
     controller.updateAppointment.bind(controller)
 );
@@ -103,6 +110,7 @@ router.put(
 router.patch(
     "/:appointmentNo/status",
     authenticate,
+    authorize("appointment.update"),
     updateAppointmentStatusValidation,
     controller.updateAppointmentStatus.bind(controller)
 );
@@ -111,6 +119,7 @@ router.patch(
 router.delete(
     "/:appointmentNo",
     authenticate,
+    authorize("appointment.cancel"),
     cancelAppointmentValidation,
     controller.cancelAppointment.bind(controller)
 );

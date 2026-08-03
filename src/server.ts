@@ -12,6 +12,8 @@ import departmentRoutes from "./modules/department/department.routes";
 import patientRoutes from "./modules/patient/patient.routes";
 import appointmentRoutes from "./modules/appointment/appointment.routes";
 import encounterRoutes from "./modules/encounter/encounter.routes";
+import permissionRoutes from "./modules/permission/permission.routes";
+import roleRoutes from "./modules/role/role.routes";
 //import prescriptionRoutes from "./modules/prescription/prescription.routes";
 //import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
 import doctorTransferRoutes from "./modules/doctor-transfer/doctorTransfer.routes";
@@ -71,7 +73,7 @@ app.use(
             "Origin",
             "Referer",
             "User-Agent",
-            "X-Branch-Id",
+            "x-branch-id",
         ],
         optionsSuccessStatus: 200,
     })
@@ -97,6 +99,8 @@ app.use("/api/lab-test-master", labTestMasterRoutes);
 app.use("/api/lab-order", labOrderRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/encounters", encounterRoutes);
+app.use("/api/permissions", permissionRoutes);
+app.use("/api/roles", roleRoutes);
 //app.use("/api/prescriptions", prescriptionRoutes);
 //app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/doctors", doctorTransferRoutes);

@@ -7,49 +7,6 @@ datasource db {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model Permission {
-  id             String           @id @db.VarChar(50)
-  key            String           @unique @db.VarChar(100)
-  name           String           @db.VarChar(100)
-  description    String?          @db.VarChar(255)
-  category       String           @db.VarChar(50)
-  is_active      Boolean          @default(true)
-  created_at     DateTime         @default(now())
-  updated_at     DateTime
-  RolePermission RolePermission[]
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model PermissionAuditLog {
-  id             BigInt   @id @default(autoincrement())
-  role_type      String   @db.VarChar(50)
-  permission_key String   @db.VarChar(100)
-  action         String   @db.VarChar(20)
-  changed_by     String   @db.VarChar(50)
-  changed_at     DateTime @default(now())
-  metadata       Json?
-
-  @@index([changed_by, changed_at])
-  @@index([role_type, changed_at])
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model RolePermission {
-  id             String         @id @db.VarChar(50)
-  role_type      String         @db.VarChar(50)
-  permission_id  String         @db.VarChar(50)
-  granted_by     String         @db.VarChar(50)
-  granted_at     DateTime       @default(now())
-  revoked_at     DateTime?
-  revoked_by     String?        @db.VarChar(50)
-  Permission     Permission     @relation(fields: [permission_id], references: [id])
-  role_id_config role_id_config @relation(fields: [role_type], references: [role_type])
-
-  @@unique([role_type, permission_id])
-  @@index([role_type])
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model appointment_history {
   appointment_id                  String                            @unique(map: "uq_appointment_id") @db.VarChar(20)
   patient_id                      String                            @db.VarChar(20)
@@ -1521,16 +1478,59 @@ model prescription_items {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model role_id_config {
-  role_type      String           @id @db.VarChar(50)
-  prefix         String           @unique @db.VarChar(5)
-  current_number Int              @default(0)
-  description    String?          @db.VarChar(100)
-  created_at     DateTime?        @default(now()) @db.Timestamp(6)
-  display_name   String?          @db.VarChar(50)
-  is_active      Boolean          @default(true)
-  sort_order     Int              @default(0)
-  updated_at     DateTime?
-  RolePermission RolePermission[]
+  role_type       String           @id @db.VarChar(50)
+  prefix          String           @unique @db.VarChar(5)
+  current_number  Int              @default(0)
+  description     String?          @db.VarChar(100)
+  created_at      DateTime?        @default(now()) @db.Timestamp(6)
+  display_name    String?          @db.VarChar(50)
+  is_active       Boolean          @default(true)
+  sort_order      Int              @default(0)
+  updated_at      DateTime?        @updatedAt
+  rolePermissions RolePermission[]
+}
+
+/// Permission catalog - all available permissions in the system
+model Permission {
+  id              String           @id @default(cuid()) @db.VarChar(50)
+  key             String           @unique @db.VarChar(100)
+  name            String           @db.VarChar(100)
+  description     String?          @db.VarChar(255)
+  category        String           @db.VarChar(50)
+  is_active       Boolean          @default(true)
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
+  rolePermissions RolePermission[]
+}
+
+/// Role-Permission mapping (many-to-many)
+model RolePermission {
+  id            String         @id @default(cuid()) @db.VarChar(50)
+  role_type     String         @db.VarChar(50)
+  permission_id String         @db.VarChar(50)
+  granted_by    String         @db.VarChar(50)
+  granted_at    DateTime       @default(now())
+  revoked_at    DateTime?
+  revoked_by    String?        @db.VarChar(50)
+  permission    Permission     @relation(fields: [permission_id], references: [id])
+  roleConfig    role_id_config @relation(fields: [role_type], references: [role_type])
+
+  @@unique([role_type, permission_id])
+  @@index([role_type])
+}
+
+/// Permission audit log for compliance
+model PermissionAuditLog {
+  id             BigInt   @id @default(autoincrement())
+  role_type      String   @db.VarChar(50)
+  permission_key String   @db.VarChar(100)
+  action         String   @db.VarChar(20)
+  changed_by     String   @db.VarChar(50)
+  changed_at     DateTime @default(now())
+  metadata       Json?
+
+  @@index([role_type, changed_at])
+  @@index([changed_by, changed_at])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
