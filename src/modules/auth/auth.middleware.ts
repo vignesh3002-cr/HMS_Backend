@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction, RequestHandler } from "express";
+import { Request, RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 
 export type AuthRequest = Request & {
@@ -6,37 +6,37 @@ export type AuthRequest = Request & {
 };
 
 export const authenticate: RequestHandler = (req, res, next) => {
+
   const authReq = req as AuthRequest;
 
   try {
 
-    const authHeader = authReq.headers.authorization;
+    // Prefer the Authorization header over the cookie - the frontend keeps
+    // the header in sync on every request, whereas a stale/expired "token"
+    // cookie from an earlier session can otherwise shadow a fresh login.
+    const token =
+      authReq.headers.authorization?.split(" ")[1] ||
+      authReq.cookies?.token;
 
-    if (!authHeader) {
+
+    if (!token) {
       return res.status(401).json({
         success: false,
         message: "Authorization token missing",
       });
     }
 
-    const token = authHeader.split(" ")[1];
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid token",
-      });
-    }
 
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET!
     );
-    console.log(decoded);
+
 
     authReq.user = decoded;
 
     next();
+
 
   } catch (error) {
 

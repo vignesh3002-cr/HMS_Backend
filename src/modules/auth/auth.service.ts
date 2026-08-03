@@ -87,7 +87,7 @@ export class AuthService {
 
   }
 
-  async login(username: string, password: string) {
+  async login(username: string, password: string, rememberMe: boolean) {
 
     const user =
       await this.authRepository.findUserByUsername(username);
@@ -105,9 +105,12 @@ export class AuthService {
 
     this.assertAccountUsable(user);
 
-    return {
-      username: user.username,
-    };
+    // OTP flow temporarily disabled - logging in directly after password check
+    // return {
+    //   username: user.username,
+    // };
+
+    return this.buildAuthPayload(user);
 
   }
 
@@ -160,36 +163,37 @@ export class AuthService {
       throw new Error("User not found");
     }
 
-    const otpRecord = await prisma.login_otp.findFirst({
-      where: {
-        user_id: user.user_id!,
-        is_verified: false
-      },
-      orderBy: {
-        created_at: "desc"
-      }
-    });
+    // OTP verification temporarily disabled
+    // const otpRecord = await prisma.login_otp.findFirst({
+    //   where: {
+    //     user_id: user.user_id!,
+    //     is_verified: false
+    //   },
+    //   orderBy: {
+    //     created_at: "desc"
+    //   }
+    // });
 
-    if (!otpRecord) {
-      throw new Error("OTP not found. Please request a new one.");
-    }
+    // if (!otpRecord) {
+    //   throw new Error("OTP not found. Please request a new one.");
+    // }
 
-    if (otpRecord.otp_code !== code) {
-      throw new Error("Invalid OTP");
-    }
+    // if (otpRecord.otp_code !== code) {
+    //   throw new Error("Invalid OTP");
+    // }
 
-    if (otpRecord.expires_at < new Date()) {
-      throw new Error("OTP has expired");
-    }
+    // if (otpRecord.expires_at < new Date()) {
+    //   throw new Error("OTP has expired");
+    // }
 
-    await prisma.login_otp.update({
-      where: {
-        id: otpRecord.id
-      },
-      data: {
-        is_verified: true
-      }
-    });
+    // await prisma.login_otp.update({
+    //   where: {
+    //     id: otpRecord.id
+    //   },
+    //   data: {
+    //     is_verified: true
+    //   }
+    // });
 
     return this.buildAuthPayload(user);
 

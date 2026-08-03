@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { AppointmentController } from "./appointment.controller";
 import { authenticate } from "../auth/auth.middleware";
+import { authorize } from "../../middleware/authorize";
 import {
     createAppointmentValidation,
     updateAppointmentValidation,
@@ -11,10 +12,45 @@ import {
     getDoctorWeekSlotSummaryValidation,
     cancelAppointmentValidation
 } from "./appointment.validation";
+import { DoctorTransferController } from "../doctor-transfer/doctorTransfer.controller";
+import { DOCTOR_TRANSFER_ROLES } from "../doctor-transfer/doctorTransfer.routes";
+import {
+    transferPreviewValidation,
+    getRescheduleQueueValidation,
+    processRescheduleActionValidation
+} from "../doctor-transfer/doctorTransfer.validation";
 
 const router = Router();
 
 const controller = new AppointmentController();
+const transferController = new DoctorTransferController();
+
+// Doctor-transfer related routes - registered before the "/:appointmentNo"
+// catch-all below so single-segment paths like "/reschedule-queue" aren't
+// swallowed by it (same trap documented in branch.routes.ts).
+router.get(
+    "/reschedule-queue",
+    authenticate,
+    authorize(...DOCTOR_TRANSFER_ROLES),
+    getRescheduleQueueValidation,
+    transferController.getRescheduleQueue.bind(transferController)
+);
+
+router.put(
+    "/reschedule/:appointmentId",
+    authenticate,
+    authorize(...DOCTOR_TRANSFER_ROLES),
+    processRescheduleActionValidation,
+    transferController.processRescheduleAction.bind(transferController)
+);
+
+router.post(
+    "/transfer-preview",
+    authenticate,
+    authorize(...DOCTOR_TRANSFER_ROLES),
+    transferPreviewValidation,
+    transferController.transferPreview.bind(transferController)
+);
 
 router.post(
     "/",

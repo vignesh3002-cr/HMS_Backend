@@ -10,6 +10,17 @@ const employee_repository_1 = require("./employee.repository");
 const idGenerator_1 = require("../../utils/idGenerator");
 const repository = new employee_repository_1.EmployeeRepository();
 let employeeId;
+// doctor_schedule.start_time/end_time are @db.Time columns with no timezone.
+// Every other reader of this value (appointment.utils.ts's timeStringToDate,
+// and the frontend's toTimeInputValue/formatScheduleTime helpers) treats it
+// as UTC-anchored — construct it the same way here so the round trip is
+// timezone-independent. Building this from a bare "1970-01-01THH:MM:00"
+// string (no explicit UTC) previously got parsed as the server's LOCAL time,
+// silently shifting the stored value whenever the server isn't running in UTC.
+function timeStringToUtcDate(time) {
+    const [hours, minutes] = time.split(":").map(Number);
+    return new Date(Date.UTC(1970, 0, 1, hours, minutes, 0, 0));
+}
 class EmployeeService {
     async createEmployee(data, createdBy) {
         const username = await repository.findUsername(data.username);
@@ -92,6 +103,8 @@ class EmployeeService {
                     marital_status: data.marital_status,
                     aadhaar_no: data.aadhaar_no,
                     pan_no: data.pan_no,
+                    emp_gender: data.gender,
+                    emp_DOB: data.dob,
                     passport_no: data.passport_no,
                     parmanent_address: data.permanent_address,
                     current_address: data.current_address,
@@ -103,6 +116,9 @@ class EmployeeService {
                     joining_date: new Date(data.joining_date),
                     specialization: data.specialization,
                     qualification: data.qualification,
+                    permanent_employee_state: data.permanent_employee_state,
+                    permanent_employee_district: data.permanent_employee_district,
+                    permanent_employee_area: data.permanent_employee_area,
                     license_no: data.license_no,
                     emp_status: true,
                     employee_photo_URL: data.employee_photo_URL,
@@ -127,7 +143,6 @@ class EmployeeService {
                 await tx.doctor_profile.create({
                     data: {
                         employee_id: employee.employee_id,
-                        specialization: data.specialization,
                         consultation_minutes: data.consultation_minutes ?? 20
                     }
                 });
@@ -139,8 +154,8 @@ class EmployeeService {
                         branch_id: schedule.branch_id,
                         day_of_week: schedule.day_of_week,
                         shift_name: schedule.shift_name,
-                        start_time: new Date(`1970-01-01T${schedule.start_time}:00`),
-                        end_time: new Date(`1970-01-01T${schedule.end_time}:00`),
+                        start_time: timeStringToUtcDate(schedule.start_time),
+                        end_time: timeStringToUtcDate(schedule.end_time),
                         consultation_minutes: data.consultation_minutes ?? 20,
                         is_active: true
                     }
@@ -166,6 +181,25 @@ class EmployeeService {
         const employee = await repository.findEmployeeById(employeeId);
         if (!employee) {
             throw new Error("Employee not found");
+        }
+        // A doctor's branch is tied to their doctor_schedule/user_branch_mapping
+        // rows, which future appointments point at. Changing it here would hit
+        // the destructive deleteMany/create block below and silently orphan any
+        // future appointment still on the old schedule. Branch changes for a
+        // doctor must go through the transfer workflow instead, which checks for
+        // future appointments and closes old rows rather than deleting them.
+        if (employee.user_table?.role_type === "DOCTOR" && data.branch_ids) {
+            const activeMappings = await prisma_1.default.user_branch_mapping.findMany({
+                where: { employee_id: employeeId, status: 1 },
+                select: { branch_id: true }
+            });
+            const currentBranchIds = activeMappings.map((mapping) => mapping.branch_id);
+            const requestedBranchIds = data.branch_ids;
+            const isBranchChange = requestedBranchIds.some((id) => !currentBranchIds.includes(id)) ||
+                currentBranchIds.some((id) => !requestedBranchIds.includes(id));
+            if (isBranchChange) {
+                throw new Error("Doctor branch changes must go through POST /api/doctors/:employeeId/transfer to preserve appointment history");
+            }
         }
         if (data.department_id) {
             const department = await repository.findDepartment(data.department_id);
@@ -202,6 +236,8 @@ class EmployeeService {
             middle_name: data.middle_name,
             last_name: data.last_name,
             email: data.email,
+            emp_gender: data.gender,
+            emp_DOB: data.dob,
             mobile_no: data.mobile_no,
             dob: data.dob ? new Date(data.dob) : undefined,
             gender: data.gender,
@@ -210,6 +246,7 @@ class EmployeeService {
             marital_status: data.marital_status,
             aadhaar_no: data.aadhaar_no,
             pan_no: data.pan_no,
+            age: data.age,
             passport_no: data.passport_no,
             parmanent_address: data.permanent_address,
             current_address: data.current_address,
@@ -229,6 +266,9 @@ class EmployeeService {
             specialization: data.specialization,
             qualification: data.qualification,
             license_no: data.license_no,
+            permanent_employee_state: data.permanent_employee_state,
+            permanent_employee_district: data.permanent_employee_district,
+            permanent_employee_area: data.permanent_employee_area,
         };
         if (shouldReleaseBranch) {
             employeeUpdateData.branch_id = null;
@@ -290,7 +330,6 @@ class EmployeeService {
                     },
                     create: {
                         employee_id: employeeId,
-                        specialization: data.specialization ?? "",
                         consultation_minutes: data.consultation_minutes ?? 20
                     }
                 });
@@ -308,8 +347,8 @@ class EmployeeService {
                             branch_id: schedule.branch_id,
                             day_of_week: schedule.day_of_week,
                             shift_name: schedule.shift_name,
-                            start_time: new Date(`1970-01-01T${schedule.start_time}:00`),
-                            end_time: new Date(`1970-01-01T${schedule.end_time}:00`),
+                            start_time: timeStringToUtcDate(schedule.start_time),
+                            end_time: timeStringToUtcDate(schedule.end_time),
                             consultation_minutes: data.consultation_minutes ?? 20,
                             is_active: true
                         }
