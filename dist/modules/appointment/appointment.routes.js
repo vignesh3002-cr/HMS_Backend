@@ -21,6 +21,8 @@ router.post("/transfer-preview", auth_middleware_1.authenticate, (0, authorize_1
 router.post("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.create"), appointment_validation_1.createAppointmentValidation, controller.createAppointment.bind(controller));
 router.get("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.read"), branchScope_1.branchScope, appointment_validation_1.getAppointmentsValidation, controller.getAppointments.bind(controller));
 router.get("/available-slots", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.read"), appointment_validation_1.getAvailableSlotsValidation, controller.getAvailableSlots.bind(controller));
+router.get("/doctor-slot-summary", auth_middleware_1.authenticate, appointment_validation_1.getDoctorSlotSummaryValidation, controller.getDoctorSlotSummary.bind(controller));
+router.get("/doctor-week-slot-summary", auth_middleware_1.authenticate, appointment_validation_1.getDoctorWeekSlotSummaryValidation, controller.getDoctorWeekSlotSummary.bind(controller));
 router.get("/:appointmentNo", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.read"), controller.getAppointmentByNumber.bind(controller));
 router.put("/:appointmentNo", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.update"), appointment_validation_1.updateAppointmentValidation, controller.updateAppointment.bind(controller));
 router.patch("/:appointmentNo/status", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.update"), appointment_validation_1.updateAppointmentStatusValidation, controller.updateAppointmentStatus.bind(controller));

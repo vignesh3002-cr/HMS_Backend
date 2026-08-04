@@ -105,7 +105,7 @@ export interface UpdateEmployeeDto {
  
     email?: string;
     mobile_no?: string;
- 
+
     blood_group?: string;
     nationality?: string;
     marital_status?: string;

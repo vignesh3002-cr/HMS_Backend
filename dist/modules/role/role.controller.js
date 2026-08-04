@@ -8,23 +8,27 @@ const prisma_1 = __importDefault(require("../../config/prisma"));
 class RoleController {
     async listRoles(req, res) {
         try {
-            const roles = await prisma_1.default.role_id_config.findMany({
-                orderBy: { sort_order: "asc" },
-                include: {
-                    _count: {
-                        select: {
-                            rolePermissions: {
-                                where: { revoked_at: null },
+            const [roles, sequences] = await Promise.all([
+                prisma_1.default.role_id_config.findMany({
+                    orderBy: { sort_order: "asc" },
+                    include: {
+                        _count: {
+                            select: {
+                                rolePermissions: {
+                                    where: { revoked_at: null },
+                                },
                             },
                         },
                     },
-                },
-            });
+                }),
+                prisma_1.default.id_sequences.findMany(),
+            ]);
+            const prefixMap = new Map(sequences.map((s) => [s.entity_name, s.prefix]));
             return res.json({
                 success: true,
                 data: roles.map((role) => ({
                     role_type: role.role_type,
-                    prefix: role.prefix,
+                    prefix: prefixMap.get(role.role_type) ?? null,
                     display_name: role.display_name,
                     description: role.description,
                     is_active: role.is_active,

@@ -2,6 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.parseDateOnly = parseDateOnly;
 exports.toDayOfWeek = toDayOfWeek;
+exports.formatDateOnly = formatDateOnly;
+exports.getWeekRange = getWeekRange;
 exports.timeStringToDate = timeStringToDate;
 exports.timeToMinutes = timeToMinutes;
 exports.formatTimeOfDay = formatTimeOfDay;
@@ -14,6 +16,22 @@ function parseDateOnly(date) {
 }
 function toDayOfWeek(date) {
     return appointment_constants_1.DAY_OF_WEEK_NAMES[date.getUTCDay()];
+}
+function formatDateOnly(date) {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+// Monday-start week containing `date` (a UTC-midnight date from parseDateOnly).
+function getWeekRange(date) {
+    const dayOfWeek = date.getUTCDay(); // 0=Sun..6=Sat
+    const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const start = new Date(date);
+    start.setUTCDate(start.getUTCDate() - diffToMonday);
+    const end = new Date(start);
+    end.setUTCDate(start.getUTCDate() + 6);
+    return { start, end };
 }
 function timeStringToDate(time) {
     const [hours, minutes] = time.split(":").map(Number);

@@ -140,6 +140,8 @@ class EmployeeService {
                     last_name: data.last_name,
                     email: data.email,
                     mobile_no: data.mobile_no,
+                    dob: data.dob ? new Date(data.dob) : undefined,
+                    gender: data.gender,
                     blood_group: data.blood_group,
                     nationality: data.nationality,
                     marital_status: data.marital_status,
@@ -186,7 +188,8 @@ class EmployeeService {
                 await tx.doctor_profile.create({
                     data: {
                         employee_id: employee.employee_id,
-                        consultation_minutes: data.consultation_minutes ?? 20
+                        consultation_minutes: data.consultation_minutes ?? 20,
+                        doctor_bio: data.doctor_bio
                     }
                 });
             }
@@ -310,6 +313,8 @@ class EmployeeService {
             emp_gender: data.gender,
             emp_DOB: data.dob,
             mobile_no: data.mobile_no,
+            dob: data.dob ? new Date(data.dob) : undefined,
+            gender: data.gender,
             blood_group: data.blood_group,
             nationality: data.nationality,
             marital_status: data.marital_status,
@@ -392,10 +397,12 @@ class EmployeeService {
                     },
                     update: {
                         consultation_minutes: data.consultation_minutes ?? 20,
+                        ...(data.doctor_bio !== undefined && { doctor_bio: data.doctor_bio }),
                     },
                     create: {
                         employee_id: employeeId,
                         consultation_minutes: data.consultation_minutes ?? 20,
+                        doctor_bio: data.doctor_bio,
                     },
                 });
             }

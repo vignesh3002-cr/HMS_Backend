@@ -17,10 +17,17 @@ import {
     timeToMinutes,
     formatTimeOfDay,
     generateTimeSlots,
-    parseDateOnly
+    parseDateOnly,
+    formatDateOnly,
+    getWeekRange
 } from "./appointment.utils";
 
 const repository = new AppointmentRepository();
+
+// Fixed slot length used to count a doctor's total daily/weekly slot
+// capacity for the availability progress bar, independent of whichever
+// consultation_minutes value an individual schedule row carries.
+const SLOT_DURATION_MINUTES = 20;
 
 type DoctorSchedule = Awaited<
     ReturnType<AppointmentRepository["findActiveDoctorSchedules"]>
@@ -482,6 +489,123 @@ export class AppointmentService {
         });
 
         return { date: dateStr, day_of_week: dayOfWeek, slots };
+
+    }
+
+    // Total slot capacity for a doctor on a given day = every active shift
+    // of theirs (across every branch) on that day-of-week, sliced into fixed
+    // 20-minute slots based on their working-hours availability - independent
+    // of who ends up booking them, and independent of any per-schedule
+    // consultation_minutes override.
+    async getDoctorSlotSummary(employeeId: string, dateStr: string) {
+
+        const employee = await repository.findEmployee(employeeId);
+
+        if (!employee) {
+            throw new Error("Doctor not found");
+        }
+
+        const appointmentDate = parseDateOnly(dateStr);
+        const dayOfWeek = toDayOfWeek(appointmentDate);
+
+        const schedules = await repository.findActiveDoctorSchedulesForEmployee(
+            employeeId,
+            dayOfWeek
+        );
+
+        const totalSlots = schedules.reduce((sum, schedule) => {
+
+            if (!schedule.start_time || !schedule.end_time) {
+                return sum;
+            }
+
+            return sum + generateTimeSlots(
+                schedule.start_time,
+                schedule.end_time,
+                SLOT_DURATION_MINUTES
+            ).length;
+
+        }, 0);
+
+        const bookedCount = await repository.countBookedAppointmentsForEmployee(
+            employeeId,
+            appointmentDate
+        );
+
+        const percentage = totalSlots > 0
+            ? Math.min(100, Math.round((bookedCount / totalSlots) * 100))
+            : 0;
+
+        return {
+            date: dateStr,
+            day_of_week: dayOfWeek,
+            total_slots: totalSlots,
+            booked_count: bookedCount,
+            percentage
+        };
+
+    }
+
+    // Same idea as getDoctorSlotSummary, but summed across the whole
+    // Monday-Sunday week containing `dateStr` - total slot capacity across
+    // all 7 days' schedules, and booked count across the whole date range.
+    async getDoctorWeekSlotSummary(employeeId: string, dateStr: string) {
+
+        const employee = await repository.findEmployee(employeeId);
+
+        if (!employee) {
+            throw new Error("Doctor not found");
+        }
+
+        const anchorDate = parseDateOnly(dateStr);
+        const { start, end } = getWeekRange(anchorDate);
+
+        let totalSlots = 0;
+
+        for (let i = 0; i < 7; i++) {
+
+            const day = new Date(start);
+            day.setUTCDate(start.getUTCDate() + i);
+            const dayOfWeek = toDayOfWeek(day);
+
+            const schedules = await repository.findActiveDoctorSchedulesForEmployee(
+                employeeId,
+                dayOfWeek
+            );
+
+            totalSlots += schedules.reduce((sum, schedule) => {
+
+                if (!schedule.start_time || !schedule.end_time) {
+                    return sum;
+                }
+
+                return sum + generateTimeSlots(
+                    schedule.start_time,
+                    schedule.end_time,
+                    SLOT_DURATION_MINUTES
+                ).length;
+
+            }, 0);
+
+        }
+
+        const bookedCount = await repository.countBookedAppointmentsForEmployeeInRange(
+            employeeId,
+            start,
+            end
+        );
+
+        const percentage = totalSlots > 0
+            ? Math.min(100, Math.round((bookedCount / totalSlots) * 100))
+            : 0;
+
+        return {
+            week_start: formatDateOnly(start),
+            week_end: formatDateOnly(end),
+            total_slots: totalSlots,
+            booked_count: bookedCount,
+            percentage
+        };
 
     }
 
