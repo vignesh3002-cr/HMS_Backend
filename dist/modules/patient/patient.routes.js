@@ -3,23 +3,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const patient_controller_1 = require("./patient.controller");
 const auth_middleware_1 = require("../auth/auth.middleware");
-<<<<<<< HEAD
 const authorize_1 = require("../../middleware/authorize");
-=======
->>>>>>> a430ca9ba6608e611b8e0041162a90cf3433d7ed
 const branchScope_1 = require("../../middleware/branchScope");
 const patient_validation_1 = require("./patient.validation");
 const router = (0, express_1.Router)();
 const controller = new patient_controller_1.PatientController();
-<<<<<<< HEAD
 router.post("/create", auth_middleware_1.authenticate, (0, authorize_1.authorize)("patient.create"), patient_validation_1.createPatientValidation, controller.createPatient.bind(controller));
 router.get("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("patient.read"), branchScope_1.branchScope, controller.getPatients.bind(controller));
 router.get("/:patientId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("patient.read"), controller.getPatientById.bind(controller));
 router.put("/:patientId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("patient.update"), patient_validation_1.updatePatientValidation, controller.updatePatient.bind(controller));
-=======
-router.post("/create", auth_middleware_1.authenticate, patient_validation_1.createPatientValidation, controller.createPatient.bind(controller));
-router.get("/", auth_middleware_1.authenticate, branchScope_1.branchScope, controller.getPatients.bind(controller));
-router.get("/:patientId", auth_middleware_1.authenticate, controller.getPatientById.bind(controller));
-router.put("/:patientId", auth_middleware_1.authenticate, patient_validation_1.updatePatientValidation, controller.updatePatient.bind(controller));
->>>>>>> a430ca9ba6608e611b8e0041162a90cf3433d7ed
 exports.default = router;

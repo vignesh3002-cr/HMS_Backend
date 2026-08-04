@@ -16,7 +16,6 @@ const controller = new branch_controller_1.BranchController();
 // `/:branchId` with branchId="assignable-admins" and 404 with "Branch not
 // found" instead of ever reaching this handler (which is exactly what was
 // happening before this reordering).
-<<<<<<< HEAD
 router.get("/assignable-admins", auth_middleware_1.authenticate, (0, authorize_1.authorizeRoles)(...roles_1.TOP_LEVEL_ADMIN_ROLES), branch_validation_1.getAssignableAdminsValidation, controller.getAssignableAdmins.bind(controller));
 // Existing routes
 router.get("/", auth_middleware_1.authenticate, controller.getAllBranches.bind(controller));
@@ -28,17 +27,4 @@ router.delete("/:branchId", auth_middleware_1.authenticate, (0, authorize_1.auth
 router.patch("/:branchId/admin", auth_middleware_1.authenticate, (0, authorize_1.authorizeRoles)(...roles_1.TOP_LEVEL_ADMIN_ROLES), branch_validation_1.assignAdminValidation, controller.assignAdmin.bind(controller));
 // NEW: Explicitly unassign a Branch Admin (the "None" state) - requires a top-level admin role
 router.patch("/admin/:userId/unassign", auth_middleware_1.authenticate, (0, authorize_1.authorizeRoles)(...roles_1.TOP_LEVEL_ADMIN_ROLES), controller.unassignAdmin.bind(controller));
-=======
-router.get("/assignable-admins", auth_middleware_1.authenticate, (0, authorize_1.authorize)(...roles_1.TOP_LEVEL_ADMIN_ROLES), branch_validation_1.getAssignableAdminsValidation, controller.getAssignableAdmins.bind(controller));
-// Existing routes
-router.get("/", auth_middleware_1.authenticate, controller.getAllBranches.bind(controller));
-router.get("/:branchId", auth_middleware_1.authenticate, controller.getBranchById.bind(controller));
-router.post("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)(...roles_1.TOP_LEVEL_ADMIN_ROLES), branch_validation_1.createBranchValidation, controller.createBranch.bind(controller));
-router.put("/:branchId", auth_middleware_1.authenticate, (0, authorize_1.authorize)(...roles_1.TOP_LEVEL_ADMIN_ROLES), branch_validation_1.updateBranchValidation, controller.updateBranch.bind(controller));
-router.delete("/:branchId", auth_middleware_1.authenticate, (0, authorize_1.authorize)(...roles_1.TOP_LEVEL_ADMIN_ROLES), controller.deleteBranch.bind(controller));
-// NEW: Assign/reassign admin to branch - requires a top-level admin role
-router.patch("/:branchId/admin", auth_middleware_1.authenticate, (0, authorize_1.authorize)(...roles_1.TOP_LEVEL_ADMIN_ROLES), branch_validation_1.assignAdminValidation, controller.assignAdmin.bind(controller));
-// NEW: Explicitly unassign a Branch Admin (the "None" state) - requires a top-level admin role
-router.patch("/admin/:userId/unassign", auth_middleware_1.authenticate, (0, authorize_1.authorize)(...roles_1.TOP_LEVEL_ADMIN_ROLES), controller.unassignAdmin.bind(controller));
->>>>>>> a430ca9ba6608e611b8e0041162a90cf3433d7ed
 exports.default = router;
