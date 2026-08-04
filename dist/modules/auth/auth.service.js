@@ -11,19 +11,14 @@ const prisma_1 = __importDefault(require("../../config/prisma"));
 const idGenerator_1 = require("../../utils/idGenerator");
 const crypto_1 = require("crypto");
 const mail_1 = require("../../utils/mail");
-const BRANCH_SCOPED_ROLES = [
-    "BRANCH_ADMIN",
-    "DOCTOR",
-    "NURSE",
-    "PHARMACIST",
-    "STAFF",
-];
+const roles_1 = require("../../permissions/roles");
 class AuthService {
     authRepository = new auth_repository_1.AuthRepository();
     assertAccountUsable(user) {
         const role = user.role_type;
         const employee = user.employees;
-        if (role !== "HEAD_ADMIN") {
+        const isTopLevelAdmin = roles_1.TOP_LEVEL_ADMIN_ROLES.some((r) => r.toLowerCase() === String(role ?? "").toLowerCase());
+        if (!isTopLevelAdmin) {
             if (!employee) {
                 throw new Error("Employee profile not found. Please contact the administrator.");
             }

@@ -21,7 +21,7 @@ class EmployeeController {
             catch (logErr) {
                 console.error("Failed to log createEmployee request", logErr);
             }
-            const createdBy = req.user?.role || "SYSTEM";
+            const createdBy = req.user?.user_id || "SYSTEM";
             const employee = await service.createEmployee(req.body, createdBy);
             return res.status(201).json({
                 success: true,
@@ -53,7 +53,7 @@ class EmployeeController {
     }
     async updateEmployee(req, res) {
         try {
-            const employee = await service.updateEmployee(String(req.params.employeeId), req.body);
+            const employee = await service.updateEmployee(String(req.params.employeeId), req.body, req.user?.user_id);
             return res.status(200).json({
                 success: true,
                 data: employee

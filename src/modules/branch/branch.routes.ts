@@ -7,15 +7,12 @@ import {
   assignAdminValidation,
 } from "./branch.validation";
 import { authenticate } from "../auth/auth.middleware";
-import { authorize } from "../../middleware/authorize";
+import { authorize, authorizeRoles } from "../../middleware/authorize";
+import { TOP_LEVEL_ADMIN_ROLES } from "../../permissions/roles";
 
 const router = Router();
 
 const controller = new BranchController();
-
-// Roles used inconsistently across the codebase for a top-level (non branch-scoped)
-// admin — accept them all rather than betting on one exact casing/spelling.
-const TOP_LEVEL_ADMIN_ROLES = ["ADMIN", "Admin", "HEAD_ADMIN", "SUPER_ADMIN"];
 
 // NEW: Get assignable admins - requires a top-level admin role
 //
@@ -28,23 +25,23 @@ const TOP_LEVEL_ADMIN_ROLES = ["ADMIN", "Admin", "HEAD_ADMIN", "SUPER_ADMIN"];
 router.get(
   "/assignable-admins",
   authenticate,
-  authorize(...TOP_LEVEL_ADMIN_ROLES),
+  authorizeRoles(...TOP_LEVEL_ADMIN_ROLES),
   getAssignableAdminsValidation,
   controller.getAssignableAdmins.bind(controller)
 );
 
 // Existing routes
-router.get("/", controller.getAllBranches.bind(controller));
-router.get("/:branchId", controller.getBranchById.bind(controller));
-router.post("/", createBranchValidation, controller.createBranch.bind(controller));
-router.put("/:branchId", updateBranchValidation, controller.updateBranch.bind(controller));
-router.delete("/:branchId", controller.deleteBranch.bind(controller));
+router.get("/", authenticate, controller.getAllBranches.bind(controller));
+router.get("/:branchId", authenticate, controller.getBranchById.bind(controller));
+router.post("/", authenticate, authorize("branch.create"), createBranchValidation, controller.createBranch.bind(controller));
+router.put("/:branchId", authenticate, authorize("branch.update"), updateBranchValidation, controller.updateBranch.bind(controller));
+router.delete("/:branchId", authenticate, authorize("branch.delete"), controller.deleteBranch.bind(controller));
 
 // NEW: Assign/reassign admin to branch - requires a top-level admin role
 router.patch(
   "/:branchId/admin",
   authenticate,
-  authorize(...TOP_LEVEL_ADMIN_ROLES),
+  authorizeRoles(...TOP_LEVEL_ADMIN_ROLES),
   assignAdminValidation,
   controller.assignAdmin.bind(controller)
 );
@@ -53,7 +50,7 @@ router.patch(
 router.patch(
   "/admin/:userId/unassign",
   authenticate,
-  authorize(...TOP_LEVEL_ADMIN_ROLES),
+  authorizeRoles(...TOP_LEVEL_ADMIN_ROLES),
   controller.unassignAdmin.bind(controller)
 );
 

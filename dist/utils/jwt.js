@@ -9,12 +9,15 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "1h");
 const generateToken = (user, rememberMe = false) => {
     return jsonwebtoken_1.default.sign({
-        id: user.id,
-        username: user.username
+        id: user.user_id ?? user.id,
+        user_id: user.user_id,
+        username: user.username,
+        role: user.role,
+        hospital_id: user.hospital_id
     }, process.env.JWT_SECRET, {
         expiresIn: rememberMe
             ? "12h"
-            : "5m"
+            : "12h"
     });
 };
 exports.generateToken = generateToken;
