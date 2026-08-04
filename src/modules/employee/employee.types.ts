@@ -75,11 +75,12 @@ export interface CreateEmployeeDto {
     emp_status: boolean;
  
     // Doctor only
- 
+
     specialization: string;
     qualification: string;
     license_no: string;
     consultation_minutes: number;
+    doctor_bio: string;
  
     // Multi Branch
  
@@ -146,6 +147,7 @@ export interface UpdateEmployeeDto {
         | "BRANCH_ADMIN"
         | "Admin";
     consultation_minutes?: number;
+    doctor_bio?: string;
     branch_ids?: string[];
     working_hours?: WorkingHourDto[];
 }

@@ -1,12 +1,13 @@
 import { Request, RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 import { LOGIN_ENABLED_ROLES } from "../../permissions/roles";
+import prisma from "../../config/prisma";
 
 export type AuthRequest = Request & {
   user?: any;
 };
 
-export const authenticate: RequestHandler = (req, res, next) => {
+export const authenticate: RequestHandler = async (req, res, next) => {
 
   const authReq = req as AuthRequest;
 
@@ -44,6 +45,20 @@ export const authenticate: RequestHandler = (req, res, next) => {
       return res.status(403).json({
         success: false,
         message: "Forbidden. Your role is not authorized to access this system.",
+      });
+    }
+
+    // Respect the "disable role" toggle in Role Management (role_id_config.is_active).
+    // Roles with no config row (not yet seeded) are treated as active so this
+    // never locks everyone out by default.
+    const roleConfig = await prisma.role_id_config.findUnique({
+      where: { role_type: String(authReq.user?.role ?? "") },
+    });
+
+    if (roleConfig && !roleConfig.is_active) {
+      return res.status(403).json({
+        success: false,
+        message: "Your role has been disabled by an administrator.",
       });
     }
 

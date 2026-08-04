@@ -282,20 +282,21 @@ for (const branchId of allowedBranchIds) {
 
 }
 if (data.role_type === "DOCTOR") {
- 
+  
     await tx.doctor_profile.create({
- 
+  
         data: {
- 
+  
             employee_id: employee.employee_id!,
- 
+  
             consultation_minutes:
-                data.consultation_minutes ?? 20
- 
+                data.consultation_minutes ?? 20,
+            doctor_bio: data.doctor_bio
+  
         }
- 
+  
     });
- 
+  
 }
 for (const schedule of data.working_hours ?? []) {
  
@@ -548,10 +549,12 @@ async updateEmployee(
                 },
                 update: {
                     consultation_minutes: data.consultation_minutes ?? 20,
+                    ...(data.doctor_bio !== undefined && { doctor_bio: data.doctor_bio }),
                 },
                 create: {
                     employee_id: employeeId,
                     consultation_minutes: data.consultation_minutes ?? 20,
+                    doctor_bio: data.doctor_bio,
                 },
             });
         }

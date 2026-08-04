@@ -1280,11 +1280,9 @@ model prescription_items {
   prescription         prescription    @relation(fields: [prescription_id], references: [prescription_id], onDelete: Cascade, map: "fk_prescription_items_prescription")
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// Role metadata. ID prefixes and numbering live in id_sequences only.
 model role_id_config {
   role_type       String           @id @db.VarChar(50)
-  prefix          String           @unique @db.VarChar(5)
-  current_number  Int              @default(0)
   description     String?          @db.VarChar(100)
   created_at      DateTime?        @default(now()) @db.Timestamp(6)
   display_name    String?          @db.VarChar(50)

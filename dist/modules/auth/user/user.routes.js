@@ -7,5 +7,5 @@ const authorize_1 = require("../../../middleware/authorize");
 const roles_1 = require("../../../permissions/roles");
 const router = (0, express_1.Router)();
 const userController = new user_controller_1.UserController();
-router.post("/branch_admin", auth_middleware_1.authenticate, (0, authorize_1.authorize)(...roles_1.TOP_LEVEL_ADMIN_ROLES), userController.createBranchAdmin.bind(userController));
+router.post("/branch_admin", auth_middleware_1.authenticate, (0, authorize_1.authorizeRoles)(...roles_1.TOP_LEVEL_ADMIN_ROLES), userController.createBranchAdmin.bind(userController));
 exports.default = router;
