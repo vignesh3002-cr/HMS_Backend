@@ -8,14 +8,14 @@ datasource db {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Permission {
-  id             String           @id @default(cuid()) @db.VarChar(50)
-  key            String           @unique @db.VarChar(100)
-  name           String           @db.VarChar(100)
-  description    String?          @db.VarChar(255)
-  category       String           @db.VarChar(50)
-  is_active      Boolean          @default(true)
-  created_at     DateTime         @default(now())
-  updated_at     DateTime         @updatedAt
+  id              String           @id @default(cuid()) @db.VarChar(50)
+  key             String           @unique @db.VarChar(100)
+  name            String           @db.VarChar(100)
+  description     String?          @db.VarChar(255)
+  category        String           @db.VarChar(50)
+  is_active       Boolean          @default(true)
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
   rolePermissions RolePermission[]
 }
 
@@ -869,8 +869,8 @@ model employees {
   employee_area                                                                      String?                       @db.VarChar
   employee_pincode                                                                   BigInt?
   employee_no_experence                                                              BigInt?
-  emp_gender                                                                         String?                       @db.VarChar
-  emp_DOB                                                                            String?                       @db.VarChar
+  gender                                                                             String?                       @map("emp_gender") @db.VarChar
+  dob                                                                                String?                       @map("emp_DOB") @db.VarChar
   permanent_employee_state                                                           String?                       @db.VarChar
   permanent_employee_district                                                        String?                       @db.VarChar
   permanent_employee_area                                                            String?                       @db.VarChar
@@ -1521,13 +1521,13 @@ model prescription_items {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model role_id_config {
-  role_type      String           @id @db.VarChar(50)
-  description    String?          @db.VarChar(100)
-  created_at     DateTime?        @default(now()) @db.Timestamp(6)
-  display_name   String?          @db.VarChar(50)
-  is_active      Boolean          @default(true)
-  sort_order     Int              @default(0)
-  updated_at     DateTime?
+  role_type       String           @id @db.VarChar(50)
+  description     String?          @db.VarChar(100)
+  created_at      DateTime?        @default(now()) @db.Timestamp(6)
+  display_name    String?          @db.VarChar(50)
+  is_active       Boolean          @default(true)
+  sort_order      Int              @default(0)
+  updated_at      DateTime?
   rolePermissions RolePermission[]
 }
 

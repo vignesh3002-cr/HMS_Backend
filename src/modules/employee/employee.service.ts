@@ -213,10 +213,6 @@ const employee = await tx.employees.create({
  
         mobile_no: data.mobile_no,
 
-        dob: data.dob ? new Date(data.dob) : undefined,
-
-        gender: data.gender,
-
         blood_group: data.blood_group,
  
         nationality: data.nationality,
@@ -226,8 +222,8 @@ const employee = await tx.employees.create({
         aadhaar_no: data.aadhaar_no,
  
         pan_no: data.pan_no,
-        emp_gender:data.gender,
-        emp_DOB: data.dob,
+        gender: data.gender,
+        dob: data.dob,
 
         passport_no: data.passport_no,
  
@@ -460,11 +456,9 @@ async updateEmployee(
         middle_name: data.middle_name,
         last_name: data.last_name,
         email: data.email,
-        emp_gender: data.gender,
-        emp_DOB: data.dob,
-        mobile_no: data.mobile_no,
-        dob: data.dob ? new Date(data.dob) : undefined,
         gender: data.gender,
+        dob: data.dob,
+        mobile_no: data.mobile_no,
         blood_group: data.blood_group,
         nationality: data.nationality,
         marital_status: data.marital_status,
