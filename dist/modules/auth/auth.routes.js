@@ -16,7 +16,11 @@ router.get("/me", auth_middleware_1.authenticate, (req, res) => {
         user: req.user
     });
 });
+<<<<<<< HEAD
 router.get("/admin", auth_middleware_1.authenticate, (0, authorize_1.authorizeRoles)(...roles_1.TOP_LEVEL_ADMIN_ROLES), (req, res) => {
+=======
+router.get("/admin", auth_middleware_1.authenticate, (0, authorize_1.authorize)(...roles_1.TOP_LEVEL_ADMIN_ROLES), (req, res) => {
+>>>>>>> a430ca9ba6608e611b8e0041162a90cf3433d7ed
     res.json({
         success: true,
         message: "Welcome Admin"

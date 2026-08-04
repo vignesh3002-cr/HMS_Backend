@@ -12,7 +12,13 @@ const doctorTransfer_validation_1 = require("./doctorTransfer.validation");
 exports.DOCTOR_TRANSFER_ROLES = roles_1.BRANCH_ADMIN_ROLES;
 const router = (0, express_1.Router)();
 const controller = new doctorTransfer_controller_1.DoctorTransferController();
+<<<<<<< HEAD
 router.post("/:employeeId/transfer", auth_middleware_1.authenticate, (0, authorize_1.authorizeRoles)(...exports.DOCTOR_TRANSFER_ROLES), doctorTransfer_validation_1.initiateTransferValidation, controller.initiateTransfer.bind(controller));
 router.post("/:employeeId/transfer/confirm", auth_middleware_1.authenticate, (0, authorize_1.authorizeRoles)(...exports.DOCTOR_TRANSFER_ROLES), doctorTransfer_validation_1.confirmTransferValidation, controller.confirmTransfer.bind(controller));
 router.get("/:employeeId/future-appointments", auth_middleware_1.authenticate, (0, authorize_1.authorizeRoles)(...exports.DOCTOR_TRANSFER_ROLES), doctorTransfer_validation_1.getFutureAppointmentsValidation, controller.getFutureAppointments.bind(controller));
+=======
+router.post("/:employeeId/transfer", auth_middleware_1.authenticate, (0, authorize_1.authorize)(...exports.DOCTOR_TRANSFER_ROLES), doctorTransfer_validation_1.initiateTransferValidation, controller.initiateTransfer.bind(controller));
+router.post("/:employeeId/transfer/confirm", auth_middleware_1.authenticate, (0, authorize_1.authorize)(...exports.DOCTOR_TRANSFER_ROLES), doctorTransfer_validation_1.confirmTransferValidation, controller.confirmTransfer.bind(controller));
+router.get("/:employeeId/future-appointments", auth_middleware_1.authenticate, (0, authorize_1.authorize)(...exports.DOCTOR_TRANSFER_ROLES), doctorTransfer_validation_1.getFutureAppointmentsValidation, controller.getFutureAppointments.bind(controller));
+>>>>>>> a430ca9ba6608e611b8e0041162a90cf3433d7ed
 exports.default = router;

@@ -15,8 +15,11 @@ const department_routes_1 = __importDefault(require("./modules/department/depart
 const patient_routes_1 = __importDefault(require("./modules/patient/patient.routes"));
 const appointment_routes_1 = __importDefault(require("./modules/appointment/appointment.routes"));
 const encounter_routes_1 = __importDefault(require("./modules/encounter/encounter.routes"));
+<<<<<<< HEAD
 const permission_routes_1 = __importDefault(require("./modules/permission/permission.routes"));
 const role_routes_1 = __importDefault(require("./modules/role/role.routes"));
+=======
+>>>>>>> a430ca9ba6608e611b8e0041162a90cf3433d7ed
 //import prescriptionRoutes from "./modules/prescription/prescription.routes";
 //import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
 const doctorTransfer_routes_1 = __importDefault(require("./modules/doctor-transfer/doctorTransfer.routes"));
@@ -43,8 +46,11 @@ const allowedOrigins = new Set([
     "http://127.0.0.1:5173",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+<<<<<<< HEAD
     "http://localhost:8080",
     "http://127.0.0.1:8080",
+=======
+>>>>>>> a430ca9ba6608e611b8e0041162a90cf3433d7ed
 ]);
 app.use((0, cors_1.default)({
     origin: (origin, callback) => {
@@ -90,8 +96,11 @@ app.use("/api/lab-test-master", lab_test_master_routes_1.default);
 app.use("/api/lab-order", lab_order_routes_1.default);
 app.use("/api/appointments", appointment_routes_1.default);
 app.use("/api/encounters", encounter_routes_1.default);
+<<<<<<< HEAD
 app.use("/api/permissions", permission_routes_1.default);
 app.use("/api/roles", role_routes_1.default);
+=======
+>>>>>>> a430ca9ba6608e611b8e0041162a90cf3433d7ed
 //app.use("/api/prescriptions", prescriptionRoutes);
 //app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/doctors", doctorTransfer_routes_1.default);

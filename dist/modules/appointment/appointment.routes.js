@@ -15,6 +15,7 @@ const transferController = new doctorTransfer_controller_1.DoctorTransferControl
 // Doctor-transfer related routes - registered before the "/:appointmentNo"
 // catch-all below so single-segment paths like "/reschedule-queue" aren't
 // swallowed by it (same trap documented in branch.routes.ts).
+<<<<<<< HEAD
 router.get("/reschedule-queue", auth_middleware_1.authenticate, (0, authorize_1.authorizeRoles)(...doctorTransfer_routes_1.DOCTOR_TRANSFER_ROLES), doctorTransfer_validation_1.getRescheduleQueueValidation, transferController.getRescheduleQueue.bind(transferController));
 router.put("/reschedule/:appointmentId", auth_middleware_1.authenticate, (0, authorize_1.authorizeRoles)(...doctorTransfer_routes_1.DOCTOR_TRANSFER_ROLES), doctorTransfer_validation_1.processRescheduleActionValidation, transferController.processRescheduleAction.bind(transferController));
 router.post("/transfer-preview", auth_middleware_1.authenticate, (0, authorize_1.authorizeRoles)(...doctorTransfer_routes_1.DOCTOR_TRANSFER_ROLES), doctorTransfer_validation_1.transferPreviewValidation, transferController.transferPreview.bind(transferController));
@@ -26,6 +27,17 @@ router.get("/doctor-week-slot-summary", auth_middleware_1.authenticate, appointm
 router.get("/:appointmentNo", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.read"), controller.getAppointmentByNumber.bind(controller));
 router.put("/:appointmentNo", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.update"), appointment_validation_1.updateAppointmentValidation, controller.updateAppointment.bind(controller));
 router.patch("/:appointmentNo/status", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.update"), appointment_validation_1.updateAppointmentStatusValidation, controller.updateAppointmentStatus.bind(controller));
+=======
+router.get("/reschedule-queue", auth_middleware_1.authenticate, (0, authorize_1.authorize)(...doctorTransfer_routes_1.DOCTOR_TRANSFER_ROLES), doctorTransfer_validation_1.getRescheduleQueueValidation, transferController.getRescheduleQueue.bind(transferController));
+router.put("/reschedule/:appointmentId", auth_middleware_1.authenticate, (0, authorize_1.authorize)(...doctorTransfer_routes_1.DOCTOR_TRANSFER_ROLES), doctorTransfer_validation_1.processRescheduleActionValidation, transferController.processRescheduleAction.bind(transferController));
+router.post("/transfer-preview", auth_middleware_1.authenticate, (0, authorize_1.authorize)(...doctorTransfer_routes_1.DOCTOR_TRANSFER_ROLES), doctorTransfer_validation_1.transferPreviewValidation, transferController.transferPreview.bind(transferController));
+router.post("/", auth_middleware_1.authenticate, appointment_validation_1.createAppointmentValidation, controller.createAppointment.bind(controller));
+router.get("/", auth_middleware_1.authenticate, branchScope_1.branchScope, appointment_validation_1.getAppointmentsValidation, controller.getAppointments.bind(controller));
+router.get("/available-slots", auth_middleware_1.authenticate, appointment_validation_1.getAvailableSlotsValidation, controller.getAvailableSlots.bind(controller));
+router.get("/:appointmentNo", auth_middleware_1.authenticate, controller.getAppointmentByNumber.bind(controller));
+router.put("/:appointmentNo", auth_middleware_1.authenticate, appointment_validation_1.updateAppointmentValidation, controller.updateAppointment.bind(controller));
+router.patch("/:appointmentNo/status", auth_middleware_1.authenticate, appointment_validation_1.updateAppointmentStatusValidation, controller.updateAppointmentStatus.bind(controller));
+>>>>>>> a430ca9ba6608e611b8e0041162a90cf3433d7ed
 // Soft cancellation only - appointments are never physically deleted.
 router.delete("/:appointmentNo", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.cancel"), appointment_validation_1.cancelAppointmentValidation, controller.cancelAppointment.bind(controller));
 exports.default = router;
