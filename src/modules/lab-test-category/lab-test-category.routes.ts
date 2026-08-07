@@ -9,11 +9,15 @@ import {
 
 const router = Router();
 
+import { authenticate } from "../auth/auth.middleware";
+
 router.post(
     "/",
+    authenticate,
     createLabTestCategoryValidation,
-    controller.create
+    controller.create.bind(controller)
 );
+
 
 router.get(
     "/",
@@ -27,13 +31,14 @@ router.get(
 
 router.put(
     "/:id",
+    authenticate,
     updateLabTestCategoryValidation,
-    controller.update
+    controller.update.bind(controller)
 );
 
 router.delete(
     "/:id",
-    controller.delete
+    authenticate,
+    controller.delete.bind(controller)
 );
-
 export default router;

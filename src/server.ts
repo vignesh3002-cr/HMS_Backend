@@ -20,7 +20,9 @@ import labTestMasterRoutes from "./modules/lab-test-master/lab-test-master.route
 import labOrderRoutes from "./modules/lab-order/lab-order-routes";
 import cookieParser from "cookie-parser";
 import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
+import labOrderItemRoutes from "./modules/lab-order-item/lab-order-item.routes";
 import prescriptionRoutes from "./modules/prescription/prescription.routes";
+import qualificationMasterRoutes from "./modules/qualification-master/qualification-master.routes";
 import { hashPassword } from "./utils/bcrypt";
 dns.setDefaultResultOrder("ipv4first");
 // Fix BigInt serialization - Prisma returns BigInt types that JSON.stringify can't handle
@@ -71,14 +73,13 @@ app.use(
             "Origin",
             "Referer",
             "User-Agent",
-        ],
+            "X-Branch-Id"
+],
         optionsSuccessStatus: 200,
     })
 );
 
-app.use(cookieParser());
 
-app.use(express.json());
 
 app.get("/api/health", (_req, res) => {
     res.json({ success: true, message: "Server is running" });
@@ -91,16 +92,18 @@ app.use("/api/users", userRoutes);
 app.use("/api/branch", branchRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/patients", patientRoutes);
-app.use("/api/lab-test-categories", labTestCategoryRoutes);
+app.use("/api/lab-test-category", labTestCategoryRoutes);
 app.use("/api/lab-test-master", labTestMasterRoutes);
 app.use("/api/lab-order", labOrderRoutes);
 app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/appointments", appointmentRoutes);
+app.use("/api/lab-order-item", labOrderItemRoutes);
 app.use("/api/encounters", encounterRoutes);
 //app.use("/api/prescriptions", prescriptionRoutes);
 //app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/doctors", doctorTransferRoutes);
+app.use("/api/qualification-master", qualificationMasterRoutes);
 app.use("/api/hashpassword", async (req, res) => {
 
     const { password } = req.body;

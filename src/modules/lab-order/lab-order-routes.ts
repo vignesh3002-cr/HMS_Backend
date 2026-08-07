@@ -8,8 +8,11 @@ import {
 
 const router = Router();
 
+import { authenticate } from "../auth/auth.middleware";
+
 router.post(
     "/",
+    authenticate,
     createLabOrderValidation,
     controller.create
 );
@@ -26,12 +29,14 @@ router.get(
 
 router.put(
     "/:id",
+    authenticate,
     updateLabOrderValidation,
     controller.update
 );
 
 router.delete(
     "/:id",
+    authenticate,
     controller.delete
 );
 
