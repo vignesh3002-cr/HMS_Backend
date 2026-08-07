@@ -1,4 +1,3 @@
-import dns from "node:dns";
 import "dotenv/config";
 
 import express from "express";
@@ -23,16 +22,17 @@ import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
 import labOrderItemRoutes from "./modules/lab-order-item/lab-order-item.routes";
 import prescriptionRoutes from "./modules/prescription/prescription.routes";
 import qualificationMasterRoutes from "./modules/qualification-master/qualification-master.routes";
+import prescriptionRoutes from "./modules/prescription/prescription.routes";
+import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
+import doctorTransferRoutes from "./modules/doctor-transfer/doctorTransfer.routes";
 import { hashPassword } from "./utils/bcrypt";
-dns.setDefaultResultOrder("ipv4first");
+
 // Fix BigInt serialization - Prisma returns BigInt types that JSON.stringify can't handle
 (BigInt.prototype as any).toJSON = function () {
     return this.toString();
 };
 
 const app = express();
-app.use(express.json());
-app.use(cookieParser());
 
 const configuredOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
     .split(",")
@@ -41,6 +41,7 @@ const configuredOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
 
 const allowedOrigins = new Set([
     ...configuredOrigins,
+const allowedOrigins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
@@ -61,12 +62,33 @@ app.use(
             }
 
             callback(new Error(`CORS blocked for origin: ${origin}`));
+    process.env.FRONTEND_URL,
+].filter(Boolean) as string[];
+ 
+const isAllowedOrigin = (origin: string | undefined) => {
+    if (!origin) return true;
+ 
+    if (allowedOrigins.includes(origin)) return true;
+ 
+    return /^https:\/\/.*\.vercel\.app$/i.test(origin);
+};
+ 
+app.use(
+    cors({
+        origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+            if (isAllowedOrigin(origin)) {
+                callback(null, true);
+                return;
+            }
+ 
+            callback(new Error(`Not allowed by CORS: ${origin}`));
         },
         credentials: true,
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: [
             "Content-Type",
             "Authorization",
+            "x-branch-id",
             "X-Requested-With",
             "Cache-Control",
             "Accept",
@@ -79,6 +101,11 @@ app.use(
     })
 );
 
+        ],
+        optionsSuccessStatus: 200,
+    })
+);
+ 
 
 
 app.get("/api/health", (_req, res) => {
@@ -88,7 +115,6 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/users", userRoutes);
-//app.use("/api/doctors", doctorRoutes);
 app.use("/api/branch", branchRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/patients", patientRoutes);
@@ -104,6 +130,11 @@ app.use("/api/encounters", encounterRoutes);
 //app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/doctors", doctorTransferRoutes);
 app.use("/api/qualification-master", qualificationMasterRoutes);
+app.use("/api/appointments", appointmentRoutes);
+app.use("/api/encounters", encounterRoutes);
+app.use("/api/prescriptions", prescriptionRoutes);
+app.use("/api/chemotherapy", chemotherapyRoutes);
+app.use("/api/doctors", doctorTransferRoutes);
 app.use("/api/hashpassword", async (req, res) => {
 
     const { password } = req.body;

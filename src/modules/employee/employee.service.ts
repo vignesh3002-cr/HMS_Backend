@@ -316,6 +316,28 @@ async updateEmployee(
             select: { branch_id: true },
         });
 
+        const activeMappings = await prisma.user_branch_mapping.findMany({
+            where: { employee_id: employeeId, status: 1 },
+            select: { branch_id: true }
+        });
+
+        const currentBranchIds = activeMappings.map((mapping) => mapping.branch_id);
+        const requestedBranchIds = data.branch_ids;
+
+        const isBranchChange =
+            requestedBranchIds.some((id) => !currentBranchIds.includes(id)) ||
+            currentBranchIds.some((id) => !requestedBranchIds.includes(id));
+
+        if (isBranchChange) {
+            throw new Error(
+                "Doctor branch changes must go through POST /api/doctors/:employeeId/transfer to preserve appointment history"
+            );
+        }
+
+    }
+
+    if (data.department_id) {
+
         const currentBranchIds = activeMappings.map((mapping) => mapping.branch_id);
         const requestedBranchIds = data.branch_ids;
         const isBranchChange =
@@ -370,6 +392,7 @@ async updateEmployee(
         email: data.email,
         emp_gender: data.gender,
         emp_DOB: data.dob,
+        gender:data.gender,
         mobile_no: data.mobile_no,
         blood_group: data.blood_group,
         nationality: data.nationality,
@@ -377,6 +400,7 @@ async updateEmployee(
         aadhaar_no: data.aadhaar_no,
         pan_no: data.pan_no,
         age: data.age,
+        age:data.age,
         passport_no: data.passport_no,
         parmanent_address: data.permanent_address,
         current_address: data.current_address,
@@ -399,6 +423,9 @@ async updateEmployee(
         permanent_employee_state: data.permanent_employee_state,
         permanent_employee_district: data.permanent_employee_district,
         permanent_employee_area: data.permanent_employee_area,
+        permanent_employee_state:data.permanent_employee_state,
+        permanent_employee_district:data.permanent_employee_district,
+        permanent_employee_area:data.permanent_employee_area,
     };
 
     if (shouldReleaseBranch) {
