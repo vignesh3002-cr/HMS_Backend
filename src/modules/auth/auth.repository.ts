@@ -2,6 +2,12 @@ import prisma from "../../config/prisma";
 
 export class AuthRepository {
 
+  async findUserById(userId: string) {
+    return prisma.user_table.findFirst({
+      where: { user_id: userId },
+    });
+  }
+
   async findUserByUsername(username: string) {
     return prisma.user_table.findFirst({
       where: {

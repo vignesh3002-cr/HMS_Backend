@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { EmployeeController } from "./employee.controller";
 import { authenticate } from "../../modules/auth/auth.middleware";
-import { authorize } from "../../middleware/authorize";
+import { authorize, authorizeSelfOrPermission } from "../../middleware/authorize";
 import { branchScope } from "../../middleware/branchScope";
 
 const router = Router();
@@ -24,7 +24,7 @@ router.get(
 router.get(
     "/:employeeId",
     authenticate,
-    authorize("employee.read"),
+    authorizeSelfOrPermission("employee.read"),
     branchScope,
     controller.getEmployeeById.bind(controller)
 );
@@ -32,7 +32,7 @@ router.get(
 router.put(
     "/:employeeId",
     authenticate,
-    authorize("employee.update"),
+    authorizeSelfOrPermission("employee.update"),
     branchScope,
     controller.updateEmployee.bind(controller)
 );

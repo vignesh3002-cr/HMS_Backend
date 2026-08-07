@@ -97,7 +97,8 @@ async softDeleteEmployee(req: Request, res: Response) {
     try {
  
         const result = await service.softDeleteEmployee(
-            String(req.params.employeeId)
+            String(req.params.employeeId),
+            (req as any).user?.user_id || "SYSTEM"
         );
  
         return res.status(200).json({
@@ -124,6 +125,7 @@ async softDeleteEmployee(req: Request, res: Response) {
                 branchId: req.query.branchId as string | undefined,
                 department: req.query.department as string | undefined,
                 status: req.query.status !== undefined ? req.query.status === "true" : undefined,
+                includeDeleted: req.query.includeDeleted === "true",
                 search: req.query.search as string | undefined,
                 page: req.query.page ? Number(req.query.page) : 1,
                 limit: req.query.limit ? Number(req.query.limit) : 10,

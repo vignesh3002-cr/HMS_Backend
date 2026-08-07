@@ -1,6 +1,8 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
-import {GetEmployeesQuery} from "./employee.types";
+import { GetEmployeesQuery } from "./employee.types";
+import { generateId } from "../../utils/idGenerator";
+import { TERMINAL_APPOINTMENT_STATUSES } from "../appointment/appointment.constants";
  
 export class EmployeeRepository {
  
@@ -67,16 +69,197 @@ export class EmployeeRepository {
             }
         });
     }
-    async softDeleteEmployee(employeeId: string) {
-    return prisma.employees.update({
-        where: {
-            employee_id: employeeId
-        },
-        data: {
-            emp_status: false
+    async softDeleteEmployee(
+        tx: Prisma.TransactionClient,
+        employeeId: string
+    ) {
+        return tx.employees.update({
+            where: {
+                employee_id: employeeId
+            },
+            data: {
+                emp_status: false,
+                deleted_at: new Date(),
+                branch_id: null
+            }
+        });
+    }
+
+    async blockUserLogin(tx: Prisma.TransactionClient, userId: string | null) {
+
+        if (!userId) {
+            return;
         }
-    });
-}
+
+        return tx.user_table.update({
+            where: {
+                user_id: userId
+            },
+            data: {
+                user_status: 1
+            }
+        });
+
+    }
+
+    async deleteUserBranchMappings(tx: Prisma.TransactionClient, userId: string | null) {
+
+        if (!userId) {
+            return;
+        }
+
+        return tx.user_branch_mapping.deleteMany({
+            where: {
+                user_id: userId
+            }
+        });
+
+    }
+
+    async closeAllActiveSchedules(
+        tx: Prisma.TransactionClient,
+        employeeId: string,
+        effectiveTo: Date
+    ) {
+
+        return tx.doctor_schedule.updateMany({
+            where: {
+                employee_id: employeeId,
+                is_active: true
+            },
+            data: {
+                is_active: false,
+                effective_to: effectiveTo
+            }
+        });
+
+    }
+
+    async findFutureAppointmentsTx(
+        tx: Prisma.TransactionClient,
+        employeeId: string,
+        fromDate: Date
+    ) {
+
+        return tx.appointment_history.findMany({
+            where: {
+                employee_id: employeeId,
+                appointment_date: { gte: fromDate },
+                status: { notIn: TERMINAL_APPOINTMENT_STATUSES }
+            },
+            select: {
+                appointment_id: true,
+                patient_id: true,
+                branch_id: true,
+                department_id: true,
+                schedule_id: true,
+                appointment_date: true,
+                appointment_time: true,
+                status: true
+            },
+            orderBy: { appointment_date: "asc" }
+        });
+
+    }
+
+    async requeueAppointment(
+        tx: Prisma.TransactionClient,
+        data: {
+            appointment_id: string;
+            old_employee_id: string;
+            patient_id: string;
+            branch_id: string | null;
+            department_id: string | null;
+            old_schedule_id: bigint | null;
+            old_appointment_date: Date;
+            old_appointment_time: Date;
+            reason: string;
+            created_by: string;
+        }
+    ) {
+
+        await tx.appointment_history.update({
+            where: {
+                appointment_id: data.appointment_id
+            },
+            data: {
+                status: "RESCHEDULE_REQUIRED",
+                employee_id: null,
+                schedule_id: null
+            }
+        });
+
+        const queueId = await generateId(tx, "RESCHEDULE_QUEUE");
+
+        await tx.appointment_reschedule_queue.create({
+            data: {
+                queue_id: queueId,
+                appointment_id: data.appointment_id,
+                patient_id: data.patient_id,
+                employee_id: data.old_employee_id,
+                branch_id: data.branch_id!,
+                department_id: data.department_id,
+                old_schedule_id: data.old_schedule_id,
+                old_appointment_date: data.old_appointment_date,
+                old_appointment_time: data.old_appointment_time,
+                priority: "NORMAL",
+                reason: data.reason,
+                status: "PENDING",
+                created_by: data.created_by
+            }
+        });
+
+        await tx.appointment_reschedule_action_log.create({
+            data: {
+                queue_id: queueId,
+                action: "CREATED",
+                performed_by: data.created_by,
+                notes: `Created from employee deactivation (${data.reason})`
+            }
+        });
+
+        return queueId;
+
+    }
+
+    async findOpenRescheduleQueueEntries(tx: Prisma.TransactionClient, appointmentId: string) {
+
+        return tx.appointment_reschedule_queue.findMany({
+            where: {
+                appointment_id: appointmentId,
+                status: { in: ["PENDING", "ASSIGNED"] }
+            },
+            orderBy: { created_at: "desc" }
+        });
+
+    }
+
+    async closeRescheduleQueueEntry(
+        tx: Prisma.TransactionClient,
+        queueId: string,
+        performedBy: string
+    ) {
+
+        await tx.appointment_reschedule_queue.update({
+            where: {
+                queue_id: queueId
+            },
+            data: {
+                status: "CONFIRMED",
+                updated_at: new Date()
+            }
+        });
+
+        await tx.appointment_reschedule_action_log.create({
+            data: {
+                queue_id: queueId,
+                action: "CONFIRMED",
+                performed_by: performedBy,
+                notes: "Appointment updated directly via the edit appointment form"
+            }
+        });
+
+    }
     async findEmployeeById(employeeId: string) {
     return prisma.employees.findUnique({
         where: {
@@ -107,40 +290,47 @@ async updateEmployee(
 async getAllEmployees() {
     return prisma.employees.findMany();
 }
-    async getEmployees(query: GetEmployeesQuery) {
+async getEmployees(query: GetEmployeesQuery) {
             const {
- 
+
         roleType,
- 
+
         branchId,
- 
+
         department,
- 
+
         status,
- 
+
+        includeDeleted,
+
         search,
- 
+
         page = 1,
- 
+
         limit = 10
- 
+
     } = query;
- 
-    const where: Prisma.employeesWhereInput = {};
+
+    const where: Prisma.employeesWhereInput & { deleted_at?: null } = {};
     if (department) {
- 
+
     where.department_id = department;
- 
+
 }
 if (branchId) {
- 
+
     where.branch_id = branchId;
    
 }
 if (status !== undefined) {
- 
+
     where.emp_status = status;
- 
+
+}
+if (!includeDeleted) {
+
+    where.deleted_at = null;
+
 }
 if (search) {
  
@@ -340,40 +530,50 @@ async getEmployeeById(
     }
     const branches =
 await prisma.user_branch_mapping.findMany({
- 
+
     where:{
- 
+
         user_id: employee.user_id!
- 
+
     },
- 
+
     include:{
- 
+
         branch:true
- 
-    }
- 
+
+    },
+
+    orderBy: {
+        assigned_date: "desc",
+    },
+
 });
 const response:any={
- 
+
     employee,
- 
+
     user:employee.user_table,
- 
+
     // status is included so callers can tell an active assignment (1) apart
     // from a deactivated/historical one (0) — e.g. resolving "which branch
     // is this admin currently on" without a second, privileged API call.
+    // assigned_date (with the list already ordered newest-first) lets a
+    // caller find the MOST RECENT inactive mapping when there's more than
+    // one in a Branch Admin's history, e.g. to suggest their last branch
+    // when reactivating them.
     branches:
         branches.map(x=>({
- 
+
             branch_id:x.branch.branch_id,
- 
+
             branch_name:x.branch.branch_name,
- 
-            status:x.status
- 
+
+            status:x.status,
+
+            assigned_date:x.assigned_date,
+
         }))
- 
+
 };
 switch(employee.user_table?.role_type){
  

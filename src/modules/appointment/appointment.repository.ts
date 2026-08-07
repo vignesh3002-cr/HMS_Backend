@@ -302,6 +302,43 @@ export class AppointmentRepository {
 
     }
 
+    async findOpenRescheduleQueueEntries(tx: Prisma.TransactionClient, appointmentId: string) {
+
+        return tx.appointment_reschedule_queue.findMany({
+            where: {
+                appointment_id: appointmentId,
+                status: { in: ["PENDING", "ASSIGNED"] }
+            },
+            orderBy: { created_at: "desc" }
+        });
+
+    }
+
+    async closeRescheduleQueueEntry(
+        tx: Prisma.TransactionClient,
+        queueId: string,
+        performedBy: string
+    ) {
+
+        await tx.appointment_reschedule_queue.update({
+            where: { queue_id: queueId },
+            data: {
+                status: "CONFIRMED",
+                updated_at: new Date()
+            }
+        });
+
+        await tx.appointment_reschedule_action_log.create({
+            data: {
+                queue_id: queueId,
+                action: "CONFIRMED",
+                performed_by: performedBy,
+                notes: "Appointment updated directly via the edit appointment form"
+            }
+        });
+
+    }
+
     async getAppointments(query: GetAppointmentsQuery) {
 
         const {

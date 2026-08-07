@@ -444,13 +444,9 @@ async updateEmployee(
     if (hashedPassword) userUpdateData.password = hashedPassword;
     if (data.emp_status !== undefined) userUpdateData.user_status = data.emp_status ? 0 : 1;
 
-    // A Branch Admin's branch_id is a real assignment — deactivating them
-    // must release that branch rather than leaving a stale branch_id on an
-    // inactive admin. Every other role's branch_id is just their home branch
-    // and is left untouched regardless of active/inactive status.
-    const isBranchAdminTarget = employee.user_table?.role_type === "BRANCH_ADMIN";
-    const shouldReleaseBranch = isBranchAdminTarget && data.emp_status === false;
-
+    // A Branch Admin's branch_id/mapping is left untouched by active/inactive
+    // status changes, same as every other role (Staff Admin included) —
+    // deactivating them doesn't release or otherwise affect their branch.
     const employeeUpdateData: Record<string, unknown> = {
         first_name: data.first_name,
         middle_name: data.middle_name,
@@ -490,10 +486,6 @@ async updateEmployee(
         permanent_employee_pincode: data.permanent_employee_pincode,
     };
 
-    if (shouldReleaseBranch) {
-        employeeUpdateData.branch_id = null;
-    }
-
     const hasUserUpdate = Object.keys(userUpdateData).length > 0 && !!employee.user_id;
     const isDoctor = data.role_type === "DOCTOR" || employee.user_table?.role_type === "DOCTOR";
     const userId = employee.user_id ?? employee.user_table?.user_id;
@@ -508,18 +500,6 @@ async updateEmployee(
             await tx.user_table.update({
                 where: { user_id: userId },
                 data: userUpdateData,
-            });
-        }
-
-        // Deactivating a Branch Admin also releases whichever branch's
-        // active mapping they hold — getAssignableAdmins/getBranchById's
-        // "current admin" lookups key off user_branch_mapping.status, not
-        // employees.branch_id, so both must be released together or the
-        // branch would still show this now-inactive admin as current.
-        if (shouldReleaseBranch && userId) {
-            await tx.user_branch_mapping.updateMany({
-                where: { user_id: userId, status: 1 },
-                data: { status: 0, is_primary_branch: false },
             });
         }
 
@@ -538,6 +518,20 @@ async updateEmployee(
                         employee_id: employeeId,
                         status: 1,
                     },
+                });
+            }
+
+            // employees.branch_id is a denormalized copy of the single-branch
+            // roles' real assignment (user_branch_mapping is authoritative) -
+            // it's read directly by the Staff/Doctor branch column and by
+            // login's buildAuthPayload, so it must never be left to drift
+            // from the mapping just rewritten above. Doctors are the one
+            // genuinely multi-branch role, where a single branch_id can't
+            // represent "their branch" - leave that column alone for them.
+            if (!isDoctor) {
+                await tx.employees.update({
+                    where: { employee_id: employeeId },
+                    data: { branch_id: data.branch_ids[0] ?? null },
                 });
             }
         }
@@ -560,9 +554,43 @@ async updateEmployee(
         }
 
         if (data.working_hours) {
+            // appointment_history.schedule_id and encounter.schedule_id both
+            // have a real FK (onDelete: NoAction) into doctor_schedule -
+            // deleting a slot that already has a booked appointment/encounter
+            // against it 500s with a foreign key violation. Keep whichever
+            // rows are still referenced instead of deleting everything, and
+            // replace only the rest - same end result for every slot that
+            // has no bookings, but never crashes for one that does.
+            const existingSchedules = await tx.doctor_schedule.findMany({
+                where: { employee_id: employeeId },
+                select: { schedule_id: true },
+            });
+            const existingIds = existingSchedules.map((s) => s.schedule_id);
+
+            const [referencedByAppointment, referencedByEncounter] = existingIds.length
+                ? await Promise.all([
+                      tx.appointment_history.findMany({
+                          where: { schedule_id: { in: existingIds } },
+                          select: { schedule_id: true },
+                          distinct: ["schedule_id"],
+                      }),
+                      tx.encounter.findMany({
+                          where: { schedule_id: { in: existingIds } },
+                          select: { schedule_id: true },
+                          distinct: ["schedule_id"],
+                      }),
+                  ])
+                : [[], []];
+
+            const protectedIds = [
+                ...referencedByAppointment.map((r) => r.schedule_id!),
+                ...referencedByEncounter.map((r) => r.schedule_id!),
+            ];
+
             await tx.doctor_schedule.deleteMany({
                 where: {
                     employee_id: employeeId,
+                    schedule_id: { notIn: protectedIds },
                 },
             });
 
@@ -598,17 +626,70 @@ async getAllEmployees() {
     return repository.getAllEmployees();
 }
 
-async softDeleteEmployee(employeeId: string) {
+async softDeleteEmployee(employeeId: string, actingUserId: string = "SYSTEM") {
+
     const employee = await repository.findEmployeeById(employeeId);
 
     if (!employee) {
         throw new Error("Employee not found");
     }
 
-    await repository.softDeleteEmployee(employeeId);
+    let affectedAppointments = 0;
+
+    await prisma.$transaction(async (tx) => {
+
+        // 1. Soft-delete: flag the row so it disappears from every list
+        // (getEmployees now excludes deleted_at by default).
+        await repository.softDeleteEmployee(tx, employeeId);
+
+        // 2. Block login at the user_table level too (belt-and-braces next
+        // to the auth.service emp_status check).
+        await repository.blockUserLogin(tx, employee.user_id);
+
+        // 3. Release every branch assignment (branch_id + user_branch_mapping).
+        await repository.deleteUserBranchMappings(tx, employee.user_id);
+
+        // 4. Close all of the doctor's schedule rows so no slots can be
+        // picked up by availability queries.
+        await repository.closeAllActiveSchedules(tx, employeeId, new Date());
+
+        // 5. Future appointments are NOT cancelled - they are flagged
+        // RESCHEDULE_REQUIRED, unlinked from the doctor and queued so an
+        // admin can reassign them later (via the edit appointment form or
+        // the reschedule queue).
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const futureAppointments = await repository.findFutureAppointmentsTx(
+            tx,
+            employeeId,
+            today
+        );
+
+        affectedAppointments = futureAppointments.length;
+
+        for (const appointment of futureAppointments) {
+
+            await repository.requeueAppointment(tx, {
+                appointment_id: appointment.appointment_id,
+                old_employee_id: employeeId,
+                patient_id: appointment.patient_id,
+                branch_id: appointment.branch_id,
+                department_id: appointment.department_id,
+                old_schedule_id: appointment.schedule_id,
+                old_appointment_date: appointment.appointment_date,
+                old_appointment_time: appointment.appointment_time,
+                reason: "Doctor deactivated",
+                created_by: actingUserId
+            });
+
+        }
+
+    });
 
     return {
         message: "Employee deactivated successfully",
+        affected_appointments: affectedAppointments
     };
 }
 

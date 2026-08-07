@@ -153,19 +153,21 @@ export interface UpdateEmployeeDto {
 }
  
 export interface GetEmployeesQuery {
- 
+
     roleType?: string;
- 
+
     branchId?: string;
- 
+
     department?: string;
- 
+
     status?: boolean;
- 
+
+    includeDeleted?: boolean;
+
     search?: string;
- 
+
     page?: number;
- 
+
     limit?: number;
- 
+
 }

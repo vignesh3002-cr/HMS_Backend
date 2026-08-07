@@ -5,6 +5,10 @@ import prisma from "../../config/prisma";
 
 export type AuthRequest = Request & {
   user?: any;
+  // Set by authorizeSelfOrPermission when the caller is accessing their own
+  // record - lets downstream middleware (branchScope) skip branch-ambiguity
+  // checks, since accessing your own data never needs branch disambiguation.
+  isSelfAccess?: boolean;
 };
 
 export const authenticate: RequestHandler = async (req, res, next) => {
