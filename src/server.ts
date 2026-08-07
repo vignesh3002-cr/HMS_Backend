@@ -11,8 +11,8 @@ import departmentRoutes from "./modules/department/department.routes";
 import patientRoutes from "./modules/patient/patient.routes";
 import appointmentRoutes from "./modules/appointment/appointment.routes";
 import encounterRoutes from "./modules/encounter/encounter.routes";
-//import prescriptionRoutes from "./modules/prescription/prescription.routes";
-//import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
+import permissionRoutes from "./modules/permission/permission.routes";
+import roleRoutes from "./modules/role/role.routes";
 import doctorTransferRoutes from "./modules/doctor-transfer/doctorTransfer.routes";
 import labTestCategoryRoutes from "./modules/lab-test-category/lab-test-category.routes";
 import labTestMasterRoutes from "./modules/lab-test-master/lab-test-master.routes";
@@ -20,11 +20,10 @@ import labOrderRoutes from "./modules/lab-order/lab-order-routes";
 import cookieParser from "cookie-parser";
 import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
 import labOrderItemRoutes from "./modules/lab-order-item/lab-order-item.routes";
-import prescriptionRoutes from "./modules/prescription/prescription.routes";
 import qualificationMasterRoutes from "./modules/qualification-master/qualification-master.routes";
 import prescriptionRoutes from "./modules/prescription/prescription.routes";
-import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
-import doctorTransferRoutes from "./modules/doctor-transfer/doctorTransfer.routes";
+
+
 import { hashPassword } from "./utils/bcrypt";
 
 // Fix BigInt serialization - Prisma returns BigInt types that JSON.stringify can't handle
@@ -34,78 +33,73 @@ import { hashPassword } from "./utils/bcrypt";
 
 const app = express();
 
-const configuredOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean);
+const configuredOrigins = (
+  process.env.FRONTEND_URL || "http://localhost:5173"
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
-const allowedOrigins = new Set([
-    ...configuredOrigins,
 const allowedOrigins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]);
+  ...configuredOrigins,
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:5174",
+  "http://127.0.0.1:5174",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "http://localhost:8080",
+  "http://127.0.0.1:8080",
+];
 
-app.use(
-    cors({
-        origin: (origin, callback) => {
-            if (!origin) {
-                callback(null, true);
-                return;
-            }
-
-            if (allowedOrigins.has(origin)) {
-                callback(null, true);
-                return;
-            }
-
-            callback(new Error(`CORS blocked for origin: ${origin}`));
-    process.env.FRONTEND_URL,
-].filter(Boolean) as string[];
- 
 const isAllowedOrigin = (origin: string | undefined) => {
-    if (!origin) return true;
- 
-    if (allowedOrigins.includes(origin)) return true;
- 
-    return /^https:\/\/.*\.vercel\.app$/i.test(origin);
+  if (!origin) return true;
+
+  if (allowedOrigins.includes(origin)) {
+    return true;
+  }
+
+  return /^https:\/\/.*\.vercel\.app$/i.test(origin);
 };
- 
+
 app.use(
-    cors({
-        origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-            if (isAllowedOrigin(origin)) {
-                callback(null, true);
-                return;
-            }
- 
-            callback(new Error(`Not allowed by CORS: ${origin}`));
-        },
-        credentials: true,
-        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allowedHeaders: [
-            "Content-Type",
-            "Authorization",
-            "x-branch-id",
-            "X-Requested-With",
-            "Cache-Control",
-            "Accept",
-            "Origin",
-            "Referer",
-            "User-Agent",
-            "X-Branch-Id"
-],
-        optionsSuccessStatus: 200,
-    })
+  cors({
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void
+    ) => {
+      if (isAllowedOrigin(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Not allowed by CORS: ${origin}`));
+      }
+    },
+    credentials: true,
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS",
+    ],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-branch-id",
+      "X-Requested-With",
+      "Cache-Control",
+      "Accept",
+      "Origin",
+      "Referer",
+      "User-Agent",
+    ],
+    optionsSuccessStatus: 200,
+  })
 );
 
-        ],
-        optionsSuccessStatus: 200,
-    })
-);
- 
+app.use(express.json());
+app.use(cookieParser());
 
 
 app.get("/api/health", (_req, res) => {
@@ -126,6 +120,8 @@ app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/lab-order-item", labOrderItemRoutes);
 app.use("/api/encounters", encounterRoutes);
+app.use("/api/permissions", permissionRoutes);
+app.use("/api/roles", roleRoutes);
 //app.use("/api/prescriptions", prescriptionRoutes);
 //app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/doctors", doctorTransferRoutes);

@@ -7,6 +7,49 @@ datasource db {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Permission {
+  id             String           @id @db.VarChar(50)
+  key            String           @unique @db.VarChar(100)
+  name           String           @db.VarChar(100)
+  description    String?          @db.VarChar(255)
+  category       String           @db.VarChar(50)
+  is_active      Boolean          @default(true)
+  created_at     DateTime         @default(now())
+  updated_at     DateTime
+  RolePermission RolePermission[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model PermissionAuditLog {
+  id             BigInt   @id @default(autoincrement())
+  role_type      String   @db.VarChar(50)
+  permission_key String   @db.VarChar(100)
+  action         String   @db.VarChar(20)
+  changed_by     String   @db.VarChar(50)
+  changed_at     DateTime @default(now())
+  metadata       Json?
+
+  @@index([changed_by, changed_at])
+  @@index([role_type, changed_at])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model RolePermission {
+  id             String         @id @db.VarChar(50)
+  role_type      String         @db.VarChar(50)
+  permission_id  String         @db.VarChar(50)
+  granted_by     String         @db.VarChar(50)
+  granted_at     DateTime       @default(now())
+  revoked_at     DateTime?
+  revoked_by     String?        @db.VarChar(50)
+  Permission     Permission     @relation(fields: [permission_id], references: [id])
+  role_id_config role_id_config @relation(fields: [role_type], references: [role_type])
+
+  @@unique([role_type, permission_id])
+  @@index([role_type])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model appointment_history {
   appointment_id                  String                            @unique(map: "uq_appointment_id") @db.VarChar(20)
   patient_id                      String                            @db.VarChar(20)
@@ -119,6 +162,20 @@ model appointment_reschedule_queue {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model biomarker_tests {
+  id                 BigInt  @id @default(autoincrement())
+  biomarker_id       String  @unique(map: "uq_biomarker_tests_id") @db.VarChar(20)
+  biomarker_name     String  @db.VarChar(100)
+  test_method        String? @db.VarChar(100)
+  threshold_value    String? @db.VarChar(100)
+  threshold_unit     String? @db.VarChar(30)
+  drug_target        String?
+  nccn_level         String? @db.VarChar(50)
+  applicable_cancers String?
+  guideline_source   String? @db.VarChar(150)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model branch {
   branch_id                    String                         @unique(map: "uq_branch_branch_id") @default(dbgenerated("nextval('branch_branch_id_seq'::regclass)")) @db.VarChar(10)
   branch_type                  String                         @db.VarChar(20)
@@ -170,6 +227,40 @@ model branch {
   user_branch_mapping          user_branch_mapping[]
   user_log                     user_log[]
   user_table                   user_table[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model cancer_subtypes {
+  id                            BigInt                          @id @default(autoincrement())
+  subtype_id                    String                          @unique(map: "uq_cancer_subtypes_id") @db.VarChar(20)
+  cancer_type_id                String                          @db.VarChar(20)
+  subtype_name                  String                          @db.VarChar(150)
+  icd_o3_morphology             String?                         @db.VarChar(30)
+  icd10_subtype                 String?                         @db.VarChar(20)
+  active_status                 Int?                            @default(1) @db.SmallInt
+  cancer_types                  cancer_types                    @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: Cascade, map: "fk_subtype_cancer_type")
+  chemotherapy_plan             chemotherapy_plan[]
+  chemotherapy_regimen_protocol chemotherapy_regimen_protocol[]
+  oncology_staging_detail       oncology_staging_detail[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model cancer_types {
+  id                            BigInt                          @id @default(autoincrement())
+  cancer_type_id                String                          @unique(map: "uq_cancer_types_id") @db.VarChar(20)
+  cancer_type                   String                          @unique(map: "uq_cancer_types_name") @db.VarChar(100)
+  icd10                         String?                         @db.VarChar(20)
+  icd_o3_topography             String?                         @db.VarChar(20)
+  staging_system                String?                         @db.VarChar(50)
+  druggable_targets             String?
+  active_status                 Int?                            @default(1) @db.SmallInt
+  created_at                    DateTime?                       @default(now()) @db.Timestamp(6)
+  cancer_subtypes               cancer_subtypes[]
+  chemotherapy_plan             chemotherapy_plan[]
+  chemotherapy_regimen_protocol chemotherapy_regimen_protocol[]
+  molecular_subtypes            molecular_subtypes[]
+  oncology_staging_detail       oncology_staging_detail[]
+  staging_reference             staging_reference[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -527,6 +618,55 @@ model chemotherapy_plan_items {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model chemotherapy_regimen_protocol {
+  id                                  BigInt                                @id @default(autoincrement())
+  protocol_id                         String                                @unique(map: "uq_regimen_protocol_id") @db.VarChar(20)
+  regimen_code                        String                                @unique(map: "uq_regimen_protocol_code") @db.VarChar(50)
+  regimen_name                        String                                @db.VarChar(200)
+  protocol_version                    String?                               @db.VarChar(50)
+  cancer_type_id                      String                                @db.VarChar(20)
+  subtype_id                          String?                               @db.VarChar(20)
+  treatment_intent                    String?                               @db.VarChar(50)
+  standard_cycles                     Int?
+  cycle_interval_days                 Int?
+  guideline_source                    String?                               @db.VarChar(150)
+  notes                               String?
+  active_status                       Int?                                  @default(1) @db.SmallInt
+  created_at                          DateTime?                             @default(now()) @db.Timestamp(6)
+  updated_at                          DateTime?                             @default(now()) @db.Timestamp(6)
+  cancer_types                        cancer_types                          @relation(fields: [cancer_type_id], references: [cancer_type_id], map: "fk_regimen_protocol_cancer_type")
+  cancer_subtypes                     cancer_subtypes?                      @relation(fields: [subtype_id], references: [subtype_id], map: "fk_regimen_protocol_subtype")
+  chemotherapy_regimen_protocol_items chemotherapy_regimen_protocol_items[]
+
+  @@unique([cancer_type_id, subtype_id, regimen_code], map: "uq_regimen_protocol_type_subtype_code")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model chemotherapy_regimen_protocol_items {
+  id                            BigInt                        @id @default(autoincrement())
+  protocol_item_id              String                        @unique(map: "uq_regimen_protocol_item_id") @db.VarChar(20)
+  protocol_id                   String                        @db.VarChar(20)
+  medicine_id                   String                        @db.VarChar(20)
+  drug_role                     String                        @default("PRIMARY") @db.VarChar(20)
+  drug_sequence                 Int
+  drug_type                     String?                       @db.VarChar(50)
+  dosage                        Decimal?                      @db.Decimal(10, 2)
+  dosage_unit                   String?                       @db.VarChar(30)
+  dose_calculation_method       String?                       @db.VarChar(50)
+  administration_route          String?                       @db.VarChar(50)
+  infusion_type                 String?                       @db.VarChar(50)
+  infusion_duration_minutes     Int?
+  administration_day            Int?
+  cycle_day                     Int?
+  frequency                     String?                       @db.VarChar(100)
+  timing_relative_to_primary    String?                       @db.VarChar(100)
+  remarks                       String?
+  active_status                 Int?                          @default(1) @db.SmallInt
+  medicine_master               medicine_master               @relation(fields: [medicine_id], references: [medicine_id], map: "fk_regimen_protocol_item_medicine")
+  chemotherapy_regimen_protocol chemotherapy_regimen_protocol @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_regimen_protocol_item_protocol")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_vitals {
   id                       BigInt             @id @default(autoincrement())
   vital_id                 String             @unique(map: "uq_chemo_vital_id") @db.VarChar(20)
@@ -563,6 +703,17 @@ model chemotherapy_vitals {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model clinical_parameter {
+  id               BigInt    @id @default(autoincrement())
+  parameter_key    String    @unique(map: "uq_clinical_parameter_key") @db.VarChar(50)
+  value            String    @db.VarChar(50)
+  unit             String?   @db.VarChar(20)
+  guideline_source String?   @db.VarChar(150)
+  description      String?
+  updated_at       DateTime? @default(now()) @db.Timestamp(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model clinical_test_master {
   id           BigInt    @id @default(autoincrement())
   testid       String    @unique @db.VarChar(20)
@@ -592,6 +743,28 @@ model department_master {
   lab_order           lab_order[]
   patient_history     patient_history[]
   prescription        prescription[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model derived_fields {
+  id                      BigInt                  @id @default(autoincrement())
+  derived_id              String                  @unique(map: "uq_derived_fields_id") @db.VarChar(20)
+  staging_detail_id       String                  @unique(map: "uq_derived_fields_staging_detail") @db.VarChar(20)
+  breast_mol_subtype      String?                 @db.VarChar(50)
+  ajcc_stage              String?                 @db.VarChar(20)
+  icd10_auto              String?                 @db.VarChar(10)
+  icd_o3_auto             String?                 @db.VarChar(20)
+  pdl1_score_type         String?                 @db.VarChar(10)
+  germline_referral_flag  Boolean?                @default(false)
+  lynch_syndrome_flag     Boolean?                @default(false)
+  eln_risk                String?                 @db.VarChar(20)
+  lymphoma_deauville      Int?                    @db.SmallInt
+  tnbc_subtype            String?                 @db.VarChar(20)
+  suggested_therapy       String?
+  recommended_tests       String?
+  derived_at              DateTime?               @default(now()) @db.Timestamp(6)
+  oncology_staging_detail oncology_staging_detail @relation(fields: [staging_detail_id], references: [staging_detail_id], onDelete: Cascade, map: "fk_derived_staging_detail")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -641,6 +814,34 @@ model diagnosis_medicine_mapping {
   created_at      DateTime?       @default(now()) @db.Timestamp(6)
   diagnosis       diagnosis       @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: Cascade, map: "fk_dm_diagnosis")
   medicine_master medicine_master @relation(fields: [medicine_id], references: [medicine_id], map: "fk_dm_medicine")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model doctor_leave {
+  id                                                        BigInt      @id @default(autoincrement())
+  leave_id                                                  String      @unique @db.VarChar(20)
+  employee_id                                               String      @db.VarChar(20)
+  replacement_employee_id                                   String?     @db.VarChar(20)
+  leave_start_date                                          DateTime    @db.Date
+  leave_end_date                                            DateTime    @db.Date
+  leave_reason                                              String      @db.VarChar(500)
+  status                                                    LeaveStatus @default(PENDING)
+  requested_by                                              String      @db.VarChar(20)
+  requested_at                                              DateTime    @default(now()) @db.Timestamp(6)
+  approved_by                                               String?     @db.VarChar(20)
+  approved_at                                               DateTime?   @db.Timestamp(6)
+  rejected_by                                               String?     @db.VarChar(20)
+  rejected_at                                               DateTime?   @db.Timestamp(6)
+  remarks                                                   String?     @db.VarChar(500)
+  leave_type                                                String?     @db.VarChar
+  total_leave_days                                          BigInt?
+  branch_id                                                 String      @db.VarChar
+  user_table_doctor_leave_approved_byTouser_table           user_table? @relation("doctor_leave_approved_byTouser_table", fields: [approved_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_doctor_leave_approved_by")
+  branch                                                    branch      @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_doctor_leave_branch")
+  employees_doctor_leave_employee_idToemployees             employees   @relation("doctor_leave_employee_idToemployees", fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_doctor_leave_employee")
+  user_table_doctor_leave_rejected_byTouser_table           user_table? @relation("doctor_leave_rejected_byTouser_table", fields: [rejected_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_doctor_leave_rejected_by")
+  employees_doctor_leave_replacement_employee_idToemployees employees?  @relation("doctor_leave_replacement_employee_idToemployees", fields: [replacement_employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_doctor_leave_replacement_employee")
+  user_table_doctor_leave_requested_byTouser_table          user_table  @relation("doctor_leave_requested_byTouser_table", fields: [requested_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_doctor_leave_requested_by")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -870,6 +1071,37 @@ model id_sequences {
   prefix         String    @db.VarChar(10)
   current_number Int       @default(0)
   updated_at     DateTime? @default(now()) @db.Timestamp(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ihc_results {
+  id                      BigInt                  @id @default(autoincrement())
+  ihc_id                  String                  @unique(map: "uq_ihc_results_id") @db.VarChar(20)
+  staging_detail_id       String                  @unique(map: "uq_ihc_results_staging_detail") @db.VarChar(20)
+  er_status               String?                 @db.VarChar(20)
+  er_percent              Int?                    @db.SmallInt
+  pr_status               String?                 @db.VarChar(20)
+  pr_percent              Int?                    @db.SmallInt
+  her2_ihc                String?                 @db.VarChar(20)
+  her2_fish               String?                 @db.VarChar(30)
+  her2_fish_ratio         Decimal?                @db.Decimal(4, 2)
+  her2_avg_copy           Decimal?                @db.Decimal(6, 2)
+  ki67_percent            Int?                    @db.SmallInt
+  pdl1_tps                Int?                    @db.SmallInt
+  pdl1_cps                Int?                    @db.SmallInt
+  pdl1_clone              String?                 @db.VarChar(20)
+  mmr_mlh1                String?                 @db.VarChar(20)
+  mmr_msh2                String?                 @db.VarChar(20)
+  mmr_msh6                String?                 @db.VarChar(20)
+  mmr_pms2                String?                 @db.VarChar(20)
+  mmr_overall             String?                 @db.VarChar(20)
+  p53_ihc                 String?                 @db.VarChar(30)
+  ar_status               String?                 @db.VarChar(20)
+  created_at              DateTime?               @default(now()) @db.Timestamp(6)
+  updated_at              DateTime?               @default(now()) @db.Timestamp(6)
+  mlh1_methylation        String?                 @db.VarChar(20)
+  oncology_staging_detail oncology_staging_detail @relation(fields: [staging_detail_id], references: [staging_detail_id], onDelete: Cascade, map: "fk_ihc_staging_detail")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1126,6 +1358,104 @@ model medicine_master {
   prescription_items                  prescription_items[]
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model molecular_results {
+  id                      BigInt                  @id @default(autoincrement())
+  mol_id                  String                  @unique(map: "uq_molecular_results_id") @db.VarChar(20)
+  staging_detail_id       String                  @unique(map: "uq_molecular_results_staging_detail") @db.VarChar(20)
+  egfr_status             String?                 @db.VarChar(30)
+  egfr_mutation_type      String?                 @db.VarChar(50)
+  alk_status              String?                 @db.VarChar(30)
+  alk_test_method         String?                 @db.VarChar(20)
+  ros1_status             String?                 @db.VarChar(30)
+  kras_g12c               String?                 @db.VarChar(30)
+  kras_mutation           String?                 @db.VarChar(20)
+  braf_v600e              String?                 @db.VarChar(30)
+  brca1_germline          String?                 @db.VarChar(40)
+  brca2_germline          String?                 @db.VarChar(40)
+  brca_somatic            String?                 @db.VarChar(20)
+  hrd_status              String?                 @db.VarChar(30)
+  hrd_score               Decimal?                @db.Decimal(5, 1)
+  hrd_assay               String?                 @db.VarChar(30)
+  msi_status              String?                 @db.VarChar(30)
+  msi_test_method         String?                 @db.VarChar(20)
+  tmb                     Decimal?                @db.Decimal(5, 1)
+  tmb_assay               String?                 @db.VarChar(30)
+  ngs_panel               String?                 @db.VarChar(30)
+  flt3_itd                String?                 @db.VarChar(20)
+  flt3_itd_allelic_ratio  Decimal?                @db.Decimal(4, 2)
+  flt3_tkd                String?                 @db.VarChar(20)
+  npm1_mutation           String?                 @db.VarChar(30)
+  idh1_mutation           String?                 @db.VarChar(20)
+  idh2_mutation           String?                 @db.VarChar(20)
+  bcr_abl1                Decimal?                @db.Decimal(6, 2)
+  bcr_abl1_transcript     String?                 @db.VarChar(20)
+  created_at              DateTime?               @default(now()) @db.Timestamp(6)
+  updated_at              DateTime?               @default(now()) @db.Timestamp(6)
+  oncology_staging_detail oncology_staging_detail @relation(fields: [staging_detail_id], references: [staging_detail_id], onDelete: Cascade, map: "fk_mol_staging_detail")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model molecular_subtypes {
+  id             BigInt       @id @default(autoincrement())
+  mol_sub_id     String       @unique(map: "uq_molecular_subtypes_id") @db.VarChar(20)
+  cancer_type_id String       @db.VarChar(20)
+  subtype_name   String       @db.VarChar(50)
+  er_rule        String?      @db.VarChar(20)
+  pr_rule        String?      @db.VarChar(20)
+  her2_rule      String?      @db.VarChar(20)
+  ki67_threshold Int?         @default(14)
+  colour_hex     String?      @db.Char(7)
+  badge_label    String?      @db.VarChar(50)
+  cancer_types   cancer_types @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: Cascade, map: "fk_molsub_cancer_type")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model oncology_staging_detail {
+  id                    BigInt              @id @default(autoincrement())
+  staging_detail_id     String              @unique(map: "uq_staging_detail_id") @db.VarChar(20)
+  patient_id            String              @db.VarChar(20)
+  patient_history_id    String?             @db.VarChar(20)
+  diagnosis_id          String?             @db.VarChar(20)
+  visit_date            DateTime?           @db.Date
+  diagnosis_date        DateTime?           @db.Date
+  biopsy_date           DateTime?           @db.Date
+  consulting_oncologist String?             @db.VarChar(150)
+  cancer_type_id        String              @db.VarChar(20)
+  cancer_subtype_id     String              @db.VarChar(20)
+  icd10_code            String?             @db.VarChar(10)
+  icd_o3_topo           String?             @db.VarChar(10)
+  icd_o3_morpho         String?             @db.VarChar(20)
+  staging_system        String?             @db.VarChar(50)
+  clinical_stage        String?             @db.VarChar(20)
+  t_stage               String?             @db.VarChar(10)
+  n_stage               String?             @db.VarChar(10)
+  m_stage               String?             @db.VarChar(10)
+  metastasis_sites      Json?
+  laterality            String?             @db.VarChar(10)
+  performance_status    Int?                @db.SmallInt
+  employee_id           String?             @db.VarChar(20)
+  branch_id             String?             @db.VarChar(20)
+  user_id               String?             @db.VarChar(20)
+  created_at            DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at            DateTime?           @default(now()) @db.Timestamp(6)
+  chemotherapy_plan     chemotherapy_plan[]
+  derived_fields        derived_fields?
+  ihc_results           ihc_results?
+  molecular_results     molecular_results?
+  branch                branch?             @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_staging_branch")
+  cancer_types          cancer_types        @relation(fields: [cancer_type_id], references: [cancer_type_id], map: "fk_staging_cancer_type")
+  diagnosis             diagnosis?          @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: Restrict, map: "fk_staging_diagnosis")
+  employees             employees?          @relation(fields: [employee_id], references: [employee_id], map: "fk_staging_employee")
+  patient_bio_data      patient_bio_data    @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade, map: "fk_staging_patient")
+  patient_history       patient_history?    @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: Cascade, map: "fk_staging_patient_history")
+  cancer_subtypes       cancer_subtypes     @relation(fields: [cancer_subtype_id], references: [subtype_id], map: "fk_staging_subtype")
+  user_table            user_table?         @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_staging_user")
+}
+
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model patient_bio_data {
   id                           BigInt                         @id @default(autoincrement())
@@ -1287,6 +1617,18 @@ model prescription_items {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model qualification_master {
+  id                 BigInt      @id @default(autoincrement())
+  qualification_id   String      @unique @db.VarChar(20)
+  qualification_name String      @db.VarChar(150)
+  designation        String      @db.VarChar(50)
+  is_active          Boolean     @default(true)
+  created_at         DateTime    @default(now())
+  updated_at         DateTime    @updatedAt
+  employees          employees[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model role_id_config {
   role_type      String           @id @db.VarChar(50)
   description    String?          @db.VarChar(100)
@@ -1323,6 +1665,23 @@ model sample_collection {
   employees            employees?     @relation(fields: [collected_by], references: [employee_id], onDelete: Restrict, map: "fk_sample_collection_employee")
   lab_order_item       lab_order_item @relation(fields: [lab_order_item_id], references: [lab_order_item_id], onDelete: Cascade, map: "fk_sample_collection_order_item")
   user_table           user_table?    @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_sample_collection_user")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model staging_reference {
+  id               BigInt       @id @default(autoincrement())
+  stage_ref_id     String       @unique(map: "uq_staging_reference_id") @db.VarChar(20)
+  cancer_type_id   String       @db.VarChar(20)
+  subtype_label    String?      @db.VarChar(150)
+  staging_system   String?      @db.VarChar(50)
+  stage_label      String?      @db.VarChar(50)
+  tnm_criteria     String?
+  risk_system      String?      @db.VarChar(50)
+  risk_category    String?      @db.VarChar(50)
+  risk_criteria    String?
+  os_5yr_approx    String?      @db.VarChar(30)
+  guideline_source String?      @db.VarChar(150)
+  cancer_types     cancer_types @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: Cascade, map: "fk_staging_cancer_type")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1390,364 +1749,6 @@ model user_table {
   user_branch_mapping                                user_branch_mapping[]
   user_log                                           user_log[]
   branch                                             branch?                   @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_user_branch")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model biomarker_tests {
-  id                 BigInt  @id @default(autoincrement())
-  biomarker_id       String  @unique(map: "uq_biomarker_tests_id") @db.VarChar(20)
-  biomarker_name     String  @db.VarChar(100)
-  test_method        String? @db.VarChar(100)
-  threshold_value    String? @db.VarChar(100)
-  threshold_unit     String? @db.VarChar(30)
-  drug_target        String?
-  nccn_level         String? @db.VarChar(50)
-  applicable_cancers String?
-  guideline_source   String? @db.VarChar(150)
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model cancer_subtypes {
-  id                            BigInt                          @id @default(autoincrement())
-  subtype_id                    String                          @unique(map: "uq_cancer_subtypes_id") @db.VarChar(20)
-  cancer_type_id                String                          @db.VarChar(20)
-  subtype_name                  String                          @db.VarChar(150)
-  icd_o3_morphology             String?                         @db.VarChar(30)
-  icd10_subtype                 String?                         @db.VarChar(20)
-  active_status                 Int?                            @default(1) @db.SmallInt
-  cancer_types                  cancer_types                    @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: Cascade, map: "fk_subtype_cancer_type")
-  chemotherapy_plan             chemotherapy_plan[]
-  chemotherapy_regimen_protocol chemotherapy_regimen_protocol[]
-  oncology_staging_detail       oncology_staging_detail[]
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model cancer_types {
-  id                            BigInt                          @id @default(autoincrement())
-  cancer_type_id                String                          @unique(map: "uq_cancer_types_id") @db.VarChar(20)
-  cancer_type                   String                          @unique(map: "uq_cancer_types_name") @db.VarChar(100)
-  icd10                         String?                         @db.VarChar(20)
-  icd_o3_topography             String?                         @db.VarChar(20)
-  staging_system                String?                         @db.VarChar(50)
-  druggable_targets             String?
-  active_status                 Int?                            @default(1) @db.SmallInt
-  created_at                    DateTime?                       @default(now()) @db.Timestamp(6)
-  cancer_subtypes               cancer_subtypes[]
-  chemotherapy_plan             chemotherapy_plan[]
-  chemotherapy_regimen_protocol chemotherapy_regimen_protocol[]
-  molecular_subtypes            molecular_subtypes[]
-  oncology_staging_detail       oncology_staging_detail[]
-  staging_reference             staging_reference[]
-}
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model derived_fields {
-  id                      BigInt                  @id @default(autoincrement())
-  derived_id              String                  @unique(map: "uq_derived_fields_id") @db.VarChar(20)
-  staging_detail_id       String                  @unique(map: "uq_derived_fields_staging_detail") @db.VarChar(20)
-  breast_mol_subtype      String?                 @db.VarChar(50)
-  ajcc_stage              String?                 @db.VarChar(20)
-  icd10_auto              String?                 @db.VarChar(10)
-  icd_o3_auto             String?                 @db.VarChar(20)
-  pdl1_score_type         String?                 @db.VarChar(10)
-  germline_referral_flag  Boolean?                @default(false)
-  lynch_syndrome_flag     Boolean?                @default(false)
-  eln_risk                String?                 @db.VarChar(20)
-  lymphoma_deauville      Int?                    @db.SmallInt
-  tnbc_subtype            String?                 @db.VarChar(20)
-  suggested_therapy       String?
-  recommended_tests       String?
-  derived_at              DateTime?               @default(now()) @db.Timestamp(6)
-  oncology_staging_detail oncology_staging_detail @relation(fields: [staging_detail_id], references: [staging_detail_id], onDelete: Cascade, map: "fk_derived_staging_detail")
-}
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model ihc_results {
-  id                      BigInt                  @id @default(autoincrement())
-  ihc_id                  String                  @unique(map: "uq_ihc_results_id") @db.VarChar(20)
-  staging_detail_id       String                  @unique(map: "uq_ihc_results_staging_detail") @db.VarChar(20)
-  er_status               String?                 @db.VarChar(20)
-  er_percent              Int?                    @db.SmallInt
-  pr_status               String?                 @db.VarChar(20)
-  pr_percent              Int?                    @db.SmallInt
-  her2_ihc                String?                 @db.VarChar(20)
-  her2_fish               String?                 @db.VarChar(30)
-  her2_fish_ratio         Decimal?                @db.Decimal(4, 2)
-  her2_avg_copy           Decimal?                @db.Decimal(6, 2)
-  ki67_percent            Int?                    @db.SmallInt
-  pdl1_tps                Int?                    @db.SmallInt
-  pdl1_cps                Int?                    @db.SmallInt
-  pdl1_clone              String?                 @db.VarChar(20)
-  mmr_mlh1                String?                 @db.VarChar(20)
-  mmr_msh2                String?                 @db.VarChar(20)
-  mmr_msh6                String?                 @db.VarChar(20)
-  mmr_pms2                String?                 @db.VarChar(20)
-  mmr_overall             String?                 @db.VarChar(20)
-  p53_ihc                 String?                 @db.VarChar(30)
-  ar_status               String?                 @db.VarChar(20)
-  created_at              DateTime?               @default(now()) @db.Timestamp(6)
-  updated_at              DateTime?               @default(now()) @db.Timestamp(6)
-  mlh1_methylation        String?                 @db.VarChar(20)
-  oncology_staging_detail oncology_staging_detail @relation(fields: [staging_detail_id], references: [staging_detail_id], onDelete: Cascade, map: "fk_ihc_staging_detail")
-}
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model molecular_results {
-  id                      BigInt                  @id @default(autoincrement())
-  mol_id                  String                  @unique(map: "uq_molecular_results_id") @db.VarChar(20)
-  staging_detail_id       String                  @unique(map: "uq_molecular_results_staging_detail") @db.VarChar(20)
-  egfr_status             String?                 @db.VarChar(30)
-  egfr_mutation_type      String?                 @db.VarChar(50)
-  alk_status              String?                 @db.VarChar(30)
-  alk_test_method         String?                 @db.VarChar(20)
-  ros1_status             String?                 @db.VarChar(30)
-  kras_g12c               String?                 @db.VarChar(30)
-  kras_mutation           String?                 @db.VarChar(20)
-  braf_v600e              String?                 @db.VarChar(30)
-  brca1_germline          String?                 @db.VarChar(40)
-  brca2_germline          String?                 @db.VarChar(40)
-  brca_somatic            String?                 @db.VarChar(20)
-  hrd_status              String?                 @db.VarChar(30)
-  hrd_score               Decimal?                @db.Decimal(5, 1)
-  hrd_assay               String?                 @db.VarChar(30)
-  msi_status              String?                 @db.VarChar(30)
-  msi_test_method         String?                 @db.VarChar(20)
-  tmb                     Decimal?                @db.Decimal(5, 1)
-  tmb_assay               String?                 @db.VarChar(30)
-  ngs_panel               String?                 @db.VarChar(30)
-  flt3_itd                String?                 @db.VarChar(20)
-  flt3_itd_allelic_ratio  Decimal?                @db.Decimal(4, 2)
-  flt3_tkd                String?                 @db.VarChar(20)
-  npm1_mutation           String?                 @db.VarChar(30)
-  idh1_mutation           String?                 @db.VarChar(20)
-  idh2_mutation           String?                 @db.VarChar(20)
-  bcr_abl1                Decimal?                @db.Decimal(6, 2)
-  bcr_abl1_transcript     String?                 @db.VarChar(20)
-  created_at              DateTime?               @default(now()) @db.Timestamp(6)
-  updated_at              DateTime?               @default(now()) @db.Timestamp(6)
-  oncology_staging_detail oncology_staging_detail @relation(fields: [staging_detail_id], references: [staging_detail_id], onDelete: Cascade, map: "fk_mol_staging_detail")
-}
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model molecular_subtypes {
-  id             BigInt       @id @default(autoincrement())
-  mol_sub_id     String       @unique(map: "uq_molecular_subtypes_id") @db.VarChar(20)
-  cancer_type_id String       @db.VarChar(20)
-  subtype_name   String       @db.VarChar(50)
-  er_rule        String?      @db.VarChar(20)
-  pr_rule        String?      @db.VarChar(20)
-  her2_rule      String?      @db.VarChar(20)
-  ki67_threshold Int?         @default(14)
-  colour_hex     String?      @db.Char(7)
-  badge_label    String?      @db.VarChar(50)
-  cancer_types   cancer_types @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: Cascade, map: "fk_molsub_cancer_type")
-}
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model oncology_staging_detail {
-  id                    BigInt              @id @default(autoincrement())
-  staging_detail_id     String              @unique(map: "uq_staging_detail_id") @db.VarChar(20)
-  patient_id            String              @db.VarChar(20)
-  patient_history_id    String?             @db.VarChar(20)
-  diagnosis_id          String?             @db.VarChar(20)
-  visit_date            DateTime?           @db.Date
-  diagnosis_date        DateTime?           @db.Date
-  biopsy_date           DateTime?           @db.Date
-  consulting_oncologist String?             @db.VarChar(150)
-  cancer_type_id        String              @db.VarChar(20)
-  cancer_subtype_id     String              @db.VarChar(20)
-  icd10_code            String?             @db.VarChar(10)
-  icd_o3_topo           String?             @db.VarChar(10)
-  icd_o3_morpho         String?             @db.VarChar(20)
-  staging_system        String?             @db.VarChar(50)
-  clinical_stage        String?             @db.VarChar(20)
-  t_stage               String?             @db.VarChar(10)
-  n_stage               String?             @db.VarChar(10)
-  m_stage               String?             @db.VarChar(10)
-  metastasis_sites      Json?
-  laterality            String?             @db.VarChar(10)
-  performance_status    Int?                @db.SmallInt
-  employee_id           String?             @db.VarChar(20)
-  branch_id             String?             @db.VarChar(20)
-  user_id               String?             @db.VarChar(20)
-  created_at            DateTime?           @default(now()) @db.Timestamp(6)
-  updated_at            DateTime?           @default(now()) @db.Timestamp(6)
-  chemotherapy_plan     chemotherapy_plan[]
-  derived_fields        derived_fields?
-  ihc_results           ihc_results?
-  molecular_results     molecular_results?
-  branch                branch?             @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_staging_branch")
-  cancer_types          cancer_types        @relation(fields: [cancer_type_id], references: [cancer_type_id], map: "fk_staging_cancer_type")
-  diagnosis             diagnosis?          @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: Restrict, map: "fk_staging_diagnosis")
-  employees             employees?          @relation(fields: [employee_id], references: [employee_id], map: "fk_staging_employee")
-  patient_bio_data      patient_bio_data    @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade, map: "fk_staging_patient")
-  patient_history       patient_history?    @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: Cascade, map: "fk_staging_patient_history")
-  cancer_subtypes       cancer_subtypes     @relation(fields: [cancer_subtype_id], references: [subtype_id], map: "fk_staging_subtype")
-  user_table            user_table?         @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_staging_user")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model staging_reference {
-  id               BigInt       @id @default(autoincrement())
-  stage_ref_id     String       @unique(map: "uq_staging_reference_id") @db.VarChar(20)
-  cancer_type_id   String       @db.VarChar(20)
-  subtype_label    String?      @db.VarChar(150)
-  staging_system   String?      @db.VarChar(50)
-  stage_label      String?      @db.VarChar(50)
-  tnm_criteria     String?
-  risk_system      String?      @db.VarChar(50)
-  risk_category    String?      @db.VarChar(50)
-  risk_criteria    String?
-  os_5yr_approx    String?      @db.VarChar(30)
-  guideline_source String?      @db.VarChar(150)
-  cancer_types     cancer_types @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: Cascade, map: "fk_staging_cancer_type")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model Permission {
-  id             String           @id @db.VarChar(50)
-  key            String           @unique @db.VarChar(100)
-  name           String           @db.VarChar(100)
-  description    String?          @db.VarChar(255)
-  category       String           @db.VarChar(50)
-  is_active      Boolean          @default(true)
-  created_at     DateTime         @default(now())
-  updated_at     DateTime
-  RolePermission RolePermission[]
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model PermissionAuditLog {
-  id             BigInt   @id @default(autoincrement())
-  role_type      String   @db.VarChar(50)
-  permission_key String   @db.VarChar(100)
-  action         String   @db.VarChar(20)
-  changed_by     String   @db.VarChar(50)
-  changed_at     DateTime @default(now())
-  metadata       Json?
-
-  @@index([changed_by, changed_at])
-  @@index([role_type, changed_at])
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model RolePermission {
-  id             String         @id @db.VarChar(50)
-  role_type      String         @db.VarChar(50)
-  permission_id  String         @db.VarChar(50)
-  granted_by     String         @db.VarChar(50)
-  granted_at     DateTime       @default(now())
-  revoked_at     DateTime?
-  revoked_by     String?        @db.VarChar(50)
-  Permission     Permission     @relation(fields: [permission_id], references: [id])
-  role_id_config role_id_config @relation(fields: [role_type], references: [role_type])
-
-  @@unique([role_type, permission_id])
-  @@index([role_type])
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model clinical_parameter {
-  id               BigInt    @id @default(autoincrement())
-  parameter_key    String    @unique(map: "uq_clinical_parameter_key") @db.VarChar(50)
-  value            String    @db.VarChar(50)
-  unit             String?   @db.VarChar(20)
-  guideline_source String?   @db.VarChar(150)
-  description      String?
-  updated_at       DateTime? @default(now()) @db.Timestamp(6)
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model doctor_leave {
-  id                                                        BigInt      @id @default(autoincrement())
-  leave_id                                                  String      @unique @db.VarChar(20)
-  employee_id                                               String      @db.VarChar(20)
-  replacement_employee_id                                   String?     @db.VarChar(20)
-  leave_start_date                                          DateTime    @db.Date
-  leave_end_date                                            DateTime    @db.Date
-  leave_reason                                              String      @db.VarChar(500)
-  status                                                    LeaveStatus @default(PENDING)
-  requested_by                                              String      @db.VarChar(20)
-  requested_at                                              DateTime    @default(now()) @db.Timestamp(6)
-  approved_by                                               String?     @db.VarChar(20)
-  approved_at                                               DateTime?   @db.Timestamp(6)
-  rejected_by                                               String?     @db.VarChar(20)
-  rejected_at                                               DateTime?   @db.Timestamp(6)
-  remarks                                                   String?     @db.VarChar(500)
-  leave_type                                                String?     @db.VarChar
-  total_leave_days                                          BigInt?
-  branch_id                                                 String      @db.VarChar
-  user_table_doctor_leave_approved_byTouser_table           user_table? @relation("doctor_leave_approved_byTouser_table", fields: [approved_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_doctor_leave_approved_by")
-  branch                                                    branch      @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_doctor_leave_branch")
-  employees_doctor_leave_employee_idToemployees             employees   @relation("doctor_leave_employee_idToemployees", fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_doctor_leave_employee")
-  user_table_doctor_leave_rejected_byTouser_table           user_table? @relation("doctor_leave_rejected_byTouser_table", fields: [rejected_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_doctor_leave_rejected_by")
-  employees_doctor_leave_replacement_employee_idToemployees employees?  @relation("doctor_leave_replacement_employee_idToemployees", fields: [replacement_employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_doctor_leave_replacement_employee")
-  user_table_doctor_leave_requested_byTouser_table          user_table  @relation("doctor_leave_requested_byTouser_table", fields: [requested_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_doctor_leave_requested_by")
-}
-
-model qualification_master {
-  id                 BigInt      @id @default(autoincrement())
-  qualification_id   String      @unique @db.VarChar(20)
-  qualification_name String      @db.VarChar(150)
-  designation        String      @db.VarChar(50)
-  is_active          Boolean     @default(true)
-  created_at         DateTime    @default(now())
-  updated_at         DateTime    @updatedAt
-  employees          employees[]
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model chemotherapy_regimen_protocol {
-  id                                  BigInt                                @id @default(autoincrement())
-  protocol_id                         String                                @unique(map: "uq_regimen_protocol_id") @db.VarChar(20)
-  regimen_code                        String                                @unique(map: "uq_regimen_protocol_code") @db.VarChar(50)
-  regimen_name                        String                                @db.VarChar(200)
-  protocol_version                    String?                               @db.VarChar(50)
-  cancer_type_id                      String                                @db.VarChar(20)
-  subtype_id                          String?                               @db.VarChar(20)
-  treatment_intent                    String?                               @db.VarChar(50)
-  standard_cycles                     Int?
-  cycle_interval_days                 Int?
-  guideline_source                    String?                               @db.VarChar(150)
-  notes                               String?
-  active_status                       Int?                                  @default(1) @db.SmallInt
-  created_at                          DateTime?                             @default(now()) @db.Timestamp(6)
-  updated_at                          DateTime?                             @default(now()) @db.Timestamp(6)
-  cancer_types                        cancer_types                          @relation(fields: [cancer_type_id], references: [cancer_type_id], map: "fk_regimen_protocol_cancer_type")
-  cancer_subtypes                     cancer_subtypes?                      @relation(fields: [subtype_id], references: [subtype_id], map: "fk_regimen_protocol_subtype")
-  chemotherapy_regimen_protocol_items chemotherapy_regimen_protocol_items[]
-
-  @@unique([cancer_type_id, subtype_id, regimen_code], map: "uq_regimen_protocol_type_subtype_code")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model chemotherapy_regimen_protocol_items {
-  id                            BigInt                        @id @default(autoincrement())
-  protocol_item_id              String                        @unique(map: "uq_regimen_protocol_item_id") @db.VarChar(20)
-  protocol_id                   String                        @db.VarChar(20)
-  medicine_id                   String                        @db.VarChar(20)
-  drug_role                     String                        @default("PRIMARY") @db.VarChar(20)
-  drug_sequence                 Int
-  drug_type                     String?                       @db.VarChar(50)
-  dosage                        Decimal?                      @db.Decimal(10, 2)
-  dosage_unit                   String?                       @db.VarChar(30)
-  dose_calculation_method       String?                       @db.VarChar(50)
-  administration_route          String?                       @db.VarChar(50)
-  infusion_type                 String?                       @db.VarChar(50)
-  infusion_duration_minutes     Int?
-  administration_day            Int?
-  cycle_day                     Int?
-  frequency                     String?                       @db.VarChar(100)
-  timing_relative_to_primary    String?                       @db.VarChar(100)
-  remarks                       String?
-  active_status                 Int?                          @default(1) @db.SmallInt
-  medicine_master               medicine_master               @relation(fields: [medicine_id], references: [medicine_id], map: "fk_regimen_protocol_item_medicine")
-  chemotherapy_regimen_protocol chemotherapy_regimen_protocol @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_regimen_protocol_item_protocol")
 }
 
 enum LeaveStatus {

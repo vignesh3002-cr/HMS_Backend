@@ -101,6 +101,37 @@ class AppointmentRepository {
             orderBy: { start_time: "asc" }
         });
     }
+    // A doctor's schedules across every branch they work at, used to compute
+    // their total appointment slot capacity for a given day - not scoped to
+    // any single branch, since a doctor's daily capacity is a property of
+    // the doctor, not of whichever branch happens to be selected.
+    async findActiveDoctorSchedulesForEmployee(employeeId, dayOfWeek) {
+        return prisma_1.default.doctor_schedule.findMany({
+            where: {
+                employee_id: employeeId,
+                day_of_week: dayOfWeek,
+                is_active: true
+            }
+        });
+    }
+    async countBookedAppointmentsForEmployee(employeeId, appointmentDate) {
+        return prisma_1.default.appointment_history.count({
+            where: {
+                employee_id: employeeId,
+                appointment_date: appointmentDate,
+                status: { notIn: appointment_constants_1.NON_BLOCKING_APPOINTMENT_STATUSES }
+            }
+        });
+    }
+    async countBookedAppointmentsForEmployeeInRange(employeeId, startDate, endDate) {
+        return prisma_1.default.appointment_history.count({
+            where: {
+                employee_id: employeeId,
+                appointment_date: { gte: startDate, lte: endDate },
+                status: { notIn: appointment_constants_1.NON_BLOCKING_APPOINTMENT_STATUSES }
+            }
+        });
+    }
     async findBookedAppointmentTimes(employeeId, appointmentDate) {
         const appointments = await prisma_1.default.appointment_history.findMany({
             where: {

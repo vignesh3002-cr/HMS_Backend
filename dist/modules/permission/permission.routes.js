@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const permission_controller_1 = require("./permission.controller");
+const auth_middleware_1 = require("../../modules/auth/auth.middleware");
+const authorize_1 = require("../../middleware/authorize");
+const router = (0, express_1.Router)();
+const controller = new permission_controller_1.PermissionController();
+router.get("/matrix", auth_middleware_1.authenticate, (0, authorize_1.authorize)("permission.manage"), controller.getMatrix.bind(controller));
+router.post("/grant", auth_middleware_1.authenticate, (0, authorize_1.authorize)("permission.manage"), controller.grantPermission.bind(controller));
+router.post("/revoke", auth_middleware_1.authenticate, (0, authorize_1.authorize)("permission.manage"), controller.revokePermission.bind(controller));
+router.post("/bulk", auth_middleware_1.authenticate, (0, authorize_1.authorize)("permission.manage"), controller.bulkUpdatePermissions.bind(controller));
+router.get("/my-permissions", auth_middleware_1.authenticate, controller.getMyPermissions.bind(controller));
+router.get("/audit", auth_middleware_1.authenticate, (0, authorize_1.authorize)("permission.manage"), controller.getAuditLog.bind(controller));
+exports.default = router;

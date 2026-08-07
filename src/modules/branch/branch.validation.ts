@@ -1,5 +1,10 @@
 import { body, query } from "express-validator";
 
+// Normalizes missing or empty values to null (not the string "null") so the
+// DB column is actually cleared instead of silently keeping its old value.
+const nullIfEmpty = (value: unknown) =>
+  value === undefined || value === null || value === "" ? null : value;
+
 export const createBranchValidation = [
   body("branch_code")
     .optional()
@@ -20,19 +25,38 @@ export const createBranchValidation = [
     .withMessage("Valid Branch Email is required"),
 
   body("pincode")
-    .optional()
+    .optional({ values: "null" })
+    .customSanitizer(nullIfEmpty)
     .isInt()
     .withMessage("Pincode must be a number"),
 
   body("total_beds")
-    .optional()
+    .optional({ values: "null" })
+    .customSanitizer(nullIfEmpty)
     .isInt()
     .withMessage("Total beds must be a number"),
 
   body("date_of_establish")
-    .optional()
+    .optional({ values: "null" })
+    .customSanitizer(nullIfEmpty)
     .isISO8601()
     .withMessage("Date of establish must be a valid date"),
+
+  // Optional fields — missing or empty values are normalized to null so the
+  // DB column is actually cleared instead of silently keeping its old value.
+  body("emergency_number").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("address").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("area").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("district").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("state_name").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("country").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("license_number").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("total_no_emp").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("fax_no").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("gst_no").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("pan_no").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("website_address").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("medical_services").optional({ values: "null" }).customSanitizer(nullIfEmpty),
 
   // Admin Mode validation
   body("admin_mode")
@@ -89,19 +113,38 @@ export const updateBranchValidation = [
     .withMessage("Valid Branch Email is required"),
 
   body("pincode")
-    .optional()
+    .optional({ values: "null" })
+    .customSanitizer(nullIfEmpty)
     .isInt()
     .withMessage("Pincode must be a number"),
 
   body("total_beds")
-    .optional()
+    .optional({ values: "null" })
+    .customSanitizer(nullIfEmpty)
     .isInt()
     .withMessage("Total beds must be a number"),
 
   body("date_of_establish")
-    .optional()
+    .optional({ values: "null" })
+    .customSanitizer(nullIfEmpty)
     .isISO8601()
     .withMessage("Date of establish must be a valid date"),
+
+  // Optional fields — missing or empty values are normalized to null so the
+  // DB column is actually cleared instead of silently keeping its old value.
+  body("emergency_number").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("address").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("area").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("district").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("state_name").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("country").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("license_number").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("total_no_emp").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("fax_no").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("gst_no").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("pan_no").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("website_address").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("medical_services").optional({ values: "null" }).customSanitizer(nullIfEmpty),
 
   body("branch_status")
     .optional()

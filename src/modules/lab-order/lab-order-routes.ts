@@ -1,6 +1,8 @@
 import { Router } from "express";
 import controller from "./lab-order-controller";
-
+import { authenticate } from "../auth/auth.middleware";
+import { authorize } from "../../middleware/authorize";
+import { branchScope } from "../../middleware/branchScope";
 import {
     createLabOrderValidation,
     updateLabOrderValidation
@@ -8,7 +10,7 @@ import {
 
 const router = Router();
 
-import { authenticate } from "../auth/auth.middleware";
+
 
 router.post(
     "/",
@@ -19,11 +21,16 @@ router.post(
 
 router.get(
     "/",
+    authenticate,
+    authorize("lab.order"),
+    branchScope,
     controller.getAll
 );
 
 router.get(
     "/:id",
+    authenticate,
+    authorize("lab.order"),
     controller.getById
 );
 

@@ -134,6 +134,82 @@ export class AppointmentController {
 
     }
 
+    async getDoctorSlotSummary(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const summary = await service.getDoctorSlotSummary(
+                req.query.employeeId as string,
+                req.query.date as string
+            );
+
+            return res.json({
+                success: true,
+                message: "Doctor slot summary fetched successfully",
+                data: summary
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async getDoctorWeekSlotSummary(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const summary = await service.getDoctorWeekSlotSummary(
+                req.query.employeeId as string,
+                req.query.date as string
+            );
+
+            return res.json({
+                success: true,
+                message: "Doctor week slot summary fetched successfully",
+                data: summary
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
     async getAppointmentByNumber(req: Request, res: Response) {
 
         try {

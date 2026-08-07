@@ -137,6 +137,34 @@ export const getAvailableSlotsValidation = [
 
 ];
 
+export const getDoctorSlotSummaryValidation = [
+
+    query("employeeId")
+        .notEmpty()
+        .withMessage("Doctor is required"),
+
+    query("date")
+        .notEmpty()
+        .withMessage("Date is required")
+        .isISO8601()
+        .withMessage("Date must be a valid date (YYYY-MM-DD)")
+
+];
+
+export const getDoctorWeekSlotSummaryValidation = [
+
+    query("employeeId")
+        .notEmpty()
+        .withMessage("Doctor is required"),
+
+    query("date")
+        .notEmpty()
+        .withMessage("Date is required")
+        .isISO8601()
+        .withMessage("Date must be a valid date (YYYY-MM-DD)")
+
+];
+
 export const getAppointmentsValidation = [
 
     query("page")

@@ -303,7 +303,7 @@ export class BranchService {
       branch_area: data.area,
       date_of_establish: data.date_of_establish
         ? new Date(data.date_of_establish)
-        : undefined,
+        : null,
       website_address: data.website_address,
       branch_license_no: data.license_number,
       total_beds: data.total_beds,

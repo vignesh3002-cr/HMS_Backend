@@ -55,11 +55,6 @@ const encounterDetailInclude = {
             day_of_week: true,
             shift_name: true
         }
-    },
-    _count: {
-        select: {
-            lab_order: true
-        }
     }
 };
 class EncounterRepository {

@@ -53,6 +53,7 @@ export interface CreateEmployeeDto {
     permanent_employee_state?: string;
     permanent_employee_district?: string;
     permanent_employee_area? : string;
+    permanent_employee_pincode?: number;
     permanent_address?: string;
     current_address?: string;
     employee_photo_URL?: string;
@@ -74,11 +75,12 @@ export interface CreateEmployeeDto {
     emp_status: boolean;
  
     // Doctor only
- 
+
     specialization: string;
     qualification: string;
     license_no: string;
     consultation_minutes: number;
+    doctor_bio: string;
  
     // Multi Branch
  
@@ -103,7 +105,7 @@ export interface UpdateEmployeeDto {
  
     email?: string;
     mobile_no?: string;
- 
+
     blood_group?: string;
     nationality?: string;
     marital_status?: string;
@@ -123,7 +125,7 @@ export interface UpdateEmployeeDto {
     permanent_employee_state?: string;
     permanent_employee_district?: string;
     permanent_employee_area? : string;
-
+    permanent_employee_pincode?: number;
  
     emergency_contact_name?: string;
     emergency_contact_relationship?: string;
@@ -145,6 +147,7 @@ export interface UpdateEmployeeDto {
         | "BRANCH_ADMIN"
         | "Admin";
     consultation_minutes?: number;
+    doctor_bio?: string;
     branch_ids?: string[];
     working_hours?: WorkingHourDto[];
 }

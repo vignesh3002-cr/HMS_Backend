@@ -1,7 +1,7 @@
 import { Router } from "express";
-
 import controller from "./lab-test-category.controller";
-
+import { authenticate } from "../auth/auth.middleware";
+import { authorize } from "../../middleware/authorize";
 import {
     createLabTestCategoryValidation,
     updateLabTestCategoryValidation
@@ -9,7 +9,7 @@ import {
 
 const router = Router();
 
-import { authenticate } from "../auth/auth.middleware";
+
 
 router.post(
     "/",
@@ -21,11 +21,15 @@ router.post(
 
 router.get(
     "/",
+    authenticate,
+    authorize("lab.manage"),
     controller.getAll
 );
 
 router.get(
     "/:id",
+    authenticate,
+    authorize("lab.manage"),
     controller.getById
 );
 

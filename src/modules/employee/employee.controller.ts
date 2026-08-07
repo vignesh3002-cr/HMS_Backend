@@ -24,7 +24,7 @@ export class EmployeeController {
                 console.error("Failed to log createEmployee request", logErr);
             }
  
-            const createdBy = (req as any).user?.role || "SYSTEM";
+            const createdBy = (req as any).user?.user_id || "SYSTEM";
  
             const employee = await service.createEmployee(
                 req.body,
@@ -73,7 +73,8 @@ export class EmployeeController {
  
         const employee = await service.updateEmployee(
             String(req.params.employeeId),
-            req.body
+            req.body,
+            (req as any).user?.user_id
         );
  
         return res.status(200).json({
