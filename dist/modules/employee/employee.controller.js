@@ -1,7 +1,12 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EmployeeController = void 0;
 const employee_service_1 = require("./employee.service");
+const prisma_1 = __importDefault(require("../../config/prisma"));
+const authorize_1 = require("../../middleware/authorize");
 const service = new employee_service_1.EmployeeService();
 class EmployeeController {
     async createEmployee(req, res) {
@@ -92,12 +97,46 @@ class EmployeeController {
                 search: req.query.search,
                 page: req.query.page ? Number(req.query.page) : 1,
                 limit: req.query.limit ? Number(req.query.limit) : 10,
+                excludeEmployeeId: undefined,
             };
+            // Admins never see their own record in employee lists - self
+            // management happens only through the read-only own profile.
+            const authReq = req;
+            if (authReq.user && authorize_1.ADMIN_ROLES.includes(String(authReq.user.role ?? "").toUpperCase())) {
+                const own = await prisma_1.default.employees.findUnique({
+                    where: { user_id: authReq.user.user_id },
+                    select: { employee_id: true },
+                });
+                query.excludeEmployeeId = own?.employee_id ?? undefined;
+            }
             const result = await service.getEmployees(query);
             return res.status(200).json({
                 success: true,
                 message: "Employees fetched successfully",
                 data: result
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+    async updateEmployeePhoto(req, res) {
+        try {
+            const { employee_photo_URL } = req.body;
+            if (!employee_photo_URL || typeof employee_photo_URL !== "string") {
+                return res.status(400).json({
+                    success: false,
+                    message: "employee_photo_URL is required"
+                });
+            }
+            const employee = await service.updateEmployeePhoto(String(req.params.employeeId), employee_photo_URL);
+            return res.status(200).json({
+                success: true,
+                message: "Photo updated successfully",
+                data: employee
             });
         }
         catch (error) {

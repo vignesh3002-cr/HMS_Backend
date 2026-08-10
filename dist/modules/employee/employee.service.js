@@ -512,6 +512,9 @@ class EmployeeService {
     async getEmployees(query) {
         return repository.getEmployees(query);
     }
+    async updateEmployeePhoto(employeeId, employee_photo_URL) {
+        return repository.updateEmployeePhoto(employeeId, employee_photo_URL);
+    }
     async getEmployeeById(employeeId) {
         return repository.getEmployeeById(employeeId);
     }

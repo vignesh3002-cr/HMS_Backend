@@ -17,6 +17,7 @@ const appointment_routes_1 = __importDefault(require("./modules/appointment/appo
 const encounter_routes_1 = __importDefault(require("./modules/encounter/encounter.routes"));
 const permission_routes_1 = __importDefault(require("./modules/permission/permission.routes"));
 const role_routes_1 = __importDefault(require("./modules/role/role.routes"));
+const export_routes_1 = __importDefault(require("./modules/export/export.routes"));
 //import prescriptionRoutes from "./modules/prescription/prescription.routes";
 //import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
 const doctorTransfer_routes_1 = __importDefault(require("./modules/doctor-transfer/doctorTransfer.routes"));
@@ -94,6 +95,7 @@ app.use("/api/appointments", appointment_routes_1.default);
 app.use("/api/encounters", encounter_routes_1.default);
 app.use("/api/permissions", permission_routes_1.default);
 app.use("/api/roles", role_routes_1.default);
+app.use("/api/export", export_routes_1.default);
 //app.use("/api/prescriptions", prescriptionRoutes);
 //app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/doctors", doctorTransfer_routes_1.default);
