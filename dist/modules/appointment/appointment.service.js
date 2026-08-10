@@ -22,6 +22,9 @@ class AppointmentService {
         if (employee.user_table?.role_type !== "DOCTOR") {
             throw new Error("Selected employee is not a doctor");
         }
+        if (employee.emp_status !== true) {
+            throw new Error("Doctor is inactive. Please contact the administrator.");
+        }
         const branch = await repository.findBranch(branchId);
         if (!branch) {
             throw new Error("Branch not found");
@@ -124,13 +127,19 @@ class AppointmentService {
         }
         return appointment;
     }
-    async updateAppointment(appointmentNo, data) {
+    async updateAppointment(appointmentNo, data, actingUserId = "SYSTEM") {
         const existing = await repository.getAppointmentByNumber(appointmentNo);
         if (!existing) {
             throw new Error("Appointment not found");
         }
         if (appointment_constants_1.TERMINAL_APPOINTMENT_STATUSES.includes(existing.status ?? "")) {
             throw new Error(`Cannot modify an appointment that is already ${existing.status}`);
+        }
+        // A RESCHEDULE_REQUIRED appointment has no doctor - it can only be
+        // resolved by explicitly picking one (or cancelling it). Block saves
+        // that would leave it doctorless.
+        if (existing.status === appointment_constants_1.APPOINTMENT_STATUS.RESCHEDULE_REQUIRED && !data.employee_id) {
+            throw new Error("This appointment needs a doctor - select one to resolve the reschedule");
         }
         const employeeId = data.employee_id ?? existing.employee_id;
         const branchId = data.branch_id ?? existing.branch_id;
@@ -179,7 +188,15 @@ class AppointmentService {
                 updateData.department = departmentName;
                 updateData.status = 'RESCHEDULED';
             }
-            return repository.updateAppointment(tx, appointmentNo, updateData);
+            const updated = await repository.updateAppointment(tx, appointmentNo, updateData);
+            // If this appointment was sitting in the reschedule queue (e.g.
+            // doctor transfer / deactivation), resolving it here via the edit
+            // form closes the open queue entries so the queue stays consistent.
+            const openQueues = await repository.findOpenRescheduleQueueEntries(tx, appointmentNo);
+            for (const queue of openQueues) {
+                await repository.closeRescheduleQueueEntry(tx, queue.queue_id, actingUserId);
+            }
+            return updated;
         });
     }
     async updateAppointmentStatus(appointmentNo, status, cancelReason) {
@@ -205,6 +222,9 @@ class AppointmentService {
         }
         if (employee.user_table?.role_type !== "DOCTOR") {
             throw new Error("Selected employee is not a doctor");
+        }
+        if (employee.emp_status !== true) {
+            throw new Error("Doctor is inactive. Please contact the administrator.");
         }
         const branch = await repository.findBranch(branchId);
         if (!branch) {
@@ -259,6 +279,9 @@ class AppointmentService {
         if (!employee) {
             throw new Error("Doctor not found");
         }
+        if (employee.emp_status !== true) {
+            throw new Error("Doctor is inactive. Please contact the administrator.");
+        }
         const appointmentDate = (0, appointment_utils_1.parseDateOnly)(dateStr);
         const dayOfWeek = (0, appointment_utils_1.toDayOfWeek)(appointmentDate);
         const schedules = await repository.findActiveDoctorSchedulesForEmployee(employeeId, dayOfWeek);
@@ -287,6 +310,9 @@ class AppointmentService {
         const employee = await repository.findEmployee(employeeId);
         if (!employee) {
             throw new Error("Doctor not found");
+        }
+        if (employee.emp_status !== true) {
+            throw new Error("Doctor is inactive. Please contact the administrator.");
         }
         const anchorDate = (0, appointment_utils_1.parseDateOnly)(dateStr);
         const { start, end } = (0, appointment_utils_1.getWeekRange)(anchorDate);

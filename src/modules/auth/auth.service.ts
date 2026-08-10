@@ -81,6 +81,7 @@ const activeMappings = user.user_branch_mapping?.filter(
         username: user.username,
         role: user.role_type,
         role_type: user.role_type,
+        employee_id: employee?.employee_id ?? null,
         hospital_id: primaryBranch?.hospital_id,
         branch_id: primaryBranchId,
         branch_name: primaryBranch?.branch_name || null,

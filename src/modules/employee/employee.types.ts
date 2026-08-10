@@ -170,4 +170,6 @@ export interface GetEmployeesQuery {
 
     limit?: number;
 
+    excludeEmployeeId?: string;
+
 }

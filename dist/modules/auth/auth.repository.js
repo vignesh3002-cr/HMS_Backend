@@ -6,6 +6,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthRepository = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
 class AuthRepository {
+    async findUserById(userId) {
+        return prisma_1.default.user_table.findFirst({
+            where: { user_id: userId },
+        });
+    }
     async findUserByUsername(username) {
         return prisma_1.default.user_table.findFirst({
             where: {

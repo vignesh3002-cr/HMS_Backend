@@ -1,17 +1,12 @@
 import { Router } from "express";
 import { DoctorTransferController } from "./doctorTransfer.controller";
 import { authenticate } from "../auth/auth.middleware";
-import { authorizeRoles } from "../../middleware/authorize";
-import { BRANCH_ADMIN_ROLES } from "../../permissions/roles";
+import { authorize } from "../../middleware/authorize";
 import {
     initiateTransferValidation,
     confirmTransferValidation,
     getFutureAppointmentsValidation
 } from "./doctorTransfer.validation";
-
-// Re-exported for appointment.routes.ts, which reuses this same role set
-// for its doctor-transfer-related endpoints.
-export const DOCTOR_TRANSFER_ROLES = BRANCH_ADMIN_ROLES;
 
 const router = Router();
 
@@ -20,7 +15,7 @@ const controller = new DoctorTransferController();
 router.post(
     "/:employeeId/transfer",
     authenticate,
-    authorizeRoles(...DOCTOR_TRANSFER_ROLES),
+    authorize("doctor.transfer"),
     initiateTransferValidation,
     controller.initiateTransfer.bind(controller)
 );
@@ -28,7 +23,7 @@ router.post(
 router.post(
     "/:employeeId/transfer/confirm",
     authenticate,
-    authorizeRoles(...DOCTOR_TRANSFER_ROLES),
+    authorize("doctor.transfer"),
     confirmTransferValidation,
     controller.confirmTransfer.bind(controller)
 );
@@ -36,7 +31,7 @@ router.post(
 router.get(
     "/:employeeId/future-appointments",
     authenticate,
-    authorizeRoles(...DOCTOR_TRANSFER_ROLES),
+    authorize("doctor.transfer"),
     getFutureAppointmentsValidation,
     controller.getFutureAppointments.bind(controller)
 );

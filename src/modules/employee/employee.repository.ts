@@ -287,6 +287,19 @@ async updateEmployee(
         data
     });
 }
+async updateEmployeePhoto(
+    employeeId: string,
+    employee_photo_URL: string
+) {
+    return prisma.employees.update({
+        where: {
+            employee_id: employeeId
+        },
+        data: {
+            employee_photo_URL
+        }
+    });
+}
 async getAllEmployees() {
     return prisma.employees.findMany();
 }
@@ -307,12 +320,19 @@ async getEmployees(query: GetEmployeesQuery) {
 
         page = 1,
 
-        limit = 10
+        limit = 10,
+
+        excludeEmployeeId
 
     } = query;
 
     const where: Prisma.employeesWhereInput & { deleted_at?: null } = {};
-    if (department) {
+    if (excludeEmployeeId) {
+
+        where.employee_id = { not: excludeEmployeeId };
+
+}
+if (department) {
 
     where.department_id = department;
 

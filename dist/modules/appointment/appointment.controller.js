@@ -164,7 +164,7 @@ class AppointmentController {
                     errors: errors.array()
                 });
             }
-            const appointment = await service.updateAppointment(req.params.appointmentNo, req.body);
+            const appointment = await service.updateAppointment(req.params.appointmentNo, req.body, req.user?.user_id || "SYSTEM");
             return res.json({
                 success: true,
                 message: "Appointment updated successfully",

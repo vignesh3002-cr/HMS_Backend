@@ -697,6 +697,10 @@ async getEmployees(query: GetEmployeesQuery) {
     return repository.getEmployees(query);
 }
 
+async updateEmployeePhoto(employeeId: string, employee_photo_URL: string) {
+    return repository.updateEmployeePhoto(employeeId, employee_photo_URL);
+}
+
 async getEmployeeById(employeeId: string) {
     return repository.getEmployeeById(employeeId);
 }

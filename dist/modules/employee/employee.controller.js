@@ -68,7 +68,7 @@ class EmployeeController {
     }
     async softDeleteEmployee(req, res) {
         try {
-            const result = await service.softDeleteEmployee(String(req.params.employeeId));
+            const result = await service.softDeleteEmployee(String(req.params.employeeId), req.user?.user_id || "SYSTEM");
             return res.status(200).json({
                 success: true,
                 message: result.message
@@ -88,6 +88,7 @@ class EmployeeController {
                 branchId: req.query.branchId,
                 department: req.query.department,
                 status: req.query.status !== undefined ? req.query.status === "true" : undefined,
+                includeDeleted: req.query.includeDeleted === "true",
                 search: req.query.search,
                 page: req.query.page ? Number(req.query.page) : 1,
                 limit: req.query.limit ? Number(req.query.limit) : 10,
