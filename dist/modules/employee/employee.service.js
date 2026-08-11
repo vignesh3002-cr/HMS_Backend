@@ -161,10 +161,7 @@ class EmployeeService {
                     permanent_employee_state: data.permanent_employee_state,
                     permanent_employee_district: data.permanent_employee_district,
                     permanent_employee_area: data.permanent_employee_area,
-<<<<<<< HEAD
-=======
                     permanent_employee_pincode: data.permanent_employee_pincode,
->>>>>>> 0a8fdcbc6838eddba90bba2049f5294dba65cd77
                     license_no: data.license_no,
                     emp_status: true,
                     employee_photo_URL: data.employee_photo_URL,
@@ -189,12 +186,8 @@ class EmployeeService {
                 await tx.doctor_profile.create({
                     data: {
                         employee_id: employee.employee_id,
-<<<<<<< HEAD
-                        consultation_minutes: data.consultation_minutes ?? 20
-=======
                         consultation_minutes: data.consultation_minutes ?? 20,
                         doctor_bio: data.doctor_bio
->>>>>>> 0a8fdcbc6838eddba90bba2049f5294dba65cd77
                     }
                 });
             }
@@ -242,8 +235,6 @@ class EmployeeService {
         if (!employee) {
             throw new Error("Employee not found");
         }
-<<<<<<< HEAD
-=======
         // STAFF_ADMIN field-level restrictions: read-only fields
         if (isStaffAdmin) {
             const restrictedFields = [
@@ -263,7 +254,6 @@ class EmployeeService {
                 throw new Error("Branch Admin cannot assign Branch Admin or Doctor roles");
             }
         }
->>>>>>> 0a8fdcbc6838eddba90bba2049f5294dba65cd77
         // A doctor's branch is tied to their doctor_schedule/user_branch_mapping
         // rows, which future appointments point at. Changing it here would hit
         // the destructive deleteMany/create block below and silently orphan any
@@ -273,11 +263,7 @@ class EmployeeService {
         if (employee.user_table?.role_type === "DOCTOR" && data.branch_ids) {
             const activeMappings = await prisma_1.default.user_branch_mapping.findMany({
                 where: { employee_id: employeeId, status: 1 },
-<<<<<<< HEAD
-                select: { branch_id: true }
-=======
                 select: { branch_id: true },
->>>>>>> 0a8fdcbc6838eddba90bba2049f5294dba65cd77
             });
             const currentBranchIds = activeMappings.map((mapping) => mapping.branch_id);
             const requestedBranchIds = data.branch_ids;
@@ -350,10 +336,7 @@ class EmployeeService {
             permanent_employee_state: data.permanent_employee_state,
             permanent_employee_district: data.permanent_employee_district,
             permanent_employee_area: data.permanent_employee_area,
-<<<<<<< HEAD
-=======
             permanent_employee_pincode: data.permanent_employee_pincode,
->>>>>>> 0a8fdcbc6838eddba90bba2049f5294dba65cd77
         };
         const hasUserUpdate = Object.keys(userUpdateData).length > 0 && !!employee.user_id;
         const isDoctor = data.role_type === "DOCTOR" || employee.user_table?.role_type === "DOCTOR";
@@ -410,14 +393,9 @@ class EmployeeService {
                     },
                     create: {
                         employee_id: employeeId,
-<<<<<<< HEAD
-                        consultation_minutes: data.consultation_minutes ?? 20
-                    }
-=======
                         consultation_minutes: data.consultation_minutes ?? 20,
                         doctor_bio: data.doctor_bio,
                     },
->>>>>>> 0a8fdcbc6838eddba90bba2049f5294dba65cd77
                 });
             }
             if (data.working_hours) {
@@ -533,6 +511,9 @@ class EmployeeService {
     }
     async getEmployees(query) {
         return repository.getEmployees(query);
+    }
+    async updateEmployeePhoto(employeeId, employee_photo_URL) {
+        return repository.updateEmployeePhoto(employeeId, employee_photo_URL);
     }
     async getEmployeeById(employeeId) {
         return repository.getEmployeeById(employeeId);

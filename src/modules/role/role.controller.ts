@@ -10,7 +10,7 @@ export class RoleController {
           include: {
             _count: {
               select: {
-                rolePermissions: {
+                RolePermission: {
                   where: { revoked_at: null },
                 },
               },
@@ -31,7 +31,7 @@ export class RoleController {
           description: role.description,
           is_active: role.is_active,
           sort_order: role.sort_order,
-          permission_count: role._count.rolePermissions,
+          permission_count: role._count.RolePermission,
         })),
       });
     } catch (error: any) {

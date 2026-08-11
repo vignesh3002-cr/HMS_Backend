@@ -31,5 +31,9 @@ exports.TOP_LEVEL_ADMIN_ROLES = [exports.HEAD_ADMIN, exports.SUPER_ADMIN];
 // reschedule queue) without needing to escalate to a top-level admin.
 exports.BRANCH_ADMIN_ROLES = [...exports.TOP_LEVEL_ADMIN_ROLES, exports.BRANCH_ADMIN];
 exports.ADMIN_ROLES = [...exports.TOP_LEVEL_ADMIN_ROLES, exports.ADMIN];
-exports.LOGIN_ENABLED_ROLES = [...exports.TOP_LEVEL_ADMIN_ROLES, exports.BRANCH_ADMIN, exports.ADMIN];
+// Clinical roles need to log in to use the oncology/chemotherapy module
+// (create diagnoses/plans as a doctor, record administration/vitals as a
+// nurse, verify drugs as a pharmacist) - added alongside the admin roles
+// rather than replacing them.
+exports.LOGIN_ENABLED_ROLES = [...exports.TOP_LEVEL_ADMIN_ROLES, exports.BRANCH_ADMIN, exports.ADMIN, exports.DOCTOR, exports.NURSE, exports.PHARMACIST];
 exports.BRANCH_RESTRICTED_ROLES = [exports.BRANCH_ADMIN, exports.ADMIN];

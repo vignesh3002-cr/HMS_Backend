@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const audit_controller_1 = require("./audit.controller");
+const auth_middleware_1 = require("../auth/auth.middleware");
+const authorize_1 = require("../../middleware/authorize");
+const audit_validation_1 = require("./audit.validation");
+const router = (0, express_1.Router)();
+const controller = new audit_controller_1.AuditController();
+router.get("/logs", auth_middleware_1.authenticate, (0, authorize_1.authorize)("audit.read"), audit_validation_1.listAuditLogsValidation, controller.listAuditLogs.bind(controller));
+exports.default = router;

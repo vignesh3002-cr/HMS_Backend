@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.BEFORE_AFTER_FOOD_VALUES = exports.ROUTE_OF_ADMINISTRATION_VALUES = exports.PRESCRIPTION_STATUS_VALUES = exports.PRESCRIPTION_STATUS = void 0;
 exports.PRESCRIPTION_STATUS = {
     DRAFT: "DRAFT",

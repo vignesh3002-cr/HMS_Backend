@@ -221,12 +221,25 @@ class EmployeeRepository {
             data
         });
     }
+    async updateEmployeePhoto(employeeId, employee_photo_URL) {
+        return prisma_1.default.employees.update({
+            where: {
+                employee_id: employeeId
+            },
+            data: {
+                employee_photo_URL
+            }
+        });
+    }
     async getAllEmployees() {
         return prisma_1.default.employees.findMany();
     }
     async getEmployees(query) {
-        const { roleType, branchId, department, status, includeDeleted, search, page = 1, limit = 10 } = query;
+        const { roleType, branchId, department, status, includeDeleted, search, page = 1, limit = 10, excludeEmployeeId } = query;
         const where = {};
+        if (excludeEmployeeId) {
+            where.employee_id = { not: excludeEmployeeId };
+        }
         if (department) {
             where.department_id = department;
         }

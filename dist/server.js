@@ -3,7 +3,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const node_dns_1 = __importDefault(require("node:dns"));
 require("dotenv/config");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
@@ -17,26 +16,19 @@ const appointment_routes_1 = __importDefault(require("./modules/appointment/appo
 const encounter_routes_1 = __importDefault(require("./modules/encounter/encounter.routes"));
 const permission_routes_1 = __importDefault(require("./modules/permission/permission.routes"));
 const role_routes_1 = __importDefault(require("./modules/role/role.routes"));
-//import prescriptionRoutes from "./modules/prescription/prescription.routes";
-//import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
-const doctorTransfer_routes_1 = __importDefault(require("./modules/doctor-transfer/doctorTransfer.routes"));
-const lab_test_category_routes_1 = __importDefault(require("./modules/lab-test-category/lab-test-category.routes"));
-const lab_test_master_routes_1 = __importDefault(require("./modules/lab-test-master/lab-test-master.routes"));
-const lab_order_routes_1 = __importDefault(require("./modules/lab-order/lab-order-routes"));
-const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const prescription_routes_1 = __importDefault(require("./modules/prescription/prescription.routes"));
 const chemotherapy_routes_1 = __importDefault(require("./modules/chemotherapy/chemotherapy.routes"));
+const oncology_routes_1 = __importDefault(require("./modules/oncology/oncology.routes"));
+const audit_routes_1 = __importDefault(require("./modules/audit/audit.routes"));
+const export_routes_1 = __importDefault(require("./modules/export/export.routes"));
+const doctorTransfer_routes_1 = __importDefault(require("./modules/doctor-transfer/doctorTransfer.routes"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const bcrypt_1 = require("./utils/bcrypt");
-node_dns_1.default.setDefaultResultOrder("ipv4first");
 // Fix BigInt serialization - Prisma returns BigInt types that JSON.stringify can't handle
 BigInt.prototype.toJSON = function () {
     return this.toString();
 };
 const app = (0, express_1.default)();
-app.use(express_1.default.json());
-app.use((0, cookie_parser_1.default)());
-<<<<<<< HEAD
-app.use((0, cors_1.default)());
-=======
 const configuredOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
     .split(",")
     .map((origin) => origin.trim())
@@ -79,7 +71,6 @@ app.use((0, cors_1.default)({
     ],
     optionsSuccessStatus: 200,
 }));
->>>>>>> 0a8fdcbc6838eddba90bba2049f5294dba65cd77
 app.use((0, cookie_parser_1.default)());
 app.use(express_1.default.json());
 app.get("/api/health", (_req, res) => {
@@ -88,18 +79,18 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/auth", auth_routes_1.default);
 app.use("/api/employees", employee_routes_1.default);
 app.use("/api/users", user_routes_1.default);
-//app.use("/api/doctors", doctorRoutes);
 app.use("/api/branch", branch_routes_1.default);
 app.use("/api/departments", department_routes_1.default);
 app.use("/api/patients", patient_routes_1.default);
-app.use("/api/lab-test-categories", lab_test_category_routes_1.default);
-app.use("/api/lab-test-master", lab_test_master_routes_1.default);
-app.use("/api/lab-order", lab_order_routes_1.default);
-app.use("/api/chemotherapy", chemotherapy_routes_1.default);
 app.use("/api/appointments", appointment_routes_1.default);
 app.use("/api/encounters", encounter_routes_1.default);
 app.use("/api/permissions", permission_routes_1.default);
 app.use("/api/roles", role_routes_1.default);
+app.use("/api/prescriptions", prescription_routes_1.default);
+app.use("/api/chemotherapy", chemotherapy_routes_1.default);
+app.use("/api/oncology", oncology_routes_1.default);
+app.use("/api/audit", audit_routes_1.default);
+app.use("/api/export", export_routes_1.default);
 //app.use("/api/prescriptions", prescriptionRoutes);
 //app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/doctors", doctorTransfer_routes_1.default);

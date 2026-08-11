@@ -69,6 +69,14 @@ const prescriptionDetailInclude = {
         include: prescriptionItemInclude
     }
 };
+function startOfDay(date) {
+    return new Date(`${date}T00:00:00.000Z`);
+}
+function startOfNextDay(date) {
+    const day = startOfDay(date);
+    day.setUTCDate(day.getUTCDate() + 1);
+    return day;
+}
 class PrescriptionRepository {
     async findEncounterForPrescription(encounterNo) {
         return prisma_1.default.encounter.findUnique({
@@ -262,11 +270,3 @@ class PrescriptionRepository {
     }
 }
 exports.PrescriptionRepository = PrescriptionRepository;
-function startOfDay(date) {
-    return new Date(`${date}T00:00:00.000Z`);
-}
-function startOfNextDay(date) {
-    const day = startOfDay(date);
-    day.setUTCDate(day.getUTCDate() + 1);
-    return day;
-}

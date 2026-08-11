@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import prisma from "../../config/prisma";
 
 const PERMISSION_CACHE_TTL = 5 * 60 * 1000;
@@ -40,7 +41,7 @@ export class PermissionService {
       }),
       prisma.rolePermission.findMany({
         where: { revoked_at: null },
-        include: { permission: true },
+        include: { Permission: true },
       }),
     ]);
 
@@ -85,6 +86,7 @@ export class PermissionService {
       where: { role_type_permission_id: { role_type: roleType, permission_id: permission.id } },
       update: { revoked_at: null, revoked_by: null },
       create: {
+        id: randomUUID(),
         role_type: roleType,
         permission_id: permission.id,
         granted_by: grantedBy,
@@ -167,6 +169,7 @@ export class PermissionService {
           where: { role_type_permission_id: { role_type: grant.role_type, permission_id: grant.permission_id } },
           update: { revoked_at: null, revoked_by: null },
           create: {
+            id: randomUUID(),
             role_type: grant.role_type,
             permission_id: grant.permission_id,
             granted_by: changedBy,
@@ -224,10 +227,10 @@ export class PermissionService {
         role_type: roleType.toUpperCase(),
         revoked_at: null,
       },
-      include: { permission: true },
+      include: { Permission: true },
     });
 
-    const permissionKeys = rolePermissions.map((rp) => rp.permission.key);
+    const permissionKeys = rolePermissions.map((rp) => rp.Permission.key);
 
     cache.set(cacheKey, {
       permissions: permissionKeys,
