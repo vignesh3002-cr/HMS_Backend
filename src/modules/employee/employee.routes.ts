@@ -5,9 +5,9 @@ import { authorize, authorizeSelfOrPermission, authorizeNoSelf, authorizeSelfPho
 import { branchScope } from "../../middleware/branchScope";
 
 const router = Router();
- 
+
 const controller = new EmployeeController();
- 
+
 router.post(
     "/create",
     authenticate,
@@ -28,7 +28,7 @@ router.get(
     branchScope,
     controller.getEmployeeById.bind(controller)
 );
- 
+
 router.put(
     "/:employeeId",
     authenticate,
@@ -50,5 +50,5 @@ router.delete(
     branchScope,
     controller.softDeleteEmployee.bind(controller)
 );
- 
+
 export default router;

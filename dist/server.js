@@ -29,6 +29,11 @@ BigInt.prototype.toJSON = function () {
     return this.toString();
 };
 const app = (0, express_1.default)();
+<<<<<<< HEAD
+=======
+app.use(express_1.default.json());
+app.use((0, cookie_parser_1.default)());
+>>>>>>> 5df3e7e14ad93e80109586aace3a35d2d071eb00
 const configuredOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
     .split(",")
     .map((origin) => origin.trim())

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { AppointmentController } from "./appointment.controller";
 import { authenticate } from "../auth/auth.middleware";
-import { authorize } from "../../middleware/authorize";
+import { authorize, authorizeRoles } from "../../middleware/authorize";
 import { branchScope } from "../../middleware/branchScope";
 import {
     createAppointmentValidation,
@@ -19,6 +19,7 @@ import {
     getRescheduleQueueValidation,
     processRescheduleActionValidation
 } from "../doctor-transfer/doctorTransfer.validation";
+import { DOCTOR_TRANSFER_ROLES } from "../doctor-transfer/doctorTransfer.routes";
 
 const router = Router();
 
@@ -32,6 +33,7 @@ router.get(
     "/reschedule-queue",
     authenticate,
     authorize("doctor.transfer"),
+    authorizeRoles(...DOCTOR_TRANSFER_ROLES),
     getRescheduleQueueValidation,
     transferController.getRescheduleQueue.bind(transferController)
 );
@@ -40,6 +42,7 @@ router.put(
     "/reschedule/:appointmentId",
     authenticate,
     authorize("doctor.transfer"),
+    authorizeRoles(...DOCTOR_TRANSFER_ROLES),
     processRescheduleActionValidation,
     transferController.processRescheduleAction.bind(transferController)
 );
@@ -48,6 +51,7 @@ router.post(
     "/transfer-preview",
     authenticate,
     authorize("doctor.transfer"),
+    authorizeRoles(...DOCTOR_TRANSFER_ROLES),
     transferPreviewValidation,
     transferController.transferPreview.bind(transferController)
 );

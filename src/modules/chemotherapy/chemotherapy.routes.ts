@@ -36,6 +36,7 @@ const controller = new ChemotherapyController();
 // sub-paths are never swallowed by a param route (same trap documented in
 // branch.routes.ts / appointment.routes.ts).
 
+
 router.get(
     "/regimen-protocols",
     authenticate,
