@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.permissionService = exports.PermissionService = void 0;
-const crypto_1 = require("crypto");
+const crypto_1 = __importDefault(require("crypto"));
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const PERMISSION_CACHE_TTL = 5 * 60 * 1000;
 const cache = new Map();
@@ -55,18 +55,31 @@ class PermissionService {
             sort_order: r.sort_order,
             is_active: r.is_active,
         }));
-        return { permissions: permissionsWithRoles, roles: rolesWithConfig };
+        return {
+            permissions: permissionsWithRoles,
+            roles: rolesWithConfig,
+        };
     }
     async grantPermission(roleType, permissionKey, grantedBy) {
-        const permission = await prisma_1.default.permission.findUnique({ where: { key: permissionKey } });
+        const permission = await prisma_1.default.permission.findUnique({
+            where: { key: permissionKey },
+        });
         if (!permission) {
             throw new Error(`Permission not found: ${permissionKey}`);
         }
         await prisma_1.default.rolePermission.upsert({
-            where: { role_type_permission_id: { role_type: roleType, permission_id: permission.id } },
-            update: { revoked_at: null, revoked_by: null },
+            where: {
+                role_type_permission_id: {
+                    role_type: roleType,
+                    permission_id: permission.id,
+                },
+            },
+            update: {
+                revoked_at: null,
+                revoked_by: null,
+            },
             create: {
-                id: (0, crypto_1.randomUUID)(),
+                id: crypto_1.default.randomUUID(),
                 role_type: roleType,
                 permission_id: permission.id,
                 granted_by: grantedBy,
@@ -78,25 +91,42 @@ class PermissionService {
                 permission_key: permissionKey,
                 action: "GRANTED",
                 changed_by: grantedBy,
-                metadata: { permission_id: permission.id },
+                metadata: {
+                    permission_id: permission.id,
+                },
             },
         });
         this.invalidateCache(roleType);
     }
     async revokePermission(roleType, permissionKey, revokedBy) {
-        const permission = await prisma_1.default.permission.findUnique({ where: { key: permissionKey } });
+        const permission = await prisma_1.default.permission.findUnique({
+            where: { key: permissionKey },
+        });
         if (!permission) {
             throw new Error(`Permission not found: ${permissionKey}`);
         }
         const existing = await prisma_1.default.rolePermission.findUnique({
-            where: { role_type_permission_id: { role_type: roleType, permission_id: permission.id } },
+            where: {
+                role_type_permission_id: {
+                    role_type: roleType,
+                    permission_id: permission.id,
+                },
+            },
         });
         if (!existing || existing.revoked_at) {
             throw new Error(`Permission not granted to role: ${roleType}`);
         }
         await prisma_1.default.rolePermission.update({
-            where: { role_type_permission_id: { role_type: roleType, permission_id: permission.id } },
-            data: { revoked_at: new Date(), revoked_by: revokedBy },
+            where: {
+                role_type_permission_id: {
+                    role_type: roleType,
+                    permission_id: permission.id,
+                },
+            },
+            data: {
+                revoked_at: new Date(),
+                revoked_by: revokedBy,
+            },
         });
         await prisma_1.default.permissionAuditLog.create({
             data: {
@@ -104,15 +134,23 @@ class PermissionService {
                 permission_key: permissionKey,
                 action: "REVOKED",
                 changed_by: revokedBy,
-                metadata: { permission_id: permission.id },
+                metadata: {
+                    permission_id: permission.id,
+                },
             },
         });
         this.invalidateCache(roleType);
     }
     async bulkUpdatePermissions(updates, changedBy) {
-        const permissionKeys = [...new Set(updates.map((u) => u.permission_key))];
+        const permissionKeys = [
+            ...new Set(updates.map((u) => u.permission_key)),
+        ];
         const permissions = await prisma_1.default.permission.findMany({
-            where: { key: { in: permissionKeys } },
+            where: {
+                key: {
+                    in: permissionKeys,
+                },
+            },
         });
         const permMap = new Map(permissions.map((p) => [p.key, p.id]));
         const toGrant = [];
@@ -123,19 +161,35 @@ class PermissionService {
                 throw new Error(`Permission not found: ${update.permission_key}`);
             }
             if (update.grant) {
-                toGrant.push({ role_type: update.role_type, permission_id: permId, permission_key: update.permission_key });
+                toGrant.push({
+                    role_type: update.role_type,
+                    permission_id: permId,
+                    permission_key: update.permission_key,
+                });
             }
             else {
-                toRevoke.push({ role_type: update.role_type, permission_id: permId, permission_key: update.permission_key });
+                toRevoke.push({
+                    role_type: update.role_type,
+                    permission_id: permId,
+                    permission_key: update.permission_key,
+                });
             }
         }
         await prisma_1.default.$transaction(async (tx) => {
             for (const grant of toGrant) {
                 await tx.rolePermission.upsert({
-                    where: { role_type_permission_id: { role_type: grant.role_type, permission_id: grant.permission_id } },
-                    update: { revoked_at: null, revoked_by: null },
+                    where: {
+                        role_type_permission_id: {
+                            role_type: grant.role_type,
+                            permission_id: grant.permission_id,
+                        },
+                    },
+                    update: {
+                        revoked_at: null,
+                        revoked_by: null,
+                    },
                     create: {
-                        id: (0, crypto_1.randomUUID)(),
+                        id: crypto_1.default.randomUUID(),
                         role_type: grant.role_type,
                         permission_id: grant.permission_id,
                         granted_by: changedBy,
@@ -147,14 +201,24 @@ class PermissionService {
                         permission_key: grant.permission_key,
                         action: "GRANTED",
                         changed_by: changedBy,
-                        metadata: { permission_id: grant.permission_id },
+                        metadata: {
+                            permission_id: grant.permission_id,
+                        },
                     },
                 });
             }
             for (const revoke of toRevoke) {
                 await tx.rolePermission.update({
-                    where: { role_type_permission_id: { role_type: revoke.role_type, permission_id: revoke.permission_id } },
-                    data: { revoked_at: new Date(), revoked_by: changedBy },
+                    where: {
+                        role_type_permission_id: {
+                            role_type: revoke.role_type,
+                            permission_id: revoke.permission_id,
+                        },
+                    },
+                    data: {
+                        revoked_at: new Date(),
+                        revoked_by: changedBy,
+                    },
                 });
                 await tx.permissionAuditLog.create({
                     data: {
@@ -162,12 +226,17 @@ class PermissionService {
                         permission_key: revoke.permission_key,
                         action: "REVOKED",
                         changed_by: changedBy,
-                        metadata: { permission_id: revoke.permission_id },
+                        metadata: {
+                            permission_id: revoke.permission_id,
+                        },
                     },
                 });
             }
         });
-        const affectedRoles = new Set([...toGrant.map((g) => g.role_type), ...toRevoke.map((r) => r.role_type)]);
+        const affectedRoles = new Set([
+            ...toGrant.map((g) => g.role_type),
+            ...toRevoke.map((r) => r.role_type),
+        ]);
         for (const role of affectedRoles) {
             this.invalidateCache(role);
         }
@@ -187,7 +256,9 @@ class PermissionService {
                 role_type: roleType.toUpperCase(),
                 revoked_at: null,
             },
-            include: { Permission: true },
+            include: {
+                Permission: true,
+            },
         });
         const permissionKeys = rolePermissions.map((rp) => rp.Permission.key);
         cache.set(cacheKey, {
@@ -198,8 +269,12 @@ class PermissionService {
     }
     async getUserPermissions(userId) {
         const user = await prisma_1.default.user_table.findUnique({
-            where: { user_id: userId },
-            select: { role_type: true },
+            where: {
+                user_id: userId,
+            },
+            select: {
+                role_type: true,
+            },
         });
         if (!user?.role_type) {
             return [];
@@ -215,12 +290,20 @@ class PermissionService {
         }
     }
     async getAuditLog(roleType, limit = 100, offset = 0) {
-        return (await prisma_1.default.permissionAuditLog.findMany({
-            where: roleType ? { role_type: roleType } : {},
-            orderBy: { changed_at: "desc" },
+        const logs = await prisma_1.default.permissionAuditLog.findMany({
+            where: roleType
+                ? { role_type: roleType }
+                : {},
+            orderBy: {
+                changed_at: "desc",
+            },
             take: limit,
             skip: offset,
-        })).map((log) => ({ ...log, id: Number(log.id) }));
+        });
+        return logs.map((log) => ({
+            ...log,
+            id: Number(log.id),
+        }));
     }
 }
 exports.PermissionService = PermissionService;

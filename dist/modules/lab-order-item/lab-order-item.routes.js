@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const lab_order_item_controller_1 = require("./lab-order-item.controller");
+const lab_order_item_validation_1 = require("./lab-order-item.validation");
+const auth_middleware_1 = require("../auth/auth.middleware");
+const router = (0, express_1.Router)();
+const controller = new lab_order_item_controller_1.LabOrderItemController();
+router.post("/", auth_middleware_1.authenticate, lab_order_item_validation_1.createLabOrderItemValidation, controller.create.bind(controller));
+router.get("/", controller.getAll.bind(controller));
+router.get("/:id", auth_middleware_1.authenticate, controller.getById.bind(controller));
+router.put("/:id", auth_middleware_1.authenticate, lab_order_item_validation_1.updateLabOrderItemValidation, controller.update.bind(controller));
+router.delete("/:id", auth_middleware_1.authenticate, controller.delete.bind(controller));
+exports.default = router;
