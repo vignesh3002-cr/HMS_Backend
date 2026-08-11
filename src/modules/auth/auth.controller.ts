@@ -26,11 +26,15 @@ export class AuthController {
             );
 
             // OTP flow temporarily disabled - issuing the session cookie directly on login
+            // Cookie lifetime must match the JWT's own expiry (see utils/jwt.ts:
+            // 12h when rememberMe is on, 5m otherwise) - otherwise the cookie
+            // outlives the token (or vice versa) and requests start failing
+            // with 401s well before the user expects to be logged out.
             res.cookie("token", result.token, {
                 httpOnly: true,
                 secure: false,
                 sameSite: "lax",
-                maxAge: 12 * 60 * 60 * 1000
+                maxAge: rememberMe ? 12 * 60 * 60 * 1000 : 5 * 60 * 1000
             });
 
             return res.status(200).json({
@@ -108,14 +112,15 @@ export class AuthController {
 
         const result = await authService.verifyOtp(
             username,
-            otpCode
+            otpCode,
+            rememberMe
         );
         res.cookie("token", result.token, {
         httpOnly: true,
         secure: false,
         sameSite: "lax",
-        maxAge: 12 * 60 * 60 * 1000
-        
+        maxAge: rememberMe ? 12 * 60 * 60 * 1000 : 5 * 60 * 1000
+
    });
 
         return res.status(200).json({
@@ -136,5 +141,63 @@ export class AuthController {
     }
 
 }
+
+    async changeUsername(req: Request, res: Response) {
+
+        try {
+
+            const userId = (req as any).user?.user_id;
+            const { newUsername } = req.body;
+
+            const result = await authService.changeUsername(userId, String(newUsername ?? ""));
+
+            return res.status(200).json({
+                success: true,
+                message: "Username updated successfully",
+                data: result
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async changePassword(req: Request, res: Response) {
+
+        try {
+
+            const userId = (req as any).user?.user_id;
+            const { oldPassword, newPassword } = req.body;
+
+            if (!oldPassword || !newPassword) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Current password and new password are required"
+                });
+            }
+
+            const result = await authService.changePassword(userId, oldPassword, newPassword);
+
+            return res.status(200).json({
+                success: true,
+                message: result.message
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
 
 }

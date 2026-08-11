@@ -1,41 +1,53 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const chemotherapyController = __importStar(require("./chemotherapy.controller"));
+const chemotherapy_controller_1 = require("./chemotherapy.controller");
+const auth_middleware_1 = require("../auth/auth.middleware");
+const authorize_1 = require("../../middleware/authorize");
+const branchScope_1 = require("../../middleware/branchScope");
+const chemotherapy_validation_1 = require("./chemotherapy.validation");
 const router = (0, express_1.Router)();
-router.get("/cancer-types", chemotherapyController.getCancerTypes);
-router.post("/cancer-type", chemotherapyController.addCancerType);
+const controller = new chemotherapy_controller_1.ChemotherapyController();
+// ---------------- Regimen protocols ----------------
+// Registered before "/plans/:planId" etc. so "/regimen-protocols" and its
+// sub-paths are never swallowed by a param route (same trap documented in
+// branch.routes.ts / appointment.routes.ts).
+router.get("/regimen-protocols", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), chemotherapy_validation_1.listRegimenProtocolsValidation, controller.listRegimenProtocols.bind(controller));
+router.get("/regimen-protocols/:protocolId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), chemotherapy_validation_1.getRegimenProtocolValidation, controller.getRegimenProtocol.bind(controller));
+router.post("/regimen-protocols", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.manage"), chemotherapy_validation_1.createRegimenProtocolValidation, controller.createRegimenProtocol.bind(controller));
+router.put("/regimen-protocols/:protocolId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.manage"), chemotherapy_validation_1.updateRegimenProtocolValidation, controller.updateRegimenProtocol.bind(controller));
+router.post("/regimen-protocols/:protocolId/items", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.manage"), chemotherapy_validation_1.addRegimenProtocolItemValidation, controller.addRegimenProtocolItem.bind(controller));
+router.delete("/regimen-protocols/:protocolId/items/:protocolItemId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.manage"), controller.removeRegimenProtocolItem.bind(controller));
+// ---------------- Plan ----------------
+router.get("/plans/preview", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.previewPlanValidation, controller.previewPlan.bind(controller));
+router.post("/plans", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.create"), chemotherapy_validation_1.createPlanValidation, controller.createPlan.bind(controller));
+router.get("/plans", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), branchScope_1.branchScope, chemotherapy_validation_1.listPlansValidation, controller.listPlans.bind(controller));
+router.get("/plans/:planId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.planIdParamValidation, controller.getPlan.bind(controller));
+router.put("/plans/:planId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.updatePlanValidation, controller.updatePlan.bind(controller));
+router.patch("/plans/:planId/status", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.planStatusValidation, controller.changePlanStatus.bind(controller));
+// ---------------- Plan items ----------------
+router.post("/plans/:planId/items", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.addPlanItemValidation, controller.addPlanItem.bind(controller));
+router.put("/plans/:planId/items/:planItemId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.updatePlanItemValidation, controller.updatePlanItem.bind(controller));
+router.delete("/plans/:planId/items/:planItemId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), controller.removePlanItem.bind(controller));
+// ---------------- Cycles ----------------
+router.post("/plans/:planId/cycles", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.cycle.manage"), chemotherapy_validation_1.createCycleValidation, controller.createCycle.bind(controller));
+router.get("/plans/:planId/cycles", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.planIdParamValidation, controller.listCyclesForPlan.bind(controller));
+router.get("/cycles/:cycleId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.cycleIdParamValidation, controller.getCycle.bind(controller));
+router.put("/cycles/:cycleId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.cycle.manage"), chemotherapy_validation_1.updateCycleValidation, controller.updateCycle.bind(controller));
+router.patch("/cycles/:cycleId/status", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.cycle.manage"), chemotherapy_validation_1.cycleStatusValidation, controller.changeCycleStatus.bind(controller));
+// ---------------- Administration ----------------
+router.post("/cycles/:cycleId/administration", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.administration.record"), chemotherapy_validation_1.recordAdministrationValidation, controller.recordAdministration.bind(controller));
+router.get("/cycles/:cycleId/administration", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.cycleIdParamValidation, controller.listAdministrations.bind(controller));
+// ---------------- Vitals ----------------
+router.post("/cycles/:cycleId/vitals", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.vitals.record"), chemotherapy_validation_1.recordVitalsValidation, controller.recordVitals.bind(controller));
+router.get("/cycles/:cycleId/vitals", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.cycleIdParamValidation, controller.listVitals.bind(controller));
+// ---------------- Adverse events ----------------
+router.post("/cycles/:cycleId/adverse-events", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.adverse_event.record"), chemotherapy_validation_1.recordAdverseEventValidation, controller.recordAdverseEvent.bind(controller));
+router.get("/cycles/:cycleId/adverse-events", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.cycleIdParamValidation, controller.listAdverseEvents.bind(controller));
+// ---------------- Lab review ----------------
+router.post("/cycles/:cycleId/lab-review", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.lab_review.record"), chemotherapy_validation_1.recordLabReviewValidation, controller.recordLabReview.bind(controller));
+router.get("/cycles/:cycleId/lab-review", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.cycleIdParamValidation, controller.listLabReviews.bind(controller));
+// ---------------- Followup ----------------
+router.post("/cycles/:cycleId/followup", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.followup.record"), chemotherapy_validation_1.recordFollowupValidation, controller.recordFollowup.bind(controller));
+router.get("/cycles/:cycleId/followup", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.cycleIdParamValidation, controller.listFollowups.bind(controller));
 exports.default = router;

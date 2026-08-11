@@ -5,7 +5,7 @@ exports.generateId = generateId;
 // detect collisions when a sequence's current_number has fallen out of
 // sync with the real data (e.g. after manual seeds/imports bypassed it).
 const ENTITY_TARGET = {
-    APPOINTMENT: { table: "appointment", column: "appointment_id" },
+    APPOINTMENT: { table: "appointment_history", column: "appointment_id" },
     BRANCH: { table: "branch", column: "branch_id" },
     BRANCH_ADMIN: { table: "employees", column: "employee_id" },
     DEPARTMENT: { table: "department_master", column: "department_id" },
@@ -14,7 +14,7 @@ const ENTITY_TARGET = {
     ENCOUNTER: { table: "encounter", column: "encounter_no" },
     LOGIN_OTP: { table: "login_otp", column: "otp_id" },
     NOTIFICATION: { table: "appointment_notification", column: "notification_id" },
-    PATIENT: { table: "patient", column: "patient_id" },
+    PATIENT: { table: "patient_bio_data", column: "patient_id" },
     RESCHEDULE_QUEUE: { table: "appointment_reschedule_queue", column: "queue_id" },
     USER: { table: "user_table", column: "user_id" },
     DOCTOR_TRANSFER: { table: "doctor_transfer", column: "transfer_id" },

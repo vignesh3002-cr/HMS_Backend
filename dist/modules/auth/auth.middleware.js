@@ -6,7 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.authenticate = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const roles_1 = require("../../permissions/roles");
-const authenticate = (req, res, next) => {
+const prisma_1 = __importDefault(require("../../config/prisma"));
+const authenticate = async (req, res, next) => {
     const authReq = req;
     try {
         // Prefer the Authorization header over the cookie - the frontend keeps
@@ -29,6 +30,18 @@ const authenticate = (req, res, next) => {
             return res.status(403).json({
                 success: false,
                 message: "Forbidden. Your role is not authorized to access this system.",
+            });
+        }
+        // Respect the "disable role" toggle in Role Management (role_id_config.is_active).
+        // Roles with no config row (not yet seeded) are treated as active so this
+        // never locks everyone out by default.
+        const roleConfig = await prisma_1.default.role_id_config.findUnique({
+            where: { role_type: String(authReq.user?.role ?? "") },
+        });
+        if (roleConfig && !roleConfig.is_active) {
+            return res.status(403).json({
+                success: false,
+                message: "Your role has been disabled by an administrator.",
             });
         }
         next();

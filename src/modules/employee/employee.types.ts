@@ -75,11 +75,12 @@ export interface CreateEmployeeDto {
     emp_status: boolean;
  
     // Doctor only
- 
+
     specialization: string;
     qualification: string;
     license_no: string;
     consultation_minutes: number;
+    doctor_bio: string;
  
     // Multi Branch
  
@@ -104,7 +105,7 @@ export interface UpdateEmployeeDto {
  
     email?: string;
     mobile_no?: string;
- 
+
     blood_group?: string;
     nationality?: string;
     marital_status?: string;
@@ -146,24 +147,29 @@ export interface UpdateEmployeeDto {
         | "BRANCH_ADMIN"
         | "Admin";
     consultation_minutes?: number;
+    doctor_bio?: string;
     branch_ids?: string[];
     working_hours?: WorkingHourDto[];
 }
  
 export interface GetEmployeesQuery {
- 
+
     roleType?: string;
- 
+
     branchId?: string;
- 
+
     department?: string;
- 
+
     status?: boolean;
- 
+
+    includeDeleted?: boolean;
+
     search?: string;
- 
+
     page?: number;
- 
+
     limit?: number;
- 
+
+    excludeEmployeeId?: string;
+
 }

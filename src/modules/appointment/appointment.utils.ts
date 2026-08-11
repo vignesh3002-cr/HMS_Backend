@@ -10,6 +10,28 @@ export function toDayOfWeek(date: Date): string {
     return DAY_OF_WEEK_NAMES[date.getUTCDay()];
 }
 
+export function formatDateOnly(date: Date): string {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+}
+
+// Monday-start week containing `date` (a UTC-midnight date from parseDateOnly).
+export function getWeekRange(date: Date): { start: Date; end: Date } {
+    const dayOfWeek = date.getUTCDay(); // 0=Sun..6=Sat
+    const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+    const start = new Date(date);
+    start.setUTCDate(start.getUTCDate() - diffToMonday);
+
+    const end = new Date(start);
+    end.setUTCDate(start.getUTCDate() + 6);
+
+    return { start, end };
+}
+
 export function timeStringToDate(time: string): Date {
     const [hours, minutes] = time.split(":").map(Number);
 

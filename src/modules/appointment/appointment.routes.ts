@@ -9,15 +9,17 @@ import {
     updateAppointmentStatusValidation,
     getAppointmentsValidation,
     getAvailableSlotsValidation,
+    getDoctorSlotSummaryValidation,
+    getDoctorWeekSlotSummaryValidation,
     cancelAppointmentValidation
 } from "./appointment.validation";
 import { DoctorTransferController } from "../doctor-transfer/doctorTransfer.controller";
-import { DOCTOR_TRANSFER_ROLES } from "../doctor-transfer/doctorTransfer.routes";
 import {
     transferPreviewValidation,
     getRescheduleQueueValidation,
     processRescheduleActionValidation
 } from "../doctor-transfer/doctorTransfer.validation";
+import { DOCTOR_TRANSFER_ROLES } from "../doctor-transfer/doctorTransfer.routes";
 
 const router = Router();
 
@@ -30,6 +32,7 @@ const transferController = new DoctorTransferController();
 router.get(
     "/reschedule-queue",
     authenticate,
+    authorize("doctor.transfer"),
     authorizeRoles(...DOCTOR_TRANSFER_ROLES),
     getRescheduleQueueValidation,
     transferController.getRescheduleQueue.bind(transferController)
@@ -38,6 +41,7 @@ router.get(
 router.put(
     "/reschedule/:appointmentId",
     authenticate,
+    authorize("doctor.transfer"),
     authorizeRoles(...DOCTOR_TRANSFER_ROLES),
     processRescheduleActionValidation,
     transferController.processRescheduleAction.bind(transferController)
@@ -46,6 +50,7 @@ router.put(
 router.post(
     "/transfer-preview",
     authenticate,
+    authorize("doctor.transfer"),
     authorizeRoles(...DOCTOR_TRANSFER_ROLES),
     transferPreviewValidation,
     transferController.transferPreview.bind(transferController)
@@ -74,6 +79,20 @@ router.get(
     authorize("appointment.read"),
     getAvailableSlotsValidation,
     controller.getAvailableSlots.bind(controller)
+);
+
+router.get(
+    "/doctor-slot-summary",
+    authenticate,
+    getDoctorSlotSummaryValidation,
+    controller.getDoctorSlotSummary.bind(controller)
+);
+
+router.get(
+    "/doctor-week-slot-summary",
+    authenticate,
+    getDoctorWeekSlotSummaryValidation,
+    controller.getDoctorWeekSlotSummary.bind(controller)
 );
 
 router.get(

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { DoctorTransferController } from "./doctorTransfer.controller";
 import { authenticate } from "../auth/auth.middleware";
+import { authorize } from "../../middleware/authorize";
 import { authorizeRoles } from "../../middleware/authorize";
 import { BRANCH_ADMIN_ROLES } from "../../permissions/roles";
 import {
@@ -20,6 +21,7 @@ const controller = new DoctorTransferController();
 router.post(
     "/:employeeId/transfer",
     authenticate,
+    authorize("doctor.transfer"),
     authorizeRoles(...DOCTOR_TRANSFER_ROLES),
     initiateTransferValidation,
     controller.initiateTransfer.bind(controller)
@@ -28,6 +30,7 @@ router.post(
 router.post(
     "/:employeeId/transfer/confirm",
     authenticate,
+    authorize("doctor.transfer"),
     authorizeRoles(...DOCTOR_TRANSFER_ROLES),
     confirmTransferValidation,
     controller.confirmTransfer.bind(controller)
@@ -36,6 +39,7 @@ router.post(
 router.get(
     "/:employeeId/future-appointments",
     authenticate,
+    authorize("doctor.transfer"),
     authorizeRoles(...DOCTOR_TRANSFER_ROLES),
     getFutureAppointmentsValidation,
     controller.getFutureAppointments.bind(controller)

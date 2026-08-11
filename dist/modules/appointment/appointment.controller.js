@@ -90,6 +90,54 @@ class AppointmentController {
             });
         }
     }
+    async getDoctorSlotSummary(req, res) {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+            const summary = await service.getDoctorSlotSummary(req.query.employeeId, req.query.date);
+            return res.json({
+                success: true,
+                message: "Doctor slot summary fetched successfully",
+                data: summary
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+    async getDoctorWeekSlotSummary(req, res) {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+            const summary = await service.getDoctorWeekSlotSummary(req.query.employeeId, req.query.date);
+            return res.json({
+                success: true,
+                message: "Doctor week slot summary fetched successfully",
+                data: summary
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
     async getAppointmentByNumber(req, res) {
         try {
             const appointment = await service.getAppointmentByNumber(req.params.appointmentNo);
@@ -116,7 +164,7 @@ class AppointmentController {
                     errors: errors.array()
                 });
             }
-            const appointment = await service.updateAppointment(req.params.appointmentNo, req.body);
+            const appointment = await service.updateAppointment(req.params.appointmentNo, req.body, req.user?.user_id || "SYSTEM");
             return res.json({
                 success: true,
                 message: "Appointment updated successfully",

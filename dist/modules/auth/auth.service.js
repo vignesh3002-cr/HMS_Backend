@@ -25,9 +25,9 @@ class AuthService {
             if (employee.emp_status !== true) {
                 throw new Error("Account is inactive. Please contact your administrator.");
             }
-            const activeMappings = user.user_branch_mapping?.filter((m) => m.status === 1);
+            const activeMappings = user.user_branch_mapping?.filter((m) => m.status === 1 && m.branch?.branch_status === "Active");
             if (!activeMappings || activeMappings.length === 0) {
-                throw new Error("No branch has been assigned to your account. Please contact the Head Admin.");
+                throw new Error("No active branch has been assigned to your account. Please contact the Head Admin.");
             }
         }
     }
@@ -37,16 +37,22 @@ class AuthService {
         }
         return user.employees?.email ?? undefined;
     }
-    buildAuthPayload(user) {
+    buildAuthPayload(user, rememberMe = false) {
         const employee = user.employees;
-        const primaryBranch = employee?.branch || user.branch || null;
-        const primaryBranchId = employee?.branch_id || user.branch_id || null;
+        // user_branch_mapping (already filtered to status: 1 by findUserByUsername)
+        // is the authoritative record of which branch this user is on -
+        // employees.branch_id/user_table.branch_id are denormalized copies that
+        // can drift out of sync with it, so prefer the real mapping first and
+        // only fall back to those columns when there's no active mapping at all.
+        const primaryMapping = user.user_branch_mapping?.[0];
+        const primaryBranch = primaryMapping?.branch || employee?.branch || user.branch || null;
+        const primaryBranchId = primaryMapping?.branch_id || employee?.branch_id || user.branch_id || null;
         const token = (0, jwt_1.generateToken)({
             username: user.username,
             role: user.role_type,
             user_id: user.user_id,
             hospital_id: primaryBranch?.hospital_id,
-        });
+        }, rememberMe);
         return {
             token,
             user: {
@@ -54,6 +60,7 @@ class AuthService {
                 username: user.username,
                 role: user.role_type,
                 role_type: user.role_type,
+                employee_id: employee?.employee_id ?? null,
                 hospital_id: primaryBranch?.hospital_id,
                 branch_id: primaryBranchId,
                 branch_name: primaryBranch?.branch_name || null,
@@ -76,7 +83,7 @@ class AuthService {
         // return {
         //   username: user.username,
         // };
-        return this.buildAuthPayload(user);
+        return this.buildAuthPayload(user, rememberMe);
     }
     async sendOtp(username) {
         const user = await this.authRepository.findUserByUsername(username);
@@ -105,7 +112,7 @@ class AuthService {
             message: `OTP sent to ${email.replace(/^(.{2}).*(@.*)$/, "$1***$2")}`,
         };
     }
-    async verifyOtp(username, code) {
+    async verifyOtp(username, code, rememberMe = false) {
         const user = await this.authRepository.findUserByUsername(username);
         if (!user) {
             throw new Error("User not found");
@@ -137,7 +144,50 @@ class AuthService {
         //     is_verified: true
         //   }
         // });
-        return this.buildAuthPayload(user);
+        return this.buildAuthPayload(user, rememberMe);
+    }
+    // Self-service only - the caller can only ever change their own username,
+    // never someone else's (userId comes from the authenticated JWT, not
+    // request input). No cooldown period for now.
+    async changeUsername(userId, newUsername) {
+        const trimmed = newUsername.trim();
+        if (!trimmed) {
+            throw new Error("New username is required");
+        }
+        const existing = await this.authRepository.findUserByUsername(trimmed);
+        if (existing && existing.user_id !== userId) {
+            throw new Error("Username already exists");
+        }
+        const user = await this.authRepository.findUserById(userId);
+        if (!user) {
+            throw new Error("User not found");
+        }
+        await prisma_1.default.user_table.update({
+            where: { id: user.id },
+            data: { username: trimmed },
+        });
+        return { username: trimmed };
+    }
+    // Self-service only, same as changeUsername - requires the current
+    // password to be re-entered, and userId always comes from the JWT.
+    async changePassword(userId, oldPassword, newPassword) {
+        const user = await this.authRepository.findUserById(userId);
+        if (!user) {
+            throw new Error("User not found");
+        }
+        const passwordMatched = await (0, bcrypt_1.comparePassword)(oldPassword, user.password);
+        if (!passwordMatched) {
+            throw new Error("Current password is incorrect");
+        }
+        if (!newPassword || newPassword.length < 6) {
+            throw new Error("New password must be at least 6 characters");
+        }
+        const hashed = await (0, bcrypt_1.hashPassword)(newPassword);
+        await prisma_1.default.user_table.update({
+            where: { id: user.id },
+            data: { password: hashed },
+        });
+        return { message: "Password updated successfully" };
     }
 }
 exports.AuthService = AuthService;

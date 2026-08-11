@@ -34,6 +34,10 @@ export interface CreatePatientRequest {
     patient_district?: string;
     patient_area?: string;
     patient_pincode?: number;
+    current_address?: string;
+    emergency_name?: string;
+    emergency_relation?: string;
+    emergency_mobile?: string;
 }
 
 export interface UpdatePatientRequest {
@@ -66,6 +70,10 @@ export interface UpdatePatientRequest {
     patient_district?: string;
     patient_area?: string;
     patient_pincode?: number;
+    current_address?: string;
+    emergency_name?: string;
+    emergency_relation?: string;
+    emergency_mobile?: string;
 }
 
 export interface GetPatientsQuery {

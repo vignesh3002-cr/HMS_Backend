@@ -152,6 +152,8 @@ export class BranchService {
             aadhaar_no: data.admin!.aadhaar_no,
             pan_no: data.admin!.pan_no,
             passport_no: data.admin!.passport_no,
+            gender: data.admin!.gender,
+            dob: data.admin!.dob,
             parmanent_address: data.admin!.permanent_address,
             current_address: data.admin!.current_address,
             employee_photo_URL: data.admin!.employee_photo_URL,
@@ -159,6 +161,10 @@ export class BranchService {
             employee_district: data.admin!.employee_district,
             employee_area: data.admin!.employee_area,
             employee_pincode: data.admin!.employee_pincode,
+            permanent_employee_state: data.admin!.permanent_employee_state,
+            permanent_employee_district: data.admin!.permanent_employee_district,
+            permanent_employee_area: data.admin!.permanent_employee_area,
+            permanent_employee_pincode: data.admin!.permanent_employee_pincode,
             employee_no_experence: data.admin!.employee_no_experence,
             emergency_contact_name: data.admin!.emergency_contact_name,
             emergency_contact_relationship: data.admin!.emergency_contact_relationship,
@@ -341,7 +347,14 @@ export class BranchService {
       orderBy: { created_at: "desc" },
     });
 
-    return users.map((user) => {
+    // A deactivated admin isn't eligible for a new branch assignment until
+    // reactivated - exclude them from the assignable list entirely, rather
+    // than just hiding which branch they used to occupy.
+    const activeUsers = users.filter(
+      (user) => user.employees?.emp_status === true || user.user_status === 0,
+    );
+
+    return activeUsers.map((user) => {
       const activeMappings = user.user_branch_mapping.filter((m) => m.status === 1);
       return {
         user_id: user.user_id!,

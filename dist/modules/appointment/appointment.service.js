@@ -9,6 +9,10 @@ const appointment_repository_1 = require("./appointment.repository");
 const appointment_constants_1 = require("./appointment.constants");
 const appointment_utils_1 = require("./appointment.utils");
 const repository = new appointment_repository_1.AppointmentRepository();
+// Fixed slot length used to count a doctor's total daily/weekly slot
+// capacity for the availability progress bar, independent of whichever
+// consultation_minutes value an individual schedule row carries.
+const SLOT_DURATION_MINUTES = 20;
 class AppointmentService {
     async validateBookingContext(employeeId, branchId, departmentId, appointmentDate) {
         const employee = await repository.findEmployee(employeeId);
@@ -17,6 +21,9 @@ class AppointmentService {
         }
         if (employee.user_table?.role_type !== "DOCTOR") {
             throw new Error("Selected employee is not a doctor");
+        }
+        if (employee.emp_status !== true) {
+            throw new Error("Doctor is inactive. Please contact the administrator.");
         }
         const branch = await repository.findBranch(branchId);
         if (!branch) {
@@ -120,13 +127,19 @@ class AppointmentService {
         }
         return appointment;
     }
-    async updateAppointment(appointmentNo, data) {
+    async updateAppointment(appointmentNo, data, actingUserId = "SYSTEM") {
         const existing = await repository.getAppointmentByNumber(appointmentNo);
         if (!existing) {
             throw new Error("Appointment not found");
         }
         if (appointment_constants_1.TERMINAL_APPOINTMENT_STATUSES.includes(existing.status ?? "")) {
             throw new Error(`Cannot modify an appointment that is already ${existing.status}`);
+        }
+        // A RESCHEDULE_REQUIRED appointment has no doctor - it can only be
+        // resolved by explicitly picking one (or cancelling it). Block saves
+        // that would leave it doctorless.
+        if (existing.status === appointment_constants_1.APPOINTMENT_STATUS.RESCHEDULE_REQUIRED && !data.employee_id) {
+            throw new Error("This appointment needs a doctor - select one to resolve the reschedule");
         }
         const employeeId = data.employee_id ?? existing.employee_id;
         const branchId = data.branch_id ?? existing.branch_id;
@@ -175,7 +188,15 @@ class AppointmentService {
                 updateData.department = departmentName;
                 updateData.status = 'RESCHEDULED';
             }
-            return repository.updateAppointment(tx, appointmentNo, updateData);
+            const updated = await repository.updateAppointment(tx, appointmentNo, updateData);
+            // If this appointment was sitting in the reschedule queue (e.g.
+            // doctor transfer / deactivation), resolving it here via the edit
+            // form closes the open queue entries so the queue stays consistent.
+            const openQueues = await repository.findOpenRescheduleQueueEntries(tx, appointmentNo);
+            for (const queue of openQueues) {
+                await repository.closeRescheduleQueueEntry(tx, queue.queue_id, actingUserId);
+            }
+            return updated;
         });
     }
     async updateAppointmentStatus(appointmentNo, status, cancelReason) {
@@ -201,6 +222,9 @@ class AppointmentService {
         }
         if (employee.user_table?.role_type !== "DOCTOR") {
             throw new Error("Selected employee is not a doctor");
+        }
+        if (employee.emp_status !== true) {
+            throw new Error("Doctor is inactive. Please contact the administrator.");
         }
         const branch = await repository.findBranch(branchId);
         if (!branch) {
@@ -244,6 +268,78 @@ class AppointmentService {
             }));
         });
         return { date: dateStr, day_of_week: dayOfWeek, slots };
+    }
+    // Total slot capacity for a doctor on a given day = every active shift
+    // of theirs (across every branch) on that day-of-week, sliced into fixed
+    // 20-minute slots based on their working-hours availability - independent
+    // of who ends up booking them, and independent of any per-schedule
+    // consultation_minutes override.
+    async getDoctorSlotSummary(employeeId, dateStr) {
+        const employee = await repository.findEmployee(employeeId);
+        if (!employee) {
+            throw new Error("Doctor not found");
+        }
+        if (employee.emp_status !== true) {
+            throw new Error("Doctor is inactive. Please contact the administrator.");
+        }
+        const appointmentDate = (0, appointment_utils_1.parseDateOnly)(dateStr);
+        const dayOfWeek = (0, appointment_utils_1.toDayOfWeek)(appointmentDate);
+        const schedules = await repository.findActiveDoctorSchedulesForEmployee(employeeId, dayOfWeek);
+        const totalSlots = schedules.reduce((sum, schedule) => {
+            if (!schedule.start_time || !schedule.end_time) {
+                return sum;
+            }
+            return sum + (0, appointment_utils_1.generateTimeSlots)(schedule.start_time, schedule.end_time, SLOT_DURATION_MINUTES).length;
+        }, 0);
+        const bookedCount = await repository.countBookedAppointmentsForEmployee(employeeId, appointmentDate);
+        const percentage = totalSlots > 0
+            ? Math.min(100, Math.round((bookedCount / totalSlots) * 100))
+            : 0;
+        return {
+            date: dateStr,
+            day_of_week: dayOfWeek,
+            total_slots: totalSlots,
+            booked_count: bookedCount,
+            percentage
+        };
+    }
+    // Same idea as getDoctorSlotSummary, but summed across the whole
+    // Monday-Sunday week containing `dateStr` - total slot capacity across
+    // all 7 days' schedules, and booked count across the whole date range.
+    async getDoctorWeekSlotSummary(employeeId, dateStr) {
+        const employee = await repository.findEmployee(employeeId);
+        if (!employee) {
+            throw new Error("Doctor not found");
+        }
+        if (employee.emp_status !== true) {
+            throw new Error("Doctor is inactive. Please contact the administrator.");
+        }
+        const anchorDate = (0, appointment_utils_1.parseDateOnly)(dateStr);
+        const { start, end } = (0, appointment_utils_1.getWeekRange)(anchorDate);
+        let totalSlots = 0;
+        for (let i = 0; i < 7; i++) {
+            const day = new Date(start);
+            day.setUTCDate(start.getUTCDate() + i);
+            const dayOfWeek = (0, appointment_utils_1.toDayOfWeek)(day);
+            const schedules = await repository.findActiveDoctorSchedulesForEmployee(employeeId, dayOfWeek);
+            totalSlots += schedules.reduce((sum, schedule) => {
+                if (!schedule.start_time || !schedule.end_time) {
+                    return sum;
+                }
+                return sum + (0, appointment_utils_1.generateTimeSlots)(schedule.start_time, schedule.end_time, SLOT_DURATION_MINUTES).length;
+            }, 0);
+        }
+        const bookedCount = await repository.countBookedAppointmentsForEmployeeInRange(employeeId, start, end);
+        const percentage = totalSlots > 0
+            ? Math.min(100, Math.round((bookedCount / totalSlots) * 100))
+            : 0;
+        return {
+            week_start: (0, appointment_utils_1.formatDateOnly)(start),
+            week_end: (0, appointment_utils_1.formatDateOnly)(end),
+            total_slots: totalSlots,
+            booked_count: bookedCount,
+            percentage
+        };
     }
 }
 exports.AppointmentService = AppointmentService;

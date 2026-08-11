@@ -71,7 +71,7 @@ class PrescriptionController {
     }
     async getPrescriptionById(req, res) {
         try {
-            const prescription = await service.getPrescriptionById(req.params.prescriptionId);
+            const prescription = await service.getPrescriptionById(String(req.params.prescriptionId));
             return res.json({
                 success: true,
                 message: "Prescription fetched successfully",
@@ -96,7 +96,7 @@ class PrescriptionController {
                 });
             }
             const actingRole = req.user?.role || "SYSTEM";
-            const prescription = await service.updatePrescription(req.params.prescriptionId, req.body, actingRole);
+            const prescription = await service.updatePrescription(String(req.params.prescriptionId), req.body, actingRole);
             return res.json({
                 success: true,
                 message: "Prescription updated successfully",
@@ -112,7 +112,7 @@ class PrescriptionController {
     }
     async deletePrescription(req, res) {
         try {
-            const prescription = await service.deletePrescription(req.params.prescriptionId);
+            const prescription = await service.deletePrescription(String(req.params.prescriptionId));
             return res.json({
                 success: true,
                 message: "Prescription cancelled successfully",
@@ -128,7 +128,7 @@ class PrescriptionController {
     }
     async getPrescriptionItems(req, res) {
         try {
-            const items = await service.getPrescriptionItems(req.params.prescriptionId);
+            const items = await service.getPrescriptionItems(String(req.params.prescriptionId));
             return res.json({
                 success: true,
                 message: "Prescription items fetched successfully",
@@ -152,7 +152,7 @@ class PrescriptionController {
                     errors: errors.array()
                 });
             }
-            const item = await service.addPrescriptionItem(req.params.prescriptionId, req.body);
+            const item = await service.addPrescriptionItem(String(req.params.prescriptionId), req.body);
             return res.status(201).json({
                 success: true,
                 message: "Medicine added to prescription successfully",
@@ -176,7 +176,7 @@ class PrescriptionController {
                     errors: errors.array()
                 });
             }
-            const item = await service.updatePrescriptionItem(req.params.prescriptionId, req.params.itemId, req.body);
+            const item = await service.updatePrescriptionItem(String(req.params.prescriptionId), String(req.params.itemId), req.body);
             return res.json({
                 success: true,
                 message: "Prescription item updated successfully",
@@ -192,7 +192,7 @@ class PrescriptionController {
     }
     async deletePrescriptionItem(req, res) {
         try {
-            await service.deletePrescriptionItem(req.params.prescriptionId, req.params.itemId);
+            await service.deletePrescriptionItem(String(req.params.prescriptionId), String(req.params.itemId));
             return res.json({
                 success: true,
                 message: "Prescription item removed successfully"
@@ -207,7 +207,7 @@ class PrescriptionController {
     }
     async getSuggestedMedicines(req, res) {
         try {
-            const medicines = await service.getSuggestedMedicines(req.params.diagnosisId);
+            const medicines = await service.getSuggestedMedicines(String(req.params.diagnosisId));
             return res.json({
                 success: true,
                 message: "Suggested medicines fetched successfully",

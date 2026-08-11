@@ -10,10 +10,11 @@ import {
 
 const router = Router();
 
+
+
 router.post(
     "/",
     authenticate,
-    authorize("lab.order"),
     createLabOrderValidation,
     controller.create
 );
@@ -36,7 +37,6 @@ router.get(
 router.put(
     "/:id",
     authenticate,
-    authorize("lab.order"),
     updateLabOrderValidation,
     controller.update
 );
@@ -44,7 +44,6 @@ router.put(
 router.delete(
     "/:id",
     authenticate,
-    authorize("lab.order"),
     controller.delete
 );
 

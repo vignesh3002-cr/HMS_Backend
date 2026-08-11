@@ -7,7 +7,10 @@ exports.PrescriptionService = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const prescription_repository_1 = require("./prescription.repository");
 const prescription_constants_1 = require("./prescription.constants");
-const encounter_constants_1 = require("../encounter/encounter.constants");
+// There is no dedicated "encounter" module in this codebase - the encounter
+// table's status column defaults to "OPEN" (see prisma/schema.prisma), so
+// that value is inlined here rather than importing a shared constant.
+const ENCOUNTER_STATUS_OPEN = "OPEN";
 const repository = new prescription_repository_1.PrescriptionRepository();
 function computeQuantity(item) {
     if (item.quantity !== undefined && item.quantity !== null) {
@@ -31,7 +34,7 @@ class PrescriptionService {
         if (!encounter) {
             throw new Error("Encounter not found");
         }
-        if (encounter.status !== encounter_constants_1.ENCOUNTER_STATUS.OPEN) {
+        if (encounter.status !== ENCOUNTER_STATUS_OPEN) {
             throw new Error("A prescription can only be created against an OPEN encounter");
         }
         const patient = encounter.patient_bio_data;
@@ -42,6 +45,7 @@ class PrescriptionService {
         if (!doctor || !doctor.employee_id) {
             throw new Error("Doctor not found for this encounter");
         }
+        const doctorEmployeeId = doctor.employee_id;
         if (!data.medicines || data.medicines.length === 0) {
             throw new Error("At least one medicine is required");
         }
@@ -84,7 +88,7 @@ class PrescriptionService {
                     branch_id: encounter.branch_id,
                     department_id: encounter.department_id,
                     diagnosis_id: diagnosisId,
-                    employee_id: doctor.employee_id,
+                    employee_id: doctorEmployeeId,
                     visit_type: data.visit_type ?? encounter.encounter_type,
                     visit_date: new Date(),
                     visit_status: "IN_PROGRESS"
@@ -93,7 +97,7 @@ class PrescriptionService {
             const generatedPrescriptionId = await repository.generatePrescriptionNumber(tx);
             const prescription = await repository.createPrescription(tx, {
                 prescription_id: generatedPrescriptionId,
-                employee_id: doctor.employee_id,
+                employee_id: doctorEmployeeId,
                 department_id: encounter.department_id,
                 diagnosis_id: diagnosisId,
                 patient_history_id: patientHistory.patient_history_id,

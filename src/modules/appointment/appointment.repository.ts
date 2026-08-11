@@ -131,6 +131,56 @@ export class AppointmentRepository {
 
     }
 
+    // A doctor's schedules across every branch they work at, used to compute
+    // their total appointment slot capacity for a given day - not scoped to
+    // any single branch, since a doctor's daily capacity is a property of
+    // the doctor, not of whichever branch happens to be selected.
+    async findActiveDoctorSchedulesForEmployee(
+        employeeId: string,
+        dayOfWeek: string
+    ) {
+
+        return prisma.doctor_schedule.findMany({
+            where: {
+                employee_id: employeeId,
+                day_of_week: dayOfWeek,
+                is_active: true
+            }
+        });
+
+    }
+
+    async countBookedAppointmentsForEmployee(
+        employeeId: string,
+        appointmentDate: Date
+    ) {
+
+        return prisma.appointment_history.count({
+            where: {
+                employee_id: employeeId,
+                appointment_date: appointmentDate,
+                status: { notIn: NON_BLOCKING_APPOINTMENT_STATUSES }
+            }
+        });
+
+    }
+
+    async countBookedAppointmentsForEmployeeInRange(
+        employeeId: string,
+        startDate: Date,
+        endDate: Date
+    ) {
+
+        return prisma.appointment_history.count({
+            where: {
+                employee_id: employeeId,
+                appointment_date: { gte: startDate, lte: endDate },
+                status: { notIn: NON_BLOCKING_APPOINTMENT_STATUSES }
+            }
+        });
+
+    }
+
     async findBookedAppointmentTimes(
         employeeId: string,
         appointmentDate: Date
@@ -248,6 +298,43 @@ export class AppointmentRepository {
         return prisma.appointment_history.findUnique({
             where: { appointment_id: appointmentId },
             include: appointmentDetailInclude
+        });
+
+    }
+
+    async findOpenRescheduleQueueEntries(tx: Prisma.TransactionClient, appointmentId: string) {
+
+        return tx.appointment_reschedule_queue.findMany({
+            where: {
+                appointment_id: appointmentId,
+                status: { in: ["PENDING", "ASSIGNED"] }
+            },
+            orderBy: { created_at: "desc" }
+        });
+
+    }
+
+    async closeRescheduleQueueEntry(
+        tx: Prisma.TransactionClient,
+        queueId: string,
+        performedBy: string
+    ) {
+
+        await tx.appointment_reschedule_queue.update({
+            where: { queue_id: queueId },
+            data: {
+                status: "CONFIRMED",
+                updated_at: new Date()
+            }
+        });
+
+        await tx.appointment_reschedule_action_log.create({
+            data: {
+                queue_id: queueId,
+                action: "CONFIRMED",
+                performed_by: performedBy,
+                notes: "Appointment updated directly via the edit appointment form"
+            }
         });
 
     }
