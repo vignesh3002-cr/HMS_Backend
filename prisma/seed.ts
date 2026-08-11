@@ -67,6 +67,36 @@ const PERMISSIONS = [
   { key: "pharmacy.dispense", name: "Dispense Medication", description: "Dispense medications to patients", category: "pharmacy" },
   { key: "pharmacy.inventory", name: "Manage Inventory", description: "Manage pharmacy inventory", category: "pharmacy" },
   { key: "pharmacy.manage", name: "Manage Pharmacy", description: "Manage pharmacy settings", category: "pharmacy" },
+
+  // Oncology reference data (cancer types/subtypes/staging/biomarkers/clinical parameters)
+  { key: "oncology.reference.manage", name: "Manage Oncology Reference Data", description: "Seed/edit cancer types, subtypes, staging reference, biomarkers, clinical parameters", category: "oncology" },
+  { key: "oncology.reference.read", name: "View Oncology Reference Data", description: "View cancer types, subtypes, staging reference, biomarkers", category: "oncology" },
+
+  // Oncology staging/diagnosis (per-patient)
+  { key: "oncology.diagnosis.create", name: "Create Oncology Diagnosis", description: "Create a patient's cancer staging/diagnosis record", category: "oncology" },
+  { key: "oncology.diagnosis.read", name: "View Oncology Diagnosis", description: "View a patient's cancer staging/diagnosis record", category: "oncology" },
+  { key: "oncology.diagnosis.update", name: "Update Oncology Diagnosis", description: "Update a patient's cancer staging/diagnosis record", category: "oncology" },
+
+  // IHC / molecular biomarker panels
+  { key: "oncology.ihc.write", name: "Record IHC Results", description: "Enter/update IHC biomarker panel results", category: "oncology" },
+  { key: "oncology.molecular.write", name: "Record Molecular Results", description: "Enter/update molecular/NGS panel results", category: "oncology" },
+  { key: "oncology.derived.read", name: "View Derived Oncology Fields", description: "View server-derived subtype/stage/suggested-therapy fields", category: "oncology" },
+
+  // Chemotherapy plan / treatment lifecycle
+  { key: "chemo.plan.create", name: "Create Chemotherapy Plan", description: "Create a patient-specific chemotherapy plan", category: "chemo" },
+  { key: "chemo.plan.read", name: "View Chemotherapy Plan", description: "View chemotherapy plans and items", category: "chemo" },
+  { key: "chemo.plan.update", name: "Update Chemotherapy Plan", description: "Update/close a chemotherapy plan", category: "chemo" },
+  { key: "chemo.cycle.manage", name: "Manage Chemotherapy Cycles", description: "Create/update/complete chemotherapy cycles", category: "chemo" },
+  { key: "chemo.administration.record", name: "Record Chemotherapy Administration", description: "Record drug administration for a cycle", category: "chemo" },
+  { key: "chemo.vitals.record", name: "Record Chemotherapy Vitals", description: "Record patient vitals during a chemotherapy cycle", category: "chemo" },
+  { key: "chemo.adverse_event.record", name: "Record Adverse Event", description: "Record a chemotherapy adverse event", category: "chemo" },
+  { key: "chemo.followup.record", name: "Record Chemotherapy Followup", description: "Record chemotherapy follow-up visit outcomes", category: "chemo" },
+  { key: "chemo.lab_review.record", name: "Record Chemotherapy Lab Review", description: "Record pre-cycle lab review results", category: "chemo" },
+  { key: "chemo.protocol.read", name: "View Regimen Protocols", description: "View named regimen protocol templates (AC-T, TCH, TCHP, ...)", category: "chemo" },
+  { key: "chemo.protocol.manage", name: "Manage Regimen Protocols", description: "Create/update regimen protocol templates and their drug lines", category: "chemo" },
+
+  // Audit trail
+  { key: "audit.read", name: "View Audit Log", description: "View the oncology/chemotherapy write audit trail", category: "audit" },
 ];
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -103,6 +133,14 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "pharmacy.dispense",
     "pharmacy.inventory",
     "pharmacy.manage",
+    "oncology.reference.manage",
+    "oncology.reference.read",
+    "oncology.diagnosis.read",
+    "oncology.derived.read",
+    "chemo.plan.read",
+    "chemo.protocol.read",
+    "chemo.protocol.manage",
+    "audit.read",
   ],
 
   // STAFF_ADMIN (ADMIN) - branch-scoped view/edit
@@ -123,6 +161,13 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "lab.result",
     "pharmacy.dispense",
     "pharmacy.inventory",
+    "oncology.reference.read",
+    "oncology.diagnosis.read",
+    "oncology.derived.read",
+    "chemo.plan.read",
+    "chemo.protocol.read",
+    "chemo.protocol.manage",
+    "audit.read",
   ],
 
   // RECEPTIONIST - patient/appointment only
@@ -145,6 +190,24 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "encounter.update",
     "lab.order",
     "lab.result",
+    // Oncology - a doctor makes the clinical calls: diagnosis/staging,
+    // biomarker entry, and the plan/cycle/adverse-event/followup record.
+    // Administration and vitals are recorded by NURSE, not DOCTOR.
+    "oncology.reference.read",
+    "oncology.diagnosis.create",
+    "oncology.diagnosis.read",
+    "oncology.diagnosis.update",
+    "oncology.ihc.write",
+    "oncology.molecular.write",
+    "oncology.derived.read",
+    "chemo.plan.create",
+    "chemo.plan.read",
+    "chemo.plan.update",
+    "chemo.cycle.manage",
+    "chemo.adverse_event.record",
+    "chemo.followup.record",
+    "chemo.lab_review.record",
+    "chemo.protocol.read",
   ],
 
   // NURSE - patient care
@@ -157,6 +220,15 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "encounter.update",
     "lab.order",
     "lab.result",
+    // Nurse administers and monitors - not diagnosing or planning
+    "oncology.reference.read",
+    "oncology.diagnosis.read",
+    "oncology.derived.read",
+    "chemo.plan.read",
+    "chemo.protocol.read",
+    "chemo.administration.record",
+    "chemo.vitals.record",
+    "chemo.adverse_event.record",
   ],
 
   // PHARMACIST
@@ -165,6 +237,8 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "department.read",
     "pharmacy.dispense",
     "pharmacy.inventory",
+    // Verifies drug orders against the plan before dispensing
+    "chemo.plan.read",
   ],
 
   // LAB_TECHNICIAN
