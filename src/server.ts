@@ -17,6 +17,7 @@ import prescriptionRoutes from "./modules/prescription/prescription.routes";
 import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
 import oncologyRoutes from "./modules/oncology/oncology.routes";
 import auditRoutes from "./modules/audit/audit.routes";
+import exportRoutes from "./modules/export/export.routes";
 import doctorTransferRoutes from "./modules/doctor-transfer/doctorTransfer.routes";
 import labTestCategoryRoutes from "./modules/lab-test-category/lab-test-category.routes";
 import labTestMasterRoutes from "./modules/lab-test-master/lab-test-master.routes";
@@ -102,6 +103,9 @@ app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/oncology", oncologyRoutes);
 app.use("/api/audit", auditRoutes);
+app.use("/api/export", exportRoutes);
+//app.use("/api/prescriptions", prescriptionRoutes);
+//app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/doctors", doctorTransferRoutes);
 app.use("/api/hashpassword", async (req, res) => {
 

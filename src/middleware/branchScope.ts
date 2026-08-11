@@ -27,6 +27,13 @@ export const branchScope: RequestHandler = async (req, res, next) => {
             });
         }
 
+        // Accessing your own record (set by authorizeSelfOrPermission) never
+        // needs branch disambiguation - skip straight through regardless of
+        // how many branches this user is mapped to.
+        if (authReq.isSelfAccess) {
+            return next();
+        }
+
         const role = String(user.role ?? "").toLowerCase();
 
         if (UNRESTRICTED_ROLES.some((r) => r.toLowerCase() === role)) {

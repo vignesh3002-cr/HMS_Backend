@@ -59,10 +59,20 @@ class BranchRepository {
                 // status: 1 plus the BRANCH_ADMIN role check is enough on its own
                 // now that assignAdminToBranch/createBranch also evict any other
                 // admin's active mapping on this branch before activating a new one.
+                // Also requires the admin to actually be active - deactivating a
+                // Branch Admin no longer releases their branch mapping (it behaves
+                // like every other role now), so without this check a deactivated
+                // admin would keep showing up as this branch's "current admin".
                 // Never the raw user_table row either — it carries the password hash,
                 // just the safe fields needed to display "who administers this branch".
                 user_branch_mapping: {
-                    where: { status: 1, user_table: { role_type: "BRANCH_ADMIN" } },
+                    where: {
+                        status: 1,
+                        user_table: {
+                            role_type: "BRANCH_ADMIN",
+                            OR: [{ employees: { emp_status: true } }, { user_status: 0 }],
+                        },
+                    },
                     take: 1,
                     select: {
                         user_id: true,

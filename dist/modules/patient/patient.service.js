@@ -69,7 +69,11 @@ class PatientService {
                     patient_state: data.patient_state,
                     patient_district: data.patient_district,
                     patient_area: data.patient_area,
-                    patient_pincode: data.patient_pincode
+                    patient_pincode: data.patient_pincode,
+                    Patient_address: data.current_address,
+                    Patient_Emergency_contact_name: data.emergency_name,
+                    Emergency_contact_relation: data.emergency_relation,
+                    Patient_emergency_mobile: data.emergency_mobile
                 }
             });
             return {
@@ -94,7 +98,13 @@ class PatientService {
         if (!patient) {
             throw new Error("Patient not found");
         }
-        return patient;
+        return {
+            ...patient,
+            current_address: patient.Patient_address ?? null,
+            emergency_name: patient.Patient_Emergency_contact_name ?? null,
+            emergency_relation: patient.Emergency_contact_relation ?? null,
+            emergency_mobile: patient.Patient_emergency_mobile ?? null
+        };
     }
     async updatePatient(patientId, data) {
         const existing = await repository.getPatientById(patientId);
@@ -143,6 +153,10 @@ class PatientService {
             patient_district: data.patient_district,
             patient_area: data.patient_area,
             patient_pincode: data.patient_pincode,
+            Patient_address: data.current_address,
+            Patient_Emergency_contact_name: data.emergency_name,
+            Emergency_contact_relation: data.emergency_relation,
+            Patient_emergency_mobile: data.emergency_mobile,
             branch: data.branch_id
                 ? {
                     connect: {

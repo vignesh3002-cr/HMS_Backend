@@ -198,6 +198,32 @@ class AppointmentRepository {
             include: appointmentDetailInclude
         });
     }
+    async findOpenRescheduleQueueEntries(tx, appointmentId) {
+        return tx.appointment_reschedule_queue.findMany({
+            where: {
+                appointment_id: appointmentId,
+                status: { in: ["PENDING", "ASSIGNED"] }
+            },
+            orderBy: { created_at: "desc" }
+        });
+    }
+    async closeRescheduleQueueEntry(tx, queueId, performedBy) {
+        await tx.appointment_reschedule_queue.update({
+            where: { queue_id: queueId },
+            data: {
+                status: "CONFIRMED",
+                updated_at: new Date()
+            }
+        });
+        await tx.appointment_reschedule_action_log.create({
+            data: {
+                queue_id: queueId,
+                action: "CONFIRMED",
+                performed_by: performedBy,
+                notes: "Appointment updated directly via the edit appointment form"
+            }
+        });
+    }
     async getAppointments(query) {
         const { branchId, employeeId, patientId, status, date, dateFrom, dateTo, sortBy = "appointment_date", sortOrder = "desc", page = 1, limit = 10 } = query;
         const where = {};

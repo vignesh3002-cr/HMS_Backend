@@ -9,5 +9,6 @@ export interface LoginResponse {
     id: string;
     username: string;
     role_type: string;
+    employee_id?: string | null;
   };
 }

@@ -45,6 +45,8 @@ export interface NewBranchAdminDto {
   aadhaar_no?: string;
   pan_no?: string;
   passport_no?: string;
+  gender?: string;
+  dob?: string;
   permanent_address?: string;
   current_address?: string;
   employee_photo_URL?: string;
@@ -52,6 +54,10 @@ export interface NewBranchAdminDto {
   employee_district?: string;
   employee_area?: string;
   employee_pincode?: number;
+  permanent_employee_state?: string;
+  permanent_employee_district?: string;
+  permanent_employee_area?: string;
+  permanent_employee_pincode?: number;
   employee_no_experence?: number;
   emergency_contact_name?: string;
   emergency_contact_relationship?: string;

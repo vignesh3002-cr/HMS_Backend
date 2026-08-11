@@ -253,7 +253,8 @@ export class AppointmentController {
 
             const appointment = await service.updateAppointment(
                 req.params.appointmentNo as string,
-                req.body
+                req.body,
+                (req as any).user?.user_id || "SYSTEM"
             );
 
             return res.json({

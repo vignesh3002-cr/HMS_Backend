@@ -99,5 +99,46 @@ class AuthController {
             });
         }
     }
+    async changeUsername(req, res) {
+        try {
+            const userId = req.user?.user_id;
+            const { newUsername } = req.body;
+            const result = await authService.changeUsername(userId, String(newUsername ?? ""));
+            return res.status(200).json({
+                success: true,
+                message: "Username updated successfully",
+                data: result
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+    async changePassword(req, res) {
+        try {
+            const userId = req.user?.user_id;
+            const { oldPassword, newPassword } = req.body;
+            if (!oldPassword || !newPassword) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Current password and new password are required"
+                });
+            }
+            const result = await authService.changePassword(userId, oldPassword, newPassword);
+            return res.status(200).json({
+                success: true,
+                message: result.message
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
 }
 exports.AuthController = AuthController;

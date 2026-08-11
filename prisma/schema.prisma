@@ -1459,6 +1459,7 @@ model oncology_staging_detail {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model patient_bio_data {
+<<<<<<< HEAD
   id                           BigInt                         @id @default(autoincrement())
   patient_id                   String                         @unique @db.VarChar(20)
   user_id                      String?                        @db.VarChar(20)
@@ -1498,6 +1499,43 @@ model patient_bio_data {
   branch                       branch?                        @relation(fields: [branch_id], references: [branch_id], onDelete: Restrict, map: "fk_patient_bio_branch")
   user_table                   user_table?                    @relation(fields: [user_id], references: [user_id], onDelete: Restrict, map: "fk_patient_bio_user")
   patient_history              patient_history[]
+=======
+  id                             BigInt                         @id @default(autoincrement())
+  patient_id                     String                         @unique @db.VarChar(20)
+  user_id                        String?                        @db.VarChar(20)
+  branch_id                      String?                        @db.VarChar(20)
+  patient_first_name             String                         @db.VarChar(100)
+  patient_middle_name            String?                        @db.VarChar(100)
+  patient_last_name              String?                        @db.VarChar(100)
+  patient_gender                 String?                        @db.VarChar(20)
+  patient_dob                    DateTime?                      @db.Date
+  patient_age                    Int?
+  patient_blood_group            String?                        @db.VarChar(10)
+  patient_primary_mobile         String?                        @db.VarChar(20)
+  patient_alternate_mobile       String?                        @db.VarChar(20)
+  patient_email                  String?                        @db.VarChar(150)
+  patient_marital_status         String?                        @db.VarChar(30)
+  patient_nationality            String?                        @db.VarChar(100)
+  patient_photo_url              String?
+  patient_type                   String?                        @db.VarChar(50)
+  patient_active                 String?                        @db.VarChar(20)
+  patient_state                  String?                        @db.VarChar
+  patient_district               String?                        @db.VarChar
+  patient_area                   String?                        @db.VarChar
+  patient_pincode                BigInt?
+  Patient_address                String?                        @db.VarChar
+  Patient_Emergency_contact_name String?                        @db.VarChar
+  Emergency_contact_relation     String?                        @db.VarChar
+  Patient_emergency_mobile       String?                        @db.VarChar
+  appointment_history            appointment_history[]
+  appointment_reschedule_queue   appointment_reschedule_queue[]
+  chemotherapy_plan              chemotherapy_plan[]
+  encounter                      encounter[]
+  oncology_staging_detail        oncology_staging_detail[]
+  branch                         branch?                        @relation(fields: [branch_id], references: [branch_id], onDelete: Restrict, map: "fk_patient_bio_branch")
+  user_table                     user_table?                    @relation(fields: [user_id], references: [user_id], onDelete: Restrict, map: "fk_patient_bio_user")
+  patient_history                patient_history[]
+>>>>>>> e53413168bc65ca9ee32550cb1b518a284a9b45f
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1749,6 +1787,69 @@ model user_table {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+<<<<<<< HEAD
+=======
+model chemotherapy_regimen_protocol {
+  id                                  BigInt                                @id @default(autoincrement())
+  protocol_id                         String                                @unique(map: "uq_regimen_protocol_id") @db.VarChar(20)
+  regimen_code                        String                                @unique(map: "uq_regimen_protocol_code") @db.VarChar(50)
+  regimen_name                        String                                @db.VarChar(200)
+  protocol_version                    String?                               @db.VarChar(50)
+  cancer_type_id                      String                                @db.VarChar(20)
+  subtype_id                          String?                               @db.VarChar(20)
+  treatment_intent                    String?                               @db.VarChar(50)
+  standard_cycles                     Int?
+  cycle_interval_days                 Int?
+  guideline_source                    String?                               @db.VarChar(150)
+  notes                               String?
+  active_status                       Int?                                  @default(1) @db.SmallInt
+  created_at                          DateTime?                             @default(now()) @db.Timestamp(6)
+  updated_at                          DateTime?                             @default(now()) @db.Timestamp(6)
+  cancer_types                        cancer_types                          @relation(fields: [cancer_type_id], references: [cancer_type_id], map: "fk_regimen_protocol_cancer_type")
+  cancer_subtypes                     cancer_subtypes?                      @relation(fields: [subtype_id], references: [subtype_id], map: "fk_regimen_protocol_subtype")
+  chemotherapy_regimen_protocol_items chemotherapy_regimen_protocol_items[]
+
+  @@unique([cancer_type_id, subtype_id, regimen_code], map: "uq_regimen_protocol_type_subtype_code")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model chemotherapy_regimen_protocol_items {
+  id                            BigInt                        @id @default(autoincrement())
+  protocol_item_id              String                        @unique(map: "uq_regimen_protocol_item_id") @db.VarChar(20)
+  protocol_id                   String                        @db.VarChar(20)
+  medicine_id                   String                        @db.VarChar(20)
+  drug_role                     String                        @default("PRIMARY") @db.VarChar(20)
+  drug_sequence                 Int
+  drug_type                     String?                       @db.VarChar(50)
+  dosage                        Decimal?                      @db.Decimal(10, 2)
+  dosage_unit                   String?                       @db.VarChar(30)
+  dose_calculation_method       String?                       @db.VarChar(50)
+  administration_route          String?                       @db.VarChar(50)
+  infusion_type                 String?                       @db.VarChar(50)
+  infusion_duration_minutes     Int?
+  administration_day            Int?
+  cycle_day                     Int?
+  frequency                     String?                       @db.VarChar(100)
+  timing_relative_to_primary    String?                       @db.VarChar(100)
+  remarks                       String?
+  active_status                 Int?                          @default(1) @db.SmallInt
+  medicine_master               medicine_master               @relation(fields: [medicine_id], references: [medicine_id], map: "fk_regimen_protocol_item_medicine")
+  chemotherapy_regimen_protocol chemotherapy_regimen_protocol @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_regimen_protocol_item_protocol")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model clinical_parameter {
+  id               BigInt    @id @default(autoincrement())
+  parameter_key    String    @unique(map: "uq_clinical_parameter_key") @db.VarChar(50)
+  value            String    @db.VarChar(50)
+  unit             String?   @db.VarChar(20)
+  guideline_source String?   @db.VarChar(150)
+  description      String?
+  updated_at       DateTime? @default(now()) @db.Timestamp(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+>>>>>>> e53413168bc65ca9ee32550cb1b518a284a9b45f
 model doctor_leave {
   id                                                        BigInt      @id @default(autoincrement())
   leave_id                                                  String      @unique @db.VarChar(20)
