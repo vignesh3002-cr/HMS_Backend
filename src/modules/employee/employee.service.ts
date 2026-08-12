@@ -633,8 +633,28 @@ const isBranchChange =
 async getAllEmployees() {
     return repository.getAllEmployees();
 }
+async softDeleteSchedule(employeeId: string, scheduleId: number, actingUserId: string) {
 
-async softDeleteEmployee(employeeId: string, actingUserId: string = "SYSTEM") {
+    const employee = await repository.findEmployeeById(employeeId);
+    if (!employee) {
+        throw new Error("Employee not found");
+    }
+    await prisma.$transaction(async (tx) => {
+
+        const schedule = await repository.findScheduleById(scheduleId);
+        if (!schedule) {
+            throw new Error("Schedule not found");
+        }
+        if (schedule.employee_id !== employeeId) {
+            throw new Error("Schedule does not belong to the specified employee");
+        }
+        await repository.closeSchedule(tx, scheduleId, actingUserId);
+    });
+    return {
+        message: "Schedule soft-deleted successfully"
+    };
+}
+async softDeleteEmployee(employeeId: string, actingUserId: string) {
 
     const employee = await repository.findEmployeeById(employeeId);
 

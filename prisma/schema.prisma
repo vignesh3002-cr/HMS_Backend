@@ -874,6 +874,7 @@ model doctor_schedule {
   is_active            Boolean?              @default(true)
   effective_from       DateTime?             @db.Timestamptz(6)
   effective_to         DateTime?             @db.Timestamptz(6)
+  deleted_by           String?               @db.VarChar
   appointment_history  appointment_history[]
   employees            employees             @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
   branch               branch                @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_doctor_schedule_branch")

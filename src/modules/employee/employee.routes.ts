@@ -50,5 +50,10 @@ router.delete(
     branchScope,
     controller.softDeleteEmployee.bind(controller)
 );
+router.delete(
+    "/:employeeId/:schedule_id",
+    authenticate,
+    controller.softDeleteSchedule.bind(controller)
+)
 
 export default router;
