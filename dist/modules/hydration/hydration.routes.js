@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const hydration_controller_1 = require("./hydration.controller");
+const auth_middleware_1 = require("../auth/auth.middleware");
+const authorize_1 = require("../../middleware/authorize");
+const hydration_validation_1 = require("./hydration.validation");
+const router = (0, express_1.Router)();
+const controller = new hydration_controller_1.HydrationController();
+router.get("/", auth_middleware_1.authenticate, controller.getHydrations.bind(controller));
+router.get("/:hydrationId", auth_middleware_1.authenticate, controller.getHydrationById.bind(controller));
+router.post("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR", "PHARMACIST"), hydration_validation_1.createHydrationValidation, controller.createHydration.bind(controller));
+router.put("/:hydrationId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR", "PHARMACIST"), hydration_validation_1.updateHydrationValidation, controller.updateHydration.bind(controller));
+router.delete("/:hydrationId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.deleteHydration.bind(controller));
+router.patch("/:hydrationId/restore", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.restoreHydration.bind(controller));
+exports.default = router;

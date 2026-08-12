@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+console.log("Drug routes loaded");
+const drug_controller_1 = require("./drug.controller");
+const auth_middleware_1 = require("../auth/auth.middleware");
+const authorize_1 = require("../../middleware/authorize");
+const drug_validation_1 = require("./drug.validation");
+const router = (0, express_1.Router)();
+const controller = new drug_controller_1.DrugController();
+router.get("/", auth_middleware_1.authenticate, controller.getDrugs.bind(controller));
+router.get("/:drugId", auth_middleware_1.authenticate, controller.getDrugById.bind(controller));
+router.post("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR", "PHARMACIST"), drug_validation_1.createDrugValidation, controller.createDrug.bind(controller));
+router.put("/:drugId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR", "PHARMACIST"), drug_validation_1.updateDrugValidation, controller.updateDrug.bind(controller));
+router.delete("/:drugId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.deleteDrug.bind(controller));
+router.patch("/:drugId/restore", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.restoreDrug.bind(controller));
+exports.default = router;

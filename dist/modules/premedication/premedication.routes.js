@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const premedication_controller_1 = require("./premedication.controller");
+const auth_middleware_1 = require("../auth/auth.middleware");
+const authorize_1 = require("../../middleware/authorize");
+const premedication_validation_1 = require("./premedication.validation");
+const router = (0, express_1.Router)();
+const controller = new premedication_controller_1.PremedicationController();
+router.get("/", auth_middleware_1.authenticate, controller.getPremedications.bind(controller));
+router.get("/:premedicationId", auth_middleware_1.authenticate, controller.getPremedicationById.bind(controller));
+router.post("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR", "PHARMACIST"), premedication_validation_1.createPremedicationValidation, controller.createPremedication.bind(controller));
+router.put("/:premedicationId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR", "PHARMACIST"), premedication_validation_1.updatePremedicationValidation, controller.updatePremedication.bind(controller));
+router.delete("/:premedicationId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.deletePremedication.bind(controller));
+router.patch("/:premedicationId/restore", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.restorePremedication.bind(controller));
+exports.default = router;

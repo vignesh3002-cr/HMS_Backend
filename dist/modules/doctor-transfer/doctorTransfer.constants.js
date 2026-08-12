@@ -1,0 +1,43 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TRANSFER_TRANSACTION_TIMEOUT_MS = exports.DOCTOR_TRANSFER_CANCEL_REASON = exports.NOTIFICATION_CHANNEL_VALUES = exports.RESCHEDULE_ACTION_INPUT_VALUES = exports.RESCHEDULE_ACTION_INPUT = exports.RESCHEDULE_QUEUE_ACTION = exports.RESCHEDULE_QUEUE_STATUS = exports.APPOINTMENT_LOG_RESULT = exports.TRANSFER_ACTION_VALUES = exports.TRANSFER_ACTION = exports.TRANSFER_STATUS = void 0;
+exports.TRANSFER_STATUS = {
+    PENDING_CONFIRMATION: "PENDING_CONFIRMATION",
+    COMPLETED: "COMPLETED"
+};
+exports.TRANSFER_ACTION = {
+    TRANSFER: "TRANSFER",
+    RESCHEDULE: "RESCHEDULE",
+    CANCEL: "CANCEL"
+};
+exports.TRANSFER_ACTION_VALUES = Object.values(exports.TRANSFER_ACTION);
+exports.APPOINTMENT_LOG_RESULT = {
+    SUCCESS: "SUCCESS",
+    CONFLICT: "CONFLICT",
+    QUEUED: "QUEUED",
+    CANCELLED: "CANCELLED"
+};
+exports.RESCHEDULE_QUEUE_STATUS = {
+    PENDING: "PENDING",
+    ASSIGNED: "ASSIGNED",
+    CONFIRMED: "CONFIRMED",
+    CANCELLED: "CANCELLED"
+};
+exports.RESCHEDULE_QUEUE_ACTION = {
+    CREATED: "CREATED",
+    ASSIGNED: "ASSIGNED",
+    CONFIRMED: "CONFIRMED",
+    CANCELLED: "CANCELLED"
+};
+exports.RESCHEDULE_ACTION_INPUT = {
+    ASSIGN: "ASSIGN",
+    CONFIRM: "CONFIRM",
+    CANCEL: "CANCEL"
+};
+exports.RESCHEDULE_ACTION_INPUT_VALUES = Object.values(exports.RESCHEDULE_ACTION_INPUT);
+exports.NOTIFICATION_CHANNEL_VALUES = ["SMS", "EMAIL", "WHATSAPP"];
+exports.DOCTOR_TRANSFER_CANCEL_REASON = "DOCTOR_TRANSFER";
+// A doctor-transfer confirmation loops per affected appointment inside one
+// transaction, which can exceed Prisma's 5s interactive-transaction default
+// once a doctor's future backlog runs into the hundreds.
+exports.TRANSFER_TRANSACTION_TIMEOUT_MS = 30000;
