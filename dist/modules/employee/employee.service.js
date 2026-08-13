@@ -465,7 +465,26 @@ class EmployeeService {
     async getAllEmployees() {
         return repository.getAllEmployees();
     }
-    async softDeleteEmployee(employeeId, actingUserId = "SYSTEM") {
+    async softDeleteSchedule(employeeId, scheduleId, actingUserId) {
+        const employee = await repository.findEmployeeById(employeeId);
+        if (!employee) {
+            throw new Error("Employee not found");
+        }
+        await prisma_1.default.$transaction(async (tx) => {
+            const schedule = await repository.findScheduleById(scheduleId);
+            if (!schedule) {
+                throw new Error("Schedule not found");
+            }
+            if (schedule.employee_id !== employeeId) {
+                throw new Error("Schedule does not belong to the specified employee");
+            }
+            await repository.closeSchedule(tx, scheduleId, actingUserId);
+        });
+        return {
+            message: "Schedule soft-deleted successfully"
+        };
+    }
+    async softDeleteEmployee(employeeId, actingUserId) {
         const employee = await repository.findEmployeeById(employeeId);
         if (!employee) {
             throw new Error("Employee not found");

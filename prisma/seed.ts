@@ -68,6 +68,7 @@ const PERMISSIONS = [
   { key: "pharmacy.inventory", name: "Manage Inventory", description: "Manage pharmacy inventory", category: "pharmacy" },
   { key: "pharmacy.manage", name: "Manage Pharmacy", description: "Manage pharmacy settings", category: "pharmacy" },
 <<<<<<< HEAD
+<<<<<<< HEAD
 
   // Oncology reference data (cancer types/subtypes/staging/biomarkers/clinical parameters)
   { key: "oncology.reference.manage", name: "Manage Oncology Reference Data", description: "Seed/edit cancer types, subtypes, staging reference, biomarkers, clinical parameters", category: "oncology" },
@@ -100,6 +101,8 @@ const PERMISSIONS = [
   { key: "audit.read", name: "View Audit Log", description: "View the oncology/chemotherapy write audit trail", category: "audit" },
 =======
 >>>>>>> 5df3e7e14ad93e80109586aace3a35d2d071eb00
+=======
+>>>>>>> 7a3d07f681780cc0b9d069d91b728a63f92e2e56
 ];
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -137,6 +140,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "pharmacy.inventory",
     "pharmacy.manage",
 <<<<<<< HEAD
+<<<<<<< HEAD
     "oncology.reference.manage",
     "oncology.reference.read",
     "oncology.diagnosis.read",
@@ -147,6 +151,8 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "audit.read",
 =======
 >>>>>>> 5df3e7e14ad93e80109586aace3a35d2d071eb00
+=======
+>>>>>>> 7a3d07f681780cc0b9d069d91b728a63f92e2e56
   ],
 
   // STAFF_ADMIN (ADMIN) - branch-scoped view/edit
@@ -168,6 +174,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "pharmacy.dispense",
     "pharmacy.inventory",
 <<<<<<< HEAD
+<<<<<<< HEAD
     "oncology.reference.read",
     "oncology.diagnosis.read",
     "oncology.derived.read",
@@ -177,6 +184,8 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "audit.read",
 =======
 >>>>>>> 5df3e7e14ad93e80109586aace3a35d2d071eb00
+=======
+>>>>>>> 7a3d07f681780cc0b9d069d91b728a63f92e2e56
   ],
 
   // RECEPTIONIST - patient/appointment only
@@ -200,6 +209,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "lab.order",
     "lab.result",
 <<<<<<< HEAD
+<<<<<<< HEAD
     // Oncology - a doctor makes the clinical calls: diagnosis/staging,
     // biomarker entry, and the plan/cycle/adverse-event/followup record.
     // Administration and vitals are recorded by NURSE, not DOCTOR.
@@ -220,6 +230,8 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "chemo.protocol.read",
 =======
 >>>>>>> 5df3e7e14ad93e80109586aace3a35d2d071eb00
+=======
+>>>>>>> 7a3d07f681780cc0b9d069d91b728a63f92e2e56
   ],
 
   // NURSE - patient care
@@ -233,6 +245,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "lab.order",
     "lab.result",
 <<<<<<< HEAD
+<<<<<<< HEAD
     // Nurse administers and monitors - not diagnosing or planning
     "oncology.reference.read",
     "oncology.diagnosis.read",
@@ -244,6 +257,8 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "chemo.adverse_event.record",
 =======
 >>>>>>> 5df3e7e14ad93e80109586aace3a35d2d071eb00
+=======
+>>>>>>> 7a3d07f681780cc0b9d069d91b728a63f92e2e56
   ],
 
   // PHARMACIST
@@ -253,10 +268,13 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "pharmacy.dispense",
     "pharmacy.inventory",
 <<<<<<< HEAD
+<<<<<<< HEAD
     // Verifies drug orders against the plan before dispensing
     "chemo.plan.read",
 =======
 >>>>>>> 5df3e7e14ad93e80109586aace3a35d2d071eb00
+=======
+>>>>>>> 7a3d07f681780cc0b9d069d91b728a63f92e2e56
   ],
 
   // LAB_TECHNICIAN

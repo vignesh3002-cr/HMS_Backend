@@ -37,12 +37,10 @@ export class PermissionService {
         where: { is_active: true },
         orderBy: [{ category: "asc" }, { name: "asc" }],
       }),
-
       prisma.role_id_config.findMany({
         where: { is_active: true },
         orderBy: { sort_order: "asc" },
       }),
-
       prisma.rolePermission.findMany({
         where: { revoked_at: null },
         include: { Permission: true },
@@ -71,14 +69,12 @@ export class PermissionService {
         granted: rolePermMap.get(r.role_type)?.has(p.id) ?? false,
       })),
     }));
-
     const rolesWithConfig = roles.map((r) => ({
       role_type: r.role_type,
       display_name: r.display_name,
       sort_order: r.sort_order,
       is_active: r.is_active,
     }));
-
     return {
       permissions: permissionsWithRoles,
       roles: rolesWithConfig,
@@ -108,12 +104,10 @@ export class PermissionService {
           permission_id: permission.id,
         },
       },
-
       update: {
         revoked_at: null,
         revoked_by: null,
       },
-
       create: {
   id: crypto.randomUUID(),
   role_type: roleType,
@@ -180,7 +174,6 @@ export class PermissionService {
           permission_id: permission.id,
         },
       },
-
       data: {
         revoked_at: new Date(),
         revoked_by: revokedBy,
