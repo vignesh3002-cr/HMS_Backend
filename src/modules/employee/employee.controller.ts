@@ -117,9 +117,32 @@ async softDeleteEmployee(req: Request, res: Response) {
         });
  
     }
- 
+
 }
- async getAllEmployees(req: Request, res: Response) {
+async restoreEmployee(req: Request, res: Response) {
+
+    try {
+
+        const result = await service.restoreEmployee(
+            String(req.params.employeeId)
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: result.message
+        });
+
+    } catch (error: any) {
+
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        });
+
+    }
+
+}
+async getAllEmployees(req: Request, res: Response) {
  
         try {
  

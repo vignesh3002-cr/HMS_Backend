@@ -71,8 +71,7 @@ class EmployeeRepository {
             },
             data: {
                 emp_status: false,
-                deleted_at: new Date(),
-                branch_id: null
+                deleted_at: new Date()
             }
         });
     }

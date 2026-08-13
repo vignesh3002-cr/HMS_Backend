@@ -646,14 +646,11 @@ async softDeleteEmployee(employeeId: string, actingUserId: string = "SYSTEM") {
         // to the auth.service emp_status check).
         await repository.blockUserLogin(tx, employee.user_id);
 
-        // 3. Release every branch assignment (branch_id + user_branch_mapping).
-        await repository.deleteUserBranchMappings(tx, employee.user_id);
-
-        // 4. Close all of the doctor's schedule rows so no slots can be
+        // 3. Close all of the doctor's schedule rows so no slots can be
         // picked up by availability queries.
         await repository.closeAllActiveSchedules(tx, employeeId, new Date());
 
-        // 5. Future appointments are NOT cancelled - they are flagged
+        // 4. Future appointments are NOT cancelled - they are flagged
         // RESCHEDULE_REQUIRED, unlinked from the doctor and queued so an
         // admin can reassign them later (via the edit appointment form or
         // the reschedule queue).
@@ -690,6 +687,42 @@ async softDeleteEmployee(employeeId: string, actingUserId: string = "SYSTEM") {
     return {
         message: "Employee deactivated successfully",
         affected_appointments: affectedAppointments
+    };
+}
+
+async restoreEmployee(employeeId: string) {
+
+    const employee = await repository.findEmployeeById(employeeId);
+
+    if (!employee) {
+        throw new Error("Employee not found");
+    }
+
+    // Branch assignment (employees.branch_id + user_branch_mapping) is
+    // deliberately preserved on deactivation, so restoring only needs to
+    // flip the visibility/status flags back - the user comes back with
+    // their original branch intact.
+    await prisma.$transaction(async (tx) => {
+        await tx.employees.update({
+            where: { employee_id: employeeId },
+            data: {
+                emp_status: true,
+                deleted_at: null
+            }
+        });
+
+        if (employee.user_id) {
+            await tx.user_table.update({
+                where: { user_id: employee.user_id },
+                data: {
+                    user_status: 0
+                }
+            });
+        }
+    });
+
+    return {
+        message: "Employee restored successfully"
     };
 }
 
