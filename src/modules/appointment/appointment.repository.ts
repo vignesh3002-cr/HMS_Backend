@@ -5,7 +5,6 @@ import { GetAppointmentsQuery } from "./appointment.types";
 import { NON_BLOCKING_APPOINTMENT_STATUSES } from "./appointment.constants";
 
 const appointmentDetailInclude = {
-
     patient_bio_data: {
         select: {
             patient_id: true,
@@ -53,7 +52,6 @@ const appointmentDetailInclude = {
             consultation_minutes: true
         }
     }
-
 } satisfies Prisma.appointment_historyInclude;
 
 export class AppointmentRepository {
