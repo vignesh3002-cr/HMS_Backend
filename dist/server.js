@@ -16,35 +16,29 @@ const appointment_routes_1 = __importDefault(require("./modules/appointment/appo
 const encounter_routes_1 = __importDefault(require("./modules/encounter/encounter.routes"));
 const permission_routes_1 = __importDefault(require("./modules/permission/permission.routes"));
 const role_routes_1 = __importDefault(require("./modules/role/role.routes"));
-<<<<<<< HEAD
-const export_routes_1 = __importDefault(require("./modules/export/export.routes"));
-//import prescriptionRoutes from "./modules/prescription/prescription.routes";
-//import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
-=======
 const prescription_routes_1 = __importDefault(require("./modules/prescription/prescription.routes"));
 const chemotherapy_routes_1 = __importDefault(require("./modules/chemotherapy/chemotherapy.routes"));
 const oncology_routes_1 = __importDefault(require("./modules/oncology/oncology.routes"));
 const audit_routes_1 = __importDefault(require("./modules/audit/audit.routes"));
 const export_routes_1 = __importDefault(require("./modules/export/export.routes"));
->>>>>>> eea0b33ffc165ee9a14bba0db0209360596be4ae
 const doctorTransfer_routes_1 = __importDefault(require("./modules/doctor-transfer/doctorTransfer.routes"));
+const lab_test_category_routes_1 = __importDefault(require("./modules/lab-test-category/lab-test-category.routes"));
+const lab_test_master_routes_1 = __importDefault(require("./modules/lab-test-master/lab-test-master.routes"));
+const lab_order_routes_1 = __importDefault(require("./modules/lab-order/lab-order-routes"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const lab_order_item_routes_1 = __importDefault(require("./modules/lab-order-item/lab-order-item.routes"));
+const qualification_master_routes_1 = __importDefault(require("./modules/qualification-master/qualification-master.routes"));
 const bcrypt_1 = require("./utils/bcrypt");
 // Fix BigInt serialization - Prisma returns BigInt types that JSON.stringify can't handle
 BigInt.prototype.toJSON = function () {
     return this.toString();
 };
 const app = (0, express_1.default)();
-<<<<<<< HEAD
-=======
-app.use(express_1.default.json());
-app.use((0, cookie_parser_1.default)());
->>>>>>> 5df3e7e14ad93e80109586aace3a35d2d071eb00
 const configuredOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
-const allowedOrigins = new Set([
+const allowedOrigins = [
     ...configuredOrigins,
     "http://localhost:5173",
     "http://127.0.0.1:5173",
@@ -54,36 +48,48 @@ const allowedOrigins = new Set([
     "http://127.0.0.1:3000",
     "http://localhost:8080",
     "http://127.0.0.1:8080",
-]);
+];
+const isAllowedOrigin = (origin) => {
+    if (!origin)
+        return true;
+    if (allowedOrigins.includes(origin)) {
+        return true;
+    }
+    return /^https:\/\/.*\.vercel\.app$/i.test(origin);
+};
 app.use((0, cors_1.default)({
     origin: (origin, callback) => {
-        if (!origin) {
+        if (isAllowedOrigin(origin)) {
             callback(null, true);
-            return;
         }
-        if (allowedOrigins.has(origin)) {
-            callback(null, true);
-            return;
+        else {
+            callback(new Error(`Not allowed by CORS: ${origin}`));
         }
-        callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    methods: [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "OPTIONS",
+    ],
     allowedHeaders: [
         "Content-Type",
         "Authorization",
+        "x-branch-id",
         "X-Requested-With",
         "Cache-Control",
         "Accept",
         "Origin",
         "Referer",
         "User-Agent",
-        "x-branch-id",
     ],
     optionsSuccessStatus: 200,
 }));
-app.use((0, cookie_parser_1.default)());
 app.use(express_1.default.json());
+app.use((0, cookie_parser_1.default)());
 app.get("/api/health", (_req, res) => {
     res.json({ success: true, message: "Server is running" });
 });
@@ -94,19 +100,27 @@ app.use("/api/branch", branch_routes_1.default);
 app.use("/api/departments", department_routes_1.default);
 app.use("/api/patients", patient_routes_1.default);
 app.use("/api/appointments", appointment_routes_1.default);
+app.use("/api/lab-test-category", lab_test_category_routes_1.default);
+app.use("/api/lab-test-master", lab_test_master_routes_1.default);
+app.use("/api/lab-order", lab_order_routes_1.default);
+app.use("/api/prescriptions", prescription_routes_1.default);
+app.use("/api/chemotherapy", chemotherapy_routes_1.default);
+app.use("/api/appointments", appointment_routes_1.default);
+app.use("/api/lab-order-item", lab_order_item_routes_1.default);
 app.use("/api/encounters", encounter_routes_1.default);
 app.use("/api/permissions", permission_routes_1.default);
 app.use("/api/roles", role_routes_1.default);
-<<<<<<< HEAD
-=======
 app.use("/api/prescriptions", prescription_routes_1.default);
 app.use("/api/chemotherapy", chemotherapy_routes_1.default);
 app.use("/api/oncology", oncology_routes_1.default);
 app.use("/api/audit", audit_routes_1.default);
->>>>>>> eea0b33ffc165ee9a14bba0db0209360596be4ae
 app.use("/api/export", export_routes_1.default);
-//app.use("/api/prescriptions", prescriptionRoutes);
-//app.use("/api/chemotherapy", chemotherapyRoutes);
+app.use("/api/doctors", doctorTransfer_routes_1.default);
+app.use("/api/qualification-master", qualification_master_routes_1.default);
+app.use("/api/appointments", appointment_routes_1.default);
+app.use("/api/encounters", encounter_routes_1.default);
+app.use("/api/prescriptions", prescription_routes_1.default);
+app.use("/api/chemotherapy", chemotherapy_routes_1.default);
 app.use("/api/doctors", doctorTransfer_routes_1.default);
 app.use("/api/hashpassword", async (req, res) => {
     const { password } = req.body;

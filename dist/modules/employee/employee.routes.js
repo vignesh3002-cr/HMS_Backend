@@ -13,8 +13,6 @@ router.get("/:employeeId", auth_middleware_1.authenticate, (0, authorize_1.autho
 router.put("/:employeeId", auth_middleware_1.authenticate, (0, authorize_1.authorizeNoSelf)("employee.update"), branchScope_1.branchScope, controller.updateEmployee.bind(controller));
 router.patch("/:employeeId/photo", auth_middleware_1.authenticate, (0, authorize_1.authorizeSelfPhoto)("employee.update"), branchScope_1.branchScope, controller.updateEmployeePhoto.bind(controller));
 router.delete("/:employeeId", auth_middleware_1.authenticate, (0, authorize_1.authorizeNoSelf)("employee.delete"), branchScope_1.branchScope, controller.softDeleteEmployee.bind(controller));
-<<<<<<< HEAD
 router.post("/:employeeId/restore", auth_middleware_1.authenticate, (0, authorize_1.authorizeNoSelf)("employee.update"), branchScope_1.branchScope, controller.restoreEmployee.bind(controller));
-=======
->>>>>>> eea0b33ffc165ee9a14bba0db0209360596be4ae
+router.delete("/:employeeId/:schedule_id", auth_middleware_1.authenticate, controller.softDeleteSchedule.bind(controller));
 exports.default = router;

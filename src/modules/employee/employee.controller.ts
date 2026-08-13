@@ -95,6 +95,17 @@ export class EmployeeController {
     }
    
 }
+async softDeleteSchedule(req: Request, res: Response) {
+    const result= await service.softDeleteSchedule(
+        String(req.params.employeeId),
+        Number(req.params.schedule_id),
+        (req as any).user?.user_id || "SYSTEM"
+    );
+    return res.status(200).json({
+        success: true,
+        message: result.message
+    });
+}
 async softDeleteEmployee(req: Request, res: Response) {
  
     try {

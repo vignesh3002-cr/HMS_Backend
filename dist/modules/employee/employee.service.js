@@ -266,7 +266,7 @@ class EmployeeService {
                 select: { branch_id: true },
             });
             const currentBranchIds = activeMappings.map((mapping) => mapping.branch_id);
-            const requestedBranchIds = data.branch_ids;
+            const requestedBranchIds = data.branch_ids ?? [];
             const isBranchChange = requestedBranchIds.some((id) => !currentBranchIds.includes(id)) ||
                 currentBranchIds.some((id) => !requestedBranchIds.includes(id));
             if (isBranchChange) {
@@ -305,6 +305,8 @@ class EmployeeService {
             middle_name: data.middle_name,
             last_name: data.last_name,
             email: data.email,
+            emp_gender: data.gender,
+            emp_DOB: data.dob,
             gender: data.gender,
             dob: data.dob,
             mobile_no: data.mobile_no,
@@ -463,7 +465,26 @@ class EmployeeService {
     async getAllEmployees() {
         return repository.getAllEmployees();
     }
-    async softDeleteEmployee(employeeId, actingUserId = "SYSTEM") {
+    async softDeleteSchedule(employeeId, scheduleId, actingUserId) {
+        const employee = await repository.findEmployeeById(employeeId);
+        if (!employee) {
+            throw new Error("Employee not found");
+        }
+        await prisma_1.default.$transaction(async (tx) => {
+            const schedule = await repository.findScheduleById(scheduleId);
+            if (!schedule) {
+                throw new Error("Schedule not found");
+            }
+            if (schedule.employee_id !== employeeId) {
+                throw new Error("Schedule does not belong to the specified employee");
+            }
+            await repository.closeSchedule(tx, scheduleId, actingUserId);
+        });
+        return {
+            message: "Schedule soft-deleted successfully"
+        };
+    }
+    async softDeleteEmployee(employeeId, actingUserId) {
         const employee = await repository.findEmployeeById(employeeId);
         if (!employee) {
             throw new Error("Employee not found");

@@ -57,6 +57,13 @@ class EmployeeRepository {
             }
         });
     }
+    async findScheduleById(scheduleId) {
+        return prisma_1.default.doctor_schedule.findUnique({
+            where: {
+                schedule_id: scheduleId
+            }
+        });
+    }
     async findBranch(branchId) {
         return prisma_1.default.branch.findUnique({
             where: {
@@ -72,6 +79,17 @@ class EmployeeRepository {
             data: {
                 emp_status: false,
                 deleted_at: new Date()
+            }
+        });
+    }
+    async closeSchedule(tx, scheduleId, actingUserId) {
+        return tx.doctor_schedule.update({
+            where: {
+                schedule_id: scheduleId
+            },
+            data: {
+                is_active: false,
+                deleted_by: actingUserId
             }
         });
     }
