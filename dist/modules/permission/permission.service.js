@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.permissionService = exports.PermissionService = void 0;
+const crypto_1 = require("crypto");
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const PERMISSION_CACHE_TTL = 5 * 60 * 1000;
 const cache = new Map();
@@ -26,7 +27,7 @@ class PermissionService {
             }),
             prisma_1.default.rolePermission.findMany({
                 where: { revoked_at: null },
-                include: { permission: true },
+                include: { Permission: true },
             }),
         ]);
         const rolePermMap = new Map();
@@ -65,6 +66,7 @@ class PermissionService {
             where: { role_type_permission_id: { role_type: roleType, permission_id: permission.id } },
             update: { revoked_at: null, revoked_by: null },
             create: {
+                id: (0, crypto_1.randomUUID)(),
                 role_type: roleType,
                 permission_id: permission.id,
                 granted_by: grantedBy,
@@ -133,6 +135,7 @@ class PermissionService {
                     where: { role_type_permission_id: { role_type: grant.role_type, permission_id: grant.permission_id } },
                     update: { revoked_at: null, revoked_by: null },
                     create: {
+                        id: (0, crypto_1.randomUUID)(),
                         role_type: grant.role_type,
                         permission_id: grant.permission_id,
                         granted_by: changedBy,
@@ -184,9 +187,9 @@ class PermissionService {
                 role_type: roleType.toUpperCase(),
                 revoked_at: null,
             },
-            include: { permission: true },
+            include: { Permission: true },
         });
-        const permissionKeys = rolePermissions.map((rp) => rp.permission.key);
+        const permissionKeys = rolePermissions.map((rp) => rp.Permission.key);
         cache.set(cacheKey, {
             permissions: permissionKeys,
             expires: Date.now() + PERMISSION_CACHE_TTL,

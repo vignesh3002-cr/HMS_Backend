@@ -54,7 +54,7 @@ const activeMappings = user.user_branch_mapping?.filter(
 
   }
 
-  private buildAuthPayload(user: AuthUser) {
+  private buildAuthPayload(user: AuthUser, rememberMe: boolean = false) {
 
     const employee = user.employees;
 
@@ -72,7 +72,7 @@ const activeMappings = user.user_branch_mapping?.filter(
       role: user.role_type,
       user_id: user.user_id,
       hospital_id: primaryBranch?.hospital_id,
-    });
+    }, rememberMe);
 
     return {
       token,
@@ -115,7 +115,7 @@ const activeMappings = user.user_branch_mapping?.filter(
     //   username: user.username,
     // };
 
-    return this.buildAuthPayload(user);
+    return this.buildAuthPayload(user, rememberMe);
 
   }
 
@@ -160,7 +160,7 @@ const activeMappings = user.user_branch_mapping?.filter(
 
   }
 
-  async verifyOtp(username: string, code: string) {
+  async verifyOtp(username: string, code: string, rememberMe: boolean = false) {
 
     const user = await this.authRepository.findUserByUsername(username);
 
@@ -200,7 +200,7 @@ const activeMappings = user.user_branch_mapping?.filter(
     //   }
     // });
 
-    return this.buildAuthPayload(user);
+    return this.buildAuthPayload(user, rememberMe);
 
   }
 

@@ -404,18 +404,24 @@ async updateEmployee(
             select: { branch_id: true },
         });
 
+        
+
         const currentBranchIds = activeMappings.map((mapping) => mapping.branch_id);
-        const requestedBranchIds = data.branch_ids;
-        const isBranchChange =
-            requestedBranchIds.some((id) => !currentBranchIds.includes(id)) ||
-            currentBranchIds.some((id) => !requestedBranchIds.includes(id));
+        const requestedBranchIds = data.branch_ids ?? [];
+
+const isBranchChange =
+    requestedBranchIds.some((id) => !currentBranchIds.includes(id)) ||
+    currentBranchIds.some((id) => !requestedBranchIds.includes(id));
 
         if (isBranchChange) {
             throw new Error(
                 "Doctor branch changes must go through POST /api/doctors/:employeeId/transfer to preserve appointment history"
             );
         }
+
     }
+
+    
 
     if (data.department_id) {
         const department = await repository.findDepartment(data.department_id);
@@ -452,7 +458,9 @@ async updateEmployee(
         middle_name: data.middle_name,
         last_name: data.last_name,
         email: data.email,
-        gender: data.gender,
+        emp_gender: data.gender,
+        emp_DOB: data.dob,
+        gender:data.gender,
         dob: data.dob,
         mobile_no: data.mobile_no,
         blood_group: data.blood_group,

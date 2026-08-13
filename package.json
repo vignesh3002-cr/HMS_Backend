@@ -7,7 +7,10 @@
     "dev": "ts-node src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "db:seed": "ts-node prisma/seed.ts"
+    "db:seed": "ts-node prisma/seed.ts",
+    "db:seed:oncology": "ts-node prisma/seedOncology.ts",
+    "db:seed:chemo-drugs": "ts-node prisma/seedChemoDrugs.ts",
+    "db:seed:regimen-protocols": "ts-node prisma/seedRegimenProtocols.ts"
   },
   "keywords": [],
   "author": "",

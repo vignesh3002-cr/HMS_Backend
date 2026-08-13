@@ -37,7 +37,7 @@ class AuthService {
         }
         return user.employees?.email ?? undefined;
     }
-    buildAuthPayload(user) {
+    buildAuthPayload(user, rememberMe = false) {
         const employee = user.employees;
         // user_branch_mapping (already filtered to status: 1 by findUserByUsername)
         // is the authoritative record of which branch this user is on -
@@ -52,7 +52,7 @@ class AuthService {
             role: user.role_type,
             user_id: user.user_id,
             hospital_id: primaryBranch?.hospital_id,
-        });
+        }, rememberMe);
         return {
             token,
             user: {
@@ -83,7 +83,7 @@ class AuthService {
         // return {
         //   username: user.username,
         // };
-        return this.buildAuthPayload(user);
+        return this.buildAuthPayload(user, rememberMe);
     }
     async sendOtp(username) {
         const user = await this.authRepository.findUserByUsername(username);
@@ -112,7 +112,7 @@ class AuthService {
             message: `OTP sent to ${email.replace(/^(.{2}).*(@.*)$/, "$1***$2")}`,
         };
     }
-    async verifyOtp(username, code) {
+    async verifyOtp(username, code, rememberMe = false) {
         const user = await this.authRepository.findUserByUsername(username);
         if (!user) {
             throw new Error("User not found");
@@ -144,7 +144,7 @@ class AuthService {
         //     is_verified: true
         //   }
         // });
-        return this.buildAuthPayload(user);
+        return this.buildAuthPayload(user, rememberMe);
     }
     // Self-service only - the caller can only ever change their own username,
     // never someone else's (userId comes from the authenticated JWT, not

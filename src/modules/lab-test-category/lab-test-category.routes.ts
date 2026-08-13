@@ -9,13 +9,15 @@ import {
 
 const router = Router();
 
+
+
 router.post(
     "/",
     authenticate,
-    authorize("lab.manage"),
     createLabTestCategoryValidation,
-    controller.create
+    controller.create.bind(controller)
 );
+
 
 router.get(
     "/",
@@ -34,16 +36,13 @@ router.get(
 router.put(
     "/:id",
     authenticate,
-    authorize("lab.manage"),
     updateLabTestCategoryValidation,
-    controller.update
+    controller.update.bind(controller)
 );
 
 router.delete(
     "/:id",
     authenticate,
-    authorize("lab.manage"),
-    controller.delete
+    controller.delete.bind(controller)
 );
-
 export default router;

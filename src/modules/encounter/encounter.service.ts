@@ -1,4 +1,4 @@
-    import prisma from "../../config/prisma";
+import prisma from "../../config/prisma";
 import { EncounterRepository } from "./encounter.repository";
 import { CreateEncounterDTO, UpdateEncounterDTO, GetEncountersQuery } from "./encounter.types";
 import { ENCOUNTER_STATUS, ENCOUNTER_TYPE_DEFAULT } from "./encounter.constants";
