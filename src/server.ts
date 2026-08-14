@@ -143,7 +143,6 @@ app.use("/api/hashpassword", async (req, res) => {
     const hashedPassword = await hashPassword(password);
 
     res.json({ hashedPassword });
-
 });
 
 const PORT = process.env.PORT || 5000;

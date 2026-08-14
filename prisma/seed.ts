@@ -67,7 +67,7 @@ const PERMISSIONS = [
   { key: "pharmacy.dispense", name: "Dispense Medication", description: "Dispense medications to patients", category: "pharmacy" },
   { key: "pharmacy.inventory", name: "Manage Inventory", description: "Manage pharmacy inventory", category: "pharmacy" },
   { key: "pharmacy.manage", name: "Manage Pharmacy", description: "Manage pharmacy settings", category: "pharmacy" },
-<<<<<<< HEAD
+
 
   // Oncology reference data (cancer types/subtypes/staging/biomarkers/clinical parameters)
   { key: "oncology.reference.manage", name: "Manage Oncology Reference Data", description: "Seed/edit cancer types, subtypes, staging reference, biomarkers, clinical parameters", category: "oncology" },
@@ -98,8 +98,7 @@ const PERMISSIONS = [
 
   // Audit trail
   { key: "audit.read", name: "View Audit Log", description: "View the oncology/chemotherapy write audit trail", category: "audit" },
-=======
->>>>>>> 5df3e7e14ad93e80109586aace3a35d2d071eb00
+
 ];
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -136,7 +135,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "pharmacy.dispense",
     "pharmacy.inventory",
     "pharmacy.manage",
-<<<<<<< HEAD
+
     "oncology.reference.manage",
     "oncology.reference.read",
     "oncology.diagnosis.read",
@@ -145,8 +144,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "chemo.protocol.read",
     "chemo.protocol.manage",
     "audit.read",
-=======
->>>>>>> 5df3e7e14ad93e80109586aace3a35d2d071eb00
+
   ],
 
   // STAFF_ADMIN (ADMIN) - branch-scoped view/edit
@@ -167,7 +165,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "lab.result",
     "pharmacy.dispense",
     "pharmacy.inventory",
-<<<<<<< HEAD
+
     "oncology.reference.read",
     "oncology.diagnosis.read",
     "oncology.derived.read",
@@ -175,8 +173,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "chemo.protocol.read",
     "chemo.protocol.manage",
     "audit.read",
-=======
->>>>>>> 5df3e7e14ad93e80109586aace3a35d2d071eb00
+
   ],
 
   // RECEPTIONIST - patient/appointment only
@@ -199,7 +196,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "encounter.update",
     "lab.order",
     "lab.result",
-<<<<<<< HEAD
+
     // Oncology - a doctor makes the clinical calls: diagnosis/staging,
     // biomarker entry, and the plan/cycle/adverse-event/followup record.
     // Administration and vitals are recorded by NURSE, not DOCTOR.
@@ -218,8 +215,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "chemo.followup.record",
     "chemo.lab_review.record",
     "chemo.protocol.read",
-=======
->>>>>>> 5df3e7e14ad93e80109586aace3a35d2d071eb00
+
   ],
 
   // NURSE - patient care
@@ -232,7 +228,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "encounter.update",
     "lab.order",
     "lab.result",
-<<<<<<< HEAD
+
     // Nurse administers and monitors - not diagnosing or planning
     "oncology.reference.read",
     "oncology.diagnosis.read",
@@ -242,8 +238,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "chemo.administration.record",
     "chemo.vitals.record",
     "chemo.adverse_event.record",
-=======
->>>>>>> 5df3e7e14ad93e80109586aace3a35d2d071eb00
+
   ],
 
   // PHARMACIST
@@ -252,11 +247,13 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "department.read",
     "pharmacy.dispense",
     "pharmacy.inventory",
-<<<<<<< HEAD
+
     // Verifies drug orders against the plan before dispensing
     "chemo.plan.read",
-=======
->>>>>>> 5df3e7e14ad93e80109586aace3a35d2d071eb00
+
+    // Verifies drug orders against the plan before dispensing
+    "chemo.plan.read",
+
   ],
 
   // LAB_TECHNICIAN
@@ -292,7 +289,7 @@ async function seedPermissions() {
     await prisma.permission.upsert({
       where: { key: perm.key },
       update: { name: perm.name, description: perm.description, category: perm.category, is_active: true },
-      create: perm,
+      create: { ...perm, id: crypto.randomUUID(), updated_at: new Date() },
     });
   }
   console.log(`✅ Created/updated ${PERMISSIONS.length} permissions`);
@@ -321,6 +318,7 @@ async function seedPermissions() {
         where: { role_type_permission_id: { role_type: roleType, permission_id: permission.id } },
         update: { revoked_at: null, revoked_by: null },
         create: {
+          id: crypto.randomUUID(),
           role_type: roleType,
           permission_id: permission.id,
           granted_by: "SYSTEM_SEED",

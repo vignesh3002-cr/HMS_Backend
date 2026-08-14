@@ -7,8 +7,15 @@ exports.qualificationMasterRepository = exports.QualificationMasterRepository = 
 const prisma_1 = __importDefault(require("../../config/prisma"));
 class QualificationMasterRepository {
     async create(data) {
+        const now = new Date();
         return prisma_1.default.qualification_master.create({
-            data,
+            data: {
+                qualification_id: data.qualification_id,
+                qualification_name: data.qualification_name,
+                designation: data.designation,
+                is_active: data.is_active !== false, // default to true if not specified
+                updated_at: now,
+            },
         });
     }
     async findAll() {
@@ -50,11 +57,15 @@ class QualificationMasterRepository {
         });
     }
     async update(qualification_id, data) {
+        const { id: _id, qualification_id: _qualification_id, created_at: _created_at, updated_at: _updated_at, ...updateData } = data;
         return prisma_1.default.qualification_master.update({
             where: {
                 qualification_id,
             },
-            data,
+            data: {
+                ...updateData,
+                updated_at: new Date(),
+            },
         });
     }
     async softDelete(qualification_id) {
@@ -64,6 +75,7 @@ class QualificationMasterRepository {
             },
             data: {
                 is_active: false,
+                updated_at: new Date(),
             },
         });
     }

@@ -85,8 +85,7 @@ export class EmployeeRepository {
             },
             data: {
                 emp_status: false,
-                deleted_at: new Date(),
-                branch_id: null
+                deleted_at: new Date()
             }
         });
     }
@@ -101,7 +100,27 @@ export class EmployeeRepository {
             },
             data: {
                 is_active: false,
-                deleted_by: actingUserId
+                deleted_by: actingUserId,
+                effective_to: new Date()
+            }
+        });
+    }
+
+    async closeSchedules(
+        tx: Prisma.TransactionClient,
+        employeeId: string,
+        excludeScheduleIds: bigint[],
+        actingUserId: string
+    ) {
+        return tx.doctor_schedule.updateMany({
+            where: {
+                employee_id: employeeId,
+                schedule_id: { notIn: excludeScheduleIds }
+            },
+            data: {
+                is_active: false,
+                deleted_by: actingUserId,
+                effective_to: new Date()
             }
         });
     }
@@ -360,7 +379,18 @@ if (department) {
 }
 if (branchId) {
 
-    where.branch_id = branchId;
+    // An employee counts as being on a branch either through the
+    // denormalized employees.branch_id column (kept in sync for
+    // single-branch roles) or through a real active user_branch_mapping
+    // row. The mapping is the source of truth for multi-branch roles
+    // like DOCTOR, whose column is intentionally left stale, so match
+    // either. AND keeps this combined with the search OR below.
+    where.AND = {
+        OR: [
+            { branch_id: branchId },
+            { user_branch_mapping: { some: { branch_id: branchId, status: 1 } } },
+        ],
+    };
    
 }
 if (status !== undefined) {
@@ -468,57 +498,106 @@ const employees = await prisma.employees.findMany({
         },
  
         branch: {
- 
+
             select: {
- 
+
                 branch_name: true,
                 branch_area: true
- 
+
             }
- 
+
+        },
+        // Active branch assignments (status 1) — the source of truth for
+        // multi-branch roles like DOCTOR whose employees.branch_id column
+        // is intentionally left stale. `branches` below is built from
+        // these, never from the schedule table.
+        user_branch_mapping: {
+            where: { status: 1 },
+            include: {
+                branch: {
+                    select: {
+                        branch_id: true,
+                        branch_name: true,
+                        branch_area: true,
+                    },
+                },
+            },
         },
         department_master: {
- 
+
             select: {
- 
+
                 department_name: true
- 
+
             }
- 
+
         }
- 
+
     },
- 
+
     skip: (page - 1) * limit,
- 
+
     take: limit,
- 
+
     orderBy: {
- 
+
         id: "desc"
- 
+
     }
- 
+
 });
 const total = await prisma.employees.count({
- 
+
     where
- 
+
+});
+// Which branches actually have an active schedule row — used only to flag
+// has_schedule on each assigned branch. The assignment list itself comes
+// from user_branch_mapping above; a branch without any schedule is still
+// a real assignment and must still show up.
+const pageEmployeeIds = employees
+    .map((e) => e.employee_id)
+    .filter((id): id is string => !!id);
+const scheduleGroups = await prisma.doctor_schedule.groupBy({
+    by: ["employee_id", "branch_id"],
+    where: {
+        is_active: true,
+        employee_id: { in: pageEmployeeIds },
+    },
+    _count: { _all: true },
+});
+const scheduleBranchesByEmployee = new Map<string, Set<string>>();
+for (const group of scheduleGroups) {
+    if (!group.employee_id) continue;
+    const set = scheduleBranchesByEmployee.get(group.employee_id) ?? new Set<string>();
+    set.add(group.branch_id);
+    scheduleBranchesByEmployee.set(group.employee_id, set);
+}
+const employeesWithBranches = employees.map((emp) => {
+    const hasScheduleFor = scheduleBranchesByEmployee.get(emp.employee_id ?? "") ?? new Set<string>();
+    const assignedBranches = (emp.user_branch_mapping ?? []).map((m) => ({
+        branch_id: m.branch.branch_id,
+        branch_name: m.branch.branch_name,
+        branch_area: m.branch.branch_area,
+        has_schedule: hasScheduleFor.has(m.branch.branch_id),
+    }));
+    const { user_branch_mapping, ...rest } = emp;
+    return { ...rest, branches: assignedBranches };
 });
 return {
- 
+
     total,
- 
+
     page,
- 
+
     limit,
- 
+
     totalPages:
- 
+
         Math.ceil(total / limit),
- 
-    employees
- 
+
+    employees: employeesWithBranches
+
 };
 }
 async getEmployeeById(
@@ -589,6 +668,19 @@ await prisma.user_branch_mapping.findMany({
     },
 
 });
+// Which branches currently have an active schedule row — only used to
+// flag has_schedule on each mapped branch; the mapping list itself is
+// the assignment source of truth.
+const detailScheduleGroups =
+await prisma.doctor_schedule.groupBy({
+    by: ["branch_id"],
+    where: {
+        is_active: true,
+        employee_id: employeeId,
+    },
+    _count: { _all: true },
+});
+const detailScheduleBranches = new Set(detailScheduleGroups.map((g) => g.branch_id));
 const response:any={
 
     employee,
@@ -610,6 +702,10 @@ const response:any={
             branch_name:x.branch.branch_name,
 
             status:x.status,
+
+            is_primary_branch:x.is_primary_branch ?? false,
+
+            has_schedule:detailScheduleBranches.has(x.branch.branch_id),
 
             assigned_date:x.assigned_date,
 

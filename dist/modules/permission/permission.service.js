@@ -70,7 +70,7 @@ class PermissionService {
         await prisma_1.default.rolePermission.upsert({
             where: {
                 role_type_permission_id: {
-                    role_type: roleType,
+                    role_type: roleType.toUpperCase(),
                     permission_id: permission.id,
                 },
             },
@@ -80,7 +80,7 @@ class PermissionService {
             },
             create: {
                 id: crypto_1.default.randomUUID(),
-                role_type: roleType,
+                role_type: roleType.toUpperCase(),
                 permission_id: permission.id,
                 granted_by: grantedBy,
             },
@@ -108,7 +108,7 @@ class PermissionService {
         const existing = await prisma_1.default.rolePermission.findUnique({
             where: {
                 role_type_permission_id: {
-                    role_type: roleType,
+                    role_type: roleType.toUpperCase(),
                     permission_id: permission.id,
                 },
             },
@@ -119,7 +119,7 @@ class PermissionService {
         await prisma_1.default.rolePermission.update({
             where: {
                 role_type_permission_id: {
-                    role_type: roleType,
+                    role_type: roleType.toUpperCase(),
                     permission_id: permission.id,
                 },
             },
@@ -162,14 +162,14 @@ class PermissionService {
             }
             if (update.grant) {
                 toGrant.push({
-                    role_type: update.role_type,
+                    role_type: update.role_type.toUpperCase(),
                     permission_id: permId,
                     permission_key: update.permission_key,
                 });
             }
             else {
                 toRevoke.push({
-                    role_type: update.role_type,
+                    role_type: update.role_type.toUpperCase(),
                     permission_id: permId,
                     permission_key: update.permission_key,
                 });

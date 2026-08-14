@@ -1651,7 +1651,7 @@ model qualification_master {
   designation        String      @db.VarChar(50)
   is_active          Boolean     @default(true)
   created_at         DateTime    @default(now())
-  updated_at         DateTime    @updatedAt
+  updated_at         DateTime
   employees          employees[]
 }
 

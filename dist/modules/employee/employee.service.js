@@ -178,7 +178,10 @@ class EmployeeService {
                         user_id: user.user_id,
                         branch_id: branchId,
                         employee_id: employeeId,
-                        status: 1
+                        status: 1,
+                        // Doctor assignments record when they started (effective_from);
+                        // other roles keep their existing create behavior unchanged.
+                        ...(data.role_type === "DOCTOR" ? { effective_from: new Date() } : {}),
                     }
                 });
             }
@@ -201,7 +204,8 @@ class EmployeeService {
                         start_time: timeStringToUtcDate(schedule.start_time),
                         end_time: timeStringToUtcDate(schedule.end_time),
                         consultation_minutes: data.consultation_minutes ?? 20,
-                        is_active: true
+                        is_active: true,
+                        effective_from: new Date()
                     }
                 });
             }
@@ -307,15 +311,12 @@ class EmployeeService {
             email: data.email,
             emp_gender: data.gender,
             emp_DOB: data.dob,
-            gender: data.gender,
-            dob: data.dob,
             mobile_no: data.mobile_no,
             blood_group: data.blood_group,
             nationality: data.nationality,
             marital_status: data.marital_status,
             aadhaar_no: data.aadhaar_no,
             pan_no: data.pan_no,
-            age: data.age,
             passport_no: data.passport_no,
             parmanent_address: data.permanent_address,
             current_address: data.current_address,
@@ -354,7 +355,10 @@ class EmployeeService {
                     data: userUpdateData,
                 });
             }
-            if (data.branch_ids) {
+            // Doctor mappings are owned by the transfer workflow (branch changes
+            // are rejected by the guard above), so a plain profile edit never
+            // rewrites them here — skip this block for doctors entirely.
+            if (data.branch_ids && !isDoctor) {
                 await tx.user_branch_mapping.deleteMany({
                     where: {
                         user_id: userId,
@@ -431,12 +435,10 @@ class EmployeeService {
                     ...referencedByAppointment.map((r) => r.schedule_id),
                     ...referencedByEncounter.map((r) => r.schedule_id),
                 ];
-                await tx.doctor_schedule.deleteMany({
-                    where: {
-                        employee_id: employeeId,
-                        schedule_id: { notIn: protectedIds },
-                    },
-                });
+                // Soft-close every slot that was removed from the schedule instead
+                // of hard-deleting it, so the row (and its audit trail) stays in
+                // the database with is_active = false and deleted_by recorded.
+                await repository.closeSchedules(tx, employeeId, protectedIds, updatedBy);
                 for (const schedule of data.working_hours) {
                     await tx.doctor_schedule.create({
                         data: {
@@ -448,6 +450,7 @@ class EmployeeService {
                             end_time: timeStringToUtcDate(schedule.end_time),
                             consultation_minutes: data.consultation_minutes ?? 20,
                             is_active: true,
+                            effective_from: new Date(),
                         },
                     });
                 }
@@ -497,12 +500,10 @@ class EmployeeService {
             // 2. Block login at the user_table level too (belt-and-braces next
             // to the auth.service emp_status check).
             await repository.blockUserLogin(tx, employee.user_id);
-            // 3. Release every branch assignment (branch_id + user_branch_mapping).
-            await repository.deleteUserBranchMappings(tx, employee.user_id);
-            // 4. Close all of the doctor's schedule rows so no slots can be
+            // 3. Close all of the doctor's schedule rows so no slots can be
             // picked up by availability queries.
             await repository.closeAllActiveSchedules(tx, employeeId, new Date());
-            // 5. Future appointments are NOT cancelled - they are flagged
+            // 4. Future appointments are NOT cancelled - they are flagged
             // RESCHEDULE_REQUIRED, unlinked from the doctor and queued so an
             // admin can reassign them later (via the edit appointment form or
             // the reschedule queue).
@@ -530,14 +531,60 @@ class EmployeeService {
             affected_appointments: affectedAppointments
         };
     }
+    async restoreEmployee(employeeId) {
+        const employee = await repository.findEmployeeById(employeeId);
+        if (!employee) {
+            throw new Error("Employee not found");
+        }
+        // Branch assignment (employees.branch_id + user_branch_mapping) is
+        // deliberately preserved on deactivation, so restoring only needs to
+        // flip the visibility/status flags back - the user comes back with
+        // their original branch intact.
+        await prisma_1.default.$transaction(async (tx) => {
+            await tx.employees.update({
+                where: { employee_id: employeeId },
+                data: {
+                    emp_status: true,
+                    deleted_at: null
+                }
+            });
+            if (employee.user_id) {
+                await tx.user_table.update({
+                    where: { user_id: employee.user_id },
+                    data: {
+                        user_status: 0
+                    }
+                });
+            }
+        });
+        return {
+            message: "Employee restored successfully"
+        };
+    }
     async getEmployees(query) {
-        return repository.getEmployees(query);
+        const result = await repository.getEmployees(query);
+        return {
+            ...result,
+            employees: result.employees.map((employee) => ({
+                ...employee,
+                gender: employee.emp_gender,
+                dob: employee.emp_DOB,
+            })),
+        };
     }
     async updateEmployeePhoto(employeeId, employee_photo_URL) {
         return repository.updateEmployeePhoto(employeeId, employee_photo_URL);
     }
     async getEmployeeById(employeeId) {
-        return repository.getEmployeeById(employeeId);
+        const result = await repository.getEmployeeById(employeeId);
+        return {
+            ...result,
+            employee: {
+                ...result.employee,
+                gender: result.employee.emp_gender,
+                dob: result.employee.emp_DOB,
+            },
+        };
     }
 }
 exports.EmployeeService = EmployeeService;

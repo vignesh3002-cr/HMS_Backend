@@ -32,10 +32,6 @@ export const TOP_LEVEL_ADMIN_ROLES = [HEAD_ADMIN, SUPER_ADMIN];
 export const BRANCH_ADMIN_ROLES = [...TOP_LEVEL_ADMIN_ROLES, BRANCH_ADMIN];
 export const ADMIN_ROLES = [...TOP_LEVEL_ADMIN_ROLES, ADMIN];
 
-// Clinical roles need to log in to use the oncology/chemotherapy module
-// (create diagnoses/plans as a doctor, record administration/vitals as a
-// nurse, verify drugs as a pharmacist) - added alongside the admin roles
-// rather than replacing them.
-export const LOGIN_ENABLED_ROLES = [...TOP_LEVEL_ADMIN_ROLES, BRANCH_ADMIN, ADMIN, DOCTOR, NURSE, PHARMACIST];
+export const LOGIN_ENABLED_ROLES = [...TOP_LEVEL_ADMIN_ROLES, BRANCH_ADMIN, ADMIN, DOCTOR];
 
 export const BRANCH_RESTRICTED_ROLES = [BRANCH_ADMIN, ADMIN];

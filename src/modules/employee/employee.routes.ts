@@ -50,6 +50,13 @@ router.delete(
     branchScope,
     controller.softDeleteEmployee.bind(controller)
 );
+router.post(
+    "/:employeeId/restore",
+    authenticate,
+    authorizeNoSelf("employee.update"),
+    branchScope,
+    controller.restoreEmployee.bind(controller)
+);
 router.delete(
     "/:employeeId/:schedule_id",
     authenticate,

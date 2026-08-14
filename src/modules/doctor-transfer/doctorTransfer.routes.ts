@@ -1,8 +1,7 @@
 import { Router } from "express";
 import { DoctorTransferController } from "./doctorTransfer.controller";
 import { authenticate } from "../auth/auth.middleware";
-import { authorize } from "../../middleware/authorize";
-import { authorizeRoles } from "../../middleware/authorize";
+import { authorizeRoles,authorize } from "../../middleware/authorize";
 import { BRANCH_ADMIN_ROLES } from "../../permissions/roles";
 import {
     initiateTransferValidation,

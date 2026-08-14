@@ -1,4 +1,3 @@
-import { randomUUID } from "crypto";
 import crypto from "crypto";
 import prisma from "../../config/prisma";
 
@@ -37,12 +36,10 @@ export class PermissionService {
         where: { is_active: true },
         orderBy: [{ category: "asc" }, { name: "asc" }],
       }),
-
       prisma.role_id_config.findMany({
         where: { is_active: true },
         orderBy: { sort_order: "asc" },
       }),
-
       prisma.rolePermission.findMany({
         where: { revoked_at: null },
         include: { Permission: true },
@@ -71,14 +68,12 @@ export class PermissionService {
         granted: rolePermMap.get(r.role_type)?.has(p.id) ?? false,
       })),
     }));
-
     const rolesWithConfig = roles.map((r) => ({
       role_type: r.role_type,
       display_name: r.display_name,
       sort_order: r.sort_order,
       is_active: r.is_active,
     }));
-
     return {
       permissions: permissionsWithRoles,
       roles: rolesWithConfig,
@@ -104,22 +99,20 @@ export class PermissionService {
     await prisma.rolePermission.upsert({
       where: {
         role_type_permission_id: {
-          role_type: roleType,
+          role_type: roleType.toUpperCase(),
           permission_id: permission.id,
         },
       },
-
       update: {
         revoked_at: null,
         revoked_by: null,
       },
-
       create: {
-  id: crypto.randomUUID(),
-  role_type: roleType,
-  permission_id: permission.id,
-  granted_by: grantedBy,
-},
+        id: crypto.randomUUID(),
+        role_type: roleType.toUpperCase(),
+        permission_id: permission.id,
+        granted_by: grantedBy,
+      },
     });
 
 
@@ -161,12 +154,11 @@ export class PermissionService {
     const existing = await prisma.rolePermission.findUnique({
       where: {
         role_type_permission_id: {
-          role_type: roleType,
+          role_type: roleType.toUpperCase(),
           permission_id: permission.id,
         },
       },
     });
-
 
     if (!existing || existing.revoked_at) {
       throw new Error(`Permission not granted to role: ${roleType}`);
@@ -176,11 +168,10 @@ export class PermissionService {
     await prisma.rolePermission.update({
       where: {
         role_type_permission_id: {
-          role_type: roleType,
+          role_type: roleType.toUpperCase(),
           permission_id: permission.id,
         },
       },
-
       data: {
         revoked_at: new Date(),
         revoked_by: revokedBy,
@@ -266,7 +257,7 @@ export class PermissionService {
       if (update.grant) {
 
         toGrant.push({
-          role_type: update.role_type,
+          role_type: update.role_type.toUpperCase(),
           permission_id: permId,
           permission_key: update.permission_key,
         });
@@ -274,7 +265,7 @@ export class PermissionService {
       } else {
 
         toRevoke.push({
-          role_type: update.role_type,
+          role_type: update.role_type.toUpperCase(),
           permission_id: permId,
           permission_key: update.permission_key,
         });
@@ -306,12 +297,12 @@ export class PermissionService {
           },
 
 
-          create: {
-  id: crypto.randomUUID(),
-  role_type: grant.role_type,
-  permission_id: grant.permission_id,
-  granted_by: changedBy,
-},
+create: {
+        id: crypto.randomUUID(),
+        role_type: grant.role_type,
+        permission_id: grant.permission_id,
+        granted_by: changedBy,
+      },
 
         });
 
