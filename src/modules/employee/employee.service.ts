@@ -222,8 +222,8 @@ const employee = await tx.employees.create({
         aadhaar_no: data.aadhaar_no,
  
         pan_no: data.pan_no,
-        gender: data.gender,
-        dob: data.dob,
+        emp_gender: data.gender,
+        emp_DOB: data.dob,
 
         passport_no: data.passport_no,
  

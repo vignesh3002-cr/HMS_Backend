@@ -90,7 +90,7 @@ export class EncounterService {
                 const encounterNo = await repository.generateEncounterNumber(tx);
 
                 const encounter = await repository.createEncounter(tx, {
-
+                    createdBy: createdBy,
                     encounter_no: encounterNo,
                     patient_id: appointment.patient_id,
                     branch_id: appointment.branch_id!,

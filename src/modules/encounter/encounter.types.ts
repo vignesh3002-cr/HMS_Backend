@@ -1,5 +1,5 @@
 export interface CreateEncounterDTO {
-
+    createdBy: string;
     appointment_id: string;
 
 }

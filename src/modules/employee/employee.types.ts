@@ -62,6 +62,8 @@ export interface CreateEmployeeDto {
     employee_area?: string;
     employee_pincode?:number;
     employee_no_experence?: number;
+    emp_gender?: string;
+    emp_DOB?: string;
  
     emergency_contact_name?: string;
     emergency_contact_relationship?: string;
