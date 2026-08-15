@@ -195,6 +195,13 @@ class EmployeeService {
                 });
             }
             for (const schedule of data.working_hours ?? []) {
+                // Validation rule: doctor_schedule.branch_id must always be a subset of
+                // the doctor's assigned branches (user_branch_mapping). A schedule on a
+                // branch the doctor isn't mapped to can never be booked and would only
+                // pollute the schedule UI with unassigned branches.
+                if (!allowedBranchIds.includes(schedule.branch_id)) {
+                    throw new Error(`Schedule branch ${schedule.branch_id} is not assigned to this doctor`);
+                }
                 await tx.doctor_schedule.create({
                     data: {
                         employee_id: employee.employee_id,
@@ -405,6 +412,24 @@ class EmployeeService {
                 });
             }
             if (data.working_hours) {
+                // Validation rule: doctor_schedule.branch_id must always be a
+                // subset of the doctor's assigned branches (user_branch_mapping).
+                // Doctor mappings are owned by the transfer workflow and are never
+                // rewritten by this update, so fetch the ACTIVE mappings and
+                // reject any schedule row aimed at a branch the doctor isn't
+                // currently assigned to.
+                const activeMappings = userId
+                    ? await tx.user_branch_mapping.findMany({
+                        where: { user_id: userId, status: 1 },
+                        select: { branch_id: true },
+                    })
+                    : [];
+                const activeBranchIds = new Set(activeMappings.map((m) => m.branch_id));
+                for (const schedule of data.working_hours) {
+                    if (!activeBranchIds.has(schedule.branch_id)) {
+                        throw new Error(`Schedule branch ${schedule.branch_id} is not assigned to this doctor`);
+                    }
+                }
                 // appointment_history.schedule_id and encounter.schedule_id both
                 // have a real FK (onDelete: NoAction) into doctor_schedule -
                 // deleting a slot that already has a booked appointment/encounter

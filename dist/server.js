@@ -121,7 +121,6 @@ app.use("/api/appointments", appointment_routes_1.default);
 app.use("/api/encounters", encounter_routes_1.default);
 app.use("/api/prescriptions", prescription_routes_1.default);
 app.use("/api/chemotherapy", chemotherapy_routes_1.default);
-app.use("/api/doctors", doctorTransfer_routes_1.default);
 app.use("/api/hashpassword", async (req, res) => {
     const { password } = req.body;
     const hashedPassword = await (0, bcrypt_1.hashPassword)(password);

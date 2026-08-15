@@ -137,7 +137,6 @@ app.use("/api/appointments", appointmentRoutes);
 app.use("/api/encounters", encounterRoutes);
 app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/chemotherapy", chemotherapyRoutes);
-app.use("/api/doctors", doctorTransferRoutes);
 app.use("/api/hashpassword", async (req, res) => {
 
     const { password } = req.body;

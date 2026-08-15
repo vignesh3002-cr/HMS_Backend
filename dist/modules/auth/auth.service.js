@@ -40,13 +40,19 @@ class AuthService {
     buildAuthPayload(user, rememberMe = false) {
         const employee = user.employees;
         // user_branch_mapping (already filtered to status: 1 by findUserByUsername)
-        // is the authoritative record of which branch this user is on -
+        // is the authoritative record of which branch this user is on. For
+        // DOCTORs the mapping is the ONLY source of branch truth -
         // employees.branch_id/user_table.branch_id are denormalized copies that
-        // can drift out of sync with it, so prefer the real mapping first and
-        // only fall back to those columns when there's no active mapping at all.
+        // can drift out of sync and are deliberately ignored. Other roles may
+        // fall back to those columns when there's no active mapping at all.
         const primaryMapping = user.user_branch_mapping?.[0];
-        const primaryBranch = primaryMapping?.branch || employee?.branch || user.branch || null;
-        const primaryBranchId = primaryMapping?.branch_id || employee?.branch_id || user.branch_id || null;
+        const isDoctor = user.role_type === "DOCTOR";
+        const primaryBranch = isDoctor
+            ? primaryMapping?.branch ?? null
+            : primaryMapping?.branch || employee?.branch || user.branch || null;
+        const primaryBranchId = isDoctor
+            ? primaryMapping?.branch_id ?? null
+            : primaryMapping?.branch_id || employee?.branch_id || user.branch_id || null;
         const token = (0, jwt_1.generateToken)({
             username: user.username,
             role: user.role_type,

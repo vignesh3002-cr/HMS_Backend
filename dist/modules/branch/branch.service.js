@@ -176,7 +176,6 @@ class BranchService {
                         branch_id: branchId,
                         employee_id: adminEmployee.employee_id,
                         status: 1,
-                        is_primary_branch: true,
                     },
                 });
             }
@@ -190,7 +189,6 @@ class BranchService {
                     },
                     data: {
                         status: 0,
-                        is_primary_branch: false,
                     },
                 });
                 // 2a. Link existing user to branch via user_branch_mapping
@@ -199,7 +197,6 @@ class BranchService {
                         user_id: data.admin_user_id,
                         branch_id: branchId,
                         status: 1,
-                        is_primary_branch: true,
                     },
                 });
                 // 2b. Move the admin's single employees row to this branch —

@@ -215,7 +215,6 @@ export class BranchRepository {
         },
         data: {
           status: 0,
-          is_primary_branch: false,
         },
       });
 
@@ -231,7 +230,6 @@ export class BranchRepository {
         },
         data: {
           status: 0,
-          is_primary_branch: false,
         },
       });
 
@@ -280,7 +278,6 @@ export class BranchRepository {
           where: { id: existingMapping.id },
           data: {
             status: 1,
-            is_primary_branch: true,
             employee_id: employeeId,
           },
         });
@@ -291,7 +288,6 @@ export class BranchRepository {
             branch_id: branchId,
             employee_id: employeeId,
             status: 1,
-            is_primary_branch: true,
           },
         });
       }
@@ -308,7 +304,6 @@ export class BranchRepository {
       },
       data: {
         status: 0,
-        is_primary_branch: false,
       },
     });
   }
