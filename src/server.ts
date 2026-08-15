@@ -25,6 +25,7 @@ import labOrderRoutes from "./modules/lab-order/lab-order-routes";
 import cookieParser from "cookie-parser";
 import labOrderItemRoutes from "./modules/lab-order-item/lab-order-item.routes";
 import qualificationMasterRoutes from "./modules/qualification-master/qualification-master.routes";
+import diagnosisRoutes from "./modules/diagnosis/diagnosis.routes";
 
 
 import { hashPassword } from "./utils/bcrypt";
@@ -121,13 +122,13 @@ app.use("/api/lab-test-master", labTestMasterRoutes);
 app.use("/api/lab-order", labOrderRoutes);
 app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/chemotherapy", chemotherapyRoutes);
-app.use("/api/appointments", appointmentRoutes);
 app.use("/api/lab-order-item", labOrderItemRoutes);
 app.use("/api/encounters", encounterRoutes);
 app.use("/api/permissions", permissionRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/chemotherapy", chemotherapyRoutes);
+app.use("/api/lab-order-item", labOrderItemRoutes);
 app.use("/api/oncology", oncologyRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/export", exportRoutes);
@@ -137,6 +138,8 @@ app.use("/api/appointments", appointmentRoutes);
 app.use("/api/encounters", encounterRoutes);
 app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/chemotherapy", chemotherapyRoutes);
+app.use("/api/diagnosis", diagnosisRoutes);
+app.use("/api/doctors", doctorTransferRoutes);
 app.use("/api/hashpassword", async (req, res) => {
 
     const { password } = req.body;
