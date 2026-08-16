@@ -33,7 +33,6 @@ router.get(
 router.get(
     "/:diagnosisId",
     authenticate,
-    authorize("diagnosis.read"),
     getDiagnosisByIdValidation,
     controller.getDiagnosisById.bind(controller)
 );

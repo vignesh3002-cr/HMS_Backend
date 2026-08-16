@@ -802,6 +802,7 @@ model diagnosis {
   oncology_staging_detail    oncology_staging_detail[]
   patient_history            patient_history[]
   prescription               prescription[]
+  patient_comorbidity        patient_comorbidity[]  @relation("fk_patient_comorbidity_diagnosis")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1002,6 +1003,10 @@ model employees {
   prescription                                                                       prescription[]
   sample_collection                                                                  sample_collection[]
   user_branch_mapping                                                                user_branch_mapping[]
+  encounter_performance_status_assessed  encounter_performance_status[]  @relation("fk_perf_status_doctor")
+  encounter_symptom_recorded           encounter_symptom[]           @relation("fk_encounter_symptom_doctor")
+  patient_allergy_identified           patient_allergy[]             @relation("fk_patient_allergy_doctor")
+  patient_comorbidity_identified       patient_comorbidity[]          @relation("fk_patient_comorbidity_doctor")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1039,14 +1044,18 @@ model encounter {
   diagnosis_id        String?              @db.VarChar(20)
   diagnosis_text      String?              @db.VarChar
   createdBy           String?              @db.VarChar
-  chemotherapy_plan   chemotherapy_plan[]
-  appointment_history appointment_history? @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade, map: "fk_encounter_appointment")
-  branch              branch               @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_encounter_branch")
-  department_master   department_master?   @relation(fields: [department_id], references: [department_id], onDelete: Cascade, map: "fk_encounter_department")
-  employees           employees?           @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, map: "fk_encounter_doctor")
-  patient_bio_data    patient_bio_data     @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade, map: "fk_encounter_patient")
-  doctor_schedule     doctor_schedule?     @relation(fields: [schedule_id], references: [schedule_id], onDelete: NoAction, map: "fk_encounter_schedule")
-  user_table          user_table?          @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_encounter_user")
+  chemotherapy_plan                 chemotherapy_plan[]
+  appointment_history               appointment_history?   @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade, map: "fk_encounter_appointment")
+  branch                            branch                 @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_encounter_branch")
+  department_master                 department_master?     @relation(fields: [department_id], references: [department_id], onDelete: Cascade, map: "fk_encounter_department")
+  employees                         employees?             @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, map: "fk_encounter_doctor")
+  patient_bio_data                  patient_bio_data       @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade, map: "fk_encounter_patient")
+  doctor_schedule                   doctor_schedule?       @relation(fields: [schedule_id], references: [schedule_id], onDelete: NoAction, map: "fk_encounter_schedule")
+  user_table                        user_table?            @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_encounter_user")
+  encounter_performance_status      encounter_performance_status?
+  encounter_symptom                 encounter_symptom[]      @relation("fk_encounter_symptom_encounter")
+  patient_allergy_identified        patient_allergy[]      @relation("fk_patient_allergy_encounter")
+  patient_comorbidity_identified    patient_comorbidity[]  @relation("fk_patient_comorbidity_encounter")
 
   @@index([patient_id], map: "idx_encounter_patient")
 }
@@ -1516,6 +1525,8 @@ model patient_bio_data {
   branch                         branch?                        @relation(fields: [branch_id], references: [branch_id], onDelete: Restrict, map: "fk_patient_bio_branch")
   user_table                     user_table?                    @relation(fields: [user_id], references: [user_id], onDelete: Restrict, map: "fk_patient_bio_user")
   patient_history                patient_history[]
+  patient_allergy                patient_allergy[]              @relation("fk_patient_allergy_patient")
+  patient_comorbidity            patient_comorbidity[]          @relation("fk_patient_comorbidity_patient")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1777,6 +1788,149 @@ model user_table {
   user_branch_mapping                                user_branch_mapping[]
   user_log                                           user_log[]
   branch                                             branch?                   @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_user_branch")
+}
+
+/// Master table for ECOG Performance Status values
+model performance_status_master {
+  id                          BigInt   @id @default(autoincrement())
+  code                        String   @unique @db.VarChar(20)
+  description                 String   @db.VarChar(200)
+  display_order               Int      @default(0)
+  is_active                   Boolean  @default(true)
+  created_at                  DateTime @default(now()) @db.Timestamp(6)
+  updated_at                  DateTime @default(now()) @db.Timestamp(6)
+  created_by                  String?  @db.VarChar(20)
+  updated_by                  String?  @db.VarChar(20)
+  encounter_performance_status encounter_performance_status[]
+
+  @@index([is_active], map: "idx_perf_status_active")
+}
+
+/// Master table for standardized symptoms
+model symptom_master {
+  id                BigInt   @id @default(autoincrement())
+  code              String   @unique @db.VarChar(30)
+  name              String   @db.VarChar(150)
+  description       String?  @db.VarChar(500)
+  category          String?  @db.VarChar(100)
+  body_system       String?  @db.VarChar(100)
+  is_active         Boolean  @default(true)
+  created_at        DateTime @default(now()) @db.Timestamp(6)
+  updated_at        DateTime @default(now()) @db.Timestamp(6)
+  created_by        String?  @db.VarChar(20)
+  updated_by        String?  @db.VarChar(20)
+  encounter_symptom encounter_symptom[]
+
+  @@index([is_active], map: "idx_symptom_active")
+  @@index([category], map: "idx_symptom_category")
+}
+
+/// Master table for standardized allergy substances/types
+model allergy_master {
+  id                BigInt       @id @default(autoincrement())
+  code              String       @unique @db.VarChar(30)
+  substance_name    String       @db.VarChar(150)
+  substance_type    String       @db.VarChar(100)
+  description       String?      @db.VarChar(500)
+  severity_level    String?      @db.VarChar(30)
+  is_active         Boolean      @default(true)
+  created_at        DateTime     @default(now()) @db.Timestamp(6)
+  updated_at        DateTime     @default(now()) @db.Timestamp(6)
+  created_by        String?      @db.VarChar(20)
+  updated_by        String?      @db.VarChar(20)
+  patient_allergy   patient_allergy[]
+
+  @@index([is_active], map: "idx_allergy_active")
+  @@index([substance_type], map: "idx_allergy_type")
+}
+
+/// Encounter-specific ECOG assessment (stored on encounter, not patient)
+model encounter_performance_status {
+  id                        BigInt   @id @default(autoincrement())
+  encounter_no              String   @unique @db.VarChar(30)
+  performance_status_id     BigInt   @db.BigInt
+  assessed_by               String?  @db.VarChar(20)
+  assessed_at               DateTime @default(now()) @db.Timestamp(6)
+  clinical_notes            String?  @db.VarChar(1000)
+  created_at                DateTime @default(now()) @db.Timestamp(6)
+  updated_at                DateTime @default(now()) @db.Timestamp(6)
+  encounter                 encounter @relation(fields: [encounter_no], references: [encounter_no], onDelete: Restrict, map: "fk_encounter_perf_status")
+  performance_status_master performance_status_master @relation(fields: [performance_status_id], references: [id], onDelete: Restrict, map: "fk_perf_status_master")
+  employees                 employees? @relation("fk_perf_status_doctor", fields: [assessed_by], references: [employee_id], onDelete: Restrict)
+
+  @@index([encounter_no], map: "idx_encounter_perf_status_encounter")
+}
+
+/// Encounter-specific symptoms (multiple per encounter)
+model encounter_symptom {
+  id                BigInt   @id @default(autoincrement())
+  encounter_no      String   @db.VarChar(30)
+  symptom_id        BigInt   @db.BigInt
+  severity          String?  @db.VarChar(30)
+  duration_days     Int?
+  onset_date        DateTime? @db.Date
+  clinical_notes    String?  @db.VarChar(1000)
+  status            String   @default("ACTIVE") @db.VarChar(20)
+  recorded_by       String?  @db.VarChar(20)
+  recorded_at       DateTime @default(now()) @db.Timestamp(6)
+  updated_at        DateTime @default(now()) @db.Timestamp(6)
+  encounter         encounter @relation("fk_encounter_symptom_encounter", fields: [encounter_no], references: [encounter_no], onDelete: Restrict)
+  symptom_master    symptom_master @relation(fields: [symptom_id], references: [id], onDelete: Restrict, map: "fk_encounter_symptom_master")
+  employees         employees? @relation("fk_encounter_symptom_doctor", fields: [recorded_by], references: [employee_id], onDelete: Restrict)
+
+  @@unique([encounter_no, symptom_id, status], map: "uq_encounter_symptom_active")
+  @@index([encounter_no], map: "idx_encounter_symptom_encounter")
+  @@index([symptom_id], map: "idx_encounter_symptom_symptom")
+  @@index([status], map: "idx_encounter_symptom_status")
+}
+
+/// Patient-level longitudinal allergies (not encounter-specific)
+model patient_allergy {
+  id              BigInt   @id @default(autoincrement())
+  patient_id      String   @db.VarChar(20)
+  allergy_id      BigInt   @db.BigInt
+  reaction        String?  @db.VarChar(500)
+  severity        String?  @db.VarChar(30)
+  status          String   @default("ACTIVE") @db.VarChar(20)
+  identified_at   DateTime @default(now()) @db.Timestamp(6)
+  identified_by   String?  @db.VarChar(20)
+  identified_at_encounter_no String? @db.VarChar(30)
+  clinical_notes  String?  @db.VarChar(1000)
+  updated_at      DateTime @default(now()) @db.Timestamp(6)
+  updated_by      String?  @db.VarChar(20)
+  patient_bio_data patient_bio_data @relation("fk_patient_allergy_patient", fields: [patient_id], references: [patient_id], onDelete: Restrict)
+  allergy_master  allergy_master @relation(fields: [allergy_id], references: [id], onDelete: Restrict, map: "fk_patient_allergy_master")
+  employees       employees? @relation("fk_patient_allergy_doctor", fields: [identified_by], references: [employee_id], onDelete: Restrict)
+  encounter       encounter? @relation("fk_patient_allergy_encounter", fields: [identified_at_encounter_no], references: [encounter_no], onDelete: Restrict)
+
+  @@unique([patient_id, allergy_id, status], map: "uq_patient_allergy_active")
+  @@index([patient_id], map: "idx_patient_allergy_patient")
+  @@index([allergy_id], map: "idx_patient_allergy_allergy")
+  @@index([status], map: "idx_patient_allergy_status")
+}
+
+/// Patient-level longitudinal comorbidities (using existing diagnosis as reference)
+model patient_comorbidity {
+  id                BigInt   @id @default(autoincrement())
+  patient_id        String   @db.VarChar(20)
+  diagnosis_id      String   @db.VarChar(20)
+  status            String   @default("ACTIVE") @db.VarChar(20)
+  onset_date        DateTime? @db.Date
+  identified_at     DateTime @default(now()) @db.Timestamp(6)
+  identified_by     String?  @db.VarChar(20)
+  identified_at_encounter_no String? @db.VarChar(30)
+  clinical_notes    String?  @db.VarChar(1000)
+  updated_at        DateTime @default(now()) @db.Timestamp(6)
+  updated_by        String?  @db.VarChar(20)
+  patient_bio_data  patient_bio_data @relation("fk_patient_comorbidity_patient", fields: [patient_id], references: [patient_id], onDelete: Restrict)
+  diagnosis         diagnosis @relation("fk_patient_comorbidity_diagnosis", fields: [diagnosis_id], references: [diagnosis_id], onDelete: Restrict)
+  employees         employees? @relation("fk_patient_comorbidity_doctor", fields: [identified_by], references: [employee_id], onDelete: Restrict)
+  encounter         encounter? @relation("fk_patient_comorbidity_encounter", fields: [identified_at_encounter_no], references: [encounter_no], onDelete: Restrict)
+
+  @@unique([patient_id, diagnosis_id, status], map: "uq_patient_comorbidity_active")
+  @@index([patient_id], map: "idx_patient_comorbidity_patient")
+  @@index([diagnosis_id], map: "idx_patient_comorbidity_diagnosis")
+  @@index([status], map: "idx_patient_comorbidity_status")
 }
 
 enum LeaveStatus {

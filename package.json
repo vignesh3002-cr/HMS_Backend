@@ -10,7 +10,8 @@
     "db:seed": "ts-node prisma/seed.ts",
     "db:seed:oncology": "ts-node prisma/seedOncology.ts",
     "db:seed:chemo-drugs": "ts-node prisma/seedChemoDrugs.ts",
-    "db:seed:regimen-protocols": "ts-node prisma/seedRegimenProtocols.ts"
+    "db:seed:regimen-protocols": "ts-node prisma/seedRegimenProtocols.ts",
+    "db:seed:clinical-master": "ts-node prisma/seedClinical_Master_Details.ts"
   },
   "keywords": [],
   "author": "",
