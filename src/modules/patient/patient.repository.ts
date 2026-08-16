@@ -51,6 +51,8 @@ export class PatientRepository {
             patientType,
             status,
             search,
+            dateFrom,
+            dateTo,
             page = 1,
             limit = 10
         } = query;
@@ -67,6 +69,15 @@ export class PatientRepository {
 
         if (status) {
             where.patient_active = status;
+        }
+
+        if (dateFrom || dateTo) {
+            where.user_table = {
+                created_at: {
+                    ...(dateFrom && { gte: new Date(dateFrom) }),
+                    ...(dateTo && { lte: new Date(dateTo + "T23:59:59.999Z") })
+                }
+            };
         }
 
         if (search) {

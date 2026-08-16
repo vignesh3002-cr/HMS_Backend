@@ -13,6 +13,17 @@ export const initiateTransferValidation = [
     param("employeeId")
         .notEmpty(),
 
+    body("mode")
+        .notEmpty()
+        .withMessage("mode is required")
+        .isIn(["TRANSFER", "ADD_BRANCH"])
+        .withMessage("mode must be one of: TRANSFER, ADD_BRANCH"),
+
+    body("old_branch_id")
+        .if(body("mode").equals("TRANSFER"))
+        .notEmpty()
+        .withMessage("From branch (old_branch_id) is required for a transfer"),
+
     body("new_branch_id")
         .notEmpty()
         .withMessage("New branch is required"),
@@ -70,6 +81,10 @@ export const confirmTransferValidation = [
         .notEmpty()
         .isIn(TRANSFER_ACTION_VALUES)
         .withMessage(`action must be one of: ${TRANSFER_ACTION_VALUES.join(", ")}`),
+
+    body("old_branch_id")
+        .optional()
+        .notEmpty(),
 
     body("replacement_employee_id")
         .if(body("action").equals("TRANSFER"))

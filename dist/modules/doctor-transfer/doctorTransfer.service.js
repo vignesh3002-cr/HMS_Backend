@@ -87,11 +87,17 @@ class DoctorTransferService {
     // has stays untouched. If closing those rows leaves a branch with zero
     // active schedules, that branch's mapping is closed too so the doctor
     // doesn't appear "assigned" somewhere they no longer have any hours.
+    //
+    // When old_branch_id is set (a true TRANSFER, not an add-branch), the
+    // source branch is closed ENTIRELY on top of that: every remaining
+    // active schedule at the old branch is deactivated and the source
+    // mapping is flipped to status 0 unconditionally, so the doctor stops
+    // appearing at that branch in every status-filtered read.
     async applyDoctorScheduleMove(tx, params) {
         const now = new Date();
         if (params.closing_schedule_ids.length > 0) {
             const closingSchedules = await this.repository.findSchedulesByIds(tx, params.closing_schedule_ids);
-            await this.repository.closeSchedulesByIds(tx, params.closing_schedule_ids, now);
+            await this.repository.closeSchedulesByIds(tx, params.closing_schedule_ids, now, params.deletedBy);
             const affectedBranchIds = Array.from(new Set(closingSchedules.map((s) => s.branch_id)));
             for (const branchId of affectedBranchIds) {
                 if (branchId === params.new_branch_id) {
@@ -99,18 +105,24 @@ class DoctorTransferService {
                 }
                 const remaining = await this.repository.countActiveSchedulesAtBranch(tx, params.employee_id, branchId);
                 if (remaining === 0) {
-                    await this.repository.closeBranchMapping(tx, params.employee_id, branchId, now);
+                    await this.repository.closeBranchMapping(tx, params.employee_id, branchId, now, params.employee_user_id);
                 }
             }
         }
-        const existingNewBranchMapping = await this.repository.findActiveBranchMapping(params.employee_id, params.new_branch_id);
+        // True transfer: the doctor is leaving the source branch entirely -
+        // close whatever schedules remain there (conflicting ones were
+        // already closed above) and deactivate the source mapping (status 0).
+        if (params.old_branch_id && params.old_branch_id !== params.new_branch_id) {
+            await this.repository.closeSchedulesAtBranch(tx, params.employee_id, params.old_branch_id, now, params.deletedBy);
+            await this.repository.closeBranchMapping(tx, params.employee_id, params.old_branch_id, now, params.employee_user_id);
+        }
+        const existingNewBranchMapping = await this.repository.findActiveBranchMapping(params.employee_id, params.new_branch_id, params.employee_user_id);
         if (!existingNewBranchMapping) {
             await this.repository.createBranchMapping(tx, {
                 user_id: params.employee_user_id,
                 branch_id: params.new_branch_id,
                 employee_id: params.employee_id,
                 status: 1,
-                is_primary_branch: !params.employee_branch_id,
                 effective_from: params.effective_date,
                 assigned_date: now
             });
@@ -188,8 +200,29 @@ class DoctorTransferService {
     }
     async initiateTransfer(employeeId, dto, requestedBy) {
         const employee = await this.resolveDoctor(employeeId);
+        const mode = dto.mode ?? "ADD_BRANCH";
         if (!dto.new_branch_id) {
             throw new Error("New branch is required");
+        }
+        let oldBranchId = null;
+        if (mode === "TRANSFER") {
+            // Rule: a transfer must always have a real FROM branch - "None"
+            // is not a valid source. Leaving no source is the Add Branch
+            // operation (mode === "ADD_BRANCH"), never a transfer.
+            if (!dto.old_branch_id) {
+                throw new Error("From branch is required for a transfer");
+            }
+            oldBranchId = dto.old_branch_id;
+            if (oldBranchId === dto.new_branch_id) {
+                throw new Error("From and To branches must be different");
+            }
+            // The source must be one of the doctor's ACTIVE assignments
+            // (user_branch_mapping status 1) - you can't transfer a doctor
+            // away from a branch they aren't currently on.
+            const sourceMapping = await this.repository.findActiveBranchMapping(employeeId, oldBranchId, employee.user_id);
+            if (!sourceMapping) {
+                throw new Error("Doctor is not assigned to the source branch");
+            }
         }
         const newBranch = await this.repository.findActiveBranch(dto.new_branch_id);
         if (!newBranch) {
@@ -227,6 +260,19 @@ class DoctorTransferService {
         const activeSchedules = await this.repository.findAllActiveSchedules(employeeId);
         const conflictingSchedules = this.findConflictingSchedules(activeSchedules, dto.working_hours);
         const closingScheduleIds = conflictingSchedules.map((s) => s.schedule_id);
+        // A TRANSFER also closes every schedule the doctor still has at the
+        // source branch - they are leaving that branch entirely, not just
+        // the slots that clash with the new hours. Those schedules' future
+        // appointments flow through the same preview/confirm protection
+        // as conflicting ones.
+        if (mode === "TRANSFER" && oldBranchId) {
+            for (const schedule of activeSchedules) {
+                if (schedule.branch_id === oldBranchId &&
+                    !closingScheduleIds.includes(schedule.schedule_id)) {
+                    closingScheduleIds.push(schedule.schedule_id);
+                }
+            }
+        }
         const completeImmediately = async (affectedCount) => prisma_1.default.$transaction(async (tx) => {
             const transferId = await this.repository.generateTransferId(tx);
             const now = new Date();
@@ -234,11 +280,13 @@ class DoctorTransferService {
                 employee_id: employeeId,
                 employee_user_id: employee.user_id,
                 employee_branch_id: employee.branch_id,
+                old_branch_id: oldBranchId,
                 new_branch_id: dto.new_branch_id,
                 new_department_id: newDepartmentId,
                 effective_date: effectiveDate,
                 new_schedule: scheduleSnapshot,
-                closing_schedule_ids: closingScheduleIds
+                closing_schedule_ids: closingScheduleIds,
+                deletedBy: mode === "TRANSFER" ? requestedBy : null
             });
             return this.repository.createDoctorTransfer(tx, {
                 transfer_id: transferId,
@@ -307,8 +355,18 @@ class DoctorTransferService {
             actions_required: doctorTransfer_constants_1.TRANSFER_ACTION_VALUES
         };
     }
-    async transferSingleAppointment(tx, appointment, replacementEmployeeId, replacementEmployee, targetBranchId) {
+    async transferSingleAppointment(tx, appointment, replacementEmployeeId, replacementEmployee, replacementUserId, targetBranchId) {
         const dayOfWeek = (0, appointment_utils_1.toDayOfWeek)(appointment.appointment_date);
+        // The replacement must be ACTIVELY assigned to the target branch
+        // (user_branch_mapping status 1) — a schedule alone is not an
+        // assignment; only mapped doctors can take over appointments there.
+        const targetMapping = await this.repository.findActiveBranchMapping(replacementEmployeeId, targetBranchId, replacementUserId);
+        if (!targetMapping) {
+            return {
+                success: false,
+                notes: `Replacement doctor is not assigned to branch ${targetBranchId}`
+            };
+        }
         const schedules = await tx.doctor_schedule.findMany({
             where: {
                 employee_id: replacementEmployeeId,
@@ -377,6 +435,12 @@ class DoctorTransferService {
         if (transfer.status !== doctorTransfer_constants_1.TRANSFER_STATUS.PENDING_CONFIRMATION) {
             throw new Error(`Transfer has already been processed (status: ${transfer.status})`);
         }
+        // The source branch travels with the confirm payload (no schema
+        // change) so the pending path can close it exactly like the
+        // immediate-complete path does at initiate time.
+        if (dto.old_branch_id && transfer.new_branch_id === dto.old_branch_id) {
+            throw new Error("From and To branches must be different");
+        }
         const employee = await this.resolveDoctor(employeeId);
         let replacementEmployee = null;
         if (dto.action === doctorTransfer_constants_1.TRANSFER_ACTION.TRANSFER) {
@@ -428,7 +492,7 @@ class DoctorTransferService {
                     // admin explicitly wants to relocate everyone to a
                     // different branch via replacement_branch_id.
                     const targetBranchId = dto.replacement_branch_id ?? appointment.branch_id;
-                    const outcome = await this.transferSingleAppointment(tx, appointment, dto.replacement_employee_id, replacementEmployee, targetBranchId);
+                    const outcome = await this.transferSingleAppointment(tx, appointment, dto.replacement_employee_id, replacementEmployee, replacementEmployee.user_id, targetBranchId);
                     if (!outcome.success) {
                         await this.repository.updateAppointment(tx, appointment.appointment_id, {
                             status: appointment_constants_1.APPOINTMENT_STATUS.TRANSFER_REVIEW_REQUIRED
@@ -538,11 +602,13 @@ class DoctorTransferService {
                 employee_id: employeeId,
                 employee_user_id: employee.user_id,
                 employee_branch_id: employee.branch_id,
+                old_branch_id: dto.old_branch_id ?? null,
                 new_branch_id: transfer.new_branch_id,
                 new_department_id: transfer.new_department_id,
                 effective_date: transfer.effective_date,
                 new_schedule: transfer.new_schedule,
-                closing_schedule_ids: transfer.closing_schedule_ids
+                closing_schedule_ids: transfer.closing_schedule_ids,
+                deletedBy: dto.action === doctorTransfer_constants_1.TRANSFER_ACTION.TRANSFER ? confirmedBy : null
             });
             const now = new Date();
             return this.repository.updateDoctorTransfer(tx, transfer.transfer_id, {
@@ -589,7 +655,7 @@ class DoctorTransferService {
             if (!branch) {
                 throw new Error("Branch not found or inactive");
             }
-            const mapping = await this.repository.findActiveBranchMapping(dto.employee_id, dto.branch_id);
+            const mapping = await this.repository.findActiveBranchMapping(dto.employee_id, dto.branch_id, employee.user_id);
             if (!mapping) {
                 throw new Error("Doctor is not assigned to the selected branch");
             }

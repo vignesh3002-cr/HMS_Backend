@@ -183,7 +183,6 @@ export class BranchService {
             branch_id: branchId,
             employee_id: adminEmployee.employee_id,
             status: 1,
-            is_primary_branch: true,
           },
         });
       } else if (data.admin_mode === "EXISTING") {
@@ -196,7 +195,6 @@ export class BranchService {
           },
           data: {
             status: 0,
-            is_primary_branch: false,
           },
         });
 
@@ -206,7 +204,6 @@ export class BranchService {
             user_id: data.admin_user_id!,
             branch_id: branchId,
             status: 1,
-            is_primary_branch: true,
           },
         });
 

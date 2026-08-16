@@ -575,7 +575,17 @@ for (const group of scheduleGroups) {
 }
 const employeesWithBranches = employees.map((emp) => {
     const hasScheduleFor = scheduleBranchesByEmployee.get(emp.employee_id ?? "") ?? new Set<string>();
-    const assignedBranches = (emp.user_branch_mapping ?? []).map((m) => ({
+    // Collapse duplicate active mappings for the same branch to the first
+    // row so the same branch never renders twice for one employee.
+    const seenBranchIds = new Set<string>();
+    const assignedBranches = (emp.user_branch_mapping ?? [])
+        .filter((m) => {
+            const id = m.branch.branch_id;
+            if (seenBranchIds.has(id)) return false;
+            seenBranchIds.add(id);
+            return true;
+        })
+        .map((m) => ({
         branch_id: m.branch.branch_id,
         branch_name: m.branch.branch_name,
         branch_area: m.branch.branch_area,
@@ -648,12 +658,19 @@ async getEmployeeById(
         );
  
     }
+    // Only ACTIVE mappings (status 1) are real, current assignments —
+    // deactivated/historical rows (status 0) must never surface as the
+    // doctor's branches. Duplicate active rows for the same branch (left
+    // behind by transfer cycles) are collapsed to the newest one so the
+    // UI can never render the same branch twice.
     const branches =
 await prisma.user_branch_mapping.findMany({
 
     where:{
 
-        user_id: employee.user_id!
+        user_id: employee.user_id!,
+
+        status: 1,
 
     },
 
@@ -681,6 +698,16 @@ await prisma.doctor_schedule.groupBy({
     _count: { _all: true },
 });
 const detailScheduleBranches = new Set(detailScheduleGroups.map((g) => g.branch_id));
+// Collapse duplicate active mappings for the same branch to the newest
+// row (list is already ordered assigned_date desc) — a doctor must never
+// appear mapped to the same branch twice.
+const seenBranchIds = new Set<string>();
+const uniqueBranches = branches.filter((x) => {
+    const id = x.branch.branch_id;
+    if (seenBranchIds.has(id)) return false;
+    seenBranchIds.add(id);
+    return true;
+});
 const response:any={
 
     employee,
@@ -695,15 +722,13 @@ const response:any={
     // one in a Branch Admin's history, e.g. to suggest their last branch
     // when reactivating them.
     branches:
-        branches.map(x=>({
+        uniqueBranches.map(x=>({
 
             branch_id:x.branch.branch_id,
 
             branch_name:x.branch.branch_name,
 
             status:x.status,
-
-            is_primary_branch:x.is_primary_branch ?? false,
 
             has_schedule:detailScheduleBranches.has(x.branch.branch_id),
 

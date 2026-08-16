@@ -198,7 +198,6 @@ class BranchRepository {
                 },
                 data: {
                     status: 0,
-                    is_primary_branch: false,
                 },
             });
             // ...and a branch belongs to one Branch Admin at a time — evict
@@ -213,7 +212,6 @@ class BranchRepository {
                 },
                 data: {
                     status: 0,
-                    is_primary_branch: false,
                 },
             });
             // Move the admin's single employees row to this branch, creating one
@@ -258,7 +256,6 @@ class BranchRepository {
                     where: { id: existingMapping.id },
                     data: {
                         status: 1,
-                        is_primary_branch: true,
                         employee_id: employeeId,
                     },
                 });
@@ -270,7 +267,6 @@ class BranchRepository {
                         branch_id: branchId,
                         employee_id: employeeId,
                         status: 1,
-                        is_primary_branch: true,
                     },
                 });
             }
@@ -286,7 +282,6 @@ class BranchRepository {
             },
             data: {
                 status: 0,
-                is_primary_branch: false,
             },
         });
     }

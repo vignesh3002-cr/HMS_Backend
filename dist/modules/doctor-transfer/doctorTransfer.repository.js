@@ -41,15 +41,29 @@ class DoctorTransferRepository {
             }
         });
     }
-    async findAnyActiveBranchMapping(employeeId) {
+    // Match on employee_id OR user_id: mappings created before the
+    // employee_id column was populated may only carry user_id.
+    mappingWhere(employeeId, userId) {
+        return userId
+            ? { OR: [{ employee_id: employeeId }, { user_id: userId }] }
+            : { employee_id: employeeId };
+    }
+    async findAnyActiveBranchMapping(employeeId, userId) {
         return prisma_1.default.user_branch_mapping.findFirst({
-            where: { employee_id: employeeId, status: 1 },
+            where: {
+                ...this.mappingWhere(employeeId, userId),
+                status: 1
+            },
             orderBy: { assigned_date: "desc" }
         });
     }
-    async findActiveBranchMapping(employeeId, branchId) {
+    async findActiveBranchMapping(employeeId, branchId, userId) {
         return prisma_1.default.user_branch_mapping.findFirst({
-            where: { employee_id: employeeId, branch_id: branchId, status: 1 }
+            where: {
+                ...this.mappingWhere(employeeId, userId),
+                branch_id: branchId,
+                status: 1
+            }
         });
     }
     async findActiveBranch(branchId) {
@@ -74,7 +88,10 @@ class DoctorTransferRepository {
     }
     // Doctors, other than the one being transferred, currently working this
     // exact branch/day/department - candidates the service filters further
-    // by time overlap with the specific appointment slot.
+    // by time overlap with the specific appointment slot. Only doctors with
+    // an ACTIVE user_branch_mapping (status 1) at this branch qualify —
+    // schedules alone are not an assignment (rule: mapping is the source
+    // of truth for branch visibility).
     async findEligibleReplacementCandidates(branchId, departmentId, excludeEmployeeId, dayOfWeek) {
         return prisma_1.default.doctor_schedule.findMany({
             where: {
@@ -85,7 +102,10 @@ class DoctorTransferRepository {
                 employees: {
                     department_id: departmentId,
                     emp_status: { not: false },
-                    user_table: { role_type: "DOCTOR" }
+                    user_table: { role_type: "DOCTOR" },
+                    user_branch_mapping: {
+                        some: { branch_id: branchId, status: 1 }
+                    }
                 }
             },
             include: {
@@ -205,9 +225,13 @@ class DoctorTransferRepository {
             where: { transfer_id: transferId }
         });
     }
-    async closeBranchMapping(tx, employeeId, branchId, effectiveTo) {
+    async closeBranchMapping(tx, employeeId, branchId, effectiveTo, userId) {
         await tx.user_branch_mapping.updateMany({
-            where: { employee_id: employeeId, branch_id: branchId, status: 1 },
+            where: {
+                ...this.mappingWhere(employeeId, userId),
+                branch_id: branchId,
+                status: 1
+            },
             data: { status: 0, effective_to: effectiveTo }
         });
     }
@@ -220,10 +244,19 @@ class DoctorTransferRepository {
             select: { schedule_id: true, branch_id: true }
         });
     }
-    async closeSchedulesByIds(tx, scheduleIds, effectiveTo) {
+    async closeSchedulesByIds(tx, scheduleIds, effectiveTo, deletedBy) {
         await tx.doctor_schedule.updateMany({
             where: { schedule_id: { in: scheduleIds } },
-            data: { is_active: false, effective_to: effectiveTo }
+            data: { is_active: false, effective_to: effectiveTo, ...(deletedBy ? { deleted_by: deletedBy } : {}) }
+        });
+    }
+    // Closes EVERY active schedule a doctor still has at one branch — used
+    // when a doctor is actually transferred away from a branch, so no active
+    // slot keeps them visible/available there (mapping alone is closed too).
+    async closeSchedulesAtBranch(tx, employeeId, branchId, effectiveTo, deletedBy) {
+        await tx.doctor_schedule.updateMany({
+            where: { employee_id: employeeId, branch_id: branchId, is_active: true },
+            data: { is_active: false, effective_to: effectiveTo, ...(deletedBy ? { deleted_by: deletedBy } : {}) }
         });
     }
     async countActiveSchedulesAtBranch(tx, employeeId, branchId) {

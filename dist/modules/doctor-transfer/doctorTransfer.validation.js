@@ -8,6 +8,15 @@ const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 exports.initiateTransferValidation = [
     (0, express_validator_1.param)("employeeId")
         .notEmpty(),
+    (0, express_validator_1.body)("mode")
+        .notEmpty()
+        .withMessage("mode is required")
+        .isIn(["TRANSFER", "ADD_BRANCH"])
+        .withMessage("mode must be one of: TRANSFER, ADD_BRANCH"),
+    (0, express_validator_1.body)("old_branch_id")
+        .if((0, express_validator_1.body)("mode").equals("TRANSFER"))
+        .notEmpty()
+        .withMessage("From branch (old_branch_id) is required for a transfer"),
     (0, express_validator_1.body)("new_branch_id")
         .notEmpty()
         .withMessage("New branch is required"),
@@ -51,6 +60,9 @@ exports.confirmTransferValidation = [
         .notEmpty()
         .isIn(doctorTransfer_constants_1.TRANSFER_ACTION_VALUES)
         .withMessage(`action must be one of: ${doctorTransfer_constants_1.TRANSFER_ACTION_VALUES.join(", ")}`),
+    (0, express_validator_1.body)("old_branch_id")
+        .optional()
+        .notEmpty(),
     (0, express_validator_1.body)("replacement_employee_id")
         .if((0, express_validator_1.body)("action").equals("TRANSFER"))
         .notEmpty()
