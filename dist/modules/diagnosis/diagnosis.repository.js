@@ -12,6 +12,10 @@ class DiagnosisRepository {
         if (activeOnly) {
             where.active_status = 1;
         }
+        // Rows without a category can't be fetched via
+        // GET /categories/:categoryId/diagnoses, so exclude them here.
+        // Otherwise the client ends up requesting "/categories//diagnoses".
+        where.diagnosis_catogory_id = { not: null };
         if (search) {
             where.OR = [
                 { diagnosis_category: { contains: search, mode: "insensitive" } },
@@ -35,7 +39,9 @@ class DiagnosisRepository {
             by: ["diagnosis_catogory_id", "diagnosis_category"],
             where,
         });
-        const formattedCategories = categories.map((cat) => ({
+        const formattedCategories = categories
+            .filter((cat) => cat.diagnosis_catogory_id)
+            .map((cat) => ({
             diagnosis_catogory_id: cat.diagnosis_catogory_id ?? "",
             diagnosis_category: cat.diagnosis_category ?? "Uncategorized",
             count: cat._count.diagnosis_id,

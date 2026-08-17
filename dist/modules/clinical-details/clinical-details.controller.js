@@ -5,7 +5,14 @@ const express_validator_1 = require("express-validator");
 const clinical_details_service_1 = require("./clinical-details.service");
 const service = new clinical_details_service_1.ClinicalDetailsService();
 function getUserIdentifier(req) {
-    return req.user?.user_id || req.user?.employee_id || 'SYSTEM';
+    return req.user?.employee_id || req.user?.user_id || 'SYSTEM';
+}
+// Columns like assessed_by/recorded_by/identified_by FK to
+// employees.employee_id - user_id (the JWT subject) is a different ID space
+// and 'SYSTEM' isn't a real employee either, so return null unless the user
+// actually has an employee profile.
+function getEmployeeIdentifier(req) {
+    return req.user?.employee_id ?? null;
 }
 function getUserRole(req) {
     return String(req.user?.role || '').toUpperCase();
@@ -269,8 +276,9 @@ class ClinicalDetailsController {
                     errors: errors.array(),
                 });
             }
-            const assessedBy = getUserIdentifier(req);
-            const perfStatus = await service.setEncounterPerformanceStatus(req.body, assessedBy);
+            const assessedBy = getEmployeeIdentifier(req);
+            const encounterNo = req.params.encounterNo;
+            const perfStatus = await service.setEncounterPerformanceStatus({ ...req.body, encounterNo }, assessedBy);
             return res.json({
                 success: true,
                 message: 'Encounter performance status updated successfully',
@@ -326,8 +334,9 @@ class ClinicalDetailsController {
                     errors: errors.array(),
                 });
             }
-            const recordedBy = getUserIdentifier(req);
-            const symptom = await service.addEncounterSymptom(req.body, recordedBy);
+            const recordedBy = getEmployeeIdentifier(req);
+            const encounterNo = req.params.encounterNo;
+            const symptom = await service.addEncounterSymptom({ ...req.body, encounterNo }, recordedBy);
             return res.status(201).json({
                 success: true,
                 message: 'Encounter symptom added successfully',
@@ -431,7 +440,7 @@ class ClinicalDetailsController {
                 });
             }
             const patientId = req.params.patientId;
-            const identifiedBy = getUserIdentifier(req);
+            const identifiedBy = getEmployeeIdentifier(req);
             const allergy = await service.addPatientAllergy(patientId, req.body, identifiedBy);
             return res.status(201).json({
                 success: true,
@@ -538,7 +547,7 @@ class ClinicalDetailsController {
                 });
             }
             const patientId = req.params.patientId;
-            const identifiedBy = getUserIdentifier(req);
+            const identifiedBy = getEmployeeIdentifier(req);
             const comorbidity = await service.addPatientComorbidity(patientId, req.body, identifiedBy);
             return res.status(201).json({
                 success: true,

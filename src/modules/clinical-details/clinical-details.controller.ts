@@ -5,7 +5,15 @@ import { ClinicalDetailsService } from './clinical-details.service';
 const service = new ClinicalDetailsService();
 
 function getUserIdentifier(req: Request): string {
-    return (req as any).user?.user_id || (req as any).user?.employee_id || 'SYSTEM';
+    return (req as any).user?.employee_id || (req as any).user?.user_id || 'SYSTEM';
+}
+
+// Columns like assessed_by/recorded_by/identified_by FK to
+// employees.employee_id - user_id (the JWT subject) is a different ID space
+// and 'SYSTEM' isn't a real employee either, so return null unless the user
+// actually has an employee profile.
+function getEmployeeIdentifier(req: Request): string | null {
+    return (req as any).user?.employee_id ?? null;
 }
 
 function getUserRole(req: Request): string {
@@ -293,8 +301,12 @@ export class ClinicalDetailsController {
                 });
             }
 
-            const assessedBy = getUserIdentifier(req);
-            const perfStatus = await service.setEncounterPerformanceStatus(req.body, assessedBy);
+            const assessedBy = getEmployeeIdentifier(req);
+            const encounterNo = req.params.encounterNo as string;
+            const perfStatus = await service.setEncounterPerformanceStatus(
+                { ...req.body, encounterNo },
+                assessedBy
+            );
 
             return res.json({
                 success: true,
@@ -355,8 +367,12 @@ export class ClinicalDetailsController {
                 });
             }
 
-            const recordedBy = getUserIdentifier(req);
-            const symptom = await service.addEncounterSymptom(req.body, recordedBy);
+            const recordedBy = getEmployeeIdentifier(req);
+            const encounterNo = req.params.encounterNo as string;
+            const symptom = await service.addEncounterSymptom(
+                { ...req.body, encounterNo },
+                recordedBy
+            );
 
             return res.status(201).json({
                 success: true,
@@ -473,7 +489,7 @@ export class ClinicalDetailsController {
             }
 
             const patientId = req.params.patientId as string;
-            const identifiedBy = getUserIdentifier(req);
+            const identifiedBy = getEmployeeIdentifier(req);
             const allergy = await service.addPatientAllergy(patientId, req.body, identifiedBy);
 
             return res.status(201).json({
@@ -588,7 +604,7 @@ export class ClinicalDetailsController {
             }
 
             const patientId = req.params.patientId as string;
-            const identifiedBy = getUserIdentifier(req);
+            const identifiedBy = getEmployeeIdentifier(req);
             const comorbidity = await service.addPatientComorbidity(patientId, req.body, identifiedBy);
 
             return res.status(201).json({
