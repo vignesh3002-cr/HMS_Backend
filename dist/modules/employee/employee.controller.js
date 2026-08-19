@@ -120,6 +120,7 @@ class EmployeeController {
                 page: req.query.page ? Number(req.query.page) : 1,
                 limit: req.query.limit ? Number(req.query.limit) : 10,
                 excludeEmployeeId: undefined,
+                date: req.query.date,
             };
             // Admins never see their own record in employee lists - self
             // management happens only through the read-only own profile.

@@ -15,17 +15,42 @@ export class DoctorScheduleRepository {
         reason?: string | null;
         created_by?: string | null;
     }) {
+        const now = new Date();
+
         return prisma.doctor_schedule_change.create({
             data: {
-                employee_id: data.employee_id,
-                branch_id: data.branch_id,
-                change_date: data.change_date,
-                mode: data.mode,
-                start_time: data.start_time ?? null,
-                end_time: data.end_time ?? null,
-                reason: data.reason ?? null,
-                created_by: data.created_by ?? null,
-                is_active: true,
+                employee_id:
+                    data.employee_id,
+
+                branch_id:
+                    data.branch_id,
+
+                change_date:
+                    data.change_date,
+
+                mode:
+                    data.mode,
+
+                start_time:
+                    data.start_time ?? null,
+
+                end_time:
+                    data.end_time ?? null,
+
+                reason:
+                    data.reason ?? null,
+
+                created_by:
+                    data.created_by ?? null,
+
+                is_active:
+                    true,
+
+                /**
+                 * Prisma schema requires updated_at.
+                 */
+                updated_at:
+                    now,
             },
         });
     }
@@ -38,15 +63,21 @@ export class DoctorScheduleRepository {
     ) {
         return prisma.doctor_schedule_change.findMany({
             where: {
-                employee_id: employeeId,
-                is_active: true,
+                employee_id:
+                    employeeId,
+
+                is_active:
+                    true,
             },
+
             orderBy: [
                 {
-                    change_date: "asc",
+                    change_date:
+                        "asc",
                 },
                 {
-                    created_at: "asc",
+                    created_at:
+                        "asc",
                 },
             ],
         });
@@ -62,12 +93,19 @@ export class DoctorScheduleRepository {
     ) {
         return prisma.doctor_schedule_change.findMany({
             where: {
-                employee_id: employeeId,
-                change_date: date,
-                is_active: true,
+                employee_id:
+                    employeeId,
+
+                change_date:
+                    date,
+
+                is_active:
+                    true,
             },
+
             orderBy: {
-                created_at: "asc",
+                created_at:
+                    "asc",
             },
         });
     }
@@ -80,7 +118,8 @@ export class DoctorScheduleRepository {
     ) {
         return prisma.doctor_schedule_change.findUnique({
             where: {
-                change_id: changeId,
+                change_id:
+                    changeId,
             },
         });
     }
@@ -97,19 +136,31 @@ export class DoctorScheduleRepository {
     ) {
         return prisma.doctor_schedule_change.findMany({
             where: {
-                employee_id: employeeId,
-                branch_id: branchId,
-                change_date: date,
-                is_active: true,
+                employee_id:
+                    employeeId,
+
+                branch_id:
+                    branchId,
+
+                change_date:
+                    date,
+
+                is_active:
+                    true,
             },
+
             orderBy: {
-                created_at: "asc",
+                created_at:
+                    "asc",
             },
         });
     }
 
     /**
      * Update an existing schedule change.
+     *
+     * updated_at is also refreshed whenever the
+     * record is modified.
      */
     async updateScheduleChange(
         changeId: bigint,
@@ -124,32 +175,46 @@ export class DoctorScheduleRepository {
     ) {
         return prisma.doctor_schedule_change.update({
             where: {
-                change_id: changeId,
+                change_id:
+                    changeId,
             },
+
             data: {
                 ...(data.change_date !== undefined && {
-                    change_date: data.change_date,
+                    change_date:
+                        data.change_date,
                 }),
 
                 ...(data.mode !== undefined && {
-                    mode: data.mode,
+                    mode:
+                        data.mode,
                 }),
 
                 ...(data.start_time !== undefined && {
-                    start_time: data.start_time,
+                    start_time:
+                        data.start_time,
                 }),
 
                 ...(data.end_time !== undefined && {
-                    end_time: data.end_time,
+                    end_time:
+                        data.end_time,
                 }),
 
                 ...(data.reason !== undefined && {
-                    reason: data.reason,
+                    reason:
+                        data.reason,
                 }),
 
                 ...(data.is_active !== undefined && {
-                    is_active: data.is_active,
+                    is_active:
+                        data.is_active,
                 }),
+
+                /**
+                 * Keep updated_at current.
+                 */
+                updated_at:
+                    new Date(),
             },
         });
     }
@@ -165,10 +230,16 @@ export class DoctorScheduleRepository {
     ) {
         return prisma.doctor_schedule_change.update({
             where: {
-                change_id: changeId,
+                change_id:
+                    changeId,
             },
+
             data: {
-                is_active: false,
+                is_active:
+                    false,
+
+                updated_at:
+                    new Date(),
             },
         });
     }
@@ -181,7 +252,8 @@ export class DoctorScheduleRepository {
     ) {
         return prisma.employees.findUnique({
             where: {
-                employee_id: employeeId,
+                employee_id:
+                    employeeId,
             },
         });
     }
@@ -194,7 +266,8 @@ export class DoctorScheduleRepository {
     ) {
         return prisma.branch.findUnique({
             where: {
-                branch_id: branchId,
+                branch_id:
+                    branchId,
             },
         });
     }
@@ -208,8 +281,11 @@ export class DoctorScheduleRepository {
     ) {
         return prisma.user_branch_mapping.findFirst({
             where: {
-                employee_id: employeeId,
-                branch_id: branchId,
+                employee_id:
+                    employeeId,
+
+                branch_id:
+                    branchId,
             },
         });
     }
@@ -225,13 +301,22 @@ export class DoctorScheduleRepository {
     ) {
         return prisma.doctor_schedule.findMany({
             where: {
-                employee_id: employeeId,
-                branch_id: branchId,
-                day_of_week: dayOfWeek,
-                is_active: true,
+                employee_id:
+                    employeeId,
+
+                branch_id:
+                    branchId,
+
+                day_of_week:
+                    dayOfWeek,
+
+                is_active:
+                    true,
             },
+
             orderBy: {
-                start_time: "asc",
+                start_time:
+                    "asc",
             },
         });
     }

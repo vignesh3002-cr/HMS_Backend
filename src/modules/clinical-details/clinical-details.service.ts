@@ -160,7 +160,7 @@ export class ClinicalDetailsService {
         return repository.getAllergies(query);
     }
 
-    async setEncounterPerformanceStatus(data: EncounterPerformanceStatusDTO, assessedBy: string) {
+    async setEncounterPerformanceStatus(data: EncounterPerformanceStatusDTO, assessedBy: string | null) {
         const encounter = await repository.findEncounterByNo(data.encounterNo);
         if (!encounter) {
             throw new Error('Encounter not found');
@@ -189,7 +189,7 @@ export class ClinicalDetailsService {
         return repository.findEncounterPerformanceStatus(encounterNo);
     }
 
-    async addEncounterSymptom(data: EncounterSymptomDTO, recordedBy: string) {
+    async addEncounterSymptom(data: EncounterSymptomDTO, recordedBy: string | null) {
         const encounter = await repository.findEncounterByNo(data.encounterNo);
         if (!encounter) {
             throw new Error('Encounter not found');
@@ -275,7 +275,7 @@ export class ClinicalDetailsService {
         });
     }
 
-    async addPatientAllergy(patientId: string, data: PatientAllergyDTO, identifiedBy: string) {
+    async addPatientAllergy(patientId: string, data: PatientAllergyDTO, identifiedBy: string | null) {
         const patient = await prisma.patient_bio_data.findUnique({
             where: { patient_id: patientId },
         });
@@ -362,7 +362,7 @@ export class ClinicalDetailsService {
         });
     }
 
-    async addPatientComorbidity(patientId: string, data: PatientComorbidityDTO, identifiedBy: string) {
+    async addPatientComorbidity(patientId: string, data: PatientComorbidityDTO, identifiedBy: string | null) {
         const patient = await prisma.patient_bio_data.findUnique({
             where: { patient_id: patientId },
         });

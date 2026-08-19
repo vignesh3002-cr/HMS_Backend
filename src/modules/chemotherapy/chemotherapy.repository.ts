@@ -23,7 +23,7 @@ export class ChemotherapyRepository {
     }
 
     private protocolInclude = {
-        chemotherapy_regimen_protocol_items: { where: { active_status: 1 }, orderBy: { drug_sequence: "asc" as const } },
+        chemotherapy_regimen_protocol_items: { where: { active_status: 1 }, orderBy: { drug_sequence: "asc" as const }, include: { medicine_master: true } },
         cancer_types: { select: { cancer_type_id: true, cancer_type: true } },
         cancer_subtypes: { select: { subtype_id: true, subtype_name: true } }
     } satisfies Prisma.chemotherapy_regimen_protocolInclude;
@@ -49,7 +49,7 @@ export class ChemotherapyRepository {
 
         return prisma.chemotherapy_regimen_protocol.findUnique({
             where: { protocol_id: protocolId },
-            include: this.protocolInclude
+            include: this.protocolInclude,
         });
 
     }

@@ -174,4 +174,6 @@ export interface GetEmployeesQuery {
 
     excludeEmployeeId?: string;
 
+    date?: string;
+
 }

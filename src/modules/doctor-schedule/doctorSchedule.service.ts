@@ -47,19 +47,27 @@ export class DoctorScheduleService {
         // --------------------------------------------------
 
         if (!employee_id) {
-            throw new Error("employee_id is required");
+            throw new Error(
+                "employee_id is required"
+            );
         }
 
         if (!branch_id) {
-            throw new Error("branch_id is required");
+            throw new Error(
+                "branch_id is required"
+            );
         }
 
         if (!change_date) {
-            throw new Error("change_date is required");
+            throw new Error(
+                "change_date is required"
+            );
         }
 
         if (!mode) {
-            throw new Error("mode is required");
+            throw new Error(
+                "mode is required"
+            );
         }
 
         // --------------------------------------------------
@@ -71,6 +79,7 @@ export class DoctorScheduleService {
                 where: {
                     employee_id,
                 },
+
                 include: {
                     user_table: {
                         select: {
@@ -82,7 +91,9 @@ export class DoctorScheduleService {
             });
 
         if (!employee) {
-            throw new Error("Doctor not found");
+            throw new Error(
+                "Doctor not found"
+            );
         }
 
         if (
@@ -94,7 +105,9 @@ export class DoctorScheduleService {
             );
         }
 
-        if (employee.emp_status !== true) {
+        if (
+            employee.emp_status !== true
+        ) {
             throw new Error(
                 "Doctor is inactive. Please contact the administrator."
             );
@@ -112,11 +125,14 @@ export class DoctorScheduleService {
             });
 
         if (!branch) {
-            throw new Error("Branch not found");
+            throw new Error(
+                "Branch not found"
+            );
         }
 
         if (
-            branch.branch_status !== "Active"
+            branch.branch_status !==
+            "Active"
         ) {
             throw new Error(
                 "Selected branch is inactive"
@@ -161,7 +177,9 @@ export class DoctorScheduleService {
         // --------------------------------------------------
 
         const parsedDate =
-            this.parseDateOnly(change_date);
+            this.parseDateOnly(
+                change_date
+            );
 
         // --------------------------------------------------
         // 7. Validate ADD / OVERRIDE
@@ -172,7 +190,10 @@ export class DoctorScheduleService {
             mode === "OVERRIDE"
         ) {
 
-            if (!start_time || !end_time) {
+            if (
+                !start_time ||
+                !end_time
+            ) {
                 throw new Error(
                     `${mode} requires start_time and end_time`
                 );
@@ -189,8 +210,12 @@ export class DoctorScheduleService {
             );
 
             if (
-                this.timeToMinutes(start_time) >=
-                this.timeToMinutes(end_time)
+                this.timeToMinutes(
+                    start_time
+                ) >=
+                this.timeToMinutes(
+                    end_time
+                )
             ) {
                 throw new Error(
                     "start_time must be earlier than end_time"
@@ -202,7 +227,9 @@ export class DoctorScheduleService {
         // 8. Validate CANCEL
         // --------------------------------------------------
 
-        if (mode === "CANCEL") {
+        if (
+            mode === "CANCEL"
+        ) {
 
             if (
                 start_time !== undefined &&
@@ -228,29 +255,20 @@ export class DoctorScheduleService {
         // --------------------------------------------------
         // 9. Check existing active changes
         // --------------------------------------------------
-        //
-        // Multiple ADD records are allowed.
-        //
-        // Example:
-        //
-        // ADD 18:00 - 20:00
-        // ADD 21:00 - 22:00
-        //
-        // Both are valid on the same date.
-        //
-        // OVERRIDE and CANCEL are mutually exclusive with
-        // another active non-ADD change.
-        // --------------------------------------------------
 
-        if (mode !== "ADD") {
+        if (
+            mode !== "ADD"
+        ) {
 
             const existingChange =
                 await prisma.doctor_schedule_change.findFirst({
                     where: {
                         employee_id,
                         branch_id,
-                        change_date: parsedDate,
-                        is_active: true,
+                        change_date:
+                            parsedDate,
+                        is_active:
+                            true,
                     },
                 });
 
@@ -265,17 +283,6 @@ export class DoctorScheduleService {
         // --------------------------------------------------
         // 10. Prevent overlapping ADD ranges
         // --------------------------------------------------
-        //
-        // Multiple ADD records are allowed, but overlapping
-        // ADD ranges should not be allowed.
-        //
-        // Example:
-        //
-        // ADD 18:00 - 20:00
-        // ADD 19:00 - 21:00
-        //
-        // This would create duplicate availability.
-        // --------------------------------------------------
 
         if (
             mode === "ADD" &&
@@ -288,23 +295,37 @@ export class DoctorScheduleService {
                     where: {
                         employee_id,
                         branch_id,
-                        change_date: parsedDate,
-                        mode: "ADD",
-                        is_active: true,
+                        change_date:
+                            parsedDate,
+                        mode:
+                            "ADD",
+                        is_active:
+                            true,
                     },
+
                     select: {
-                        start_time: true,
-                        end_time: true,
+                        start_time:
+                            true,
+
+                        end_time:
+                            true,
                     },
                 });
 
             const newStart =
-                this.timeToMinutes(start_time);
+                this.timeToMinutes(
+                    start_time
+                );
 
             const newEnd =
-                this.timeToMinutes(end_time);
+                this.timeToMinutes(
+                    end_time
+                );
 
-            for (const existing of existingAdds) {
+            for (
+                const existing
+                of existingAdds
+            ) {
 
                 if (
                     !existing.start_time ||
@@ -324,8 +345,10 @@ export class DoctorScheduleService {
                     );
 
                 const overlaps =
-                    newStart < existingEnd &&
-                    newEnd > existingStart;
+                    newStart <
+                        existingEnd &&
+                    newEnd >
+                        existingStart;
 
                 if (overlaps) {
                     throw new Error(
@@ -359,30 +382,50 @@ export class DoctorScheduleService {
 
         return prisma.doctor_schedule_change.create({
             data: {
-                employee_id,
+                employee_id:
 
-                branch_id,
+                    employee_id,
+
+                branch_id:
+
+                    branch_id,
 
                 change_date:
+
                     parsedDate,
 
                 mode:
+
                     mode as DoctorScheduleChangeMode,
 
                 start_time:
+
                     startTimeDate,
 
                 end_time:
+
                     endTimeDate,
 
                 reason:
-                    reason?.trim() || null,
+
+                    reason?.trim() ||
+                    null,
 
                 is_active:
+
                     true,
 
                 created_by:
-                    created_by?.trim() || null,
+
+                    created_by?.trim() ||
+                    null,
+
+                /**
+                 * Prisma schema requires updated_at.
+                 */
+                updated_at:
+
+                    new Date(),
             },
         });
     }
@@ -412,7 +455,9 @@ export class DoctorScheduleService {
             );
         }
 
-        if (!existingChange.is_active) {
+        if (
+            !existingChange.is_active
+        ) {
             throw new Error(
                 "Cannot update an inactive schedule change"
             );
@@ -517,7 +562,9 @@ export class DoctorScheduleService {
         // 5. Validate CANCEL
         // --------------------------------------------------
 
-        if (finalMode === "CANCEL") {
+        if (
+            finalMode === "CANCEL"
+        ) {
 
             if (
                 payload.start_time !== undefined &&
@@ -603,7 +650,8 @@ export class DoctorScheduleService {
                         change_date:
                             finalChangeDate,
 
-                        mode: "ADD",
+                        mode:
+                            "ADD",
 
                         is_active:
                             true,
@@ -614,8 +662,11 @@ export class DoctorScheduleService {
                     },
 
                     select: {
-                        start_time: true,
-                        end_time: true,
+                        start_time:
+                            true,
+
+                        end_time:
+                            true,
                     },
                 });
 
@@ -652,8 +703,10 @@ export class DoctorScheduleService {
                     );
 
                 const overlaps =
-                    newStart < existingEnd &&
-                    newEnd > existingStart;
+                    newStart <
+                        existingEnd &&
+                    newEnd >
+                        existingStart;
 
                 if (overlaps) {
                     throw new Error(
@@ -674,6 +727,7 @@ export class DoctorScheduleService {
             end_time?: Date | null;
             reason?: string | null;
             is_active?: boolean;
+            updated_at?: Date;
         } = {};
 
         if (
@@ -721,7 +775,8 @@ export class DoctorScheduleService {
         ) {
 
             updateData.reason =
-                payload.reason?.trim() || null;
+                payload.reason?.trim() ||
+                null;
         }
 
         if (
@@ -740,12 +795,22 @@ export class DoctorScheduleService {
             finalMode === "CANCEL"
         ) {
 
-            updateData.start_time = null;
-            updateData.end_time = null;
+            updateData.start_time =
+                null;
+
+            updateData.end_time =
+                null;
         }
 
         // --------------------------------------------------
-        // 10. Update
+        // 10. Always update updated_at
+        // --------------------------------------------------
+
+        updateData.updated_at =
+            new Date();
+
+        // --------------------------------------------------
+        // 11. Update
         // --------------------------------------------------
 
         return prisma.doctor_schedule_change.update({
@@ -753,7 +818,8 @@ export class DoctorScheduleService {
                 change_id,
             },
 
-            data: updateData,
+            data:
+                updateData,
         });
     }
 
@@ -773,15 +839,19 @@ export class DoctorScheduleService {
         return prisma.doctor_schedule_change.findMany({
             where: {
                 employee_id,
-                is_active: true,
+
+                is_active:
+                    true,
             },
 
             orderBy: [
                 {
-                    change_date: "asc",
+                    change_date:
+                        "asc",
                 },
                 {
-                    created_at: "asc",
+                    created_at:
+                        "asc",
                 },
             ],
         });
@@ -820,7 +890,8 @@ export class DoctorScheduleService {
 
             orderBy: [
                 {
-                    created_at: "asc",
+                    created_at:
+                        "asc",
                 },
             ],
         });
@@ -861,7 +932,11 @@ export class DoctorScheduleService {
             },
 
             data: {
-                is_active: false,
+                is_active:
+                    false,
+
+                updated_at:
+                    new Date(),
             },
         });
     }
@@ -914,9 +989,12 @@ export class DoctorScheduleService {
             );
 
         if (
-            date.getUTCFullYear() !== year ||
-            date.getUTCMonth() !== month - 1 ||
-            date.getUTCDate() !== day
+            date.getUTCFullYear() !==
+                year ||
+            date.getUTCMonth() !==
+                month - 1 ||
+            date.getUTCDate() !==
+                day
         ) {
             throw new Error(
                 "Invalid date"
@@ -983,7 +1061,9 @@ export class DoctorScheduleService {
     ): void {
 
         try {
-            this.timeToMinutes(value);
+            this.timeToMinutes(
+                value
+            );
         } catch {
             throw new Error(
                 `${fieldName} must be in HH:mm or HH:mm:ss format`

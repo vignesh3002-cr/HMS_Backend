@@ -137,17 +137,8 @@ async function getScheduleChanges(
  * used as the schedule_id reference for an ADD/OVERRIDE
  * date that has no normal schedule on that weekday.
  *
- * IMPORTANT:
- *
  * appointment_history.schedule_id references
  * doctor_schedule.
- *
- * doctor_schedule_change does NOT replace that foreign
- * key. Therefore we must use a real doctor_schedule ID.
- *
- * We first try to find a schedule on the selected branch
- * for the doctor. It does NOT need to be on the selected
- * weekday.
  */
 async function findReferenceSchedule(
     employeeId: string,
@@ -221,7 +212,7 @@ function convertNormalSchedules(
  *     -> override replaces normal
  *
  * CANCEL
- *     -> no availability
+ *     -> entire date is cancelled
  *
  * OVERRIDE + ADD
  *     -> override + additional range
@@ -256,6 +247,16 @@ async function getEffectiveSchedules(
 
     /**
      * CANCEL has absolute priority.
+     *
+     * Cancellation is for the entire date.
+     *
+     * Example:
+     * Normal schedule:
+     * 09:00 - 13:00
+     * 14:00 - 18:00
+     *
+     * CANCEL on that date:
+     * No slots for the entire day.
      */
     const hasCancel =
         changes.some(
@@ -414,9 +415,7 @@ async function getEffectiveSchedules(
     /**
      * ADD appends additional working time.
      *
-     * This is the important change:
-     *
-     * ADD can now work even if there is no normal
+     * ADD can work even if there is no normal
      * schedule on that particular weekday.
      */
     for (
@@ -1162,7 +1161,8 @@ export class AppointmentService {
     async updateAppointmentStatus(
         appointmentNo: string,
         status: string,
-        cancelReason?: string
+        cancelReason?: string,
+        cancelledBy?: string | null
     ) {
 
         const existing =
@@ -1196,6 +1196,19 @@ export class AppointmentService {
             );
         }
 
+        /**
+         * cancelledBy is accepted here so the controller
+         * can pass the authenticated user.
+         *
+         * The current repository method accepts:
+         * appointmentNo, status, cancelReason
+         *
+         * Therefore cancelledBy is intentionally not passed
+         * to the repository until the repository supports
+         * that fourth parameter.
+         */
+        void cancelledBy;
+
         return repository.updateAppointmentStatus(
             appointmentNo,
             status,
@@ -1205,16 +1218,20 @@ export class AppointmentService {
 
     /**
      * Cancels an appointment.
+     *
+     * There must be only ONE implementation of this method.
      */
     async cancelAppointment(
         appointmentNo: string,
-        cancelReason: string
+        cancelReason: string,
+        cancelledBy?: string | null
     ) {
 
         return this.updateAppointmentStatus(
             appointmentNo,
             APPOINTMENT_STATUS.CANCELLED,
-            cancelReason
+            cancelReason,
+            cancelledBy
         );
     }
 
@@ -1317,6 +1334,8 @@ export class AppointmentService {
 
         /**
          * CANCEL or no effective schedule.
+         *
+         * CANCEL means the entire date has no slots.
          */
         if (
             effectiveSchedules.length === 0
@@ -1484,8 +1503,6 @@ export class AppointmentService {
 
         /**
          * Find branches from date-specific changes.
-         *
-         * This is important for ADD/OVERRIDE-only days.
          */
         const changeBranchRecords =
             await prisma.doctor_schedule_change.findMany({
@@ -1718,9 +1735,6 @@ export class AppointmentService {
 
             /**
              * Date-specific change branches.
-             *
-             * This makes ADD/OVERRIDE-only dates
-             * visible to weekly capacity.
              */
             const changeBranchRecords =
                 await prisma.doctor_schedule_change.findMany({

@@ -57,6 +57,15 @@ class DoctorTransferRepository {
             orderBy: { assigned_date: "desc" }
         });
     }
+    async findPendingTransfer(employeeId) {
+        return prisma_1.default.doctor_transfer.findFirst({
+            where: {
+                employee_id: employeeId,
+                status: "PENDING_CONFIRMATION"
+            },
+            orderBy: { requested_at: "desc" }
+        });
+    }
     async findActiveBranchMapping(employeeId, branchId, userId) {
         return prisma_1.default.user_branch_mapping.findFirst({
             where: {
@@ -83,6 +92,11 @@ class DoctorTransferRepository {
     }
     async findAllActiveSchedules(employeeId) {
         return prisma_1.default.doctor_schedule.findMany({
+            where: { employee_id: employeeId, is_active: true }
+        });
+    }
+    async findAllActiveSchedulesInTx(tx, employeeId) {
+        return tx.doctor_schedule.findMany({
             where: { employee_id: employeeId, is_active: true }
         });
     }
@@ -152,11 +166,38 @@ class DoctorTransferRepository {
     // Scoped to the specific schedule rows being closed (not "any future
     // appointment this employee has anywhere") - a branch/time-slot conflict
     // must never flag appointments at a branch that isn't actually affected.
-    async findFutureAppointmentsByScheduleIds(scheduleIds, effectiveDate, page = 1, limit = 200) {
+    //
+    // Fallback coverage for appointments that can't be matched by
+    // schedule_id alone (booked without a schedule link, or pointing at a
+    // row closed by an earlier transfer): when branchIds are provided,
+    // appointments at those branches are matched too. A true TRANSFER
+    // (includeAllAtBranches) counts EVERY non-terminal future appointment at
+    // the closing branches, because the whole branch is closing; a slot-level
+    // move only matches schedule-less (schedule_id NULL) appointments, so
+    // other slots at the same branch stay out of scope.
+    async findFutureAppointmentsByScheduleIds(scheduleIds, effectiveDate, options, page = 1, limit = 200) {
+        const fallbackConds = [];
+        if (options?.branchIds?.length) {
+            if (options.includeAllAtBranches) {
+                fallbackConds.push({
+                    employee_id: options.employeeId,
+                    branch_id: { in: options.branchIds }
+                });
+            }
+            else {
+                fallbackConds.push({
+                    schedule_id: null,
+                    branch_id: { in: options.branchIds }
+                });
+            }
+        }
         const where = {
-            schedule_id: { in: scheduleIds },
             appointment_date: { gte: effectiveDate },
-            status: { notIn: appointment_constants_1.TERMINAL_APPOINTMENT_STATUSES }
+            status: { notIn: appointment_constants_1.TERMINAL_APPOINTMENT_STATUSES },
+            OR: [
+                { schedule_id: { in: scheduleIds } },
+                ...fallbackConds
+            ]
         };
         const [appointments, total] = await Promise.all([
             prisma_1.default.appointment_history.findMany({
@@ -186,12 +227,30 @@ class DoctorTransferRepository {
         ]);
         return { appointments, total };
     }
-    async findAllFutureAppointmentsForTransferByScheduleIds(tx, scheduleIds, effectiveDate) {
+    async findAllFutureAppointmentsForTransferByScheduleIds(tx, scheduleIds, effectiveDate, options) {
+        const fallbackConds = [];
+        if (options?.branchIds?.length) {
+            if (options.includeAllAtBranches) {
+                fallbackConds.push({
+                    employee_id: options.employeeId,
+                    branch_id: { in: options.branchIds }
+                });
+            }
+            else {
+                fallbackConds.push({
+                    schedule_id: null,
+                    branch_id: { in: options.branchIds }
+                });
+            }
+        }
         return tx.appointment_history.findMany({
             where: {
-                schedule_id: { in: scheduleIds },
                 appointment_date: { gte: effectiveDate },
-                status: { notIn: appointment_constants_1.TERMINAL_APPOINTMENT_STATUSES }
+                status: { notIn: appointment_constants_1.TERMINAL_APPOINTMENT_STATUSES },
+                OR: [
+                    { schedule_id: { in: scheduleIds } },
+                    ...fallbackConds
+                ]
             },
             orderBy: { appointment_date: "asc" }
         });

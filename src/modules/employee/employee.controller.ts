@@ -154,9 +154,9 @@ async restoreEmployee(req: Request, res: Response) {
 
 }
 async getAllEmployees(req: Request, res: Response) {
- 
+  
         try {
- 
+
             const query = {
                 roleType: req.query.roleType as string | undefined,
                 branchId: req.query.branchId as string | undefined,
@@ -167,6 +167,7 @@ async getAllEmployees(req: Request, res: Response) {
                 page: req.query.page ? Number(req.query.page) : 1,
                 limit: req.query.limit ? Number(req.query.limit) : 10,
                 excludeEmployeeId: undefined as string | undefined,
+                date: req.query.date as string | undefined,
             };
 
             // Admins never see their own record in employee lists - self

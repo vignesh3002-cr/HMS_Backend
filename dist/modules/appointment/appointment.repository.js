@@ -186,10 +186,20 @@ class AppointmentRepository {
             data
         });
     }
-    async updateAppointmentStatus(appointmentId, status, cancelReason) {
+    async updateAppointmentStatus(appointmentId, status, cancelReason, cancelledBy) {
         return prisma_1.default.appointment_history.update({
             where: { appointment_id: appointmentId },
-            data: { status, cancel_reason: cancelReason }
+            data: {
+                status,
+                cancel_reason: cancelReason,
+                ...(status === appointment_constants_1.APPOINTMENT_STATUS.CANCELLED
+                    ? {
+                        cancelled_at: new Date(),
+                        cancelled_by: cancelledBy ?? null,
+                        notification_status: "NOT_REQUIRED"
+                    }
+                    : {})
+            }
         });
     }
     async getAppointmentByNumber(appointmentId) {

@@ -17,6 +17,14 @@ exports.initiateTransferValidation = [
         .if((0, express_validator_1.body)("mode").equals("TRANSFER"))
         .notEmpty()
         .withMessage("From branch (old_branch_id) is required for a transfer"),
+    (0, express_validator_1.body)("close_schedule_ids")
+        .optional()
+        .isArray({ min: 1 })
+        .withMessage("close_schedule_ids must be a non-empty array of schedule ids"),
+    (0, express_validator_1.body)("close_schedule_ids.*")
+        .optional()
+        .isInt({ min: 1 })
+        .withMessage("close_schedule_ids entries must be valid schedule ids"),
     (0, express_validator_1.body)("new_branch_id")
         .notEmpty()
         .withMessage("New branch is required"),
