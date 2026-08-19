@@ -18,7 +18,7 @@ class ChemotherapyRepository {
         return prisma_1.default.cancer_subtypes.findUnique({ where: { subtype_id: subtypeId } });
     }
     protocolInclude = {
-        chemotherapy_regimen_protocol_items: { where: { active_status: 1 }, orderBy: { drug_sequence: "asc" } },
+        chemotherapy_regimen_protocol_items: { where: { active_status: 1 }, orderBy: { drug_sequence: "asc" }, include: { medicine_master: true } },
         cancer_types: { select: { cancer_type_id: true, cancer_type: true } },
         cancer_subtypes: { select: { subtype_id: true, subtype_name: true } }
     };
@@ -39,7 +39,7 @@ class ChemotherapyRepository {
     async findRegimenProtocolById(protocolId) {
         return prisma_1.default.chemotherapy_regimen_protocol.findUnique({
             where: { protocol_id: protocolId },
-            include: this.protocolInclude
+            include: this.protocolInclude,
         });
     }
     async findRegimenProtocolByCode(cancerTypeId, subtypeId, regimenCode) {

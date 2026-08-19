@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv/config");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const auth_routes_1 = __importDefault(require("./modules/auth/auth.routes"));
 const user_routes_1 = __importDefault(require("./modules/auth/user/user.routes"));
 const branch_routes_1 = __importDefault(require("./modules/branch/branch.routes"));
@@ -25,11 +26,11 @@ const doctorTransfer_routes_1 = __importDefault(require("./modules/doctor-transf
 const lab_test_category_routes_1 = __importDefault(require("./modules/lab-test-category/lab-test-category.routes"));
 const lab_test_master_routes_1 = __importDefault(require("./modules/lab-test-master/lab-test-master.routes"));
 const lab_order_routes_1 = __importDefault(require("./modules/lab-order/lab-order-routes"));
-const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const lab_order_item_routes_1 = __importDefault(require("./modules/lab-order-item/lab-order-item.routes"));
 const qualification_master_routes_1 = __importDefault(require("./modules/qualification-master/qualification-master.routes"));
 const diagnosis_routes_1 = __importDefault(require("./modules/diagnosis/diagnosis.routes"));
 const appointment_status_job_1 = require("./modules/appointment/appointment-status.job");
+const clinical_details_routes_1 = __importDefault(require("./modules/clinical-details/clinical-details.routes"));
 const bcrypt_1 = require("./utils/bcrypt");
 // Fix BigInt serialization - Prisma returns BigInt types that JSON.stringify can't handle
 BigInt.prototype.toJSON = function () {
@@ -109,6 +110,7 @@ app.use("/api/prescriptions", prescription_routes_1.default);
 app.use("/api/chemotherapy", chemotherapy_routes_1.default);
 app.use("/api/lab-order-item", lab_order_item_routes_1.default);
 app.use("/api/encounters", encounter_routes_1.default);
+app.use("/api/clinical-details", clinical_details_routes_1.default);
 app.use("/api/permissions", permission_routes_1.default);
 app.use("/api/roles", role_routes_1.default);
 app.use("/api/prescriptions", prescription_routes_1.default);

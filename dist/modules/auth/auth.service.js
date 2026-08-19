@@ -57,6 +57,7 @@ class AuthService {
             username: user.username,
             role: user.role_type,
             user_id: user.user_id,
+            employee_id: employee?.employee_id ?? null,
             hospital_id: primaryBranch?.hospital_id,
         }, rememberMe);
         return {

@@ -2,6 +2,7 @@ import "dotenv/config";
 
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 import authRoutes from "./modules/auth/auth.routes";
 import userRoutes from "./modules/auth/user/user.routes";
@@ -22,11 +23,11 @@ import doctorTransferRoutes from "./modules/doctor-transfer/doctorTransfer.route
 import labTestCategoryRoutes from "./modules/lab-test-category/lab-test-category.routes";
 import labTestMasterRoutes from "./modules/lab-test-master/lab-test-master.routes";
 import labOrderRoutes from "./modules/lab-order/lab-order-routes";
-import cookieParser from "cookie-parser";
 import labOrderItemRoutes from "./modules/lab-order-item/lab-order-item.routes";
 import qualificationMasterRoutes from "./modules/qualification-master/qualification-master.routes";
 import diagnosisRoutes from "./modules/diagnosis/diagnosis.routes";
 import { startAppointmentStatusJob } from "./modules/appointment/appointment-status.job";
+import clinicalDetailsRoutes from "./modules/clinical-details/clinical-details.routes";
 
 
 import { hashPassword } from "./utils/bcrypt";
@@ -125,6 +126,7 @@ app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/lab-order-item", labOrderItemRoutes);
 app.use("/api/encounters", encounterRoutes);
+app.use("/api/clinical-details", clinicalDetailsRoutes);
 app.use("/api/permissions", permissionRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/prescriptions", prescriptionRoutes);
