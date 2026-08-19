@@ -26,6 +26,7 @@ import cookieParser from "cookie-parser";
 import labOrderItemRoutes from "./modules/lab-order-item/lab-order-item.routes";
 import qualificationMasterRoutes from "./modules/qualification-master/qualification-master.routes";
 import diagnosisRoutes from "./modules/diagnosis/diagnosis.routes";
+import { startAppointmentStatusJob } from "./modules/appointment/appointment-status.job";
 
 
 import { hashPassword } from "./utils/bcrypt";
@@ -154,5 +155,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
 
     console.log(`Server running on port ${PORT}`);
+
+    startAppointmentStatusJob();
 
 });

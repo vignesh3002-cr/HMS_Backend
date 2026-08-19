@@ -3,7 +3,16 @@ import prisma from "../../config/prisma";
 import { GetEmployeesQuery } from "./employee.types";
 import { generateId } from "../../utils/idGenerator";
 import { TERMINAL_APPOINTMENT_STATUSES } from "../appointment/appointment.constants";
- 
+
+function parseDateOnlyUtc(dateString: string): Date {
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateString);
+    if (!match) {
+        const date = new Date(dateString);
+        return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    }
+    return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+}
+
 export class EmployeeRepository {
  
     async findUsername(username: string) {
@@ -362,7 +371,8 @@ async getEmployees(query: GetEmployeesQuery) {
 
         limit = 10,
 
-        excludeEmployeeId
+        excludeEmployeeId,
+        date
 
     } = query;
 
@@ -474,7 +484,10 @@ if (roleType) {
  
     where.user_table = {
  
-        role_type: roleType
+        role_type: {
+            equals: roleType,
+            mode: "insensitive"
+        }
  
     };
  
@@ -573,12 +586,51 @@ for (const group of scheduleGroups) {
     set.add(group.branch_id);
     scheduleBranchesByEmployee.set(group.employee_id, set);
 }
+const pageUserIds = employees
+    .map((e) => e.user_id)
+    .filter((id): id is string => !!id);
+const activeMappings = await prisma.user_branch_mapping.findMany({
+    where: {
+        status: 1,
+        OR: [
+            { employee_id: { in: pageEmployeeIds } },
+            { user_id: { in: pageUserIds } },
+        ],
+    },
+    include: {
+        branch: {
+            select: {
+                branch_id: true,
+                branch_name: true,
+                branch_area: true,
+            },
+        },
+    },
+    orderBy: {
+        assigned_date: "desc",
+    },
+});
+const activeMappingsByEmployee = new Map<string, typeof activeMappings>();
+for (const mapping of activeMappings) {
+    const employeeIds = new Set(
+        employees
+            .filter((emp) => emp.employee_id === mapping.employee_id || emp.user_id === mapping.user_id)
+            .map((emp) => emp.employee_id)
+            .filter((id): id is string => !!id)
+    );
+    for (const employeeId of employeeIds) {
+        const list = activeMappingsByEmployee.get(employeeId) ?? [];
+        list.push(mapping);
+        activeMappingsByEmployee.set(employeeId, list);
+    }
+}
 const employeesWithBranches = employees.map((emp) => {
     const hasScheduleFor = scheduleBranchesByEmployee.get(emp.employee_id ?? "") ?? new Set<string>();
     // Collapse duplicate active mappings for the same branch to the first
     // row so the same branch never renders twice for one employee.
     const seenBranchIds = new Set<string>();
-    const assignedBranches = (emp.user_branch_mapping ?? [])
+    const assignedMappings = activeMappingsByEmployee.get(emp.employee_id ?? "") ?? emp.user_branch_mapping ?? [];
+    const assignedBranches = assignedMappings
         .filter((m) => {
             const id = m.branch.branch_id;
             if (seenBranchIds.has(id)) return false;
@@ -594,6 +646,32 @@ const employeesWithBranches = employees.map((emp) => {
     const { user_branch_mapping, ...rest } = emp;
     return { ...rest, branches: assignedBranches };
 });
+
+// Compute doctor_status for doctors if date is provided
+if (date) {
+    const doctorIds = employeesWithBranches
+        .filter((e) => e.user_table?.role_type?.toUpperCase() === "DOCTOR")
+        .map((e) => e.employee_id!)
+        .filter(Boolean);
+
+    if (doctorIds.length > 0) {
+        const branchesByDoctor = new Map<string, string[]>();
+        employeesWithBranches.forEach((emp) => {
+            if (emp.user_table?.role_type?.toUpperCase() === "DOCTOR") {
+                branchesByDoctor.set(
+                    emp.employee_id!,
+                    (emp.branches ?? []).map((branch) => branch.branch_id)
+                );
+            }
+        });
+        const statusMap = await this.computeDoctorStatuses(doctorIds, branchId, date, branchesByDoctor);
+        employeesWithBranches.forEach((emp) => {
+            if (emp.user_table?.role_type?.toUpperCase() === "DOCTOR") {
+                (emp as any).doctor_status = statusMap.get(emp.employee_id!) || "LEAVE";
+            }
+        });
+    }
+}
 return {
 
     total,
@@ -785,5 +863,62 @@ doctorSchedules;
 break;
 }
 return response;
-}
+  }
+
+  private async computeDoctorStatuses(
+    doctorIds: string[],
+    branchId: string | undefined,
+    dateString: string,
+    branchesByDoctor: Map<string, string[]>
+  ): Promise<Map<string, "ACTIVE" | "LEAVE" | "INACTIVE">> {
+    const dateStart = parseDateOnlyUtc(dateString);
+    const dayOfWeek = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"][dateStart.getUTCDay()];
+
+    // 1. emp_status check (INACTIVE override)
+    const employees = await prisma.employees.findMany({
+      where: { employee_id: { in: doctorIds } },
+      select: { employee_id: true, emp_status: true }
+    });
+    const empStatusMap = new Map(employees.map(e => [e.employee_id, e.emp_status]));
+
+    // 2. Active schedules for dayOfWeek + branch
+    const schedules = await prisma.doctor_schedule.findMany({
+      where: {
+        employee_id: { in: doctorIds },
+        is_active: true,
+        ...(branchId ? { branch_id: branchId } : {}),
+        day_of_week: { equals: dayOfWeek, mode: "insensitive" }
+      },
+      select: { employee_id: true, branch_id: true }
+    });
+    const scheduleSet = new Set(
+      schedules.map(s => `${s.employee_id}|${s.branch_id}`)
+    );
+
+    // 3. Compute one status per doctor. With a branch filter the status is
+    // for that exact branch. Without one, aggregate across the doctor's
+    // assigned branches: any branch with an active schedule for this day of
+    // week makes the doctor ACTIVE; otherwise the doctor is on LEAVE.
+    const statusMap = new Map<string, "ACTIVE" | "LEAVE" | "INACTIVE">();
+    for (const doctorId of doctorIds) {
+      const isInactive = empStatusMap.get(doctorId) === false;
+      if (isInactive) {
+        statusMap.set(doctorId, "INACTIVE");
+        continue;
+      }
+
+      const assignedBranches = branchesByDoctor.get(doctorId) ?? [];
+      const branches = branchId
+        ? assignedBranches.includes(branchId) ? [branchId] : []
+        : assignedBranches;
+
+      const hasAvailableSchedule = branches.some((br) => {
+        const key = `${doctorId}|${br}`;
+        return scheduleSet.has(key);
+      });
+
+      statusMap.set(doctorId, hasAvailableSchedule ? "ACTIVE" : "LEAVE");
+    }
+    return statusMap;
+  }
 }

@@ -389,7 +389,8 @@ export class AppointmentService {
     async updateAppointmentStatus(
         appointmentNo: string,
         status: string,
-        cancelReason?: string
+        cancelReason?: string,
+        cancelledBy?: string | null
     ) {
 
         const existing = await repository.getAppointmentByNumber(appointmentNo);
@@ -408,16 +409,17 @@ export class AppointmentService {
             throw new Error("Cancellation reason is required when cancelling an appointment");
         }
 
-        return repository.updateAppointmentStatus(appointmentNo, status, cancelReason);
+        return repository.updateAppointmentStatus(appointmentNo, status, cancelReason, cancelledBy);
 
     }
 
-    async cancelAppointment(appointmentNo: string, cancelReason: string) {
+    async cancelAppointment(appointmentNo: string, cancelReason: string, cancelledBy?: string | null) {
 
         return this.updateAppointmentStatus(
             appointmentNo,
             APPOINTMENT_STATUS.CANCELLED,
-            cancelReason
+            cancelReason,
+            cancelledBy
         );
 
     }

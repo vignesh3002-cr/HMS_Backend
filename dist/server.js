@@ -29,6 +29,7 @@ const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const lab_order_item_routes_1 = __importDefault(require("./modules/lab-order-item/lab-order-item.routes"));
 const qualification_master_routes_1 = __importDefault(require("./modules/qualification-master/qualification-master.routes"));
 const diagnosis_routes_1 = __importDefault(require("./modules/diagnosis/diagnosis.routes"));
+const appointment_status_job_1 = require("./modules/appointment/appointment-status.job");
 const bcrypt_1 = require("./utils/bcrypt");
 // Fix BigInt serialization - Prisma returns BigInt types that JSON.stringify can't handle
 BigInt.prototype.toJSON = function () {
@@ -132,4 +133,5 @@ app.use("/api/hashpassword", async (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    (0, appointment_status_job_1.startAppointmentStatusJob)();
 });

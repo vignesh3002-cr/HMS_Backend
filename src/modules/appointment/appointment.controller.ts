@@ -293,7 +293,8 @@ export class AppointmentController {
             const appointment = await service.updateAppointmentStatus(
                 req.params.appointmentNo as string,
                 req.body.status,
-                req.body.cancel_reason
+                req.body.cancel_reason,
+                (req as any).user?.user_id || (req as any).user?.id || null
             );
 
             return res.json({
@@ -331,7 +332,8 @@ export class AppointmentController {
 
             const appointment = await service.cancelAppointment(
                 req.params.appointmentNo as string,
-                req.body.cancel_reason
+                req.body.cancel_reason,
+                (req as any).user?.user_id || (req as any).user?.id || null
             );
 
             return res.json({

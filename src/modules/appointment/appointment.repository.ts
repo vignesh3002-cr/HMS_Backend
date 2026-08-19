@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { generateId } from "../../utils/idGenerator";
 import { GetAppointmentsQuery } from "./appointment.types";
-import { NON_BLOCKING_APPOINTMENT_STATUSES } from "./appointment.constants";
+import { NON_BLOCKING_APPOINTMENT_STATUSES, APPOINTMENT_STATUS } from "./appointment.constants";
 
 const appointmentDetailInclude = {
     patient_bio_data: {
@@ -281,12 +281,23 @@ export class AppointmentRepository {
     async updateAppointmentStatus(
         appointmentId: string,
         status: string,
-        cancelReason?: string
+        cancelReason?: string,
+        cancelledBy?: string | null
     ) {
 
         return prisma.appointment_history.update({
             where: { appointment_id: appointmentId },
-            data: { status, cancel_reason: cancelReason }
+            data: {
+                status,
+                cancel_reason: cancelReason,
+                ...(status === APPOINTMENT_STATUS.CANCELLED
+                    ? {
+                        cancelled_at: new Date(),
+                        cancelled_by: cancelledBy ?? null,
+                        notification_status: "NOT_REQUIRED"
+                    }
+                    : {})
+            }
         });
 
     }

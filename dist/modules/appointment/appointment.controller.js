@@ -188,7 +188,7 @@ class AppointmentController {
                     errors: errors.array()
                 });
             }
-            const appointment = await service.updateAppointmentStatus(req.params.appointmentNo, req.body.status, req.body.cancel_reason);
+            const appointment = await service.updateAppointmentStatus(req.params.appointmentNo, req.body.status, req.body.cancel_reason, req.user?.user_id || req.user?.id || null);
             return res.json({
                 success: true,
                 message: "Appointment status updated successfully",
@@ -212,7 +212,7 @@ class AppointmentController {
                     errors: errors.array()
                 });
             }
-            const appointment = await service.cancelAppointment(req.params.appointmentNo, req.body.cancel_reason);
+            const appointment = await service.cancelAppointment(req.params.appointmentNo, req.body.cancel_reason, req.user?.user_id || req.user?.id || null);
             return res.json({
                 success: true,
                 message: "Appointment cancelled successfully",

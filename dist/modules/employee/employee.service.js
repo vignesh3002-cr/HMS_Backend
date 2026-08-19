@@ -22,6 +22,68 @@ function timeStringToUtcDate(time) {
     const [hours, minutes] = time.split(":").map(Number);
     return new Date(Date.UTC(1970, 0, 1, hours, minutes, 0, 0));
 }
+function todayDateOnly() {
+    const now = new Date();
+    return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+}
+function normalizeDayOfWeek(day) {
+    return day.trim().toUpperCase();
+}
+// doctor_schedule.start_time/end_time round-trip as UTC-anchored Dates (see
+// timeStringToUtcDate above). Normalize either a Date or a "HH:MM"/"HH:MM:SS"
+// string to minutes-of-day so overlap checks compare pure wall-clock values.
+function timeToMinutes(value) {
+    if (value instanceof Date) {
+        return value.getUTCHours() * 60 + value.getUTCMinutes();
+    }
+    if (typeof value === "string") {
+        const [hours, minutes] = value.split(":").map(Number);
+        return (Number.isFinite(hours) ? hours : 0) * 60 + (Number.isFinite(minutes) ? minutes : 0);
+    }
+    return 0;
+}
+function formatTimeMinutes(minutes) {
+    const hours = String(Math.floor(minutes / 60)).padStart(2, "0");
+    const mins = String(minutes % 60).padStart(2, "0");
+    return `${hours}:${mins}`;
+}
+// Overlap rule for doctor schedules:
+//   - Same doctor + same branch + same day + overlapping times -> reject
+//   - Same doctor + same branch + same day + adjacent times (12:00 == 12:00)
+//     -> allowed (strict comparison below)
+//   - Different branch / doctor / day -> allowed
+//   - Multiple non-overlapping schedules on the same day -> allowed
+// Throws before any schedule row is created or closed, so conflicting
+// schedules are never auto-modified -- the caller simply gets a 400.
+function assertNoScheduleOverlap(schedules, existingActive) {
+    const entries = [
+        ...schedules.map((s) => ({
+            day: s.day_of_week.trim().toUpperCase(),
+            branchId: s.branch_id,
+            start: timeToMinutes(s.start_time),
+            end: timeToMinutes(s.end_time),
+        })),
+        ...existingActive.map((s) => ({
+            day: (s.day_of_week ?? "").trim().toUpperCase(),
+            branchId: s.branch_id,
+            start: timeToMinutes(s.start_time),
+            end: timeToMinutes(s.end_time),
+        })),
+    ];
+    for (let i = 0; i < entries.length; i++) {
+        for (let j = i + 1; j < entries.length; j++) {
+            const a = entries[i];
+            const b = entries[j];
+            if (a.branchId !== b.branchId || a.day !== b.day)
+                continue;
+            const overlaps = a.start < b.end && b.start < a.end;
+            if (overlaps) {
+                throw new Error(`Schedule conflict: ${a.day} ${formatTimeMinutes(a.start)}–${formatTimeMinutes(a.end)} ` +
+                    `overlaps ${b.day} ${formatTimeMinutes(b.start)}–${formatTimeMinutes(b.end)} on branch ${a.branchId}`);
+            }
+        }
+    }
+}
 class EmployeeService {
     async createEmployee(data, createdBy) {
         // Get creator's role to enforce creation permissions
@@ -181,7 +243,7 @@ class EmployeeService {
                         status: 1,
                         // Doctor assignments record when they started (effective_from);
                         // other roles keep their existing create behavior unchanged.
-                        ...(data.role_type === "DOCTOR" ? { effective_from: new Date() } : {}),
+                        ...(data.role_type === "DOCTOR" ? { effective_from: todayDateOnly() } : {}),
                     }
                 });
             }
@@ -194,6 +256,10 @@ class EmployeeService {
                     }
                 });
             }
+            // Overlap rule: reject schedules that overlap another schedule of the same
+            // doctor on the same branch and day; adjacent times are allowed. A brand-new
+            // doctor has no existing rows, so this is purely an intra-set check.
+            assertNoScheduleOverlap(data.working_hours ?? [], []);
             for (const schedule of data.working_hours ?? []) {
                 // Validation rule: doctor_schedule.branch_id must always be a subset of
                 // the doctor's assigned branches (user_branch_mapping). A schedule on a
@@ -206,13 +272,13 @@ class EmployeeService {
                     data: {
                         employee_id: employee.employee_id,
                         branch_id: schedule.branch_id,
-                        day_of_week: schedule.day_of_week,
+                        day_of_week: normalizeDayOfWeek(schedule.day_of_week),
                         shift_name: schedule.shift_name,
                         start_time: timeStringToUtcDate(schedule.start_time),
                         end_time: timeStringToUtcDate(schedule.end_time),
                         consultation_minutes: data.consultation_minutes ?? 20,
                         is_active: true,
-                        effective_from: new Date()
+                        effective_from: todayDateOnly()
                     }
                 });
             }
@@ -429,6 +495,7 @@ class EmployeeService {
                     if (!activeBranchIds.has(schedule.branch_id)) {
                         throw new Error(`Schedule branch ${schedule.branch_id} is not assigned to this doctor`);
                     }
+                    schedule.day_of_week = normalizeDayOfWeek(schedule.day_of_week);
                 }
                 // appointment_history.schedule_id and encounter.schedule_id both
                 // have a real FK (onDelete: NoAction) into doctor_schedule -
@@ -439,7 +506,14 @@ class EmployeeService {
                 // has no bookings, but never crashes for one that does.
                 const existingSchedules = await tx.doctor_schedule.findMany({
                     where: { employee_id: employeeId },
-                    select: { schedule_id: true },
+                    select: {
+                        schedule_id: true,
+                        branch_id: true,
+                        day_of_week: true,
+                        start_time: true,
+                        end_time: true,
+                        is_active: true,
+                    },
                 });
                 const existingIds = existingSchedules.map((s) => s.schedule_id);
                 const [referencedByAppointment, referencedByEncounter] = existingIds.length
@@ -460,22 +534,52 @@ class EmployeeService {
                     ...referencedByAppointment.map((r) => r.schedule_id),
                     ...referencedByEncounter.map((r) => r.schedule_id),
                 ];
+                // Existing active schedules that will SURVIVE this edit -- rows
+                // referenced by appointment_history/encounter cannot be soft-
+                // closed (FK NoAction), so they stay active and any new slot
+                // that truly overlaps them is a real conflict.
+                const survivingSchedules = existingSchedules.filter((s) => s.is_active && protectedIds.includes(s.schedule_id));
+                // A kept slot re-submitted unchanged (same branch + day + times)
+                // must NOT conflict with its own surviving row -- it IS the
+                // current schedule. Matching it exactly means the old row stays
+                // and no new row is created (see the create loop below), so it
+                // is excluded from the overlap check.
+                const sameSlot = (entry, existing) => entry.branch_id === existing.branch_id &&
+                    normalizeDayOfWeek(entry.day_of_week) ===
+                        (existing.day_of_week ?? "").trim().toUpperCase() &&
+                    timeToMinutes(entry.start_time) === timeToMinutes(existing.start_time) &&
+                    timeToMinutes(entry.end_time) === timeToMinutes(existing.end_time);
+                const keptSlots = data.working_hours.filter((entry) => survivingSchedules.some((s) => sameSlot(entry, s)));
+                // Overlap rule (checked before anything is closed or created):
+                // reject the new working_hours if they overlap each other, or an
+                // active schedule that will SURVIVE this edit. Schedules being
+                // replaced here (active rows that this update soft-closes) and
+                // unchanged kept slots are the "current schedule" and excluded,
+                // so editing a slot in place never false-positives against its
+                // own old row.
+                assertNoScheduleOverlap(data.working_hours, survivingSchedules.filter((s) => !keptSlots.some((entry) => sameSlot(entry, s))));
                 // Soft-close every slot that was removed from the schedule instead
                 // of hard-deleting it, so the row (and its audit trail) stays in
                 // the database with is_active = false and deleted_by recorded.
                 await repository.closeSchedules(tx, employeeId, protectedIds, updatedBy);
                 for (const schedule of data.working_hours) {
+                    // Keep the surviving row for a slot submitted unchanged --
+                    // creating a new one would leave two active rows with the
+                    // exact same times.
+                    if (survivingSchedules.some((s) => sameSlot(schedule, s))) {
+                        continue;
+                    }
                     await tx.doctor_schedule.create({
                         data: {
                             employee_id: employeeId,
                             branch_id: schedule.branch_id,
-                            day_of_week: schedule.day_of_week,
+                            day_of_week: normalizeDayOfWeek(schedule.day_of_week),
                             shift_name: schedule.shift_name,
                             start_time: timeStringToUtcDate(schedule.start_time),
                             end_time: timeStringToUtcDate(schedule.end_time),
                             consultation_minutes: data.consultation_minutes ?? 20,
                             is_active: true,
-                            effective_from: new Date(),
+                            effective_from: todayDateOnly(),
                         },
                     });
                 }

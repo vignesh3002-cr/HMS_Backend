@@ -199,7 +199,7 @@ class AppointmentService {
             return updated;
         });
     }
-    async updateAppointmentStatus(appointmentNo, status, cancelReason) {
+    async updateAppointmentStatus(appointmentNo, status, cancelReason, cancelledBy) {
         const existing = await repository.getAppointmentByNumber(appointmentNo);
         if (!existing) {
             throw new Error("Appointment not found");
@@ -210,10 +210,10 @@ class AppointmentService {
         if (status === appointment_constants_1.APPOINTMENT_STATUS.CANCELLED && !cancelReason) {
             throw new Error("Cancellation reason is required when cancelling an appointment");
         }
-        return repository.updateAppointmentStatus(appointmentNo, status, cancelReason);
+        return repository.updateAppointmentStatus(appointmentNo, status, cancelReason, cancelledBy);
     }
-    async cancelAppointment(appointmentNo, cancelReason) {
-        return this.updateAppointmentStatus(appointmentNo, appointment_constants_1.APPOINTMENT_STATUS.CANCELLED, cancelReason);
+    async cancelAppointment(appointmentNo, cancelReason, cancelledBy) {
+        return this.updateAppointmentStatus(appointmentNo, appointment_constants_1.APPOINTMENT_STATUS.CANCELLED, cancelReason, cancelledBy);
     }
     async getAvailableSlots(employeeId, branchId, dateStr) {
         const employee = await repository.findEmployee(employeeId);
