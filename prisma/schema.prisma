@@ -50,6 +50,25 @@ model RolePermission {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model allergy_master {
+  id              BigInt            @id @default(autoincrement())
+  code            String            @unique @db.VarChar(30)
+  substance_name  String            @db.VarChar(150)
+  substance_type  String            @db.VarChar(100)
+  description     String?           @db.VarChar(500)
+  severity_level  String?           @db.VarChar(30)
+  is_active       Boolean           @default(true)
+  created_at      DateTime          @default(now()) @db.Timestamp(6)
+  updated_at      DateTime          @default(now()) @db.Timestamp(6)
+  created_by      String?           @db.VarChar(20)
+  updated_by      String?           @db.VarChar(20)
+  patient_allergy patient_allergy[]
+
+  @@index([is_active], map: "idx_allergy_active")
+  @@index([substance_type], map: "idx_allergy_type")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model appointment_history {
   appointment_id                  String                            @unique(map: "uq_appointment_id") @db.VarChar(20)
   patient_id                      String                            @db.VarChar(20)
@@ -827,7 +846,11 @@ model diagnosis {
   chemotherapy_plan          chemotherapy_plan[]
   diagnosis_medicine_mapping diagnosis_medicine_mapping[]
   oncology_staging_detail    oncology_staging_detail[]
+<<<<<<< HEAD
   patient_comorbidity        patient_comorbidity[]        @relation("fk_patient_comorbidity_diagnosis")
+=======
+  patient_comorbidity        patient_comorbidity[]
+>>>>>>> 68ef6f970abb3a64ccb677fe5c2abf2548c0bfc8
   patient_history            patient_history[]
   prescription               prescription[]
 }
@@ -907,6 +930,29 @@ model doctor_schedule {
   employees            employees             @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
   branch               branch                @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_doctor_schedule_branch")
   encounter            encounter[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model doctor_schedule_change {
+  change_id   BigInt                   @id @default(autoincrement())
+  employee_id String                   @db.VarChar(20)
+  branch_id   String                   @db.VarChar(10)
+  change_date DateTime                 @db.Date
+  mode        DoctorScheduleChangeMode
+  start_time  DateTime?                @db.Time(6)
+  end_time    DateTime?                @db.Time(6)
+  reason      String?                  @db.VarChar(255)
+  is_active   Boolean                  @default(true)
+  created_by  String?                  @db.VarChar(20)
+  created_at  DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime                 @db.Timestamptz(6)
+  branch      branch                   @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, onUpdate: NoAction)
+  employees   employees                @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([branch_id])
+  @@index([change_date])
+  @@index([employee_id, change_date])
+  @@index([employee_id])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1022,15 +1068,25 @@ model employees {
   department_master                                                                  department_master?             @relation(fields: [department_id], references: [department_id], onDelete: Restrict, map: "fk_employee_department")
   user_table                                                                         user_table?                    @relation(fields: [user_id], references: [user_id], onDelete: Restrict, map: "fk_employee_user")
   encounter                                                                          encounter[]
+<<<<<<< HEAD
   encounter_performance_status_assessed                                              encounter_performance_status[] @relation("fk_perf_status_doctor")
   encounter_symptom_recorded                                                         encounter_symptom[]            @relation("fk_encounter_symptom_doctor")
+=======
+  encounter_performance_status                                                       encounter_performance_status[]
+  encounter_symptom                                                                  encounter_symptom[]
+>>>>>>> 68ef6f970abb3a64ccb677fe5c2abf2548c0bfc8
   lab_history                                                                        lab_history[]
   lab_order                                                                          lab_order[]
   lab_report                                                                         lab_report[]
   lab_result                                                                         lab_result[]
   oncology_staging_detail                                                            oncology_staging_detail[]
+<<<<<<< HEAD
   patient_allergy_identified                                                         patient_allergy[]              @relation("fk_patient_allergy_doctor")
   patient_comorbidity_identified                                                     patient_comorbidity[]          @relation("fk_patient_comorbidity_doctor")
+=======
+  patient_allergy                                                                    patient_allergy[]
+  patient_comorbidity                                                                patient_comorbidity[]
+>>>>>>> 68ef6f970abb3a64ccb677fe5c2abf2548c0bfc8
   patient_history                                                                    patient_history[]
   prescription                                                                       prescription[]
   sample_collection                                                                  sample_collection[]
@@ -1039,6 +1095,7 @@ model employees {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model encounter {
+<<<<<<< HEAD
   encounter_id                   BigInt                        @id @default(autoincrement())
   encounter_no                   String                        @unique @db.VarChar(30)
   branch_id                      String                        @db.VarChar(10)
@@ -1084,8 +1141,95 @@ model encounter {
   encounter_symptom              encounter_symptom[]           @relation("fk_encounter_symptom_encounter")
   patient_allergy_identified     patient_allergy[]             @relation("fk_patient_allergy_encounter")
   patient_comorbidity_identified patient_comorbidity[]         @relation("fk_patient_comorbidity_encounter")
+=======
+  encounter_id                 BigInt                        @id @default(autoincrement())
+  encounter_no                 String                        @unique @db.VarChar(30)
+  branch_id                    String                        @db.VarChar(10)
+  encounter_ts                 DateTime                      @default(now()) @db.Timestamptz(6)
+  encounter_type               String                        @default("OPD") @db.VarChar(20)
+  status                       String                        @default("OPEN") @db.VarChar(20)
+  notes                        String?
+  created_at                   DateTime                      @default(now()) @db.Timestamptz(6)
+  employee_id                  String?                       @db.VarChar(20)
+  patient_id                   String                        @db.VarChar(20)
+  appointment_id               String?                       @unique @db.VarChar(20)
+  advice                       String?
+  checkout_time                DateTime?                     @db.Timestamptz(6)
+  chief_complaint              String?
+  clinical_notes               String?
+  closed_at                    DateTime?                     @db.Timestamptz(6)
+  closed_by                    String?                       @db.VarChar(20)
+  department_id                String?                       @db.VarChar(20)
+  diastolic_bp                 Int?
+  follow_up_date               DateTime?                     @db.Date
+  height                       Decimal?                      @db.Decimal(5, 2)
+  pulse                        Int?
+  respiratory_rate             Int?
+  schedule_id                  BigInt?
+  spo2                         Int?
+  symptoms                     String?
+  systolic_bp                  Int?
+  temperature                  Decimal?                      @db.Decimal(5, 2)
+  weight                       Decimal?                      @db.Decimal(5, 2)
+  user_id                      String?                       @db.VarChar(20)
+  diagnosis_id                 String?                       @db.VarChar(20)
+  diagnosis_text               String?                       @db.VarChar
+  createdBy                    String?                       @db.VarChar
+  chemotherapy_plan            chemotherapy_plan[]
+  appointment_history          appointment_history?          @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade, map: "fk_encounter_appointment")
+  branch                       branch                        @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_encounter_branch")
+  department_master            department_master?            @relation(fields: [department_id], references: [department_id], onDelete: Cascade, map: "fk_encounter_department")
+  employees                    employees?                    @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, map: "fk_encounter_doctor")
+  patient_bio_data             patient_bio_data              @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade, map: "fk_encounter_patient")
+  doctor_schedule              doctor_schedule?              @relation(fields: [schedule_id], references: [schedule_id], onDelete: NoAction, map: "fk_encounter_schedule")
+  user_table                   user_table?                   @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_encounter_user")
+  encounter_performance_status encounter_performance_status?
+  encounter_symptom            encounter_symptom[]
+  patient_allergy              patient_allergy[]
+  patient_comorbidity          patient_comorbidity[]
+>>>>>>> 68ef6f970abb3a64ccb677fe5c2abf2548c0bfc8
 
   @@index([patient_id], map: "idx_encounter_patient")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model encounter_performance_status {
+  id                        BigInt                    @id @default(autoincrement())
+  encounter_no              String                    @unique @db.VarChar(30)
+  performance_status_id     BigInt
+  assessed_by               String?                   @db.VarChar(20)
+  assessed_at               DateTime                  @default(now()) @db.Timestamp(6)
+  clinical_notes            String?                   @db.VarChar(1000)
+  created_at                DateTime                  @default(now()) @db.Timestamp(6)
+  updated_at                DateTime                  @default(now()) @db.Timestamp(6)
+  employees                 employees?                @relation(fields: [assessed_by], references: [employee_id], onDelete: Restrict)
+  encounter                 encounter                 @relation(fields: [encounter_no], references: [encounter_no], map: "fk_encounter_perf_status")
+  performance_status_master performance_status_master @relation(fields: [performance_status_id], references: [id], map: "fk_perf_status_master")
+
+  @@index([encounter_no], map: "idx_encounter_perf_status_encounter")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model encounter_symptom {
+  id             BigInt         @id @default(autoincrement())
+  encounter_no   String         @db.VarChar(30)
+  symptom_id     BigInt
+  severity       String?        @db.VarChar(30)
+  duration_days  Int?
+  onset_date     DateTime?      @db.Date
+  clinical_notes String?        @db.VarChar(1000)
+  status         String         @default("ACTIVE") @db.VarChar(20)
+  recorded_by    String?        @db.VarChar(20)
+  recorded_at    DateTime       @default(now()) @db.Timestamp(6)
+  updated_at     DateTime       @default(now()) @db.Timestamp(6)
+  encounter      encounter      @relation(fields: [encounter_no], references: [encounter_no])
+  employees      employees?     @relation(fields: [recorded_by], references: [employee_id], onDelete: Restrict)
+  symptom_master symptom_master @relation(fields: [symptom_id], references: [id], map: "fk_encounter_symptom_master")
+
+  @@unique([encounter_no, symptom_id, status], map: "uq_encounter_symptom_active")
+  @@index([encounter_no], map: "idx_encounter_symptom_encounter")
+  @@index([status], map: "idx_encounter_symptom_status")
+  @@index([symptom_id], map: "idx_encounter_symptom_symptom")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1520,6 +1664,31 @@ model oncology_staging_detail {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model patient_allergy {
+  id                         BigInt           @id @default(autoincrement())
+  patient_id                 String           @db.VarChar(20)
+  allergy_id                 BigInt
+  reaction                   String?          @db.VarChar(500)
+  severity                   String?          @db.VarChar(30)
+  status                     String           @default("ACTIVE") @db.VarChar(20)
+  identified_at              DateTime         @default(now()) @db.Timestamp(6)
+  identified_by              String?          @db.VarChar(20)
+  identified_at_encounter_no String?          @db.VarChar(30)
+  clinical_notes             String?          @db.VarChar(1000)
+  updated_at                 DateTime         @default(now()) @db.Timestamp(6)
+  updated_by                 String?          @db.VarChar(20)
+  allergy_master             allergy_master   @relation(fields: [allergy_id], references: [id], map: "fk_patient_allergy_master")
+  encounter                  encounter?       @relation(fields: [identified_at_encounter_no], references: [encounter_no], onDelete: Restrict)
+  employees                  employees?       @relation(fields: [identified_by], references: [employee_id], onDelete: Restrict)
+  patient_bio_data           patient_bio_data @relation(fields: [patient_id], references: [patient_id])
+
+  @@unique([patient_id, allergy_id, status], map: "uq_patient_allergy_active")
+  @@index([allergy_id], map: "idx_patient_allergy_allergy")
+  @@index([patient_id], map: "idx_patient_allergy_patient")
+  @@index([status], map: "idx_patient_allergy_status")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model patient_bio_data {
   id                             BigInt                         @id @default(autoincrement())
   patient_id                     String                         @unique @db.VarChar(20)
@@ -1553,11 +1722,43 @@ model patient_bio_data {
   chemotherapy_plan              chemotherapy_plan[]
   encounter                      encounter[]
   oncology_staging_detail        oncology_staging_detail[]
+<<<<<<< HEAD
   patient_allergy                patient_allergy[]              @relation("fk_patient_allergy_patient")
   branch                         branch?                        @relation(fields: [branch_id], references: [branch_id], onDelete: Restrict, map: "fk_patient_bio_branch")
   user_table                     user_table?                    @relation(fields: [user_id], references: [user_id], onDelete: Restrict, map: "fk_patient_bio_user")
   patient_comorbidity            patient_comorbidity[]          @relation("fk_patient_comorbidity_patient")
   patient_history                patient_history[]
+=======
+  patient_allergy                patient_allergy[]
+  branch                         branch?                        @relation(fields: [branch_id], references: [branch_id], onDelete: Restrict, map: "fk_patient_bio_branch")
+  user_table                     user_table?                    @relation(fields: [user_id], references: [user_id], onDelete: Restrict, map: "fk_patient_bio_user")
+  patient_comorbidity            patient_comorbidity[]
+  patient_history                patient_history[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model patient_comorbidity {
+  id                         BigInt           @id @default(autoincrement())
+  patient_id                 String           @db.VarChar(20)
+  diagnosis_id               String           @db.VarChar(20)
+  status                     String           @default("ACTIVE") @db.VarChar(20)
+  onset_date                 DateTime?        @db.Date
+  identified_at              DateTime         @default(now()) @db.Timestamp(6)
+  identified_by              String?          @db.VarChar(20)
+  identified_at_encounter_no String?          @db.VarChar(30)
+  clinical_notes             String?          @db.VarChar(1000)
+  updated_at                 DateTime         @default(now()) @db.Timestamp(6)
+  updated_by                 String?          @db.VarChar(20)
+  diagnosis                  diagnosis        @relation(fields: [diagnosis_id], references: [diagnosis_id])
+  encounter                  encounter?       @relation(fields: [identified_at_encounter_no], references: [encounter_no], onDelete: Restrict)
+  employees                  employees?       @relation(fields: [identified_by], references: [employee_id], onDelete: Restrict)
+  patient_bio_data           patient_bio_data @relation(fields: [patient_id], references: [patient_id])
+
+  @@unique([patient_id, diagnosis_id, status], map: "uq_patient_comorbidity_active")
+  @@index([diagnosis_id], map: "idx_patient_comorbidity_diagnosis")
+  @@index([patient_id], map: "idx_patient_comorbidity_patient")
+  @@index([status], map: "idx_patient_comorbidity_status")
+>>>>>>> 68ef6f970abb3a64ccb677fe5c2abf2548c0bfc8
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1634,6 +1835,22 @@ model patient_history {
   user_table                 user_table?               @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_patienthistory_user")
   employees                  employees?                @relation(fields: [employee_id], references: [employee_id])
   prescription               prescription[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model performance_status_master {
+  id                           BigInt                         @id @default(autoincrement())
+  code                         String                         @unique @db.VarChar(20)
+  description                  String                         @db.VarChar(200)
+  display_order                Int                            @default(0)
+  is_active                    Boolean                        @default(true)
+  created_at                   DateTime                       @default(now()) @db.Timestamp(6)
+  updated_at                   DateTime                       @default(now()) @db.Timestamp(6)
+  created_by                   String?                        @db.VarChar(20)
+  updated_by                   String?                        @db.VarChar(20)
+  encounter_performance_status encounter_performance_status[]
+
+  @@index([is_active], map: "idx_perf_status_active")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1754,6 +1971,25 @@ model staging_reference {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model symptom_master {
+  id                BigInt              @id @default(autoincrement())
+  code              String              @unique @db.VarChar(30)
+  name              String              @db.VarChar(150)
+  description       String?             @db.VarChar(500)
+  category          String?             @db.VarChar(100)
+  body_system       String?             @db.VarChar(100)
+  is_active         Boolean             @default(true)
+  created_at        DateTime            @default(now()) @db.Timestamp(6)
+  updated_at        DateTime            @default(now()) @db.Timestamp(6)
+  created_by        String?             @db.VarChar(20)
+  updated_by        String?             @db.VarChar(20)
+  encounter_symptom encounter_symptom[]
+
+  @@index([is_active], map: "idx_symptom_active")
+  @@index([category], map: "idx_symptom_category")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model user_branch_mapping {
   user_id           String     @db.VarChar(20)
   branch_id         String     @db.VarChar(10)
@@ -1821,6 +2057,7 @@ model user_table {
   branch                                             branch?                   @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_user_branch")
 }
 
+<<<<<<< HEAD
 /// Master table for ECOG Performance Status values
 model performance_status_master {
   id                           BigInt                         @id @default(autoincrement())
@@ -1962,6 +2199,12 @@ model patient_comorbidity {
   @@index([patient_id], map: "idx_patient_comorbidity_patient")
   @@index([diagnosis_id], map: "idx_patient_comorbidity_diagnosis")
   @@index([status], map: "idx_patient_comorbidity_status")
+=======
+enum DoctorScheduleChangeMode {
+  ADD
+  OVERRIDE
+  CANCEL
+>>>>>>> 68ef6f970abb3a64ccb677fe5c2abf2548c0bfc8
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

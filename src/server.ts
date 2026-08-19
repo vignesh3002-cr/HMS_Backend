@@ -20,20 +20,22 @@ import oncologyRoutes from "./modules/oncology/oncology.routes";
 import auditRoutes from "./modules/audit/audit.routes";
 import exportRoutes from "./modules/export/export.routes";
 import doctorTransferRoutes from "./modules/doctor-transfer/doctorTransfer.routes";
+import doctorScheduleRoutes from "./modules/doctor-schedule/doctorSchedule.routes";
 import labTestCategoryRoutes from "./modules/lab-test-category/lab-test-category.routes";
 import labTestMasterRoutes from "./modules/lab-test-master/lab-test-master.routes";
 import labOrderRoutes from "./modules/lab-order/lab-order-routes";
 import labOrderItemRoutes from "./modules/lab-order-item/lab-order-item.routes";
 import qualificationMasterRoutes from "./modules/qualification-master/qualification-master.routes";
 import diagnosisRoutes from "./modules/diagnosis/diagnosis.routes";
+import { startAppointmentStatusJob } from "./modules/appointment/appointment-status.job";
 import clinicalDetailsRoutes from "./modules/clinical-details/clinical-details.routes";
-
 
 import { hashPassword } from "./utils/bcrypt";
 
-// Fix BigInt serialization - Prisma returns BigInt types that JSON.stringify can't handle
+// Fix BigInt serialization - Prisma returns BigInt types
+// that JSON.stringify can't handle
 (BigInt.prototype as any).toJSON = function () {
-    return this.toString();
+  return this.toString();
 };
 
 const app = express();
@@ -106,9 +108,11 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-
 app.get("/api/health", (_req, res) => {
-    res.json({ success: true, message: "Server is running" });
+  res.json({
+    success: true,
+    message: "Server is running",
+  });
 });
 
 app.use("/api/auth", authRoutes);
@@ -134,7 +138,12 @@ app.use("/api/lab-order-item", labOrderItemRoutes);
 app.use("/api/oncology", oncologyRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/export", exportRoutes);
+
 app.use("/api/doctors", doctorTransferRoutes);
+
+// Doctor schedule ADD / OVERRIDE / CANCEL APIs
+app.use("/api/doctor-schedule", doctorScheduleRoutes);
+
 app.use("/api/qualification-master", qualificationMasterRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/encounters", encounterRoutes);
@@ -142,13 +151,13 @@ app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/diagnosis", diagnosisRoutes);
 app.use("/api/doctors", doctorTransferRoutes);
+
 app.use("/api/hashpassword", async (req, res) => {
+  const { password } = req.body;
 
-    const { password } = req.body;
+  const hashedPassword = await hashPassword(password);
 
-    const hashedPassword = await hashPassword(password);
-
-    res.json({ hashedPassword });
+  res.json({ hashedPassword });
 });
 
 const PORT = process.env.PORT || 5000;
@@ -156,5 +165,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
 
     console.log(`Server running on port ${PORT}`);
+
+    startAppointmentStatusJob();
 
 });

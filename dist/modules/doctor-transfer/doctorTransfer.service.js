@@ -17,6 +17,9 @@ function todayDateOnly() {
 function formatDateOnly(date) {
     return date.toISOString().slice(0, 10);
 }
+function normalizeDayOfWeek(day) {
+    return day.trim().toUpperCase();
+}
 class DoctorTransferService {
     repository = new doctorTransfer_repository_1.DoctorTransferRepository();
     appointmentRepository = new appointment_repository_1.AppointmentRepository();
@@ -44,6 +47,7 @@ class DoctorTransferService {
             if (hour.branch_id !== newBranchId) {
                 throw new Error("All working hours must belong to the new branch");
             }
+            hour.day_of_week = normalizeDayOfWeek(hour.day_of_week);
             if (!appointment_constants_1.DAY_OF_WEEK_NAMES.includes(hour.day_of_week)) {
                 throw new Error(`Invalid day_of_week: ${hour.day_of_week}`);
             }
@@ -93,8 +97,9 @@ class DoctorTransferService {
     // active schedule at the old branch is deactivated and the source
     // mapping is flipped to status 0 unconditionally, so the doctor stops
     // appearing at that branch in every status-filtered read.
-    async applyDoctorScheduleMove(tx, params) {
+    async applySlotMove(tx, params) {
         const now = new Date();
+        const closedBranchIds = [];
         if (params.closing_schedule_ids.length > 0) {
             const closingSchedules = await this.repository.findSchedulesByIds(tx, params.closing_schedule_ids);
             await this.repository.closeSchedulesByIds(tx, params.closing_schedule_ids, now, params.deletedBy);
@@ -106,16 +111,11 @@ class DoctorTransferService {
                 const remaining = await this.repository.countActiveSchedulesAtBranch(tx, params.employee_id, branchId);
                 if (remaining === 0) {
                     await this.repository.closeBranchMapping(tx, params.employee_id, branchId, now, params.employee_user_id);
+                    closedBranchIds.push(branchId);
                 }
             }
         }
-        // True transfer: the doctor is leaving the source branch entirely -
-        // close whatever schedules remain there (conflicting ones were
-        // already closed above) and deactivate the source mapping (status 0).
-        if (params.old_branch_id && params.old_branch_id !== params.new_branch_id) {
-            await this.repository.closeSchedulesAtBranch(tx, params.employee_id, params.old_branch_id, now, params.deletedBy);
-            await this.repository.closeBranchMapping(tx, params.employee_id, params.old_branch_id, now, params.employee_user_id);
-        }
+        // NOTE: No source‑branch closure here – this is only a slot‑move / ADD_BRANCH.
         const existingNewBranchMapping = await this.repository.findActiveBranchMapping(params.employee_id, params.new_branch_id, params.employee_user_id);
         if (!existingNewBranchMapping) {
             await this.repository.createBranchMapping(tx, {
@@ -131,7 +131,7 @@ class DoctorTransferService {
             await this.repository.createDoctorSchedule(tx, {
                 employee_id: params.employee_id,
                 branch_id: schedule.branch_id,
-                day_of_week: schedule.day_of_week,
+                day_of_week: normalizeDayOfWeek(schedule.day_of_week),
                 shift_name: schedule.shift_name,
                 start_time: (0, appointment_utils_1.timeStringToDate)(schedule.start_time),
                 end_time: (0, appointment_utils_1.timeStringToDate)(schedule.end_time),
@@ -140,8 +140,8 @@ class DoctorTransferService {
                 effective_from: params.effective_date
             });
         }
-        // Only bootstraps the doctor's primary branch/department pointer the
-        // first time they're ever assigned anywhere - an existing primary
+        // Only bootstrap the doctor's primary branch/department pointer the
+        // first time they're ever assigned anywhere – an existing primary
         // branch is never overwritten just because a new branch was added.
         if (!params.employee_branch_id) {
             await this.repository.updateEmployeeBranchDept(tx, params.employee_id, {
@@ -149,6 +149,21 @@ class DoctorTransferService {
                 ...(params.new_department_id ? { department_id: params.new_department_id } : {})
             });
         }
+        return closedBranchIds;
+    }
+    async applyDoctorTransfer(tx, params) {
+        // Reuse the slot‑move logic for schedule creation / conflict cleanup
+        const closedBranchIds = await this.applySlotMove(tx, params);
+        // True transfer: close ALL remaining schedules at the source branch and
+        // deactivate the mapping.
+        if (params.old_branch_id && params.old_branch_id !== params.new_branch_id) {
+            await this.repository.closeSchedulesAtBranch(tx, params.employee_id, params.old_branch_id, new Date(), params.deletedBy);
+            await this.repository.closeBranchMapping(tx, params.employee_id, params.old_branch_id, new Date(), params.employee_user_id);
+            if (!closedBranchIds.includes(params.old_branch_id)) {
+                closedBranchIds.push(params.old_branch_id);
+            }
+        }
+        return closedBranchIds;
     }
     timeRangesOverlap(aStart, aEnd, bStart, bEnd) {
         return (0, appointment_utils_1.timeToMinutes)(aStart) < (0, appointment_utils_1.timeToMinutes)(bEnd) && (0, appointment_utils_1.timeToMinutes)(bStart) < (0, appointment_utils_1.timeToMinutes)(aEnd);
@@ -204,7 +219,18 @@ class DoctorTransferService {
         if (!dto.new_branch_id) {
             throw new Error("New branch is required");
         }
+        // One doctor, one transfer in flight: a PENDING_CONFIRMATION transfer
+        // must be resolved before a new one can be initiated, otherwise
+        // overlapping requests can close/re-create the same schedule rows.
+        const pendingTransfer = await this.repository.findPendingTransfer(employeeId);
+        if (pendingTransfer) {
+            throw new Error(`Doctor already has transfer ${pendingTransfer.transfer_id} awaiting confirmation — complete or discard it before starting a new one`);
+        }
+        if (dto.old_branch_id && dto.close_schedule_ids && dto.close_schedule_ids.length > 0) {
+            throw new Error("old_branch_id and close_schedule_ids cannot be used together");
+        }
         let oldBranchId = null;
+        let requestedCloseScheduleIds = [];
         if (mode === "TRANSFER") {
             // Rule: a transfer must always have a real FROM branch - "None"
             // is not a valid source. Leaving no source is the Add Branch
@@ -223,6 +249,17 @@ class DoctorTransferService {
             if (!sourceMapping) {
                 throw new Error("Doctor is not assigned to the source branch");
             }
+            // The destination must NOT already be an active assignment —
+            // otherwise the "transfer" silently does nothing at the
+            // destination while still closing the source branch.
+            const destinationMapping = await this.repository.findActiveBranchMapping(employeeId, dto.new_branch_id, employee.user_id);
+            if (destinationMapping) {
+                throw new Error("Doctor is already assigned to the destination branch — no transfer is needed");
+            }
+        }
+        else if (dto.close_schedule_ids && dto.close_schedule_ids.length > 0) {
+            // Slot-level move: exactly these rows are closed, nothing else.
+            requestedCloseScheduleIds = dto.close_schedule_ids.map(Number).filter(Number.isFinite).map(BigInt);
         }
         const newBranch = await this.repository.findActiveBranch(dto.new_branch_id);
         if (!newBranch) {
@@ -253,13 +290,40 @@ class DoctorTransferService {
             ...hour,
             consultation_minutes: consultationMinutes
         }));
-        // Conflicts are computed against EVERY branch the doctor is
-        // currently active at (including new_branch_id itself, if they're
-        // already there) - not a single "old branch". Only schedule rows
-        // that actually overlap the requested hours are ever touched.
         const activeSchedules = await this.repository.findAllActiveSchedules(employeeId);
-        const conflictingSchedules = this.findConflictingSchedules(activeSchedules, dto.working_hours);
-        const closingScheduleIds = conflictingSchedules.map((s) => s.schedule_id);
+        // The explicitly requested rows being replaced (slot-level move) are
+        // excluded from the conflict scan — they are closing anyway.
+        const requestedCloseSet = new Set(requestedCloseScheduleIds.map(String));
+        const schedulesStaying = activeSchedules.filter((s) => !requestedCloseSet.has(String(s.schedule_id)));
+        // Every requested close must be one of the doctor's OWN active rows —
+        // never anyone else's schedule.
+        if (requestedCloseScheduleIds.length > 0) {
+            for (const id of requestedCloseScheduleIds) {
+                if (!activeSchedules.some((s) => s.schedule_id === id)) {
+                    throw new Error(`Schedule ${id} does not belong to this doctor or is not active`);
+                }
+            }
+        }
+        const conflictingSchedules = this.findConflictingSchedules(schedulesStaying, dto.working_hours);
+        const describeConflict = (s) => `${s.day_of_week} ${(0, appointment_utils_1.formatTimeOfDay)(s.start_time)}–${(0, appointment_utils_1.formatTimeOfDay)(s.end_time)} at branch ${s.branch_id}`;
+        // Safety rule: the system only changes what was explicitly asked for.
+        // Overlapping slots at a branch the doctor is KEEPING are never
+        // silently closed — the request is rejected and the admin decides.
+        if (conflictingSchedules.length > 0 && mode === "ADD_BRANCH") {
+            throw new Error(`New working hours conflict with the doctor's existing schedule: ${conflictingSchedules.map(describeConflict).join(", ")}. ` +
+                `Nothing was changed — cancel or edit the conflicting slot first, or choose different hours.`);
+        }
+        if (conflictingSchedules.length > 0 && mode === "TRANSFER" && oldBranchId) {
+            const foreignConflicts = conflictingSchedules.filter((s) => s.branch_id !== oldBranchId);
+            if (foreignConflicts.length > 0) {
+                throw new Error(`New working hours conflict with the doctor's schedule at another branch they are staying at: ${foreignConflicts.map(describeConflict).join(", ")}. ` +
+                    `Nothing was changed — cancel or edit the conflicting slot first, or choose different hours.`);
+            }
+        }
+        const closingScheduleIds = [
+            ...conflictingSchedules.map((s) => s.schedule_id),
+            ...requestedCloseScheduleIds
+        ];
         // A TRANSFER also closes every schedule the doctor still has at the
         // source branch - they are leaving that branch entirely, not just
         // the slots that clash with the new hours. Those schedules' future
@@ -276,18 +340,37 @@ class DoctorTransferService {
         const completeImmediately = async (affectedCount) => prisma_1.default.$transaction(async (tx) => {
             const transferId = await this.repository.generateTransferId(tx);
             const now = new Date();
-            await this.applyDoctorScheduleMove(tx, {
-                employee_id: employeeId,
-                employee_user_id: employee.user_id,
-                employee_branch_id: employee.branch_id,
-                old_branch_id: oldBranchId,
-                new_branch_id: dto.new_branch_id,
-                new_department_id: newDepartmentId,
-                effective_date: effectiveDate,
-                new_schedule: scheduleSnapshot,
-                closing_schedule_ids: closingScheduleIds,
-                deletedBy: mode === "TRANSFER" ? requestedBy : null
-            });
+            let closedBranchIds;
+            if (oldBranchId) {
+                // True transfer – close all remaining schedules on the source branch
+                closedBranchIds = await this.applyDoctorTransfer(tx, {
+                    employee_id: employeeId,
+                    employee_user_id: employee.user_id,
+                    employee_branch_id: employee.branch_id,
+                    old_branch_id: oldBranchId,
+                    new_branch_id: dto.new_branch_id,
+                    new_department_id: newDepartmentId,
+                    effective_date: effectiveDate,
+                    new_schedule: scheduleSnapshot,
+                    closing_schedule_ids: closingScheduleIds,
+                    deletedBy: requestedBy
+                });
+            }
+            else {
+                // Slot‑move / ADD_BRANCH – only the explicit schedule rows are closed
+                closedBranchIds = await this.applySlotMove(tx, {
+                    employee_id: employeeId,
+                    employee_user_id: employee.user_id,
+                    employee_branch_id: employee.branch_id,
+                    old_branch_id: null,
+                    new_branch_id: dto.new_branch_id,
+                    new_department_id: newDepartmentId,
+                    effective_date: effectiveDate,
+                    new_schedule: scheduleSnapshot,
+                    closing_schedule_ids: closingScheduleIds,
+                    deletedBy: null
+                });
+            }
             return this.repository.createDoctorTransfer(tx, {
                 transfer_id: transferId,
                 employee_id: employeeId,
@@ -304,10 +387,13 @@ class DoctorTransferService {
                 confirmed_by: requestedBy,
                 confirmed_at: now,
                 completed_at: now
-            });
+            }).then((transfer) => ({ transfer, closedBranchIds }));
         });
+        const describeClosedBranches = (ids) => ids.length > 0
+            ? ` The doctor's assignment at branch ${ids.join(", ")} was also closed (no active schedule remains there).`
+            : "";
         if (closingScheduleIds.length === 0) {
-            const transfer = await completeImmediately(0);
+            const { transfer } = await completeImmediately(0);
             return {
                 transfer_id: transfer.transfer_id,
                 status: transfer.status,
@@ -315,13 +401,24 @@ class DoctorTransferService {
                 affected_appointment_count: 0
             };
         }
-        const { total, appointments } = await this.repository.findFutureAppointmentsByScheduleIds(closingScheduleIds, effectiveDate);
+        const closingSchedules = closingScheduleIds.length > 0
+            ? await this.repository.findSchedulesByIds(prisma_1.default, closingScheduleIds)
+            : [];
+        const closingBranchIds = Array.from(new Set(closingSchedules.map((s) => s.branch_id)));
+        if (mode === "TRANSFER" && oldBranchId) {
+            closingBranchIds.push(oldBranchId);
+        }
+        const { total, appointments } = await this.repository.findFutureAppointmentsByScheduleIds(closingScheduleIds, effectiveDate, {
+            employeeId,
+            branchIds: closingBranchIds,
+            includeAllAtBranches: mode === "TRANSFER" && oldBranchId !== null
+        });
         if (total === 0) {
-            const transfer = await completeImmediately(0);
+            const { transfer, closedBranchIds } = await completeImmediately(0);
             return {
                 transfer_id: transfer.transfer_id,
                 status: transfer.status,
-                message: `${closingScheduleIds.length} conflicting schedule slot(s) were closed and the doctor was assigned to the new branch immediately (no future appointments were affected).`,
+                message: `${closingScheduleIds.length} schedule slot(s) were closed and the doctor was assigned to the new branch immediately (no future appointments were affected).${describeClosedBranches(closedBranchIds)}`,
                 affected_appointment_count: 0
             };
         }
@@ -442,6 +539,19 @@ class DoctorTransferService {
             throw new Error("From and To branches must be different");
         }
         const employee = await this.resolveDoctor(employeeId);
+        // Defense in depth: the destination must not be an active assignment
+        // at confirm time either (a transfer there would be a no-op for the
+        // destination while still closing the source branch). This only
+        // applies to TRUE transfers, which always carry old_branch_id —
+        // slot-level moves (ADD_BRANCH + close_schedule_ids, confirmed from
+        // the Scheduled page without old_branch_id) legitimately target
+        // branches the doctor is already assigned to.
+        if (dto.old_branch_id) {
+            const destinationMapping = await this.repository.findActiveBranchMapping(employeeId, transfer.new_branch_id, employee.user_id);
+            if (destinationMapping) {
+                throw new Error("Doctor is already assigned to the destination branch — no transfer is needed");
+            }
+        }
         let replacementEmployee = null;
         if (dto.action === doctorTransfer_constants_1.TRANSFER_ACTION.TRANSFER) {
             if (!dto.replacement_employee_id) {
@@ -482,7 +592,34 @@ class DoctorTransferService {
         const successful = [];
         const updatedTransfer = await prisma_1.default.$transaction(async (tx) => {
             await this.repository.lockDoctorTransfer(tx, transfer.transfer_id);
-            const appointments = await this.repository.findAllFutureAppointmentsForTransferByScheduleIds(tx, transfer.closing_schedule_ids, transfer.effective_date);
+            // Recompute the closing set at confirm time instead of trusting
+            // the initiate-time snapshot: schedules may have been edited (or
+            // new ones added) between initiate and confirm, and the set of
+            // affected appointments must match what is actually being closed
+            // right now - otherwise bookings can be missed or schedules can
+            // look "not transferred" after the transfer completes.
+            const activeSchedulesNow = await this.repository.findAllActiveSchedulesInTx(tx, employeeId);
+            const closingScheduleIdsNow = this.findConflictingSchedules(activeSchedulesNow, transfer.new_schedule).map((s) => s.schedule_id);
+            if (dto.old_branch_id) {
+                for (const schedule of activeSchedulesNow) {
+                    if (schedule.branch_id === dto.old_branch_id &&
+                        !closingScheduleIdsNow.includes(schedule.schedule_id)) {
+                        closingScheduleIdsNow.push(schedule.schedule_id);
+                    }
+                }
+            }
+            const closingSchedulesNow = closingScheduleIdsNow.length > 0
+                ? await this.repository.findSchedulesByIds(tx, closingScheduleIdsNow)
+                : [];
+            const closingBranchIdsNow = Array.from(new Set(closingSchedulesNow.map((s) => s.branch_id)));
+            if (dto.old_branch_id) {
+                closingBranchIdsNow.push(dto.old_branch_id);
+            }
+            const appointments = await this.repository.findAllFutureAppointmentsForTransferByScheduleIds(tx, closingScheduleIdsNow, transfer.effective_date, {
+                employeeId,
+                branchIds: closingBranchIdsNow,
+                includeAllAtBranches: !!dto.old_branch_id
+            });
             summary.total = appointments.length;
             for (const appointment of appointments) {
                 await this.repository.lockAppointment(tx, appointment.appointment_id);
@@ -598,18 +735,36 @@ class DoctorTransferService {
                     summary.cancelled += 1;
                 }
             }
-            await this.applyDoctorScheduleMove(tx, {
-                employee_id: employeeId,
-                employee_user_id: employee.user_id,
-                employee_branch_id: employee.branch_id,
-                old_branch_id: dto.old_branch_id ?? null,
-                new_branch_id: transfer.new_branch_id,
-                new_department_id: transfer.new_department_id,
-                effective_date: transfer.effective_date,
-                new_schedule: transfer.new_schedule,
-                closing_schedule_ids: transfer.closing_schedule_ids,
-                deletedBy: dto.action === doctorTransfer_constants_1.TRANSFER_ACTION.TRANSFER ? confirmedBy : null
-            });
+            if (dto.old_branch_id) {
+                // True transfer – close all remaining schedules on the source branch
+                await this.applyDoctorTransfer(tx, {
+                    employee_id: employeeId,
+                    employee_user_id: employee.user_id,
+                    employee_branch_id: employee.branch_id,
+                    old_branch_id: dto.old_branch_id,
+                    new_branch_id: transfer.new_branch_id,
+                    new_department_id: transfer.new_department_id,
+                    effective_date: transfer.effective_date,
+                    new_schedule: transfer.new_schedule,
+                    closing_schedule_ids: closingScheduleIdsNow,
+                    deletedBy: dto.action === doctorTransfer_constants_1.TRANSFER_ACTION.TRANSFER ? confirmedBy : null
+                });
+            }
+            else {
+                // Slot‑move – only the explicit schedule rows are closed
+                await this.applySlotMove(tx, {
+                    employee_id: employeeId,
+                    employee_user_id: employee.user_id,
+                    employee_branch_id: employee.branch_id,
+                    old_branch_id: null,
+                    new_branch_id: transfer.new_branch_id,
+                    new_department_id: transfer.new_department_id,
+                    effective_date: transfer.effective_date,
+                    new_schedule: transfer.new_schedule,
+                    closing_schedule_ids: closingScheduleIdsNow,
+                    deletedBy: null
+                });
+            }
             const now = new Date();
             return this.repository.updateDoctorTransfer(tx, transfer.transfer_id, {
                 status: doctorTransfer_constants_1.TRANSFER_STATUS.COMPLETED,

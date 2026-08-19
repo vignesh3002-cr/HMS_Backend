@@ -7,19 +7,15 @@ const service = new AppointmentService();
 export class AppointmentController {
 
     async createAppointment(req: Request, res: Response) {
-
         try {
-
             const errors = validationResult(req);
 
             if (!errors.isEmpty()) {
-
                 return res.status(400).json({
                     success: false,
                     message: errors.array()[0].msg,
                     errors: errors.array()
                 });
-
             }
 
             const createdBy = (req as any).user?.role || "SYSTEM";
@@ -36,34 +32,26 @@ export class AppointmentController {
             });
 
         } catch (error: any) {
-
             return res.status(400).json({
                 success: false,
                 message: error.message
             });
-
         }
-
     }
 
     async getAppointments(req: Request, res: Response) {
-
         try {
-
             const errors = validationResult(req);
 
             if (!errors.isEmpty()) {
-
                 return res.status(400).json({
                     success: false,
                     message: errors.array()[0].msg,
                     errors: errors.array()
                 });
-
             }
 
             const appointments = await service.getAppointments({
-
                 branchId: req.query.branchId as string,
                 employeeId: req.query.employeeId as string,
                 patientId: req.query.patientId as string,
@@ -75,7 +63,6 @@ export class AppointmentController {
                 sortOrder: req.query.sortOrder as any,
                 page: Number(req.query.page || 1),
                 limit: Number(req.query.limit || 10)
-
             });
 
             return res.json({
@@ -85,30 +72,23 @@ export class AppointmentController {
             });
 
         } catch (error: any) {
-
             return res.status(500).json({
                 success: false,
                 message: error.message
             });
-
         }
-
     }
 
     async getAvailableSlots(req: Request, res: Response) {
-
         try {
-
             const errors = validationResult(req);
 
             if (!errors.isEmpty()) {
-
                 return res.status(400).json({
                     success: false,
                     message: errors.array()[0].msg,
                     errors: errors.array()
                 });
-
             }
 
             const slots = await service.getAvailableSlots(
@@ -124,30 +104,23 @@ export class AppointmentController {
             });
 
         } catch (error: any) {
-
             return res.status(400).json({
                 success: false,
                 message: error.message
             });
-
         }
-
     }
 
     async getDoctorSlotSummary(req: Request, res: Response) {
-
         try {
-
             const errors = validationResult(req);
 
             if (!errors.isEmpty()) {
-
                 return res.status(400).json({
                     success: false,
                     message: errors.array()[0].msg,
                     errors: errors.array()
                 });
-
             }
 
             const summary = await service.getDoctorSlotSummary(
@@ -162,30 +135,23 @@ export class AppointmentController {
             });
 
         } catch (error: any) {
-
             return res.status(400).json({
                 success: false,
                 message: error.message
             });
-
         }
-
     }
 
     async getDoctorWeekSlotSummary(req: Request, res: Response) {
-
         try {
-
             const errors = validationResult(req);
 
             if (!errors.isEmpty()) {
-
                 return res.status(400).json({
                     success: false,
                     message: errors.array()[0].msg,
                     errors: errors.array()
                 });
-
             }
 
             const summary = await service.getDoctorWeekSlotSummary(
@@ -200,20 +166,15 @@ export class AppointmentController {
             });
 
         } catch (error: any) {
-
             return res.status(400).json({
                 success: false,
                 message: error.message
             });
-
         }
-
     }
 
     async getAppointmentByNumber(req: Request, res: Response) {
-
         try {
-
             const appointment = await service.getAppointmentByNumber(
                 req.params.appointmentNo as string
             );
@@ -225,30 +186,23 @@ export class AppointmentController {
             });
 
         } catch (error: any) {
-
             return res.status(404).json({
                 success: false,
                 message: error.message
             });
-
         }
-
     }
 
     async updateAppointment(req: Request, res: Response) {
-
         try {
-
             const errors = validationResult(req);
 
             if (!errors.isEmpty()) {
-
                 return res.status(400).json({
                     success: false,
                     message: errors.array()[0].msg,
                     errors: errors.array()
                 });
-
             }
 
             const appointment = await service.updateAppointment(
@@ -264,36 +218,30 @@ export class AppointmentController {
             });
 
         } catch (error: any) {
-
             return res.status(400).json({
                 success: false,
                 message: error.message
             });
-
         }
-
     }
 
     async updateAppointmentStatus(req: Request, res: Response) {
-
         try {
-
             const errors = validationResult(req);
 
             if (!errors.isEmpty()) {
-
                 return res.status(400).json({
                     success: false,
                     message: errors.array()[0].msg,
                     errors: errors.array()
                 });
-
             }
 
+            // IMPORTANT:
+            // updateAppointmentStatus currently accepts only 2 arguments.
             const appointment = await service.updateAppointmentStatus(
                 req.params.appointmentNo as string,
-                req.body.status,
-                req.body.cancel_reason
+                req.body.status
             );
 
             return res.json({
@@ -303,35 +251,34 @@ export class AppointmentController {
             });
 
         } catch (error: any) {
-
             return res.status(400).json({
                 success: false,
                 message: error.message
             });
-
         }
-
     }
 
     async cancelAppointment(req: Request, res: Response) {
-
         try {
-
             const errors = validationResult(req);
 
             if (!errors.isEmpty()) {
-
                 return res.status(400).json({
                     success: false,
                     message: errors.array()[0].msg,
                     errors: errors.array()
                 });
-
             }
+
+            const cancelledBy =
+                (req as any).user?.user_id ||
+                (req as any).user?.id ||
+                null;
 
             const appointment = await service.cancelAppointment(
                 req.params.appointmentNo as string,
-                req.body.cancel_reason
+                req.body.cancel_reason,
+                cancelledBy
             );
 
             return res.json({
@@ -341,14 +288,10 @@ export class AppointmentController {
             });
 
         } catch (error: any) {
-
             return res.status(400).json({
                 success: false,
                 message: error.message
             });
-
         }
-
     }
-
 }

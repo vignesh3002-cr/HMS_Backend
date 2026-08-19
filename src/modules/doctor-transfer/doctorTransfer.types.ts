@@ -14,6 +14,11 @@ export interface InitiateTransferDto {
     // not a valid transfer source.
     old_branch_id?: string;
 
+    // Slot-level move (used by the schedule grid when a single slot changes
+    // branch): close EXACTLY these schedule rows and nothing else. Mutually
+    // exclusive with old_branch_id — supplying both is an error.
+    close_schedule_ids?: number[];
+
     new_branch_id: string;
 
     new_department_id?: string;
