@@ -32,7 +32,7 @@ router.get(
 router.put(
     "/:employeeId",
     authenticate,
-    authorizeNoSelf("employee.update"),
+    authorizeSelfOrPermission("employee.update"),
     branchScope,
     controller.updateEmployee.bind(controller)
 );
