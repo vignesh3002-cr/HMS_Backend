@@ -73,7 +73,8 @@ export class OncologyRepository {
 
         return prisma.cancer_types.findMany({
             where: { active_status: 1 },
-            orderBy: { cancer_type: "asc" }
+            orderBy: { cancer_type: "asc" },
+            include:{staging_reference: true}
         });
 
     }

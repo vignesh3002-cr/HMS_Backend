@@ -430,6 +430,32 @@ model chemotherapy_cycle {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model chemotherapy_discharge_instructions {
+  id                            BigInt                        @id @default(autoincrement())
+  discharge_instruction_id      String                        @unique(map: "uq_discharge_instruction_id") @db.VarChar(20)
+  protocol_id                   String                        @db.VarChar(20)
+  medicine_id                   String?                       @db.VarChar(100)
+  drug_sequence                 Int?
+  drug_from                     String?                       @db.VarChar(100)
+  frequency                     String?                       @db.VarChar(100)
+  composition                   String?
+  duration                      String?                       @db.VarChar(100)
+  patient_dose                  Decimal?                      @db.Decimal(10, 2)
+  patient_dose_unit             String?                       @db.VarChar(30)
+  administration_detail         String?
+  dose_change                   Decimal?                      @db.Decimal(10, 2)
+  comment                       String?
+  source_resource_id            String?                       @db.VarChar(100)
+  active_status                 Int?                          @default(1) @db.SmallInt
+  created_by                    String?                       @db.VarChar(20)
+  created_at                    DateTime?                     @default(now()) @db.Timestamp(6)
+  updated_by                    String?                       @db.VarChar(20)
+  updated_at                    DateTime?                     @default(now()) @db.Timestamp(6)
+  medicine_master               medicine_master?              @relation(fields: [medicine_id], references: [medicine_id], onDelete: Restrict, map: "fk_discharge_medicine")
+  chemotherapy_regimen_protocol chemotherapy_regimen_protocol @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_discharge_protocol")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_followup {
   id                    BigInt             @id @default(autoincrement())
   followup_id           String             @unique(map: "uq_chemotherapy_followup") @db.VarChar(20)
@@ -608,11 +634,11 @@ model chemotherapy_plan_items {
   id                          BigInt                        @id @default(autoincrement())
   chemotherapy_plan_item_id   String                        @unique(map: "uq_chemotherapy_plan_item") @db.VarChar(20)
   chemotherapy_plan_id        String                        @db.VarChar(20)
-  medicine_id                 String                        @db.VarChar(20)
+  medicine_id                 String                        @db.VarChar(100)
   drug_sequence               Int
   drug_type                   String?                       @db.VarChar(50)
-  dosage                      Decimal?                      @db.Decimal(10, 2)
-  dosage_unit                 String?                       @db.VarChar(30)
+  protocol_dose               Decimal?                      @db.Decimal(10, 2)
+  protocol_dose_unit          String?                       @db.VarChar(30)
   dose_calculation_method     String?                       @db.VarChar(50)
   calculated_dose             Decimal?                      @db.Decimal(10, 2)
   administration_route        String?                       @db.VarChar(50)
@@ -641,9 +667,34 @@ model chemotherapy_plan_items {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model chemotherapy_protocol_dilutions {
+  id                                  BigInt                               @id @default(autoincrement())
+  protocol_dilution_id                String                               @unique(map: "uq_protocol_dilution_id") @db.VarChar(20)
+  protocol_id                         String                               @db.VarChar(100)
+  protocol_item_id                    String?                              @db.VarChar(20)
+  medicine_id                         String?                              @db.VarChar(100)
+  form                                String?                              @db.VarChar(100)
+  dose                                Decimal?                             @db.Decimal(10, 2)
+  dose_unit                           String?                              @db.VarChar(30)
+  dilution_volume                     Decimal?                             @db.Decimal(10, 2)
+  dilution_volume_unit                String?                              @db.VarChar(30)
+  diluent                             String?                              @db.VarChar(100)
+  comment                             String?
+  source_resource_id                  String?                              @db.VarChar(100)
+  active_status                       Int?                                 @default(1) @db.SmallInt
+  created_by                          String?                              @db.VarChar(20)
+  created_at                          DateTime?                            @default(now()) @db.Timestamp(6)
+  updated_by                          String?                              @db.VarChar(20)
+  updated_at                          DateTime?                            @default(now()) @db.Timestamp(6)
+  chemotherapy_regimen_protocol_items chemotherapy_regimen_protocol_items? @relation(fields: [protocol_item_id], references: [protocol_item_id], map: "fk_protocol_dilution_item")
+  medicine_master                     medicine_master?                     @relation(fields: [medicine_id], references: [medicine_id], onDelete: Restrict, map: "fk_protocol_dilution_medicine")
+  chemotherapy_regimen_protocol       chemotherapy_regimen_protocol        @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_protocol_dilution_protocol")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_regimen_protocol {
   id                                  BigInt                                @id @default(autoincrement())
-  protocol_id                         String                                @unique(map: "uq_regimen_protocol_id") @db.VarChar(20)
+  protocol_id                         String                                @unique(map: "uq_regimen_protocol_id") @db.VarChar(100)
   regimen_code                        String                                @unique(map: "uq_regimen_protocol_code") @db.VarChar(50)
   regimen_name                        String                                @db.VarChar(200)
   protocol_version                    String?                               @db.VarChar(50)
@@ -657,37 +708,81 @@ model chemotherapy_regimen_protocol {
   active_status                       Int?                                  @default(1) @db.SmallInt
   created_at                          DateTime?                             @default(now()) @db.Timestamp(6)
   updated_at                          DateTime?                             @default(now()) @db.Timestamp(6)
+  protocol_type                       String?                               @db.VarChar(50)
+  organization_id                     String?                               @db.VarChar(20)
+  protocol_reference                  String?                               @db.VarChar(100)
+  original_protocol                   String?                               @db.VarChar(200)
+  composition                         String?
+  additional_notes                    String?
+  no_of_days                          Int?
+  day_care_referred                   Boolean?                              @default(false)
+  create_day_care_appointment         Boolean?                              @default(false)
+  source_resource_id                  String?                               @db.VarChar(100)
+  chemotherapy_discharge_instructions chemotherapy_discharge_instructions[]
   chemotherapy_plan                   chemotherapy_plan[]
+  chemotherapy_protocol_dilutions     chemotherapy_protocol_dilutions[]
   cancer_types                        cancer_types                          @relation(fields: [cancer_type_id], references: [cancer_type_id], map: "fk_regimen_protocol_cancer_type")
   cancer_subtypes                     cancer_subtypes?                      @relation(fields: [subtype_id], references: [subtype_id], map: "fk_regimen_protocol_subtype")
+  chemotherapy_regimen_protocol_days  chemotherapy_regimen_protocol_days[]
   chemotherapy_regimen_protocol_items chemotherapy_regimen_protocol_items[]
 
   @@unique([cancer_type_id, subtype_id, regimen_code], map: "uq_regimen_protocol_type_subtype_code")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model chemotherapy_regimen_protocol_items {
+model chemotherapy_regimen_protocol_days {
   id                            BigInt                        @id @default(autoincrement())
-  protocol_item_id              String                        @unique(map: "uq_regimen_protocol_item_id") @db.VarChar(20)
-  protocol_id                   String                        @db.VarChar(20)
-  medicine_id                   String                        @db.VarChar(20)
-  drug_role                     String                        @default("PRIMARY") @db.VarChar(20)
-  drug_sequence                 Int
-  drug_type                     String?                       @db.VarChar(50)
-  dosage                        Decimal?                      @db.Decimal(10, 2)
-  dosage_unit                   String?                       @db.VarChar(30)
-  dose_calculation_method       String?                       @db.VarChar(50)
-  administration_route          String?                       @db.VarChar(50)
-  infusion_type                 String?                       @db.VarChar(50)
-  infusion_duration_minutes     Int?
-  administration_day            Int?
-  cycle_day                     Int?
-  frequency                     String?                       @db.VarChar(100)
-  timing_relative_to_primary    String?                       @db.VarChar(100)
-  remarks                       String?
+  protocol_day_id               String                        @unique(map: "uq_protocol_day_id") @db.VarChar(20)
+  protocol_id                   String                        @db.VarChar(100)
+  day_number                    Int
+  day_sequence                  Int?
+  same_as_day_one               Boolean?                      @default(false)
+  source_day_resource_id        String?                       @db.VarChar(100)
   active_status                 Int?                          @default(1) @db.SmallInt
-  medicine_master               medicine_master               @relation(fields: [medicine_id], references: [medicine_id], map: "fk_regimen_protocol_item_medicine")
-  chemotherapy_regimen_protocol chemotherapy_regimen_protocol @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_regimen_protocol_item_protocol")
+  created_by                    String?                       @db.VarChar(20)
+  created_at                    DateTime?                     @default(now()) @db.Timestamp(6)
+  updated_by                    String?                       @db.VarChar(20)
+  updated_at                    DateTime?                     @default(now()) @db.Timestamp(6)
+  chemotherapy_regimen_protocol chemotherapy_regimen_protocol @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_protocol_day_protocol")
+
+  @@unique([protocol_id, day_number], map: "uq_protocol_day")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model chemotherapy_regimen_protocol_items {
+  id                              BigInt                            @id @default(autoincrement())
+  protocol_item_id                String                            @unique(map: "uq_regimen_protocol_item_id") @db.VarChar(20)
+  protocol_id                     String                            @db.VarChar(100)
+  medicine_id                     String                            @db.VarChar(100)
+  drug_role                       String                            @default("PRIMARY") @db.VarChar(20)
+  drug_sequence                   Int
+  drug_type                       String?                           @db.VarChar(50)
+  dosage                          Decimal?                          @db.Decimal(10, 2)
+  dosage_unit                     String?                           @db.VarChar(30)
+  dose_calculation_method         String?                           @db.VarChar(50)
+  administration_route            String?                           @db.VarChar(50)
+  infusion_type                   String?                           @db.VarChar(50)
+  infusion_duration_minutes       Int?
+  administration_day              Int?
+  cycle_day                       Int?
+  frequency                       String?                           @db.VarChar(100)
+  timing_relative_to_primary      String?                           @db.VarChar(100)
+  remarks                         String?
+  active_status                   Int?                              @default(1) @db.SmallInt
+  drug_brand_name                 String?                           @db.VarChar(200)
+  protocol_dose                   Decimal?                          @db.Decimal(10, 2)
+  protocol_dose_unit              String?                           @db.VarChar(30)
+  protocol_dose_text              String?                           @db.VarChar(100)
+  dose_change                     Decimal?                          @db.Decimal(10, 2)
+  dose_reduction                  Decimal?                          @db.Decimal(10, 2)
+  patient_dose                    Decimal?                          @db.Decimal(10, 2)
+  patient_dose_unit               String?                           @db.VarChar(30)
+  previous_toxicity               String?
+  administration_detail           String?
+  source_resource_id              String?                           @db.VarChar(100)
+  chemotherapy_protocol_dilutions chemotherapy_protocol_dilutions[]
+  medicine_master                 medicine_master                   @relation(fields: [medicine_id], references: [medicine_id], map: "fk_regimen_protocol_item_medicine")
+  chemotherapy_regimen_protocol   chemotherapy_regimen_protocol     @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_regimen_protocol_item_protocol")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -722,6 +817,7 @@ model chemotherapy_vitals {
   created_at               DateTime?          @default(now()) @db.Timestamp(6)
   updated_by               String?            @db.VarChar(20)
   updated_at               DateTime?          @default(now()) @db.Timestamp(6)
+  ideal_body_weight        Decimal?           @db.Decimal(6, 2)
   chemotherapy_cycle       chemotherapy_cycle @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: Cascade, map: "fk_chemo_vitals_cycle")
   employees                employees?         @relation(fields: [recorded_by], references: [employee_id], map: "fk_chemo_vitals_recorded_by")
 }
@@ -1419,7 +1515,7 @@ model login_otp {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model medicine_master {
   id                                  BigInt                                @id @default(autoincrement())
-  medicine_id                         String                                @unique @db.VarChar(20)
+  medicine_id                         String                                @unique @db.VarChar(100)
   medicine_code                       String?                               @unique @db.VarChar(30)
   barcode                             String?                               @db.VarChar(100)
   medicine_category                   String?                               @db.VarChar(100)
@@ -1451,7 +1547,10 @@ model medicine_master {
   reorder_level                       Int?                                  @default(0)
   medicine_master_remarks             String?
   is_active                           Boolean?                              @default(true)
+  brand_name                          String?                               @db.VarChar(200)
+  chemotherapy_discharge_instructions chemotherapy_discharge_instructions[]
   chemotherapy_plan_items             chemotherapy_plan_items[]
+  chemotherapy_protocol_dilutions     chemotherapy_protocol_dilutions[]
   chemotherapy_regimen_protocol_items chemotherapy_regimen_protocol_items[]
   diagnosis_medicine_mapping          diagnosis_medicine_mapping[]
   prescription_items                  prescription_items[]
