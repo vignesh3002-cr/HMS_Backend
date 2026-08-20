@@ -3,6 +3,8 @@ import { doctorScheduleService } from "./doctorSchedule.service";
 import {
     CreateDoctorScheduleChangePayload,
     UpdateDoctorScheduleChangePayload,
+    ToggleRecurringSchedulePayload,
+    CreateRecurringSlotPayload,
 } from "./doctor-schedule.types";
 
 class DoctorScheduleController {
@@ -140,6 +142,217 @@ class DoctorScheduleController {
                 error instanceof Error
                     ? error.message
                     : "Failed to get schedule changes";
+
+            res.status(400).json({
+                success: false,
+                message,
+            });
+        }
+    }
+
+    /**
+     * GET
+     * Get all recurring weekly schedules for a doctor,
+     * including inactive rows.
+     */
+    async getRecurringSchedules(
+        req: Request,
+        res: Response
+    ): Promise<void> {
+        try {
+            const { employeeId } = req.params;
+
+            if (!employeeId) {
+                res.status(400).json({
+                    success: false,
+                    message: "employeeId is required",
+                });
+                return;
+            }
+
+            const branchId =
+                typeof req.query.branch_id === "string"
+                    ? req.query.branch_id
+                    : undefined;
+
+            const result =
+                await doctorScheduleService.getRecurringSchedules(
+                    String(employeeId),
+                    branchId
+                );
+
+            res.status(200).json({
+                success: true,
+                data: result,
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Get recurring schedules error:",
+                error
+            );
+
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to get recurring schedules";
+
+            res.status(400).json({
+                success: false,
+                message,
+            });
+        }
+    }
+
+    /**
+     * PATCH
+     * Toggle the recurring weekly schedule for a
+     * doctor + branch + day_of_week on/off.
+     */
+    async toggleRecurringDay(
+        req: Request,
+        res: Response
+    ): Promise<void> {
+        try {
+            const payload =
+                req.body as ToggleRecurringSchedulePayload;
+
+            const result =
+                await doctorScheduleService.toggleRecurringDay(
+                    payload
+                );
+
+            res.status(200).json({
+                success: true,
+                message:
+                    "Recurring schedule updated successfully",
+                data: result,
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Toggle recurring schedule error:",
+                error
+            );
+
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to toggle recurring schedule";
+
+            res.status(400).json({
+                success: false,
+                message,
+            });
+        }
+    }
+
+    /**
+     * POST
+     * Add a single recurring slot to the doctor_schedule
+     * template (applies to every upcoming occurrence of
+     * that weekday).
+     */
+    async createRecurringSlot(
+        req: Request,
+        res: Response
+    ): Promise<void> {
+        try {
+            const { employeeId } = req.params;
+
+            if (!employeeId) {
+                res.status(400).json({
+                    success: false,
+                    message: "employeeId is required",
+                });
+                return;
+            }
+
+            const payload =
+                req.body as CreateRecurringSlotPayload;
+
+            const result =
+                await doctorScheduleService.createRecurringSlot({
+                    ...payload,
+                    employee_id: String(employeeId),
+                });
+
+            res.status(201).json({
+                success: true,
+                message:
+                    "Recurring slot created successfully",
+                data: result,
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Create recurring slot error:",
+                error
+            );
+
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to create recurring slot";
+
+            res.status(400).json({
+                success: false,
+                message,
+            });
+        }
+    }
+
+    /**
+     * DELETE
+     * Soft-close a single recurring slot in the
+     * doctor_schedule template.
+     */
+    async deleteRecurringSlot(
+        req: Request,
+        res: Response
+    ): Promise<void> {
+        try {
+            const { employeeId, scheduleId } = req.params;
+
+            if (!employeeId || !scheduleId) {
+                res.status(400).json({
+                    success: false,
+                    message: "employeeId and scheduleId are required",
+                });
+                return;
+            }
+
+            const scheduleIdBigInt =
+                BigInt(String(scheduleId));
+
+            const result =
+                await doctorScheduleService.deleteRecurringSlot(
+                    scheduleIdBigInt,
+                    String(employeeId),
+                    (req as any).user?.user_id || "SYSTEM"
+                );
+
+            res.status(200).json({
+                success: true,
+                message:
+                    "Recurring slot deleted successfully",
+                data: result,
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Delete recurring slot error:",
+                error
+            );
+
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to delete recurring slot";
 
             res.status(400).json({
                 success: false,
