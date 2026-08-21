@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const histologicalGrade_controller_1 = require("./histologicalGrade.controller");
+const auth_middleware_1 = require("../auth/auth.middleware");
+const authorize_1 = require("../../middleware/authorize");
+const histologicalGrade_validation_1 = require("./histologicalGrade.validation");
+const router = (0, express_1.Router)();
+const controller = new histologicalGrade_controller_1.HistologicalGradeController();
+router.get("/", auth_middleware_1.authenticate, controller.getHistologicalGrades.bind(controller));
+router.get("/:histologicalGradeId", auth_middleware_1.authenticate, controller.getHistologicalGradeById.bind(controller));
+router.post("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR"), histologicalGrade_validation_1.createHistologicalGradeValidation, controller.createHistologicalGrade.bind(controller));
+router.put("/:histologicalGradeId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR"), histologicalGrade_validation_1.updateHistologicalGradeValidation, controller.updateHistologicalGrade.bind(controller));
+router.delete("/:histologicalGradeId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.deleteHistologicalGrade.bind(controller));
+router.patch("/:histologicalGradeId/restore", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.restoreHistologicalGrade.bind(controller));
+exports.default = router;

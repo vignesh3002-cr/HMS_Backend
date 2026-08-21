@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../auth/auth.middleware");
+const authorize_1 = require("../../middleware/authorize");
+const branchScope_1 = require("../../middleware/branchScope");
+const export_controller_1 = require("./export.controller");
+const router = (0, express_1.Router)();
+router.get("/employees", auth_middleware_1.authenticate, (0, authorize_1.authorize)("employee.read"), (0, authorize_1.authorize)("report.export"), branchScope_1.branchScope, export_controller_1.exportEmployees);
+router.get("/patients", auth_middleware_1.authenticate, (0, authorize_1.authorize)("patient.read"), (0, authorize_1.authorize)("report.export"), branchScope_1.branchScope, export_controller_1.exportPatients);
+router.get("/appointments", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.read"), (0, authorize_1.authorize)("report.export"), branchScope_1.branchScope, export_controller_1.exportAppointments);
+exports.default = router;

@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const tnmStage_controller_1 = require("./tnmStage.controller");
+const auth_middleware_1 = require("../auth/auth.middleware");
+const authorize_1 = require("../../middleware/authorize");
+const tnmStage_validation_1 = require("./tnmStage.validation");
+const router = (0, express_1.Router)();
+const controller = new tnmStage_controller_1.TnmStageController();
+router.get("/", auth_middleware_1.authenticate, controller.getTnmStages.bind(controller));
+router.get("/:tnmStageId", auth_middleware_1.authenticate, controller.getTnmStageById.bind(controller));
+router.post("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR"), tnmStage_validation_1.createTnmStageValidation, controller.createTnmStage.bind(controller));
+router.put("/:tnmStageId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN", "DOCTOR"), tnmStage_validation_1.updateTnmStageValidation, controller.updateTnmStage.bind(controller));
+router.delete("/:tnmStageId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.deleteTnmStage.bind(controller));
+router.patch("/:tnmStageId/restore", auth_middleware_1.authenticate, (0, authorize_1.authorize)("ADMIN"), controller.restoreTnmStage.bind(controller));
+exports.default = router;

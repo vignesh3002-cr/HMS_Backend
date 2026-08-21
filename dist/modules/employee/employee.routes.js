@@ -1,0 +1,18 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const employee_controller_1 = require("./employee.controller");
+const auth_middleware_1 = require("../../modules/auth/auth.middleware");
+const authorize_1 = require("../../middleware/authorize");
+const branchScope_1 = require("../../middleware/branchScope");
+const router = (0, express_1.Router)();
+const controller = new employee_controller_1.EmployeeController();
+router.post("/create", auth_middleware_1.authenticate, (0, authorize_1.authorize)("employee.create"), controller.createEmployee.bind(controller));
+router.get("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("employee.read"), branchScope_1.branchScope, controller.getAllEmployees.bind(controller));
+router.get("/:employeeId", auth_middleware_1.authenticate, (0, authorize_1.authorizeSelfOrPermission)("employee.read"), branchScope_1.branchScope, controller.getEmployeeById.bind(controller));
+router.put("/:employeeId", auth_middleware_1.authenticate, (0, authorize_1.authorizeSelfOrPermission)("employee.update"), branchScope_1.branchScope, controller.updateEmployee.bind(controller));
+router.patch("/:employeeId/photo", auth_middleware_1.authenticate, (0, authorize_1.authorizeSelfPhoto)("employee.update"), branchScope_1.branchScope, controller.updateEmployeePhoto.bind(controller));
+router.delete("/:employeeId", auth_middleware_1.authenticate, (0, authorize_1.authorizeNoSelf)("employee.delete"), branchScope_1.branchScope, controller.softDeleteEmployee.bind(controller));
+router.post("/:employeeId/restore", auth_middleware_1.authenticate, (0, authorize_1.authorizeNoSelf)("employee.update"), branchScope_1.branchScope, controller.restoreEmployee.bind(controller));
+router.delete("/:employeeId/:schedule_id", auth_middleware_1.authenticate, controller.softDeleteSchedule.bind(controller));
+exports.default = router;
