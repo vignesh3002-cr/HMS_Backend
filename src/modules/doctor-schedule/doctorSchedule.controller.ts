@@ -21,20 +21,9 @@ class DoctorScheduleController {
             const payload =
                 req.body as CreateDoctorScheduleChangePayload;
 
-            const actorUserId =
-                (req as any).user?.user_id ||
-                (req as any).user?.id ||
-                null;
-
             const result =
                 await doctorScheduleService.createScheduleChange(
-                    {
-                        ...payload,
-                        created_by:
-                            payload.created_by?.trim() ||
-                            actorUserId ||
-                            null,
-                    }
+                    payload
                 );
 
             res.status(201).json({

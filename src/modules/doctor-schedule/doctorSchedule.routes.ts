@@ -1,9 +1,6 @@
 import { Router } from "express";
 
 import { doctorScheduleController } from "./doctorSchedule.controller";
-import { authenticate } from "../auth/auth.middleware";
-import { authorizeScheduleChange } from "../../middleware/authorize";
-import prisma from "../../config/prisma";
 
 const router = Router();
 
@@ -11,14 +8,9 @@ const router = Router();
  * Create ADD / OVERRIDE / CANCEL schedule change
  *
  * POST /change
- *
- * The doctor may only create changes for their OWN employee_id; admins may
- * create changes for any doctor. Everyone else is denied.
  */
 router.post(
     "/change",
-    authenticate,
-    authorizeScheduleChange((req) => req.body.employee_id),
     doctorScheduleController.createScheduleChange
 );
 
@@ -69,13 +61,9 @@ router.delete(
  * Get all active schedule changes for a doctor
  *
  * GET /:employeeId/changes
- *
- * Doctors may only list their OWN changes; admins may list any doctor's.
  */
 router.get(
     "/:employeeId/changes",
-    authenticate,
-    authorizeScheduleChange((req) => String(req.params.employeeId)),
     doctorScheduleController.getDoctorScheduleChanges
 );
 
@@ -86,8 +74,6 @@ router.get(
  */
 router.get(
     "/:employeeId/changes/:date",
-    authenticate,
-    authorizeScheduleChange((req) => String(req.params.employeeId)),
     doctorScheduleController.getScheduleChangesByDate
 );
 
@@ -95,21 +81,9 @@ router.get(
  * Update an existing schedule change
  *
  * PATCH /change/:changeId
- *
- * The target doctor is resolved from the change record itself, so a doctor
- * can never edit another doctor's schedule change.
  */
 router.patch(
     "/change/:changeId",
-    authenticate,
-    authorizeScheduleChange(async (req) => {
-        const change = await prisma.doctor_schedule_change.findUnique({
-            where: { change_id: BigInt(String(req.params.changeId)) },
-            select: { employee_id: true },
-        });
-
-        return change?.employee_id ?? "";
-    }),
     doctorScheduleController.updateScheduleChange
 );
 
@@ -120,15 +94,6 @@ router.patch(
  */
 router.patch(
     "/change/:changeId/cancel",
-    authenticate,
-    authorizeScheduleChange(async (req) => {
-        const change = await prisma.doctor_schedule_change.findUnique({
-            where: { change_id: BigInt(String(req.params.changeId)) },
-            select: { employee_id: true },
-        });
-
-        return change?.employee_id ?? "";
-    }),
     doctorScheduleController.cancelScheduleChange
 );
 

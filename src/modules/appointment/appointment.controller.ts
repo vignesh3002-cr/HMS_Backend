@@ -56,9 +56,6 @@ export class AppointmentController {
                 employeeId: req.query.employeeId as string,
                 patientId: req.query.patientId as string,
                 status: req.query.status as string,
-                excludeStatuses: req.query.excludeStatuses
-                    ? String(req.query.excludeStatuses).split(",")
-                    : undefined,
                 date: req.query.date as string,
                 dateFrom: req.query.dateFrom as string,
                 dateTo: req.query.dateTo as string,
@@ -97,8 +94,7 @@ export class AppointmentController {
             const slots = await service.getAvailableSlots(
                 req.query.employeeId as string,
                 req.query.branchId as string,
-                req.query.date as string,
-                req.query.includePast === "true"
+                req.query.date as string
             );
 
             return res.json({

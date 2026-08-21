@@ -355,7 +355,6 @@ export class AppointmentRepository {
             employeeId,
             patientId,
             status,
-            excludeStatuses,
             date,
             dateFrom,
             dateTo,
@@ -371,7 +370,6 @@ export class AppointmentRepository {
         if (employeeId) where.employee_id = employeeId;
         if (patientId) where.patient_id = patientId;
         if (status) where.status = status;
-        else if (excludeStatuses?.length) where.status = { notIn: excludeStatuses };
 
         if (date) {
 

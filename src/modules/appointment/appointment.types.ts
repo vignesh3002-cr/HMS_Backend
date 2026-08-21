@@ -53,6 +53,7 @@ export interface GetAppointmentsQuery {
 
     status?: string;
 
+
     excludeStatuses?: string[];
 
     date?: string;

@@ -20,6 +20,9 @@ const PERMISSIONS = [
   { key: "patient.read", name: "View Patients", description: "View patient list and details", category: "patient" },
   { key: "patient.update", name: "Edit Patient", description: "Edit patient information", category: "patient" },
 
+  { key: "patient.delete", name: "Delete Patient", description: "Delete/deactivate patient records", category: "patient" },
+
+
   // Appointment
   { key: "appointment.create", name: "Create Appointment", description: "Book new appointments", category: "appointment" },
   { key: "appointment.read", name: "View Appointments", description: "View appointment list and details", category: "appointment" },
