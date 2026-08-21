@@ -235,7 +235,7 @@ class AppointmentRepository {
         });
     }
     async getAppointments(query) {
-        const { branchId, employeeId, patientId, status, excludeStatuses, date, dateFrom, dateTo, sortBy = "appointment_date", sortOrder = "desc", page = 1, limit = 10 } = query;
+        const { branchId, employeeId, patientId, status, date, dateFrom, dateTo, sortBy = "appointment_date", sortOrder = "desc", page = 1, limit = 10 } = query;
         const where = {};
         if (branchId)
             where.branch_id = branchId;
@@ -245,8 +245,6 @@ class AppointmentRepository {
             where.patient_id = patientId;
         if (status)
             where.status = status;
-        else if (excludeStatuses?.length)
-            where.status = { notIn: excludeStatuses };
         if (date) {
             where.appointment_date = parseDate(date);
         }

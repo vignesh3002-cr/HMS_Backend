@@ -10,15 +10,7 @@ class DoctorScheduleController {
     async createScheduleChange(req, res) {
         try {
             const payload = req.body;
-            const actorUserId = req.user?.user_id ||
-                req.user?.id ||
-                null;
-            const result = await doctorSchedule_service_1.doctorScheduleService.createScheduleChange({
-                ...payload,
-                created_by: payload.created_by?.trim() ||
-                    actorUserId ||
-                    null,
-            });
+            const result = await doctorSchedule_service_1.doctorScheduleService.createScheduleChange(payload);
             res.status(201).json({
                 success: true,
                 message: "Doctor schedule change created successfully",

@@ -567,73 +567,7 @@ class AppointmentService {
      * ADD / OVERRIDE / CANCEL are applied before
      * slots are generated.
      */
-    async getAvailableSlots(employeeId, branchId, dateStr, includePast = false) {
-        const employee = await repository.findEmployee(employeeId);
-        if (!employee) {
-            throw new Error("Doctor not found");
-        }
-        if (employee.user_table?.role_type !== "DOCTOR") {
-            throw new Error("Selected employee is not a doctor");
-        }
-        if (employee.emp_status !== true) {
-            throw new Error("Doctor is inactive. Please contact the administrator.");
-        }
-        const branch = await repository.findBranch(branchId);
-        if (!branch) {
-            throw new Error("Branch not found");
-        }
-        if (branch.branch_status !== "Active") {
-            throw new Error("Selected branch is inactive");
-        }
-        const mapping = await repository.findDoctorBranchMapping(employeeId, branchId);
-        if (!mapping) {
-            throw new Error("Doctor is not assigned to the selected branch");
-        }
-        const appointmentDate = (0, appointment_utils_1.parseDateOnly)(dateStr);
-        const dayOfWeek = (0, appointment_utils_1.toDayOfWeek)(appointmentDate);
-        // The hospital operates in Asia/Kolkata (IST). "Today" and the current
-        // minute are computed in IST (fixed UTC+05:30, no DST) so Local and
-        // Vercel agree regardless of the host machine's timezone.
-        const todayInIST = (0, appointment_utils_1.getTodayInIST)();
-        const requestedDate = (0, appointment_utils_1.formatDateOnly)(appointmentDate);
-        const nowMinutesInIST = (0, appointment_utils_1.getNowMinutesInIST)();
-        const isToday = requestedDate === todayInIST;
-        // Past dates never produce bookable slots for normal requests. (The
-        // Day View grid passes includePast so it can still render a historical
-        // shift; normal appointment booking never passes it.)
-        if (!includePast && requestedDate < todayInIST) {
-            return { date: dateStr, day_of_week: dayOfWeek, slots: [] };
-        }
-        const schedules = await repository.findActiveDoctorSchedules(employeeId, branchId, dayOfWeek);
-        if (schedules.length === 0) {
-            return { date: dateStr, day_of_week: dayOfWeek, slots: [] };
-        }
-        const bookedTimes = await repository.findBookedAppointmentTimes(employeeId, appointmentDate);
-        const bookedSet = new Set(bookedTimes.map(appointment_utils_1.formatTimeOfDay));
-        const slots = schedules.flatMap((schedule) => {
-            if (!schedule.start_time || !schedule.end_time) {
-                return [];
-            }
-            const times = (0, appointment_utils_1.generateTimeSlots)(schedule.start_time, schedule.end_time, schedule.consultation_minutes ?? 20);
-            return times
-                .filter((time) => includePast || !isToday || (0, appointment_utils_1.timeStringToMinutes)(time) > nowMinutesInIST)
-                .map((time) => ({
-                schedule_id: schedule.schedule_id,
-                shift_name: schedule.shift_name,
-                time,
-                is_available: !bookedSet.has(time)
-            }));
-        });
-        return { date: dateStr, day_of_week: dayOfWeek, slots };
-    }
-    // Legacy implementation retained for internal compatibility. The later
-    // implementation also accounts for date-specific schedule changes.
-    // Total slot capacity for a doctor on a given day = every active shift
-    // of theirs (across every branch) on that day-of-week, sliced into fixed
-    // 20-minute slots based on their working-hours availability - independent
-    // of who ends up booking them, and independent of any per-schedule
-    // consultation_minutes override.
-    async getDoctorSlotSummaryLegacy(employeeId, dateStr, branchId) {
+    async getAvailableSlots(employeeId, branchId, dateStr) {
         const employee = await repository.findEmployee(employeeId);
         if (!employee) {
             throw new Error("Doctor not found");

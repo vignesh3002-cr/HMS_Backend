@@ -45,9 +45,6 @@ class AppointmentController {
                 employeeId: req.query.employeeId,
                 patientId: req.query.patientId,
                 status: req.query.status,
-                excludeStatuses: req.query.excludeStatuses
-                    ? String(req.query.excludeStatuses).split(",")
-                    : undefined,
                 date: req.query.date,
                 dateFrom: req.query.dateFrom,
                 dateTo: req.query.dateTo,
@@ -79,7 +76,7 @@ class AppointmentController {
                     errors: errors.array()
                 });
             }
-            const slots = await service.getAvailableSlots(req.query.employeeId, req.query.branchId, req.query.date, req.query.includePast === "true");
+            const slots = await service.getAvailableSlots(req.query.employeeId, req.query.branchId, req.query.date);
             return res.json({
                 success: true,
                 message: "Available slots fetched successfully",
