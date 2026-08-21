@@ -217,9 +217,6 @@ class DoctorScheduleService {
                 is_active: true,
                 created_by: created_by?.trim() ||
                     null,
-                /**
-                 * Prisma schema requires updated_at.
-                 */
                 updated_at: new Date(),
             },
         });
@@ -616,6 +613,7 @@ class DoctorScheduleService {
     }
     /**
      * PATCH
+     *
      * Toggle the recurring weekly schedule for a
      * doctor + branch + day_of_week on/off.
      *
@@ -719,11 +717,18 @@ class DoctorScheduleService {
     }
     /**
      * POST /recurring/slot
-     * Add a single recurring slot to the doctor_schedule template.
      *
-     * The row is keyed by employee + branch + day_of_week and stored with
-     * is_active = true, so it applies to every upcoming occurrence of that
-     * weekday -- NOT a date-specific doctor_schedule_change.
+     * Add a single recurring slot to the doctor_schedule
+     * template.
+     *
+     * IMPORTANT:
+     *
+     * If the selected weekday was previously turned OFF,
+     * adding a slot from Week View automatically turns
+     * that weekday back ON.
+     *
+     * Existing ADD / OVERRIDE / CANCEL date-specific
+     * schedule-change logic is not modified.
      */
     async createRecurringSlot(payload) {
         const { employee_id, branch_id, day_of_week, shift_name, start_time, end_time, } = payload;
@@ -739,7 +744,9 @@ class DoctorScheduleService {
         if (!start_time || !end_time) {
             throw new Error("start_time and end_time are required");
         }
-        // Validate doctor
+        // =================================================
+        // 1. VALIDATE DOCTOR
+        // =================================================
         const employee = await prisma_1.default.employees.findUnique({
             where: {
                 employee_id,
@@ -763,7 +770,9 @@ class DoctorScheduleService {
         if (employee.emp_status !== true) {
             throw new Error("Doctor is inactive. Please contact the administrator.");
         }
-        // Validate branch
+        // =================================================
+        // 2. VALIDATE BRANCH
+        // =================================================
         const branch = await prisma_1.default.branch.findUnique({
             where: {
                 branch_id,
@@ -775,7 +784,9 @@ class DoctorScheduleService {
         if (branch.branch_status !== "Active") {
             throw new Error("Selected branch is inactive");
         }
-        // Validate doctor branch mapping
+        // =================================================
+        // 3. VALIDATE DOCTOR / BRANCH MAPPING
+        // =================================================
         const mapping = await prisma_1.default.user_branch_mapping.findFirst({
             where: {
                 employee_id,
@@ -786,7 +797,9 @@ class DoctorScheduleService {
         if (!mapping) {
             throw new Error("Doctor is not assigned to the selected branch");
         }
-        // Validate day_of_week
+        // =================================================
+        // 4. VALIDATE DAY
+        // =================================================
         const normalizedDay = day_of_week.trim().toUpperCase();
         const validDays = [
             "MONDAY",
@@ -800,14 +813,18 @@ class DoctorScheduleService {
         if (!validDays.includes(normalizedDay)) {
             throw new Error("Invalid day_of_week");
         }
-        // Validate times
+        // =================================================
+        // 5. VALIDATE TIMES
+        // =================================================
         this.validateTimeString(start_time, "start_time");
         this.validateTimeString(end_time, "end_time");
         if (this.timeToMinutes(start_time) >=
             this.timeToMinutes(end_time)) {
             throw new Error("start_time must be earlier than end_time");
         }
-        // Reject overlap with existing active slots on the same day
+        // =================================================
+        // 6. CHECK OVERLAPPING ACTIVE SLOTS
+        // =================================================
         const existingActive = await prisma_1.default.doctor_schedule.findMany({
             where: {
                 employee_id,
@@ -838,23 +855,59 @@ class DoctorScheduleService {
                 throw new Error("The new slot overlaps with an existing active slot on the same day");
             }
         }
-        // Create the recurring slot
-        return prisma_1.default.doctor_schedule.create({
-            data: {
-                employee_id,
-                branch_id,
-                day_of_week: normalizedDay,
-                shift_name: shift_name?.trim() || null,
-                start_time: this.timeStringToDate(start_time),
-                end_time: this.timeStringToDate(end_time),
-                consultation_minutes: 20,
-                is_active: true,
-                effective_from: new Date(),
-            },
+        // =================================================
+        // 7. REACTIVATE DAY + CREATE SLOT
+        // =================================================
+        //
+        // Day OFF
+        //    ↓
+        // Week View ADD
+        //    ↓
+        // Reactivate existing inactive schedules
+        //    ↓
+        // Create new recurring slot
+        //
+        // Both operations happen inside one transaction.
+        return prisma_1.default.$transaction(async (tx) => {
+            // -----------------------------------------
+            // 7A. Reactivate the recurring weekday
+            // -----------------------------------------
+            await tx.doctor_schedule.updateMany({
+                where: {
+                    employee_id,
+                    branch_id,
+                    day_of_week: {
+                        equals: normalizedDay,
+                        mode: "insensitive",
+                    },
+                },
+                data: {
+                    is_active: true,
+                    effective_to: null,
+                },
+            });
+            // -----------------------------------------
+            // 7B. Create the new recurring slot
+            // -----------------------------------------
+            return tx.doctor_schedule.create({
+                data: {
+                    employee_id,
+                    branch_id,
+                    day_of_week: normalizedDay,
+                    shift_name: shift_name?.trim() || null,
+                    start_time: this.timeStringToDate(start_time),
+                    end_time: this.timeStringToDate(end_time),
+                    consultation_minutes: 20,
+                    is_active: true,
+                    effective_from: new Date(),
+                    effective_to: null,
+                },
+            });
         });
     }
     /**
      * DELETE /recurring/slot
+     *
      * Soft-close a single recurring slot in the
      * doctor_schedule template.
      */
