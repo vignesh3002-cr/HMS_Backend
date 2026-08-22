@@ -13,33 +13,73 @@ const repository = new appointment_repository_1.AppointmentRepository();
  * Fixed slot length used for doctor capacity summaries.
  */
 const SLOT_DURATION_MINUTES = 20;
-// =========================================================
-// TIME HELPERS
-// =========================================================
+/**
+ * Converts PostgreSQL TIME represented as Date into minutes.
+ */
 function dateToMinutes(value) {
     return (value.getUTCHours() * 60 +
         value.getUTCMinutes());
 }
+/**
+ * Converts minutes since midnight into a Date
+ * suitable for @db.Time.
+ */
+function minutesToTimeDate(minutes) {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    const result = new Date(0);
+    result.setUTCHours(hours, mins, 0, 0);
+    return result;
+}
+/**
+ * Checks whether two time ranges overlap.
+ */
 function rangesOverlap(start1, end1, start2, end2) {
     return (start1 < end2 &&
         end1 > start2);
 }
-// =========================================================
-// SCHEDULE CHANGE LOOKUP
-// =========================================================
 /**
- * Gets active date-specific schedule changes.
- *
- * IMPORTANT:
- * The repository uses exact UTC-midnight dates, matching
- * parseDateOnly() used by the schedule-change service.
+ * Returns active schedule changes for a doctor,
+ * branch and exact date.
  */
 async function getScheduleChanges(employeeId, branchId, date) {
-    return repository.findDoctorScheduleChange(employeeId, branchId, date);
+    return prisma_1.default.doctor_schedule_change.findMany({
+        where: {
+            employee_id: employeeId,
+            branch_id: branchId,
+            change_date: date,
+            is_active: true
+        },
+        orderBy: {
+            created_at: "asc"
+        }
+    });
 }
-// =========================================================
-// NORMAL SCHEDULE CONVERSION
-// =========================================================
+/**
+ * Finds an existing doctor_schedule row that can be
+ * used as the schedule_id reference for an ADD/OVERRIDE
+ * date that has no normal schedule on that weekday.
+ *
+ * appointment_history.schedule_id references
+ * doctor_schedule.
+ */
+async function findReferenceSchedule(employeeId, branchId) {
+    const schedule = await prisma_1.default.doctor_schedule.findFirst({
+        where: {
+            employee_id: employeeId,
+            branch_id: branchId,
+            is_active: true
+        },
+        orderBy: {
+            start_time: "asc"
+        }
+    });
+    return schedule;
+}
+/**
+ * Converts normal weekly schedules into
+ * EffectiveSchedule format.
+ */
 function convertNormalSchedules(schedules) {
     return schedules
         .filter((schedule) => schedule.start_time &&
@@ -54,145 +94,101 @@ function convertNormalSchedules(schedules) {
             20
     }));
 }
-// =========================================================
-// REFERENCE SCHEDULE SYNTHESIS
-// =========================================================
 /**
- * Creates an effective schedule from an existing
- * doctor_schedule row.
- *
- * The reference row may be inactive.
- *
- * This is important when a recurring day was toggled OFF
- * and a Week View ADD is then created for that date.
- */
-function synthesizeSchedulesFromReference(referenceSchedule) {
-    const consultationMinutes = referenceSchedule.consultation_minutes ??
-        20;
-    if (!referenceSchedule.start_time ||
-        !referenceSchedule.end_time) {
-        return [];
-    }
-    return [
-        {
-            schedule_id: referenceSchedule.schedule_id,
-            shift_name: "NORMAL",
-            start_time: referenceSchedule.start_time,
-            end_time: referenceSchedule.end_time,
-            consultation_minutes: consultationMinutes
-        }
-    ];
-}
-// =========================================================
-// EFFECTIVE SCHEDULE
-// =========================================================
-/**
- * Applies ADD / OVERRIDE / CANCEL to the normal
- * recurring weekly schedule.
+ * Applies ADD / OVERRIDE / CANCEL changes to
+ * the normal schedule.
  *
  * Rules:
  *
  * NORMAL
- *   normal weekly schedule
+ *     -> normal weekly schedule
  *
  * ADD
- *   normal + additional range
+ *     -> normal + additional range
  *
  * OVERRIDE
- *   override replaces normal
+ *     -> override replaces normal
  *
  * CANCEL
- *   entire date cancelled
+ *     -> entire date is cancelled
  *
  * OVERRIDE + ADD
- *   override + additional range
+ *     -> override + additional range
  *
  * CANCEL has absolute priority.
- *
- * IMPORTANT:
- *
- * A date-specific ADD is allowed even when the normal
- * recurring schedule for that weekday is inactive.
  */
 async function getEffectiveSchedules(employeeId, branchId, appointmentDate, normalSchedules) {
     const changes = await getScheduleChanges(employeeId, branchId, appointmentDate);
-    // =====================================================
-    // NO DATE-SPECIFIC CHANGES
-    // =====================================================
+    /**
+     * No date-specific changes.
+     *
+     * Use the normal weekly schedule.
+     */
     if (changes.length === 0) {
-        if (normalSchedules.length > 0) {
-            return convertNormalSchedules(normalSchedules);
-        }
-        /**
-         * No normal schedule for this weekday.
-         *
-         * This is simply an OFF day with no ADD/OVERRIDE.
-         *
-         * There should be no consultation slots.
-         */
-        return [];
+        return convertNormalSchedules(normalSchedules);
     }
-    // =====================================================
-    // CANCEL
-    // =====================================================
+    /**
+     * CANCEL has absolute priority.
+     *
+     * Cancellation is for the entire date.
+     *
+     * Example:
+     * Normal schedule:
+     * 09:00 - 13:00
+     * 14:00 - 18:00
+     *
+     * CANCEL on that date:
+     * No slots for the entire day.
+     */
     const hasCancel = changes.some((change) => change.mode === "CANCEL");
     if (hasCancel) {
         return [];
     }
-    // =====================================================
-    // FIND REFERENCE SCHEDULE
-    // =====================================================
     /**
-     * First prefer a normal schedule from this weekday.
+     * Find a valid doctor_schedule reference.
+     *
+     * Normally we use the schedule from the selected
+     * weekday.
+     *
+     * If the selected weekday has no normal schedule,
+     * we use another active schedule belonging to the
+     * same doctor and branch.
      */
     let referenceSchedule = normalSchedules.find((schedule) => schedule.start_time &&
         schedule.end_time) ?? null;
-    /**
-     * If the weekday is OFF, there will be no active
-     * schedule in normalSchedules.
-     *
-     * We therefore search ALL schedules for the doctor
-     * + branch, including inactive rows.
-     *
-     * This is the key fix for:
-     *
-     * Day OFF
-     *   ↓
-     * Week View ADD
-     *   ↓
-     * consultation slots
-     */
     if (!referenceSchedule) {
         referenceSchedule =
-            await repository.findReferenceSchedule(employeeId, branchId);
+            await findReferenceSchedule(employeeId, branchId);
     }
     /**
-     * A schedule_id is required by appointment_history.
-     *
-     * If the doctor has never had any schedule at this
-     * branch, there is no valid schedule_id to reference.
+     * If there is no doctor_schedule at all for this
+     * doctor/branch, we cannot safely create an
+     * appointment because appointment_history.schedule_id
+     * requires a real doctor_schedule row.
      */
     if (!referenceSchedule) {
         return [];
     }
     const consultationMinutes = referenceSchedule.consultation_minutes ??
         20;
-    // =====================================================
-    // OVERRIDE
-    // =====================================================
+    /**
+     * OVERRIDE changes.
+     */
     const overrideChanges = changes.filter((change) => change.mode === "OVERRIDE" &&
         change.start_time &&
         change.end_time);
-    // =====================================================
-    // ADD
-    // =====================================================
+    /**
+     * ADD changes.
+     */
     const addChanges = changes.filter((change) => change.mode === "ADD" &&
         change.start_time &&
         change.end_time);
     let effectiveSchedules;
-    // =====================================================
-    // OVERRIDE REPLACES NORMAL
-    // =====================================================
+    /**
+     * OVERRIDE replaces the normal schedule.
+     *
+     * This also works when normalSchedules is empty.
+     */
     if (overrideChanges.length > 0) {
         effectiveSchedules =
             overrideChanges
@@ -208,8 +204,7 @@ async function getEffectiveSchedules(employeeId, branchId, appointmentDate, norm
                     return null;
                 }
                 return {
-                    schedule_id: referenceSchedule
-                        .schedule_id,
+                    schedule_id: referenceSchedule.schedule_id,
                     shift_name: "OVERRIDE",
                     start_time: change.start_time,
                     end_time: change.end_time,
@@ -222,29 +217,20 @@ async function getEffectiveSchedules(employeeId, branchId, appointmentDate, norm
         /**
          * No override.
          *
-         * Use normal schedule if one exists.
+         * Keep the normal weekly schedule.
          *
-         * If the day is OFF, this is intentionally empty.
-         * ADD below will populate it.
+         * If there is no normal schedule, this will
+         * initially be empty. ADD can then create the
+         * effective schedule below.
          */
         effectiveSchedules =
             convertNormalSchedules(normalSchedules);
     }
-    // =====================================================
-    // ADD
-    // =====================================================
     /**
-     * ADD is allowed even when normalSchedules is empty.
+     * ADD appends additional working time.
      *
-     * This is what enables:
-     *
-     * Day OFF
-     *   ↓
-     * Week View ADD
-     *   ↓
-     * ADD effective schedule
-     *   ↓
-     * consultation slots
+     * ADD can work even if there is no normal
+     * schedule on that particular weekday.
      */
     for (const change of addChanges) {
         if (!change.start_time ||
@@ -253,13 +239,16 @@ async function getEffectiveSchedules(employeeId, branchId, appointmentDate, norm
         }
         const startMinutes = dateToMinutes(change.start_time);
         const endMinutes = dateToMinutes(change.end_time);
+        /**
+         * Ignore invalid ranges.
+         */
         if (endMinutes <=
             startMinutes) {
             continue;
         }
         /**
-         * Do not generate duplicate slots when the ADD
-         * overlaps an already effective range.
+         * Prevent overlapping ADD/OVERRIDE ranges
+         * from generating duplicate slots.
          */
         const alreadyCovered = effectiveSchedules.some((schedule) => rangesOverlap(startMinutes, endMinutes, dateToMinutes(schedule.start_time), dateToMinutes(schedule.end_time)));
         if (alreadyCovered) {
@@ -273,20 +262,18 @@ async function getEffectiveSchedules(employeeId, branchId, appointmentDate, norm
             consultation_minutes: consultationMinutes
         });
     }
-    // =====================================================
-    // SORT
-    // =====================================================
+    /**
+     * Sort schedules chronologically.
+     */
     effectiveSchedules.sort((a, b) => dateToMinutes(a.start_time) -
         dateToMinutes(b.start_time));
     return effectiveSchedules;
 }
-// =========================================================
-// APPOINTMENT SERVICE
-// =========================================================
 class AppointmentService {
-    // =====================================================
-    // VALIDATE BOOKING CONTEXT
-    // =====================================================
+    /**
+     * Validates doctor, branch, department and
+     * effective schedule.
+     */
     async validateBookingContext(employeeId, branchId, departmentId, appointmentDate) {
         const employee = await repository.findEmployee(employeeId);
         if (!employee) {
@@ -322,9 +309,6 @@ class AppointmentService {
         const dayOfWeek = (0, appointment_utils_1.toDayOfWeek)(appointmentDate);
         const normalSchedules = await repository.findActiveDoctorSchedules(employeeId, branchId, dayOfWeek);
         const schedules = await getEffectiveSchedules(employeeId, branchId, appointmentDate, normalSchedules);
-        // =================================================
-        // NO EFFECTIVE SCHEDULE
-        // =================================================
         if (schedules.length === 0) {
             const changes = await getScheduleChanges(employeeId, branchId, appointmentDate);
             const hasCancel = changes.some((change) => change.mode ===
@@ -332,31 +316,12 @@ class AppointmentService {
             if (hasCancel) {
                 throw new Error("Doctor is unavailable on the selected date");
             }
-            /**
-             * No normal schedule and no ADD/OVERRIDE.
-             *
-             * Keep the existing off-day booking behavior.
-             *
-             * Find ANY schedule, including inactive schedules,
-             * so appointment_history.schedule_id remains valid.
-             */
-            const referenceSchedule = await repository.findReferenceSchedule(employeeId, branchId);
-            if (!referenceSchedule) {
-                throw new Error(`Doctor has no schedule at this branch on ${dayOfWeek}`);
-            }
-            return {
-                employee,
-                branch,
-                department,
-                schedules: [
-                    referenceSchedule
-                ],
-                isOffDayBooking: true
-            };
+            throw new Error(`Doctor has no active schedule at this branch on ${dayOfWeek}`);
         }
-        // =================================================
-        // CONVERT EFFECTIVE SCHEDULES
-        // =================================================
+        /**
+         * Convert effective schedules into the
+         * shape expected by the existing booking logic.
+         */
         const convertedSchedules = schedules.map((schedule) => ({
             ...schedule,
             consultation_minutes: schedule.consultation_minutes
@@ -368,9 +333,10 @@ class AppointmentService {
             schedules: convertedSchedules
         };
     }
-    // =====================================================
-    // PICK SCHEDULE FOR TIME
-    // =====================================================
+    /**
+     * Finds the effective schedule containing
+     * the requested appointment time.
+     */
     pickScheduleForTime(schedules, appointmentTime) {
         const requestedMinutes = (0, appointment_utils_1.timeToMinutes)((0, appointment_utils_1.timeStringToDate)(appointmentTime));
         const match = schedules.find((schedule) => {
@@ -390,19 +356,20 @@ class AppointmentService {
         }
         return match;
     }
-    // =====================================================
-    // BOOK APPOINTMENT
-    // =====================================================
+    /**
+     * Creates an appointment.
+     */
     async bookAppointment(data, createdBy) {
         const patient = await repository.findPatient(data.patient_id);
         if (!patient) {
             throw new Error("Patient not found");
         }
         const appointmentDate = (0, appointment_utils_1.parseDateOnly)(data.appointment_date);
-        const { employee, department, schedules, isOffDayBooking } = await this.validateBookingContext(data.employee_id, data.branch_id, data.department_id, appointmentDate);
-        const schedule = isOffDayBooking
-            ? schedules[0]
-            : this.pickScheduleForTime(schedules, data.appointment_time);
+        const { employee, department, schedules } = await this.validateBookingContext(data.employee_id, data.branch_id, data.department_id, appointmentDate);
+        /**
+         * Validates ADD / OVERRIDE / CANCEL.
+         */
+        const schedule = this.pickScheduleForTime(schedules, data.appointment_time);
         const appointmentTime = (0, appointment_utils_1.timeStringToDate)(data.appointment_time);
         const duplicate = await repository.findDuplicateAppointment(data.employee_id, appointmentDate, appointmentTime);
         if (duplicate) {
@@ -451,15 +418,15 @@ class AppointmentService {
             });
         });
     }
-    // =====================================================
-    // GET APPOINTMENTS
-    // =====================================================
+    /**
+     * Gets appointments.
+     */
     async getAppointments(query) {
         return repository.getAppointments(query);
     }
-    // =====================================================
-    // GET APPOINTMENT
-    // =====================================================
+    /**
+     * Gets an appointment by appointment number.
+     */
     async getAppointmentByNumber(appointmentNo) {
         const appointment = await repository.getAppointmentByNumber(appointmentNo);
         if (!appointment) {
@@ -467,9 +434,9 @@ class AppointmentService {
         }
         return appointment;
     }
-    // =====================================================
-    // UPDATE APPOINTMENT
-    // =====================================================
+    /**
+     * Updates/reschedules an appointment.
+     */
     async updateAppointment(appointmentNo, data, actingUserId = "SYSTEM") {
         const existing = await repository.getAppointmentByNumber(appointmentNo);
         if (!existing) {
@@ -505,10 +472,8 @@ class AppointmentService {
             let doctorName = existing.doctor_name;
             let departmentName = existing.department;
             if (scheduleChanged) {
-                const { employee, department, schedules, isOffDayBooking } = await this.validateBookingContext(employeeId, branchId, departmentId, appointmentDate);
-                const schedule = isOffDayBooking
-                    ? schedules[0]
-                    : this.pickScheduleForTime(schedules, appointmentTimeStr);
+                const { employee, department, schedules } = await this.validateBookingContext(employeeId, branchId, departmentId, appointmentDate);
+                const schedule = this.pickScheduleForTime(schedules, appointmentTimeStr);
                 const appointmentTime = (0, appointment_utils_1.timeStringToDate)(appointmentTimeStr);
                 const duplicate = await repository.findDuplicateAppointment(employeeId, appointmentDate, appointmentTime, appointmentNo);
                 if (duplicate) {
@@ -558,9 +523,9 @@ class AppointmentService {
             return updated;
         });
     }
-    // =====================================================
-    // UPDATE STATUS
-    // =====================================================
+    /**
+     * Updates appointment status.
+     */
     async updateAppointmentStatus(appointmentNo, status, cancelReason, cancelledBy) {
         const existing = await repository.getAppointmentByNumber(appointmentNo);
         if (!existing) {
@@ -574,21 +539,35 @@ class AppointmentService {
             !cancelReason) {
             throw new Error("Cancellation reason is required when cancelling an appointment");
         }
-        return repository.updateAppointmentStatus(appointmentNo, status, cancelReason, cancelledBy);
+        /**
+         * cancelledBy is accepted here so the controller
+         * can pass the authenticated user.
+         *
+         * The current repository method accepts:
+         * appointmentNo, status, cancelReason
+         *
+         * Therefore cancelledBy is intentionally not passed
+         * to the repository until the repository supports
+         * that fourth parameter.
+         */
+        void cancelledBy;
+        return repository.updateAppointmentStatus(appointmentNo, status, cancelReason);
     }
-    // =====================================================
-    // CANCEL APPOINTMENT
-    // =====================================================
+    /**
+     * Cancels an appointment.
+     *
+     * There must be only ONE implementation of this method.
+     */
     async cancelAppointment(appointmentNo, cancelReason, cancelledBy) {
         return this.updateAppointmentStatus(appointmentNo, appointment_constants_1.APPOINTMENT_STATUS.CANCELLED, cancelReason, cancelledBy);
     }
-    // =====================================================
-    // AVAILABLE APPOINTMENT SLOTS
-    // =====================================================
+    /**
+     * Gets available appointment slots.
+     *
+     * ADD / OVERRIDE / CANCEL are applied before
+     * slots are generated.
+     */
     async getAvailableSlots(employeeId, branchId, dateStr) {
-        // =================================================
-        // VALIDATE DOCTOR
-        // =================================================
         const employee = await repository.findEmployee(employeeId);
         if (!employee) {
             throw new Error("Doctor not found");
@@ -600,9 +579,6 @@ class AppointmentService {
         if (employee.emp_status !== true) {
             throw new Error("Doctor is inactive. Please contact the administrator.");
         }
-        // =================================================
-        // VALIDATE BRANCH
-        // =================================================
         const branch = await repository.findBranch(branchId);
         if (!branch) {
             throw new Error("Branch not found");
@@ -611,50 +587,28 @@ class AppointmentService {
             "Active") {
             throw new Error("Selected branch is inactive");
         }
-        // =================================================
-        // VALIDATE MAPPING
-        // =================================================
         const mapping = await repository.findDoctorBranchMapping(employeeId, branchId);
         if (!mapping) {
             throw new Error("Doctor is not assigned to the selected branch");
         }
-        // =================================================
-        // DATE
-        // =================================================
         const appointmentDate = (0, appointment_utils_1.parseDateOnly)(dateStr);
         const dayOfWeek = (0, appointment_utils_1.toDayOfWeek)(appointmentDate);
-        // =================================================
-        // NORMAL SCHEDULE
-        // =================================================
         const normalSchedules = await repository.findActiveDoctorSchedules(employeeId, branchId, dayOfWeek);
-        // =================================================
-        // EFFECTIVE SCHEDULE
-        // =================================================
         const effectiveSchedules = await getEffectiveSchedules(employeeId, branchId, appointmentDate, normalSchedules);
-        // =================================================
-        // CHANGE STATUS
-        // =================================================
-        const changes = await repository.findDoctorScheduleChange(employeeId, branchId, appointmentDate);
-        const isCancelled = changes.some((change) => change.mode === "CANCEL");
-        // =================================================
-        // NO EFFECTIVE SCHEDULE
-        // =================================================
+        /**
+         * CANCEL or no effective schedule.
+         *
+         * CANCEL means the entire date has no slots.
+         */
         if (effectiveSchedules.length === 0) {
             return {
                 date: dateStr,
                 day_of_week: dayOfWeek,
-                slots: [],
-                is_cancelled: isCancelled
+                slots: []
             };
         }
-        // =================================================
-        // BOOKED TIMES
-        // =================================================
         const bookedTimes = await repository.findBookedAppointmentTimes(employeeId, appointmentDate);
         const bookedSet = new Set(bookedTimes.map(appointment_utils_1.formatTimeOfDay));
-        // =================================================
-        // TODAY CHECK
-        // =================================================
         const now = new Date();
         const isToday = appointmentDate.getUTCFullYear() ===
             now.getUTCFullYear() &&
@@ -664,9 +618,6 @@ class AppointmentService {
                 now.getUTCDate();
         const nowMinutes = now.getHours() * 60 +
             now.getMinutes();
-        // =================================================
-        // GENERATE CONSULTATION SLOTS
-        // =================================================
         const slots = effectiveSchedules.flatMap((schedule) => {
             if (!schedule.start_time ||
                 !schedule.end_time) {
@@ -685,19 +636,19 @@ class AppointmentService {
                 is_available: !bookedSet.has(time)
             }));
         });
-        // =================================================
-        // RESPONSE
-        // =================================================
         return {
             date: dateStr,
             day_of_week: dayOfWeek,
-            slots,
-            is_cancelled: isCancelled
+            slots
         };
     }
-    // =====================================================
-    // DAILY SLOT SUMMARY
-    // =====================================================
+    /**
+     * Gets daily doctor slot capacity.
+     *
+     * This version also detects branches that have
+     * ADD / OVERRIDE changes even when there is no
+     * normal schedule on that weekday.
+     */
     async getDoctorSlotSummary(employeeId, dateStr) {
         const employee = await repository.findEmployee(employeeId);
         if (!employee) {
@@ -708,9 +659,9 @@ class AppointmentService {
         }
         const appointmentDate = (0, appointment_utils_1.parseDateOnly)(dateStr);
         const dayOfWeek = (0, appointment_utils_1.toDayOfWeek)(appointmentDate);
-        // =================================================
-        // NORMAL SCHEDULE BRANCHES
-        // =================================================
+        /**
+         * Find branches from normal schedules.
+         */
         const normalBranchRecords = await prisma_1.default.doctor_schedule.findMany({
             where: {
                 employee_id: employeeId,
@@ -723,9 +674,9 @@ class AppointmentService {
                 "branch_id"
             ]
         });
-        // =================================================
-        // CHANGE BRANCHES
-        // =================================================
+        /**
+         * Find branches from date-specific changes.
+         */
         const changeBranchRecords = await prisma_1.default.doctor_schedule_change.findMany({
             where: {
                 employee_id: employeeId,
@@ -739,6 +690,9 @@ class AppointmentService {
                 "branch_id"
             ]
         });
+        /**
+         * Merge branch IDs.
+         */
         const branchIds = new Set();
         for (const record of normalBranchRecords) {
             if (record.branch_id) {
@@ -751,9 +705,6 @@ class AppointmentService {
             }
         }
         let totalSlots = 0;
-        // =================================================
-        // PROCESS BRANCHES
-        // =================================================
         for (const branchId of branchIds) {
             const normalSchedules = await repository.findActiveDoctorSchedules(employeeId, branchId, dayOfWeek);
             const effectiveSchedules = await getEffectiveSchedules(employeeId, branchId, appointmentDate, normalSchedules);
@@ -763,13 +714,11 @@ class AppointmentService {
                         (0, appointment_utils_1.generateTimeSlots)(schedule.start_time, schedule.end_time, SLOT_DURATION_MINUTES).length);
                 }, 0);
         }
-        // =================================================
-        // BOOKED COUNT
-        // =================================================
         const bookedCount = await repository.countBookedAppointmentsForEmployee(employeeId, appointmentDate);
         const percentage = totalSlots > 0
             ? Math.min(100, Math.round((bookedCount /
-                totalSlots) * 100))
+                totalSlots) *
+                100))
             : 0;
         return {
             date: dateStr,
@@ -779,9 +728,19 @@ class AppointmentService {
             percentage
         };
     }
-    // =====================================================
-    // WEEKLY SLOT SUMMARY
-    // =====================================================
+    /**
+     * Gets weekly doctor slot capacity.
+     *
+     * Each day is processed independently.
+     *
+     * Branches are discovered from BOTH:
+     *
+     * 1. doctor_schedule
+     * 2. doctor_schedule_change
+     *
+     * This allows ADD/OVERRIDE-only dates to contribute
+     * to the weekly capacity.
+     */
     async getDoctorWeekSlotSummary(employeeId, dateStr) {
         const employee = await repository.findEmployee(employeeId);
         if (!employee) {
@@ -793,16 +752,16 @@ class AppointmentService {
         const anchorDate = (0, appointment_utils_1.parseDateOnly)(dateStr);
         const { start, end } = (0, appointment_utils_1.getWeekRange)(anchorDate);
         let totalSlots = 0;
-        // =================================================
-        // MONDAY -> SUNDAY
-        // =================================================
+        /**
+         * Process Monday through Sunday.
+         */
         for (let i = 0; i < 7; i++) {
             const day = new Date(start);
             day.setUTCDate(start.getUTCDate() + i);
             const dayOfWeek = (0, appointment_utils_1.toDayOfWeek)(day);
-            // =============================================
-            // NORMAL SCHEDULE BRANCHES
-            // =============================================
+            /**
+             * Normal schedule branches.
+             */
             const normalBranchRecords = await prisma_1.default.doctor_schedule.findMany({
                 where: {
                     employee_id: employeeId,
@@ -816,9 +775,9 @@ class AppointmentService {
                     "branch_id"
                 ]
             });
-            // =============================================
-            // DATE CHANGE BRANCHES
-            // =============================================
+            /**
+             * Date-specific change branches.
+             */
             const changeBranchRecords = await prisma_1.default.doctor_schedule_change.findMany({
                 where: {
                     employee_id: employeeId,
@@ -843,9 +802,6 @@ class AppointmentService {
                     branchIds.add(record.branch_id);
                 }
             }
-            // =============================================
-            // PROCESS BRANCHES
-            // =============================================
             for (const branchId of branchIds) {
                 const normalSchedules = await repository.findActiveDoctorSchedules(employeeId, branchId, dayOfWeek);
                 const effectiveSchedules = await getEffectiveSchedules(employeeId, branchId, day, normalSchedules);
@@ -856,13 +812,11 @@ class AppointmentService {
                     }, 0);
             }
         }
-        // =================================================
-        // BOOKED COUNT
-        // =================================================
         const bookedCount = await repository.countBookedAppointmentsForEmployeeInRange(employeeId, start, end);
         const percentage = totalSlots > 0
             ? Math.min(100, Math.round((bookedCount /
-                totalSlots) * 100))
+                totalSlots) *
+                100))
             : 0;
         return {
             week_start: (0, appointment_utils_1.formatDateOnly)(start),
@@ -874,4 +828,3 @@ class AppointmentService {
     }
 }
 exports.AppointmentService = AppointmentService;
-exports.default = AppointmentService;

@@ -53,58 +53,32 @@ const appointmentDetailInclude = {
     }
 };
 class AppointmentRepository {
-    // =========================================================
-    // PATIENT
-    // =========================================================
     async findPatient(patientId) {
         return prisma_1.default.patient_bio_data.findUnique({
-            where: {
-                patient_id: patientId
-            }
+            where: { patient_id: patientId }
         });
     }
-    // =========================================================
-    // EMPLOYEE / DOCTOR
-    // =========================================================
     async findEmployee(employeeId) {
         return prisma_1.default.employees.findUnique({
-            where: {
-                employee_id: employeeId
-            },
+            where: { employee_id: employeeId },
             include: {
                 user_table: {
-                    select: {
-                        role_type: true,
-                        user_status: true
-                    }
+                    select: { role_type: true, user_status: true }
                 },
                 doctor_profile: true
             }
         });
     }
-    // =========================================================
-    // BRANCH
-    // =========================================================
     async findBranch(branchId) {
         return prisma_1.default.branch.findUnique({
-            where: {
-                branch_id: branchId
-            }
+            where: { branch_id: branchId }
         });
     }
-    // =========================================================
-    // DEPARTMENT
-    // =========================================================
     async findDepartment(departmentId) {
         return prisma_1.default.department_master.findUnique({
-            where: {
-                department_id: departmentId
-            }
+            where: { department_id: departmentId }
         });
     }
-    // =========================================================
-    // DOCTOR / BRANCH MAPPING
-    // =========================================================
     async findDoctorBranchMapping(employeeId, branchId) {
         return prisma_1.default.user_branch_mapping.findFirst({
             where: {
@@ -114,15 +88,8 @@ class AppointmentRepository {
             }
         });
     }
-    // =========================================================
-    // DOCTOR SCHEDULES
-    // =========================================================
-    /**
-     * Returns active recurring schedules for a doctor,
-     * branch and weekday.
-     *
-     * These represent the NORMAL weekly schedule.
-     */
+    // A doctor can have more than one active shift on the same day_of_week
+    // (e.g. morning + evening), so this returns all of them, not just one.
     async findActiveDoctorSchedules(employeeId, branchId, dayOfWeek) {
         return prisma_1.default.doctor_schedule.findMany({
             where: {
@@ -131,17 +98,13 @@ class AppointmentRepository {
                 day_of_week: dayOfWeek,
                 is_active: true
             },
-            orderBy: {
-                start_time: "asc"
-            }
+            orderBy: { start_time: "asc" }
         });
     }
-    /**
-     * Returns all active schedules for an employee
-     * across branches.
-     *
-     * Used for doctor capacity calculations.
-     */
+    // A doctor's schedules across every branch they work at, used to compute
+    // their total appointment slot capacity for a given day - not scoped to
+    // any single branch, since a doctor's daily capacity is a property of
+    // the doctor, not of whichever branch happens to be selected.
     async findActiveDoctorSchedulesForEmployee(employeeId, dayOfWeek) {
         return prisma_1.default.doctor_schedule.findMany({
             where: {
@@ -151,108 +114,12 @@ class AppointmentRepository {
             }
         });
     }
-    /**
-     * Returns a schedule that can be used as the
-     * schedule_id reference for a date-specific ADD/OVERRIDE.
-     *
-     * IMPORTANT:
-     *
-     * is_active is intentionally NOT required here.
-     *
-     * When a recurring day is toggled OFF, the original
-     * doctor_schedule row remains in the database but becomes
-     * inactive.
-     *
-     * A date-specific ADD on that OFF day still needs a valid
-     * doctor_schedule.schedule_id because appointment_history
-     * references doctor_schedule.
-     */
-    async findReferenceSchedule(employeeId, branchId) {
-        return prisma_1.default.doctor_schedule.findFirst({
-            where: {
-                employee_id: employeeId,
-                branch_id: branchId
-            },
-            orderBy: [
-                {
-                    is_active: "desc"
-                },
-                {
-                    start_time: "asc"
-                }
-            ]
-        });
-    }
-    // =========================================================
-    // DATE-SPECIFIC SCHEDULE CHANGES
-    // =========================================================
-    /**
-     * Returns active ADD / OVERRIDE / CANCEL changes for
-     * the requested doctor, branch and calendar date.
-     *
-     * IMPORTANT:
-     *
-     * Do NOT compare change_date directly with appointmentDate.
-     *
-     * appointmentDate represents a calendar date, while the
-     * database timestamp may contain a time component.
-     *
-     * Example:
-     *
-     * appointmentDate:
-     *   2026-08-27T00:00:00.000Z
-     *
-     * Database:
-     *   2026-08-27T05:30:00.000Z
-     *
-     * An exact equality check would NOT find the row.
-     *
-     * Therefore we search:
-     *
-     *   >= start of requested day
-     *   <  start of next day
-     *
-     * This is especially important for:
-     *
-     * Day View OFF
-     *      ↓
-     * Week View ADD
-     *      ↓
-     * doctor_schedule_change row created
-     *      ↓
-     * appointment slots generated
-     */
-    async findDoctorScheduleChange(employeeId, branchId, appointmentDate) {
-        const startOfDay = new Date(appointmentDate);
-        startOfDay.setUTCHours(0, 0, 0, 0);
-        const startOfNextDay = new Date(startOfDay);
-        startOfNextDay.setUTCDate(startOfNextDay.getUTCDate() + 1);
-        return prisma_1.default.doctor_schedule_change.findMany({
-            where: {
-                employee_id: employeeId,
-                branch_id: branchId,
-                change_date: {
-                    gte: startOfDay,
-                    lt: startOfNextDay
-                },
-                is_active: true
-            },
-            orderBy: {
-                created_at: "asc"
-            }
-        });
-    }
-    // =========================================================
-    // APPOINTMENT COUNTS
-    // =========================================================
     async countBookedAppointmentsForEmployee(employeeId, appointmentDate) {
         return prisma_1.default.appointment_history.count({
             where: {
                 employee_id: employeeId,
                 appointment_date: appointmentDate,
-                status: {
-                    notIn: appointment_constants_1.NON_BLOCKING_APPOINTMENT_STATUSES
-                }
+                status: { notIn: appointment_constants_1.NON_BLOCKING_APPOINTMENT_STATUSES }
             }
         });
     }
@@ -260,56 +127,44 @@ class AppointmentRepository {
         return prisma_1.default.appointment_history.count({
             where: {
                 employee_id: employeeId,
-                appointment_date: {
-                    gte: startDate,
-                    lte: endDate
-                },
-                status: {
-                    notIn: appointment_constants_1.NON_BLOCKING_APPOINTMENT_STATUSES
-                }
+                appointment_date: { gte: startDate, lte: endDate },
+                status: { notIn: appointment_constants_1.NON_BLOCKING_APPOINTMENT_STATUSES }
             }
         });
     }
-    // =========================================================
-    // BOOKED APPOINTMENT TIMES
-    // =========================================================
     async findBookedAppointmentTimes(employeeId, appointmentDate) {
         const appointments = await prisma_1.default.appointment_history.findMany({
             where: {
                 employee_id: employeeId,
                 appointment_date: appointmentDate,
-                status: {
-                    notIn: appointment_constants_1.NON_BLOCKING_APPOINTMENT_STATUSES
-                }
+                status: { notIn: appointment_constants_1.NON_BLOCKING_APPOINTMENT_STATUSES }
             },
-            select: {
-                appointment_time: true
-            }
+            select: { appointment_time: true }
         });
         return appointments.map((appointment) => appointment.appointment_time);
     }
-    // =========================================================
-    // CONCURRENCY / TOKEN
-    // =========================================================
-    /**
-     * Serializes concurrent bookings against the same
-     * doctor schedule.
-     */
+    // Serializes concurrent bookings against the same schedule so two
+    // requests can never read the same MAX(token_number) and both insert it.
     async lockDoctorSchedule(tx, scheduleId) {
-        await tx.$queryRaw `
-            SELECT schedule_id
-            FROM doctor_schedule
-            WHERE schedule_id = ${scheduleId}
-            FOR UPDATE
-        `;
+        await tx.$queryRaw `SELECT schedule_id FROM doctor_schedule WHERE schedule_id = ${scheduleId} FOR UPDATE`;
+    }
+    async findDuplicateAppointment(employeeId, appointmentDate, appointmentTime, excludeAppointmentId) {
+        return prisma_1.default.appointment_history.findFirst({
+            where: {
+                employee_id: employeeId,
+                appointment_date: appointmentDate,
+                appointment_time: appointmentTime,
+                status: { notIn: appointment_constants_1.NON_BLOCKING_APPOINTMENT_STATUSES },
+                ...(excludeAppointmentId
+                    ? { appointment_id: { not: excludeAppointmentId } }
+                    : {})
+            }
+        });
     }
     async generateAppointmentNumber(tx) {
         return (0, idGenerator_1.generateId)(tx, "APPOINTMENT");
     }
-    /**
-     * Must run after lockDoctorSchedule() inside the
-     * same transaction.
-     */
+    // Must run after lockDoctorSchedule() inside the same transaction.
     async generateTokenNumber(tx, scheduleId, appointmentDate) {
         const result = await tx.appointment_history.aggregate({
             where: {
@@ -322,57 +177,22 @@ class AppointmentRepository {
         });
         return (result._max.token_number ?? 0) + 1;
     }
-    // =========================================================
-    // DUPLICATE APPOINTMENT
-    // =========================================================
-    async findDuplicateAppointment(employeeId, appointmentDate, appointmentTime, excludeAppointmentId) {
-        return prisma_1.default.appointment_history.findFirst({
-            where: {
-                employee_id: employeeId,
-                appointment_date: appointmentDate,
-                appointment_time: appointmentTime,
-                status: {
-                    notIn: appointment_constants_1.NON_BLOCKING_APPOINTMENT_STATUSES
-                },
-                ...(excludeAppointmentId
-                    ? {
-                        appointment_id: {
-                            not: excludeAppointmentId
-                        }
-                    }
-                    : {})
-            }
-        });
-    }
-    // =========================================================
-    // CREATE / UPDATE APPOINTMENT
-    // =========================================================
     async createAppointment(tx, data) {
-        return tx.appointment_history.create({
-            data
-        });
+        return tx.appointment_history.create({ data });
     }
     async updateAppointment(tx, appointmentId, data) {
         return tx.appointment_history.update({
-            where: {
-                appointment_id: appointmentId
-            },
+            where: { appointment_id: appointmentId },
             data
         });
     }
-    // =========================================================
-    // APPOINTMENT STATUS
-    // =========================================================
     async updateAppointmentStatus(appointmentId, status, cancelReason, cancelledBy) {
         return prisma_1.default.appointment_history.update({
-            where: {
-                appointment_id: appointmentId
-            },
+            where: { appointment_id: appointmentId },
             data: {
                 status,
                 cancel_reason: cancelReason,
-                ...(status ===
-                    appointment_constants_1.APPOINTMENT_STATUS.CANCELLED
+                ...(status === appointment_constants_1.APPOINTMENT_STATUS.CANCELLED
                     ? {
                         cancelled_at: new Date(),
                         cancelled_by: cancelledBy ?? null,
@@ -382,41 +202,24 @@ class AppointmentRepository {
             }
         });
     }
-    // =========================================================
-    // APPOINTMENT FETCH
-    // =========================================================
     async getAppointmentByNumber(appointmentId) {
         return prisma_1.default.appointment_history.findUnique({
-            where: {
-                appointment_id: appointmentId
-            },
+            where: { appointment_id: appointmentId },
             include: appointmentDetailInclude
         });
     }
-    // =========================================================
-    // RESCHEDULE QUEUE
-    // =========================================================
     async findOpenRescheduleQueueEntries(tx, appointmentId) {
         return tx.appointment_reschedule_queue.findMany({
             where: {
                 appointment_id: appointmentId,
-                status: {
-                    in: [
-                        "PENDING",
-                        "ASSIGNED"
-                    ]
-                }
+                status: { in: ["PENDING", "ASSIGNED"] }
             },
-            orderBy: {
-                created_at: "desc"
-            }
+            orderBy: { created_at: "desc" }
         });
     }
     async closeRescheduleQueueEntry(tx, queueId, performedBy) {
         await tx.appointment_reschedule_queue.update({
-            where: {
-                queue_id: queueId
-            },
+            where: { queue_id: queueId },
             data: {
                 status: "CONFIRMED",
                 updated_at: new Date()
@@ -431,69 +234,42 @@ class AppointmentRepository {
             }
         });
     }
-    // =========================================================
-    // APPOINTMENT LIST
-    // =========================================================
     async getAppointments(query) {
         const { branchId, employeeId, patientId, status, date, dateFrom, dateTo, sortBy = "appointment_date", sortOrder = "desc", page = 1, limit = 10 } = query;
         const where = {};
-        if (branchId) {
+        if (branchId)
             where.branch_id = branchId;
-        }
-        if (employeeId) {
+        if (employeeId)
             where.employee_id = employeeId;
-        }
-        if (patientId) {
+        if (patientId)
             where.patient_id = patientId;
-        }
-        if (status) {
+        if (status)
             where.status = status;
-        }
         if (date) {
-            where.appointment_date =
-                parseDate(date);
+            where.appointment_date = parseDate(date);
         }
         else if (dateFrom || dateTo) {
             where.appointment_date = {
-                ...(dateFrom
-                    ? {
-                        gte: parseDate(dateFrom)
-                    }
-                    : {}),
-                ...(dateTo
-                    ? {
-                        lte: parseDate(dateTo)
-                    }
-                    : {})
+                ...(dateFrom ? { gte: parseDate(dateFrom) } : {}),
+                ...(dateTo ? { lte: parseDate(dateTo) } : {})
             };
         }
         const orderBy = sortBy === "created_at"
-            ? {
-                created_at: sortOrder
-            }
+            ? { created_at: sortOrder }
             : sortBy === "token_number"
-                ? {
-                    token_number: sortOrder
-                }
+                ? { token_number: sortOrder }
                 : sortBy === "status"
-                    ? {
-                        status: sortOrder
-                    }
-                    : {
-                        appointment_date: sortOrder
-                    };
+                    ? { status: sortOrder }
+                    : { appointment_date: sortOrder };
         const [appointments, total] = await Promise.all([
             prisma_1.default.appointment_history.findMany({
                 where,
                 include: appointmentDetailInclude,
                 orderBy,
-                skip: (page - 1) *
-                    limit,
+                skip: (page - 1) * limit,
                 take: limit
             }),
-            prisma_1.default.appointment_history.count({
-                where
-            })
+            prisma_1.default.appointment_history.count({ where })
         ]);
         return {
             total,
@@ -505,9 +281,6 @@ class AppointmentRepository {
     }
 }
 exports.AppointmentRepository = AppointmentRepository;
-// =========================================================
-// DATE HELPER
-// =========================================================
 function parseDate(date) {
     return new Date(date);
 }
