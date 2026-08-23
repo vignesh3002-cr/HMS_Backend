@@ -50,6 +50,126 @@ export interface RegimenProtocolFilterQuery {
 
     cancer_type_id?: string;
     subtype_id?: string;
+    // Optional org scoping - when provided, the result includes that
+    // organization's active personalized protocols alongside the globally
+    // available generics. When omitted, only generics are returned.
+    organization_id?: string;
+
+}
+
+// -------------------------------------------------------------------------
+// Organization-specific personalized regimen protocols
+//
+// A personalized protocol is an independent chemotherapy_regimen_protocol
+// row owned by exactly one organization (organization_id = hospital_id) with
+// protocol_type = "PERSONALIZED". Its lineage back to the source generic
+// protocol is tracked with:
+//   - original_protocol  -> the ROOT generic protocol this lineage came from
+//   - protocol_reference -> the immediate parent protocol_id (generic for the
+//     first personalization, the previous version for later versions)
+//   - protocol_version   -> "v1", "v2", ... (incremented per version)
+// The full hierarchy (protocol -> days -> items -> dilutions) is cloned into
+// fresh rows with new IDs; nothing is ever shared with the generic source.
+// -------------------------------------------------------------------------
+
+export interface PersonalizationDilutionInput {
+
+    protocol_dilution_id?: string;
+    medicine_id?: string | null;
+    form?: string | null;
+    dose?: number | null;
+    dose_unit?: string | null;
+    dilution_volume?: number | null;
+    dilution_volume_unit?: string | null;
+    diluent?: string | null;
+    comment?: string | null;
+    active_status?: 0 | 1;
+    // Identifies the source dilution this one was cloned from (used to match
+    // inherited values when the editor saves the full structure back).
+    source_resource_id?: string | null;
+
+}
+
+export interface PersonalizationItemInput {
+
+    protocol_item_id?: string;
+    medicine_id: string;
+    drug_role?: "PRIMARY" | "PREMEDICATION" | "POSTMEDICATION" | "SUPPORTIVE";
+    drug_sequence: number;
+    drug_type?: string | null;
+    dosage?: number | null;
+    dosage_unit?: string | null;
+    dose_calculation_method?: string | null;
+    administration_route?: string | null;
+    infusion_type?: string | null;
+    infusion_duration_minutes?: number | null;
+    administration_day?: number | null;
+    cycle_day?: number | null;
+    frequency?: string | null;
+    timing_relative_to_primary?: string | null;
+    remarks?: string | null;
+    drug_brand_name?: string | null;
+    protocol_dose?: number | null;
+    protocol_dose_unit?: string | null;
+    protocol_dose_text?: string | null;
+    active_status?: 0 | 1;
+    // Identifies the source item this one was cloned from.
+    source_resource_id?: string | null;
+    dilutions?: PersonalizationDilutionInput[];
+
+}
+
+export interface PersonalizationDayInput {
+
+    protocol_day_id?: string;
+    day_number: number;
+    day_sequence?: number | null;
+    same_as_day_one?: boolean | null;
+    active_status?: 0 | 1;
+    // Identifies the source day this one was cloned from.
+    source_day_resource_id?: string | null;
+
+}
+
+export interface PersonalizeRegimenProtocolDto {
+
+    regimen_name?: string;
+    treatment_intent?: string | null;
+    standard_cycles?: number | null;
+    cycle_interval_days?: number | null;
+    guideline_source?: string | null;
+    notes?: string | null;
+    composition?: string | null;
+    additional_notes?: string | null;
+    no_of_days?: number | null;
+    day_care_referred?: boolean | null;
+    create_day_care_appointment?: boolean | null;
+    protocol_version?: string | null;
+    // Full editor payload. When omitted the source protocol's entire
+    // active structure (days, items, dilutions) is cloned unchanged.
+    days?: PersonalizationDayInput[];
+    items?: PersonalizationItemInput[];
+
+}
+
+export interface UpdatePersonalizedProtocolDto extends PersonalizeRegimenProtocolDto { }
+
+export interface AddPersonalizedProtocolItemDto extends PersonalizationItemInput { }
+
+export interface UpdatePersonalizedProtocolItemDto extends Partial<PersonalizationItemInput> { }
+
+export interface AddPersonalizedProtocolDayDto extends PersonalizationDayInput { }
+
+export interface UpdatePersonalizedProtocolDayDto extends Partial<PersonalizationDayInput> { }
+
+export interface AddPersonalizedProtocolDilutionDto extends PersonalizationDilutionInput { }
+
+export interface UpdatePersonalizedProtocolDilutionDto extends Partial<PersonalizationDilutionInput> { }
+
+export interface VersionPersonalizedProtocolDto {
+
+    reason?: string | null;
+    notes?: string | null;
 
 }
 

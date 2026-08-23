@@ -908,6 +908,37 @@ export class AppointmentService {
     }
 
     /**
+     * Counts distinct patients who booked appointments with a doctor
+     * (optionally scoped to one branch).
+     */
+    async getDistinctPatientCount(
+        employeeId: string,
+        branchId?: string | null
+    ) {
+
+        const employee =
+            await repository.findEmployee(employeeId);
+
+        if (!employee) {
+            throw new Error(
+                "Doctor not found"
+            );
+        }
+
+        const totalPatients =
+            await repository.countDistinctPatientsForEmployee(
+                employeeId,
+                branchId
+            );
+
+        return {
+            employeeId,
+            branchId: branchId ?? null,
+            totalPatients
+        };
+    }
+
+    /**
      * Gets an appointment by appointment number.
      */
     async getAppointmentByNumber(

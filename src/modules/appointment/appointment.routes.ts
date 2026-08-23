@@ -11,6 +11,7 @@ import {
     getAvailableSlotsValidation,
     getDoctorSlotSummaryValidation,
     getDoctorWeekSlotSummaryValidation,
+    getPatientCountValidation,
     cancelAppointmentValidation
 } from "./appointment.validation";
 import { DoctorTransferController } from "../doctor-transfer/doctorTransfer.controller";
@@ -93,6 +94,14 @@ router.get(
     authenticate,
     getDoctorWeekSlotSummaryValidation,
     controller.getDoctorWeekSlotSummary.bind(controller)
+);
+
+router.get(
+    "/patient-count",
+    authenticate,
+    authorize("appointment.read"),
+    getPatientCountValidation,
+    controller.getDistinctPatientCount.bind(controller)
 );
 
 router.get(

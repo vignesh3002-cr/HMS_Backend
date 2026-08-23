@@ -8,11 +8,11 @@ datasource db {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Permission {
-  id             String           @id @db.VarChar(50)
+  id             String           @id @db.VarChar(100)
   key            String           @unique @db.VarChar(100)
   name           String           @db.VarChar(100)
-  description    String?          @db.VarChar(255)
-  category       String           @db.VarChar(50)
+  description    String?          @db.VarChar(100)
+  category       String           @db.VarChar(100)
   is_active      Boolean          @default(true)
   created_at     DateTime         @default(now())
   updated_at     DateTime
@@ -22,10 +22,10 @@ model Permission {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model PermissionAuditLog {
   id             BigInt   @id @default(autoincrement())
-  role_type      String   @db.VarChar(50)
+  role_type      String   @db.VarChar(100)
   permission_key String   @db.VarChar(100)
-  action         String   @db.VarChar(20)
-  changed_by     String   @db.VarChar(50)
+  action         String   @db.VarChar(100)
+  changed_by     String   @db.VarChar(100)
   changed_at     DateTime @default(now())
   metadata       Json?
 
@@ -35,13 +35,13 @@ model PermissionAuditLog {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model RolePermission {
-  id             String         @id @db.VarChar(50)
-  role_type      String         @db.VarChar(50)
-  permission_id  String         @db.VarChar(50)
-  granted_by     String         @db.VarChar(50)
+  id             String         @id @db.VarChar(100)
+  role_type      String         @db.VarChar(100)
+  permission_id  String         @db.VarChar(100)
+  granted_by     String         @db.VarChar(100)
   granted_at     DateTime       @default(now())
   revoked_at     DateTime?
-  revoked_by     String?        @db.VarChar(50)
+  revoked_by     String?        @db.VarChar(100)
   Permission     Permission     @relation(fields: [permission_id], references: [id])
   role_id_config role_id_config @relation(fields: [role_type], references: [role_type])
 
@@ -52,16 +52,16 @@ model RolePermission {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model allergy_master {
   id              BigInt            @id @default(autoincrement())
-  code            String            @unique @db.VarChar(30)
-  substance_name  String            @db.VarChar(150)
+  code            String            @unique @db.VarChar(100)
+  substance_name  String            @db.VarChar(100)
   substance_type  String            @db.VarChar(100)
-  description     String?           @db.VarChar(500)
-  severity_level  String?           @db.VarChar(30)
+  description     String?           @db.VarChar(100)
+  severity_level  String?           @db.VarChar(100)
   is_active       Boolean           @default(true)
   created_at      DateTime          @default(now()) @db.Timestamp(6)
   updated_at      DateTime          @default(now()) @db.Timestamp(6)
-  created_by      String?           @db.VarChar(20)
-  updated_by      String?           @db.VarChar(20)
+  created_by      String?           @db.VarChar(100)
+  updated_by      String?           @db.VarChar(100)
   patient_allergy patient_allergy[]
 
   @@index([is_active], map: "idx_allergy_active")
@@ -70,45 +70,47 @@ model allergy_master {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model appointment_history {
-  appointment_id                  String                            @unique(map: "uq_appointment_id") @db.VarChar(20)
-  patient_id                      String                            @db.VarChar(20)
+  appointment_id                  String                            @unique(map: "uq_appointment_id") @db.VarChar(100)
+  patient_id                      String                            @db.VarChar(100)
   doctor_name                     String                            @db.VarChar(100)
   department                      String?                           @db.VarChar(100)
   appointment_date                DateTime                          @db.Date
   appointment_time                DateTime                          @db.Time(6)
   token_number                    Int?
-  booking_source                  String?                           @db.VarChar(30)
-  appointment_status              String?                           @db.VarChar(30)
+  booking_source                  String?                           @db.VarChar(100)
+  appointment_status              String?                           @db.VarChar(100)
   chief_complaint                 String?
   symptoms                        String?
   lab_test_details                String?
   scan_details                    String?
   consultation_fee                Decimal?                          @db.Decimal(10, 2)
   bill_amount                     Decimal?                          @db.Decimal(10, 2)
-  payment_status                  String?                           @db.VarChar(20)
-  payment_mode                    String?                           @db.VarChar(30)
+  payment_status                  String?                           @db.VarChar(100)
+  payment_mode                    String?                           @db.VarChar(100)
   checkin_time                    DateTime?                         @db.Timestamp(6)
   checkout_time                   DateTime?                         @db.Timestamp(6)
   id                              BigInt                            @id @default(autoincrement())
-  branch_id                       String?                           @db.VarChar(10)
-  department_id                   String?                           @db.VarChar(20)
-  user_id                         String?                           @db.VarChar(20)
-  assigned_doctor                 String?                           @db.VarChar(50)
-  reason_for_visit                String?                           @db.VarChar(500)
+  branch_id                       String?                           @db.VarChar(100)
+  department_id                   String?                           @db.VarChar(100)
+  user_id                         String?                           @db.VarChar(100)
+  assigned_doctor                 String?                           @db.VarChar(100)
+  reason_for_visit                String?                           @db.VarChar(100)
   referred_by                     String?                           @db.VarChar(100)
-  employee_id                     String?                           @db.VarChar(20)
-  created_by                      String?                           @db.VarChar
+  employee_id                     String?                           @db.VarChar(100)
+  created_by                      String?                           @db.VarChar(100)
   created_at                      DateTime?                         @default(now()) @db.Timestamp(6)
-  status                          String?                           @db.VarChar
+  status                          String?                           @db.VarChar(100)
   schedule_id                     BigInt?
-  diagnosis_id                    String?                           @db.VarChar(20)
+  diagnosis_id                    String?                           @db.VarChar(100)
   diagnosis_text                  String?
   prescription_details            String?
-  cancel_reason                   String?                           @db.VarChar
+  cancel_reason                   String?                           @db.VarChar(100)
   cancelled_at                    DateTime?                         @db.Timestamp(6)
-  cancelled_by                    String?                           @db.VarChar(20)
-  notification_status             String?                           @db.VarChar(20)
+  cancelled_by                    String?                           @db.VarChar(100)
+  notification_status             String?                           @db.VarChar(100)
   Reason_for_cancelling           String?
+  Patient_visit_type              String?                           @db.VarChar
+  Patient_type                    String?                           @db.VarChar
   employees                       employees?                        @relation(fields: [employee_id], references: [employee_id], onDelete: Cascade)
   doctor_schedule                 doctor_schedule?                  @relation(fields: [schedule_id], references: [schedule_id], onDelete: NoAction, onUpdate: NoAction)
   branch                          branch?                           @relation(fields: [branch_id], references: [branch_id], onDelete: Restrict, map: "fk_appointment_branch")
@@ -128,12 +130,12 @@ model appointment_history {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model appointment_notification {
   id                  BigInt              @id @default(autoincrement())
-  notification_id     String              @unique @db.VarChar(20)
-  appointment_id      String              @db.VarChar(20)
-  channel             String              @db.VarChar(20)
-  notification_type   String              @db.VarChar(40)
-  recipient           String?             @db.VarChar(150)
-  status              String              @default("PENDING") @db.VarChar(20)
+  notification_id     String              @unique @db.VarChar(100)
+  appointment_id      String              @db.VarChar(100)
+  channel             String              @db.VarChar(100)
+  notification_type   String              @db.VarChar(100)
+  recipient           String?             @db.VarChar(100)
+  status              String              @default("PENDING") @db.VarChar(100)
   created_at          DateTime            @default(now()) @db.Timestamp(6)
   appointment_history appointment_history @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade)
 }
@@ -141,9 +143,9 @@ model appointment_notification {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model appointment_reschedule_action_log {
   id                           BigInt                       @id @default(autoincrement())
-  queue_id                     String                       @db.VarChar(20)
-  action                       String                       @db.VarChar(20)
-  performed_by                 String                       @db.VarChar(20)
+  queue_id                     String                       @db.VarChar(100)
+  action                       String                       @db.VarChar(100)
+  performed_by                 String                       @db.VarChar(100)
   notes                        String?
   created_at                   DateTime                     @default(now()) @db.Timestamp(6)
   appointment_reschedule_queue appointment_reschedule_queue @relation(fields: [queue_id], references: [queue_id], onDelete: Cascade)
@@ -152,25 +154,25 @@ model appointment_reschedule_action_log {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model appointment_reschedule_queue {
   id                                BigInt                              @id @default(autoincrement())
-  queue_id                          String                              @unique @db.VarChar(20)
-  appointment_id                    String                              @db.VarChar(20)
-  patient_id                        String                              @db.VarChar(20)
-  employee_id                       String                              @db.VarChar(20)
-  branch_id                         String                              @db.VarChar(10)
-  department_id                     String?                             @db.VarChar(20)
+  queue_id                          String                              @unique @db.VarChar(100)
+  appointment_id                    String                              @db.VarChar(100)
+  patient_id                        String                              @db.VarChar(100)
+  employee_id                       String                              @db.VarChar(100)
+  branch_id                         String                              @db.VarChar(100)
+  department_id                     String?                             @db.VarChar(100)
   old_schedule_id                   BigInt?
   old_appointment_date              DateTime                            @db.Date
   old_appointment_time              DateTime                            @db.Time(6)
-  transfer_id                       String?                             @db.VarChar(20)
-  priority                          String                              @default("NORMAL") @db.VarChar(20)
+  transfer_id                       String?                             @db.VarChar(100)
+  priority                          String                              @default("NORMAL") @db.VarChar(100)
   reason                            String?
-  status                            String                              @default("PENDING") @db.VarChar(20)
-  assigned_employee_id              String?                             @db.VarChar(20)
-  assigned_branch_id                String?                             @db.VarChar(10)
+  status                            String                              @default("PENDING") @db.VarChar(100)
+  assigned_employee_id              String?                             @db.VarChar(100)
+  assigned_branch_id                String?                             @db.VarChar(100)
   assigned_schedule_id              BigInt?
   assigned_date                     DateTime?                           @db.Date
   assigned_time                     DateTime?                           @db.Time(6)
-  created_by                        String                              @db.VarChar(20)
+  created_by                        String                              @db.VarChar(100)
   created_at                        DateTime                            @default(now()) @db.Timestamp(6)
   updated_at                        DateTime?                           @db.Timestamp(6)
   appointment_reschedule_action_log appointment_reschedule_action_log[]
@@ -183,42 +185,42 @@ model appointment_reschedule_queue {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model biomarker_tests {
   id                 BigInt  @id @default(autoincrement())
-  biomarker_id       String  @unique(map: "uq_biomarker_tests_id") @db.VarChar(20)
+  biomarker_id       String  @unique(map: "uq_biomarker_tests_id") @db.VarChar(100)
   biomarker_name     String  @db.VarChar(100)
   test_method        String? @db.VarChar(100)
   threshold_value    String? @db.VarChar(100)
-  threshold_unit     String? @db.VarChar(30)
+  threshold_unit     String? @db.VarChar(100)
   drug_target        String?
-  nccn_level         String? @db.VarChar(50)
+  nccn_level         String? @db.VarChar(100)
   applicable_cancers String?
-  guideline_source   String? @db.VarChar(150)
+  guideline_source   String? @db.VarChar(100)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model branch {
-  branch_id                    String                         @unique(map: "uq_branch_branch_id") @default(dbgenerated("nextval('branch_branch_id_seq'::regclass)")) @db.VarChar(10)
-  branch_type                  String                         @db.VarChar(20)
+  branch_id                    String                         @unique(map: "uq_branch_branch_id") @default(dbgenerated("nextval('branch_branch_id_seq'::regclass)")) @db.VarChar(100)
+  branch_type                  String                         @db.VarChar(100)
   district                     String?                        @db.VarChar(100)
   state_name                   String?                        @db.VarChar(100)
-  branch_code                  String?                        @db.VarChar(20)
-  country                      String?                        @db.VarChar(50)
+  branch_code                  String?                        @db.VarChar(100)
+  country                      String?                        @db.VarChar(100)
   total_beds                   Int?
-  branch_status                String?                        @default("Active") @db.VarChar(20)
+  branch_status                String?                        @default("Active") @db.VarChar(100)
   date_of_establish            DateTime?                      @db.Date
   medical_services             String?                        @db.VarChar(100)
   id                           BigInt                         @id @default(autoincrement())
-  branch_name                  String?                        @db.VarChar(50)
-  branch_area                  String?                        @db.VarChar(50)
+  branch_name                  String?                        @db.VarChar(100)
+  branch_area                  String?                        @db.VarChar(100)
   address                      String?                        @db.VarChar(500)
-  emergency_no                 String?                        @db.VarChar(20)
-  hospital_id                  String?                        @db.VarChar(20)
-  branch_license_no            String?                        @db.VarChar(20)
+  emergency_no                 String?                        @db.VarChar(100)
+  hospital_id                  String?                        @db.VarChar(100)
+  branch_license_no            String?                        @db.VarChar(100)
   website_address              String?                        @db.VarChar(100)
-  pan_no                       String?                        @db.VarChar(20)
-  gst_no                       String?                        @db.VarChar(20)
+  pan_no                       String?                        @db.VarChar(100)
+  gst_no                       String?                        @db.VarChar(100)
   total_no_emp                 String?                        @db.VarChar(500)
   branch_email                 String?                        @db.VarChar(100)
-  fax_no                       String?                        @db.VarChar(20)
+  fax_no                       String?                        @db.VarChar(100)
   branch_pincode               Int?
   branch_photo_url             String?                        @db.VarChar
   appointment_history          appointment_history[]
@@ -252,11 +254,11 @@ model branch {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model cancer_subtypes {
   id                            BigInt                          @id @default(autoincrement())
-  subtype_id                    String                          @unique(map: "uq_cancer_subtypes_id") @db.VarChar(20)
-  cancer_type_id                String                          @db.VarChar(20)
-  subtype_name                  String                          @db.VarChar(150)
-  icd_o3_morphology             String?                         @db.VarChar(30)
-  icd10_subtype                 String?                         @db.VarChar(20)
+  subtype_id                    String                          @unique(map: "uq_cancer_subtypes_id") @db.VarChar(100)
+  cancer_type_id                String                          @db.VarChar(100)
+  subtype_name                  String                          @db.VarChar(100)
+  icd_o3_morphology             String?                         @db.VarChar(100)
+  icd10_subtype                 String?                         @db.VarChar(100)
   active_status                 Int?                            @default(1) @db.SmallInt
   cancer_types                  cancer_types                    @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: Cascade, map: "fk_subtype_cancer_type")
   chemotherapy_plan             chemotherapy_plan[]
@@ -267,11 +269,11 @@ model cancer_subtypes {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model cancer_types {
   id                            BigInt                          @id @default(autoincrement())
-  cancer_type_id                String                          @unique(map: "uq_cancer_types_id") @db.VarChar(20)
+  cancer_type_id                String?                         @unique(map: "uq_cancer_types_id") @db.VarChar(100)
   cancer_type                   String                          @unique(map: "uq_cancer_types_name") @db.VarChar(100)
-  icd10                         String?                         @db.VarChar(20)
-  icd_o3_topography             String?                         @db.VarChar(20)
-  staging_system                String?                         @db.VarChar(50)
+  icd10                         String?                         @db.VarChar(100)
+  icd_o3_topography             String?                         @db.VarChar(100)
+  staging_system                String?                         @db.VarChar(100)
   druggable_targets             String?
   active_status                 Int?                            @default(1) @db.SmallInt
   created_at                    DateTime?                       @default(now()) @db.Timestamp(6)
@@ -286,23 +288,23 @@ model cancer_types {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_administration {
   id                                                               BigInt                  @id @default(autoincrement())
-  administration_id                                                String                  @unique(map: "uq_chemo_administration") @db.VarChar(20)
-  chemotherapy_cycle_id                                            String                  @db.VarChar(20)
-  chemotherapy_plan_item_id                                        String                  @db.VarChar(20)
+  administration_id                                                String                  @unique(map: "uq_chemo_administration") @db.VarChar(100)
+  chemotherapy_cycle_id                                            String                  @db.VarChar(100)
+  chemotherapy_plan_item_id                                        String                  @db.VarChar(100)
   administration_date                                              DateTime                @db.Date
   administration_start_time                                        DateTime?               @db.Timestamp(6)
   administration_end_time                                          DateTime?               @db.Timestamp(6)
   administered_dose                                                Decimal?                @db.Decimal(10, 2)
-  administered_dose_unit                                           String?                 @db.VarChar(30)
-  administration_route                                             String?                 @db.VarChar(50)
+  administered_dose_unit                                           String?                 @db.VarChar(100)
+  administration_route                                             String?                 @db.VarChar(100)
   infusion_rate                                                    String?                 @db.VarChar(100)
   infusion_duration_minutes                                        Int?
   infusion_completed                                               Boolean?                @default(false)
-  administered_by                                                  String?                 @db.VarChar(20)
-  verified_by                                                      String?                 @db.VarChar(20)
+  administered_by                                                  String?                 @db.VarChar(100)
+  verified_by                                                      String?                 @db.VarChar(100)
   iv_site                                                          String?                 @db.VarChar(100)
   iv_access_type                                                   String?                 @db.VarChar(100)
-  cannula_size                                                     String?                 @db.VarChar(50)
+  cannula_size                                                     String?                 @db.VarChar(100)
   peripheral_line                                                  Boolean?                @default(false)
   central_line                                                     Boolean?                @default(false)
   picc_line                                                        Boolean?                @default(false)
@@ -319,13 +321,13 @@ model chemotherapy_administration {
   interruption_reason                                              String?
   doctor_informed                                                  Boolean?                @default(false)
   nursing_notes                                                    String?
-  administration_status                                            String?                 @default("Completed") @db.VarChar(30)
+  administration_status                                            String?                 @default("Completed") @db.VarChar(100)
   remarks                                                          String?
   active_status                                                    Int?                    @default(1) @db.SmallInt
   deleted_flag                                                     Boolean?                @default(false)
-  created_by                                                       String?                 @db.VarChar(20)
+  created_by                                                       String?                 @db.VarChar(100)
   created_at                                                       DateTime?               @default(now()) @db.Timestamp(6)
-  updated_by                                                       String?                 @db.VarChar(20)
+  updated_by                                                       String?                 @db.VarChar(100)
   updated_at                                                       DateTime?               @default(now()) @db.Timestamp(6)
   chemotherapy_cycle                                               chemotherapy_cycle      @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: Cascade, map: "fk_chemo_admin_cycle")
   employees_chemotherapy_administration_verified_byToemployees     employees?              @relation("chemotherapy_administration_verified_byToemployees", fields: [verified_by], references: [employee_id], map: "fk_chemo_admin_doctor")
@@ -336,10 +338,10 @@ model chemotherapy_administration {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_adverse_event {
   id                                                           BigInt             @id @default(autoincrement())
-  adverse_event_id                                             String             @unique(map: "uq_chemo_adverse_event") @db.VarChar(20)
-  chemotherapy_cycle_id                                        String             @db.VarChar(20)
+  adverse_event_id                                             String             @unique(map: "uq_chemo_adverse_event") @db.VarChar(100)
+  chemotherapy_cycle_id                                        String             @db.VarChar(100)
   event_date                                                   DateTime           @default(now()) @db.Timestamp(6)
-  adverse_event_name                                           String             @db.VarChar(200)
+  adverse_event_name                                           String             @db.VarChar(100)
   adverse_event_category                                       String?            @db.VarChar(100)
   nausea                                                       Boolean?           @default(false)
   vomiting                                                     Boolean?           @default(false)
@@ -357,9 +359,9 @@ model chemotherapy_adverse_event {
   infection                                                    Boolean?           @default(false)
   bleeding                                                     Boolean?           @default(false)
   pain                                                         Boolean?           @default(false)
-  reaction_grade                                               String?            @db.VarChar(30)
-  ctcae_grade                                                  String?            @db.VarChar(30)
-  severity                                                     String?            @db.VarChar(30)
+  reaction_grade                                               String?            @db.VarChar(100)
+  ctcae_grade                                                  String?            @db.VarChar(100)
+  severity                                                     String?            @db.VarChar(100)
   reaction_description                                         String?
   treatment_interrupted                                        Boolean?           @default(false)
   treatment_stopped                                            Boolean?           @default(false)
@@ -374,16 +376,16 @@ model chemotherapy_adverse_event {
   delay_days                                                   Int?
   doctor_action                                                String?
   nursing_action                                               String?
-  physician_id                                                 String?            @db.VarChar(20)
-  reported_by                                                  String?            @db.VarChar(20)
+  physician_id                                                 String?            @db.VarChar(100)
+  reported_by                                                  String?            @db.VarChar(100)
   resolved                                                     Boolean?           @default(false)
   resolution_date                                              DateTime?          @db.Date
   remarks                                                      String?
   active_status                                                Int?               @default(1) @db.SmallInt
   deleted_flag                                                 Boolean?           @default(false)
-  created_by                                                   String?            @db.VarChar(20)
+  created_by                                                   String?            @db.VarChar(100)
   created_at                                                   DateTime?          @default(now()) @db.Timestamp(6)
-  updated_by                                                   String?            @db.VarChar(20)
+  updated_by                                                   String?            @db.VarChar(100)
   updated_at                                                   DateTime?          @default(now()) @db.Timestamp(6)
   chemotherapy_cycle                                           chemotherapy_cycle @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: Cascade, map: "fk_chemo_adverse_cycle")
   employees_chemotherapy_adverse_event_physician_idToemployees employees?         @relation("chemotherapy_adverse_event_physician_idToemployees", fields: [physician_id], references: [employee_id], map: "fk_chemo_adverse_doctor")
@@ -393,16 +395,16 @@ model chemotherapy_adverse_event {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_cycle {
   id                          BigInt                        @id @default(autoincrement())
-  chemotherapy_cycle_id       String                        @unique(map: "uq_chemotherapy_cycle_id") @db.VarChar(20)
-  chemotherapy_plan_id        String                        @db.VarChar(20)
+  chemotherapy_cycle_id       String                        @unique(map: "uq_chemotherapy_cycle_id") @db.VarChar(100)
+  chemotherapy_plan_id        String                        @db.VarChar(100)
   cycle_number                Int
   cycle_day                   Int?
   planned_date                DateTime                      @db.Date
   actual_date                 DateTime?                     @db.Date
   next_cycle_date             DateTime?                     @db.Date
   cycle_interval_days         Int?
-  cycle_status                String?                       @default("PLANNED") @db.VarChar(30)
-  completion_status           String?                       @default("PENDING") @db.VarChar(30)
+  cycle_status                String?                       @default("PLANNED") @db.VarChar(100)
+  completion_status           String?                       @default("PENDING") @db.VarChar(100)
   treatment_delay             Boolean?                      @default(false)
   delay_days                  Int?
   delay_reason                String?
@@ -415,9 +417,9 @@ model chemotherapy_cycle {
   remarks                     String?
   active_status               Int?                          @default(1) @db.SmallInt
   deleted_flag                Boolean?                      @default(false)
-  created_by                  String?                       @db.VarChar(20)
+  created_by                  String?                       @db.VarChar(100)
   created_at                  DateTime?                     @default(now()) @db.Timestamp(6)
-  updated_by                  String?                       @db.VarChar(20)
+  updated_by                  String?                       @db.VarChar(100)
   updated_at                  DateTime?                     @default(now()) @db.Timestamp(6)
   chemotherapy_administration chemotherapy_administration[]
   chemotherapy_adverse_event  chemotherapy_adverse_event[]
@@ -432,8 +434,8 @@ model chemotherapy_cycle {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_discharge_instructions {
   id                            BigInt                        @id @default(autoincrement())
-  discharge_instruction_id      String                        @unique(map: "uq_discharge_instruction_id") @db.VarChar(20)
-  protocol_id                   String                        @db.VarChar(20)
+  discharge_instruction_id      String                        @unique(map: "uq_discharge_instruction_id") @db.VarChar(100)
+  protocol_id                   String                        @db.VarChar(100)
   medicine_id                   String?                       @db.VarChar(100)
   drug_sequence                 Int?
   drug_from                     String?                       @db.VarChar(100)
@@ -441,15 +443,15 @@ model chemotherapy_discharge_instructions {
   composition                   String?
   duration                      String?                       @db.VarChar(100)
   patient_dose                  Decimal?                      @db.Decimal(10, 2)
-  patient_dose_unit             String?                       @db.VarChar(30)
+  patient_dose_unit             String?                       @db.VarChar(100)
   administration_detail         String?
   dose_change                   Decimal?                      @db.Decimal(10, 2)
   comment                       String?
   source_resource_id            String?                       @db.VarChar(100)
   active_status                 Int?                          @default(1) @db.SmallInt
-  created_by                    String?                       @db.VarChar(20)
+  created_by                    String?                       @db.VarChar(100)
   created_at                    DateTime?                     @default(now()) @db.Timestamp(6)
-  updated_by                    String?                       @db.VarChar(20)
+  updated_by                    String?                       @db.VarChar(100)
   updated_at                    DateTime?                     @default(now()) @db.Timestamp(6)
   medicine_master               medicine_master?              @relation(fields: [medicine_id], references: [medicine_id], onDelete: Restrict, map: "fk_discharge_medicine")
   chemotherapy_regimen_protocol chemotherapy_regimen_protocol @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_discharge_protocol")
@@ -458,34 +460,34 @@ model chemotherapy_discharge_instructions {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_followup {
   id                    BigInt             @id @default(autoincrement())
-  followup_id           String             @unique(map: "uq_chemotherapy_followup") @db.VarChar(20)
-  chemotherapy_cycle_id String             @db.VarChar(20)
+  followup_id           String             @unique(map: "uq_chemotherapy_followup") @db.VarChar(100)
+  chemotherapy_cycle_id String             @db.VarChar(100)
   followup_date         DateTime           @db.Date
   next_followup_date    DateTime?          @db.Date
   treatment_response    String?            @db.VarChar(100)
-  recist_response       String?            @db.VarChar(50)
+  recist_response       String?            @db.VarChar(100)
   disease_progression   Boolean?           @default(false)
   progression_date      DateTime?          @db.Date
   progression_details   String?
   remission_status      String?            @db.VarChar(100)
   recurrence            Boolean?           @default(false)
   recurrence_date       DateTime?          @db.Date
-  recurrence_site       String?            @db.VarChar(200)
+  recurrence_site       String?            @db.VarChar(100)
   metastasis            Boolean?           @default(false)
-  metastasis_site       String?            @db.VarChar(200)
+  metastasis_site       String?            @db.VarChar(100)
   survival_status       String?            @db.VarChar(100)
-  performance_status    String?            @db.VarChar(50)
+  performance_status    String?            @db.VarChar(100)
   ongoing_symptoms      String?
   late_toxicity         String?
   supportive_care       String?
   followup_notes        String?
   physician_assessment  String?
-  physician_id          String?            @db.VarChar(20)
+  physician_id          String?            @db.VarChar(100)
   active_status         Int?               @default(1) @db.SmallInt
   deleted_flag          Boolean?           @default(false)
-  created_by            String?            @db.VarChar(20)
+  created_by            String?            @db.VarChar(100)
   created_at            DateTime?          @default(now()) @db.Timestamp(6)
-  updated_by            String?            @db.VarChar(20)
+  updated_by            String?            @db.VarChar(100)
   updated_at            DateTime?          @default(now()) @db.Timestamp(6)
   chemotherapy_cycle    chemotherapy_cycle @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: Cascade, map: "fk_chemo_followup_cycle")
   employees             employees?         @relation(fields: [physician_id], references: [employee_id], map: "fk_chemo_followup_doctor")
@@ -494,8 +496,8 @@ model chemotherapy_followup {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_lab_review {
   id                    BigInt             @id @default(autoincrement())
-  lab_review_id         String             @unique(map: "uq_chemo_lab_review") @db.VarChar(20)
-  chemotherapy_cycle_id String             @db.VarChar(20)
+  lab_review_id         String             @unique(map: "uq_chemo_lab_review") @db.VarChar(100)
+  chemotherapy_cycle_id String             @db.VarChar(100)
   review_date           DateTime           @default(now()) @db.Timestamp(6)
   hemoglobin            Decimal?           @db.Decimal(5, 2)
   rbc                   Decimal?           @db.Decimal(10, 2)
@@ -520,18 +522,18 @@ model chemotherapy_lab_review {
   uric_acid             Decimal?           @db.Decimal(6, 2)
   coagulation_profile   String?
   urine_test_result     String?
-  pregnancy_test        String?            @db.VarChar(50)
+  pregnancy_test        String?            @db.VarChar(100)
   cbc_normal            Boolean?           @default(true)
   renal_function_ok     Boolean?           @default(true)
   liver_function_ok     Boolean?           @default(true)
   chemotherapy_fit      Boolean?           @default(true)
-  reviewed_by           String?            @db.VarChar(20)
+  reviewed_by           String?            @db.VarChar(100)
   review_notes          String?
   active_status         Int?               @default(1) @db.SmallInt
   deleted_flag          Boolean?           @default(false)
-  created_by            String?            @db.VarChar(20)
+  created_by            String?            @db.VarChar(100)
   created_at            DateTime?          @default(now()) @db.Timestamp(6)
-  updated_by            String?            @db.VarChar(20)
+  updated_by            String?            @db.VarChar(100)
   updated_at            DateTime?          @default(now()) @db.Timestamp(6)
   chemotherapy_cycle    chemotherapy_cycle @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: Cascade, map: "fk_chemo_lab_cycle")
   employees             employees?         @relation(fields: [reviewed_by], references: [employee_id], map: "fk_chemo_lab_reviewed_by")
@@ -540,25 +542,25 @@ model chemotherapy_lab_review {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_master {
   id                 BigInt             @id @default(autoincrement())
-  chemo_id           String             @unique @db.VarChar(20)
-  department_id      String?            @db.VarChar(20)
-  branch_id          String?            @db.VarChar(20)
+  chemo_id           String             @unique @db.VarChar(100)
+  department_id      String?            @db.VarChar(100)
+  branch_id          String?            @db.VarChar(100)
   total_cycles       Int?
   treatment_end_date DateTime?          @db.Date
-  patient_history_id String?            @db.VarChar(20)
-  created_by         String?            @db.VarChar(20)
+  patient_history_id String?            @db.VarChar(100)
+  created_by         String?            @db.VarChar(100)
   created_at         DateTime?          @default(now()) @db.Timestamp(6)
-  diagnosis_id       String?            @db.VarChar(20)
-  user_id            String?            @db.VarChar
-  regimen_code       String?            @db.VarChar(50)
-  protocol_version   String?            @db.VarChar(30)
+  diagnosis_id       String?            @db.VarChar(100)
+  user_id            String?            @db.VarChar(100)
+  regimen_code       String?            @db.VarChar(100)
+  protocol_version   String?            @db.VarChar(100)
   cancer_type        String?            @db.VarChar(100)
-  cancer_stage       String?            @db.VarChar(50)
+  cancer_stage       String?            @db.VarChar(100)
   active_status      Int?               @default(1) @db.SmallInt
   remarks            String?
-  approved_by        String?            @db.VarChar(20)
+  approved_by        String?            @db.VarChar(100)
   approved_at        DateTime?          @db.Timestamp(6)
-  updated_by         String?            @db.VarChar(20)
+  updated_by         String?            @db.VarChar(100)
   updated_at         DateTime?          @db.Timestamp(6)
   deleted_flag       Boolean?           @default(false)
   diagnosis          diagnosis?         @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: Cascade)
@@ -571,47 +573,48 @@ model chemotherapy_master {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_plan {
   id                            BigInt                         @id @default(autoincrement())
-  chemotherapy_plan_id          String                         @unique(map: "uq_chemotherapy_plan") @db.VarChar(20)
-  patient_history_id            String                         @db.VarChar(20)
-  patient_id                    String                         @db.VarChar(20)
-  encounter_no                  String?                        @db.VarChar(30)
-  appointment_id                String?                        @db.VarChar(20)
-  diagnosis_id                  String                         @db.VarChar(20)
-  employee_id                   String                         @db.VarChar(20)
-  department_id                 String                         @db.VarChar(20)
-  branch_id                     String                         @db.VarChar(20)
-  user_id                       String?                        @db.VarChar(20)
-  regimen_name                  String                         @db.VarChar(200)
-  regimen_code                  String?                        @db.VarChar(50)
-  protocol_name                 String?                        @db.VarChar(200)
-  protocol_version              String?                        @db.VarChar(50)
-  treatment_goal                String?                        @db.VarChar(50)
-  treatment_intent              String?                        @db.VarChar(50)
-  cancer_stage                  String?                        @db.VarChar(50)
-  cancer_type                   String?                        @db.VarChar(150)
-  cancer_subtype                String?                        @db.VarChar(150)
-  ecog_status                   String?                        @db.VarChar(20)
+  chemotherapy_plan_id          String                         @unique(map: "uq_chemotherapy_plan") @db.VarChar(100)
+  patient_history_id            String                         @db.VarChar(100)
+  patient_id                    String                         @db.VarChar(100)
+  encounter_no                  String?                        @db.VarChar(100)
+  appointment_id                String?                        @db.VarChar(100)
+  diagnosis_id                  String                         @db.VarChar(100)
+  employee_id                   String                         @db.VarChar(100)
+  department_id                 String                         @db.VarChar(100)
+  branch_id                     String                         @db.VarChar(100)
+  user_id                       String?                        @db.VarChar(100)
+  regimen_name                  String                         @db.VarChar(100)
+  regimen_code                  String?                        @db.VarChar(100)
+  protocol_name                 String?                        @db.VarChar(100)
+  protocol_version              String?                        @db.VarChar(100)
+  treatment_type                String?                        @db.VarChar(100)
+  treatment_intent              String?                        @db.VarChar(100)
+  cancer_stage                  String?                        @db.VarChar(100)
+  cancer_type                   String?                        @db.VarChar(100)
+  cancer_subtype                String?                        @db.VarChar(100)
+  ecog_status                   String?                        @db.VarChar(100)
   karnofsky_score               Int?
   planned_cycles                Int
   completed_cycles              Int?                           @default(0)
   cycle_interval_days           Int?
   treatment_start_date          DateTime                       @db.Date
   expected_end_date             DateTime?                      @db.Date
-  treatment_status              String?                        @default("PLANNED") @db.VarChar(30)
+  treatment_status              String?                        @default("PLANNED") @db.VarChar(100)
   consent_taken                 Boolean?                       @default(false)
   consent_date                  DateTime?                      @db.Date
   insurance_type                String?                        @db.VarChar(100)
   remarks                       String?
   active_status                 Int?                           @default(1) @db.SmallInt
   deleted_flag                  Boolean?                       @default(false)
-  created_by                    String?                        @db.VarChar(20)
+  created_by                    String?                        @db.VarChar(100)
   created_at                    DateTime?                      @default(now()) @db.Timestamp(6)
-  updated_by                    String?                        @db.VarChar(20)
+  updated_by                    String?                        @db.VarChar(100)
   updated_at                    DateTime?                      @default(now()) @db.Timestamp(6)
-  cancer_type_id                String?                        @db.VarChar(20)
-  subtype_id                    String?                        @db.VarChar(20)
-  staging_detail_id             String?                        @db.VarChar(20)
-  source_protocol_id            String?                        @db.VarChar(20)
+  cancer_type_id                String?                        @db.VarChar(100)
+  subtype_id                    String?                        @db.VarChar(100)
+  staging_detail_id             String?                        @db.VarChar(100)
+  source_protocol_id            String?                        @db.VarChar(100)
+  treatment_goal                String?                        @db.VarChar(50)
   chemotherapy_cycle            chemotherapy_cycle[]
   appointment_history           appointment_history?           @relation(fields: [appointment_id], references: [appointment_id], map: "fk_chemo_plan_appointment")
   branch                        branch                         @relation(fields: [branch_id], references: [branch_id], map: "fk_chemo_plan_branch")
@@ -632,22 +635,22 @@ model chemotherapy_plan {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_plan_items {
   id                          BigInt                        @id @default(autoincrement())
-  chemotherapy_plan_item_id   String                        @unique(map: "uq_chemotherapy_plan_item") @db.VarChar(20)
-  chemotherapy_plan_id        String                        @db.VarChar(20)
+  chemotherapy_plan_item_id   String                        @unique(map: "uq_chemotherapy_plan_item") @db.VarChar(100)
+  chemotherapy_plan_id        String                        @db.VarChar(100)
   medicine_id                 String                        @db.VarChar(100)
   drug_sequence               Int
-  drug_type                   String?                       @db.VarChar(50)
+  drug_type                   String?                       @db.VarChar(100)
   protocol_dose               Decimal?                      @db.Decimal(10, 2)
-  protocol_dose_unit          String?                       @db.VarChar(30)
-  dose_calculation_method     String?                       @db.VarChar(50)
+  protocol_dose_unit          String?                       @db.VarChar(100)
+  dose_calculation_method     String?                       @db.VarChar(100)
   calculated_dose             Decimal?                      @db.Decimal(10, 2)
-  administration_route        String?                       @db.VarChar(50)
+  administration_route        String?                       @db.VarChar(100)
   formulation                 String?                       @db.VarChar(100)
-  infusion_type               String?                       @db.VarChar(50)
+  infusion_type               String?                       @db.VarChar(100)
   infusion_duration_minutes   Int?
   infusion_rate               String?                       @db.VarChar(100)
   dilution_solution           String?                       @db.VarChar(100)
-  dilution_volume             String?                       @db.VarChar(50)
+  dilution_volume             String?                       @db.VarChar(100)
   administration_day          Int?
   cycle_day                   Int?
   frequency                   String?                       @db.VarChar(100)
@@ -656,11 +659,11 @@ model chemotherapy_plan_items {
   dose_required               Boolean?                      @default(true)
   remarks                     String?
   active_status               Int?                          @default(1) @db.SmallInt
-  created_by                  String?                       @db.VarChar(20)
+  created_by                  String?                       @db.VarChar(100)
   created_at                  DateTime?                     @default(now()) @db.Timestamp(6)
-  updated_by                  String?                       @db.VarChar(20)
+  updated_by                  String?                       @db.VarChar(100)
   updated_at                  DateTime?                     @default(now()) @db.Timestamp(6)
-  drug_role                   String                        @default("PRIMARY") @db.VarChar(20)
+  drug_role                   String                        @default("PRIMARY") @db.VarChar(100)
   chemotherapy_administration chemotherapy_administration[]
   medicine_master             medicine_master               @relation(fields: [medicine_id], references: [medicine_id], map: "fk_chemo_plan_items_medicine")
   chemotherapy_plan           chemotherapy_plan             @relation(fields: [chemotherapy_plan_id], references: [chemotherapy_plan_id], onDelete: Cascade, map: "fk_chemo_plan_items_plan")
@@ -669,22 +672,22 @@ model chemotherapy_plan_items {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_protocol_dilutions {
   id                                  BigInt                               @id @default(autoincrement())
-  protocol_dilution_id                String                               @unique(map: "uq_protocol_dilution_id") @db.VarChar(20)
+  protocol_dilution_id                String                               @unique(map: "uq_protocol_dilution_id") @db.VarChar(100)
   protocol_id                         String                               @db.VarChar(100)
-  protocol_item_id                    String?                              @db.VarChar(20)
+  protocol_item_id                    String?                              @db.VarChar(100)
   medicine_id                         String?                              @db.VarChar(100)
   form                                String?                              @db.VarChar(100)
   dose                                Decimal?                             @db.Decimal(10, 2)
-  dose_unit                           String?                              @db.VarChar(30)
+  dose_unit                           String?                              @db.VarChar(100)
   dilution_volume                     Decimal?                             @db.Decimal(10, 2)
-  dilution_volume_unit                String?                              @db.VarChar(30)
+  dilution_volume_unit                String?                              @db.VarChar(100)
   diluent                             String?                              @db.VarChar(100)
   comment                             String?
   source_resource_id                  String?                              @db.VarChar(100)
   active_status                       Int?                                 @default(1) @db.SmallInt
-  created_by                          String?                              @db.VarChar(20)
+  created_by                          String?                              @db.VarChar(100)
   created_at                          DateTime?                            @default(now()) @db.Timestamp(6)
-  updated_by                          String?                              @db.VarChar(20)
+  updated_by                          String?                              @db.VarChar(100)
   updated_at                          DateTime?                            @default(now()) @db.Timestamp(6)
   chemotherapy_regimen_protocol_items chemotherapy_regimen_protocol_items? @relation(fields: [protocol_item_id], references: [protocol_item_id], map: "fk_protocol_dilution_item")
   medicine_master                     medicine_master?                     @relation(fields: [medicine_id], references: [medicine_id], onDelete: Restrict, map: "fk_protocol_dilution_medicine")
@@ -695,23 +698,23 @@ model chemotherapy_protocol_dilutions {
 model chemotherapy_regimen_protocol {
   id                                  BigInt                                @id @default(autoincrement())
   protocol_id                         String                                @unique(map: "uq_regimen_protocol_id") @db.VarChar(100)
-  regimen_code                        String                                @unique(map: "uq_regimen_protocol_code") @db.VarChar(50)
-  regimen_name                        String                                @db.VarChar(200)
-  protocol_version                    String?                               @db.VarChar(50)
-  cancer_type_id                      String                                @db.VarChar(20)
-  subtype_id                          String?                               @db.VarChar(20)
-  treatment_intent                    String?                               @db.VarChar(50)
+  regimen_code                        String                                @unique(map: "uq_regimen_protocol_code") @db.VarChar(100)
+  regimen_name                        String                                @db.VarChar(100)
+  protocol_version                    String?                               @db.VarChar(100)
+  cancer_type_id                      String?                               @db.VarChar(100)
+  subtype_id                          String?                               @db.VarChar(100)
+  treatment_intent                    String?                               @db.VarChar(100)
   standard_cycles                     Int?
   cycle_interval_days                 Int?
-  guideline_source                    String?                               @db.VarChar(150)
+  guideline_source                    String?                               @db.VarChar(100)
   notes                               String?
   active_status                       Int?                                  @default(1) @db.SmallInt
   created_at                          DateTime?                             @default(now()) @db.Timestamp(6)
   updated_at                          DateTime?                             @default(now()) @db.Timestamp(6)
-  protocol_type                       String?                               @db.VarChar(50)
-  organization_id                     String?                               @db.VarChar(20)
+  protocol_type                       String?                               @db.VarChar(100)
+  organization_id                     String?                               @db.VarChar(100)
   protocol_reference                  String?                               @db.VarChar(100)
-  original_protocol                   String?                               @db.VarChar(200)
+  original_protocol                   String?                               @db.VarChar(100)
   composition                         String?
   additional_notes                    String?
   no_of_days                          Int?
@@ -721,7 +724,7 @@ model chemotherapy_regimen_protocol {
   chemotherapy_discharge_instructions chemotherapy_discharge_instructions[]
   chemotherapy_plan                   chemotherapy_plan[]
   chemotherapy_protocol_dilutions     chemotherapy_protocol_dilutions[]
-  cancer_types                        cancer_types                          @relation(fields: [cancer_type_id], references: [cancer_type_id], map: "fk_regimen_protocol_cancer_type")
+  cancer_types                        cancer_types?                         @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: Restrict, map: "fk_regimen_protocol_cancer_type")
   cancer_subtypes                     cancer_subtypes?                      @relation(fields: [subtype_id], references: [subtype_id], map: "fk_regimen_protocol_subtype")
   chemotherapy_regimen_protocol_days  chemotherapy_regimen_protocol_days[]
   chemotherapy_regimen_protocol_items chemotherapy_regimen_protocol_items[]
@@ -731,67 +734,69 @@ model chemotherapy_regimen_protocol {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_regimen_protocol_days {
-  id                            BigInt                        @id @default(autoincrement())
-  protocol_day_id               String                        @unique(map: "uq_protocol_day_id") @db.VarChar(20)
-  protocol_id                   String                        @db.VarChar(100)
-  day_number                    Int
-  day_sequence                  Int?
-  same_as_day_one               Boolean?                      @default(false)
-  source_day_resource_id        String?                       @db.VarChar(100)
-  active_status                 Int?                          @default(1) @db.SmallInt
-  created_by                    String?                       @db.VarChar(20)
-  created_at                    DateTime?                     @default(now()) @db.Timestamp(6)
-  updated_by                    String?                       @db.VarChar(20)
-  updated_at                    DateTime?                     @default(now()) @db.Timestamp(6)
-  chemotherapy_regimen_protocol chemotherapy_regimen_protocol @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_protocol_day_protocol")
-
-  @@unique([protocol_id, day_number], map: "uq_protocol_day")
+  id                                  BigInt                               @id @default(autoincrement())
+  protocol_day_id                     String                               @db.VarChar(100)
+  protocol_id                         String                               @db.VarChar(100)
+  day_number                          Int
+  day_sequence                        Int?
+  same_as_day_one                     Boolean?                             @default(false)
+  source_day_resource_id              String?                              @db.VarChar(100)
+  active_status                       Int?                                 @default(1) @db.SmallInt
+  created_by                          String?                              @db.VarChar(100)
+  created_at                          DateTime?                            @default(now()) @db.Timestamp(6)
+  updated_by                          String?                              @db.VarChar(100)
+  updated_at                          DateTime?                            @default(now()) @db.Timestamp(6)
+  protocol_item_id                    String?                              @db.VarChar
+  medicine_count                      BigInt?
+  chemotherapy_regimen_protocol_items chemotherapy_regimen_protocol_items? @relation(fields: [protocol_item_id], references: [protocol_item_id], onDelete: Restrict)
+  chemotherapy_regimen_protocol       chemotherapy_regimen_protocol        @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_protocol_day_protocol")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_regimen_protocol_items {
-  id                              BigInt                            @id @default(autoincrement())
-  protocol_item_id                String                            @unique(map: "uq_regimen_protocol_item_id") @db.VarChar(20)
-  protocol_id                     String                            @db.VarChar(100)
-  medicine_id                     String                            @db.VarChar(100)
-  drug_role                       String                            @default("PRIMARY") @db.VarChar(20)
-  drug_sequence                   Int
-  drug_type                       String?                           @db.VarChar(50)
-  dosage                          Decimal?                          @db.Decimal(10, 2)
-  dosage_unit                     String?                           @db.VarChar(30)
-  dose_calculation_method         String?                           @db.VarChar(50)
-  administration_route            String?                           @db.VarChar(50)
-  infusion_type                   String?                           @db.VarChar(50)
-  infusion_duration_minutes       Int?
-  administration_day              Int?
-  cycle_day                       Int?
-  frequency                       String?                           @db.VarChar(100)
-  timing_relative_to_primary      String?                           @db.VarChar(100)
-  remarks                         String?
-  active_status                   Int?                              @default(1) @db.SmallInt
-  drug_brand_name                 String?                           @db.VarChar(200)
-  protocol_dose                   Decimal?                          @db.Decimal(10, 2)
-  protocol_dose_unit              String?                           @db.VarChar(30)
-  protocol_dose_text              String?                           @db.VarChar(100)
-  dose_change                     Decimal?                          @db.Decimal(10, 2)
-  dose_reduction                  Decimal?                          @db.Decimal(10, 2)
-  patient_dose                    Decimal?                          @db.Decimal(10, 2)
-  patient_dose_unit               String?                           @db.VarChar(30)
-  previous_toxicity               String?
-  administration_detail           String?
-  source_resource_id              String?                           @db.VarChar(100)
-  chemotherapy_protocol_dilutions chemotherapy_protocol_dilutions[]
-  medicine_master                 medicine_master                   @relation(fields: [medicine_id], references: [medicine_id], map: "fk_regimen_protocol_item_medicine")
-  chemotherapy_regimen_protocol   chemotherapy_regimen_protocol     @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_regimen_protocol_item_protocol")
+  id                                 BigInt                               @id @default(autoincrement())
+  protocol_item_id                   String                               @unique(map: "uq_regimen_protocol_item_id") @db.VarChar(100)
+  protocol_id                        String                               @db.VarChar(100)
+  medicine_id                        String                               @db.VarChar(100)
+  drug_role                          String                               @default("PRIMARY") @db.VarChar(100)
+  drug_sequence                      Int
+  drug_type                          String?                              @db.VarChar(100)
+  dosage                             Decimal?                             @db.Decimal(10, 2)
+  dosage_unit                        String?                              @db.VarChar(100)
+  dose_calculation_method            String?                              @db.VarChar(100)
+  administration_route               String?                              @db.VarChar(100)
+  infusion_type                      String?                              @db.VarChar(100)
+  infusion_duration_minutes          Int?
+  administration_day                 Int?
+  cycle_day                          Int?
+  frequency                          String?                              @db.VarChar(100)
+  timing_relative_to_primary         String?                              @db.VarChar(100)
+  remarks                            String?
+  active_status                      Int?                                 @default(1) @db.SmallInt
+  drug_brand_name                    String?                              @db.VarChar(100)
+  protocol_dose                      Decimal?                             @db.Decimal(10, 2)
+  protocol_dose_unit                 String?                              @db.VarChar(100)
+  protocol_dose_text                 String?                              @db.VarChar(100)
+  dose_change                        Decimal?                             @db.Decimal(10, 2)
+  dose_reduction                     Decimal?                             @db.Decimal(10, 2)
+  patient_dose                       Decimal?                             @db.Decimal(10, 2)
+  patient_dose_unit                  String?                              @db.VarChar(100)
+  previous_toxicity                  String?
+  administration_detail              String?
+  source_resource_id                 String?                              @db.VarChar(100)
+  chemotherapy_protocol_dilutions    chemotherapy_protocol_dilutions[]
+  chemotherapy_regimen_protocol_days chemotherapy_regimen_protocol_days[]
+  medicine_master                    medicine_master                      @relation(fields: [medicine_id], references: [medicine_id], map: "fk_regimen_protocol_item_medicine")
+  chemotherapy_regimen_protocol      chemotherapy_regimen_protocol        @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_regimen_protocol_item_protocol")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_vitals {
   id                       BigInt             @id @default(autoincrement())
-  vital_id                 String             @unique(map: "uq_chemo_vital_id") @db.VarChar(20)
-  chemotherapy_cycle_id    String             @db.VarChar(20)
+  vital_id                 String             @unique(map: "uq_chemo_vital_id") @db.VarChar(100)
+  chemotherapy_cycle_id    String             @db.VarChar(100)
   recorded_at              DateTime           @default(now()) @db.Timestamp(6)
-  vital_stage              String?            @db.VarChar(30)
+  vital_stage              String?            @db.VarChar(100)
   blood_pressure_systolic  Int?
   blood_pressure_diastolic Int?
   pulse_rate               Int?
@@ -807,15 +812,15 @@ model chemotherapy_vitals {
   blood_sugar              Decimal?           @db.Decimal(6, 2)
   oxygen_support           Boolean?           @default(false)
   oxygen_flow_rate         Decimal?           @db.Decimal(5, 2)
-  consciousness_level      String?            @db.VarChar(50)
-  hydration_status         String?            @db.VarChar(50)
-  recorded_by              String?            @db.VarChar(20)
+  consciousness_level      String?            @db.VarChar(100)
+  hydration_status         String?            @db.VarChar(100)
+  recorded_by              String?            @db.VarChar(100)
   remarks                  String?
   active_status            Int?               @default(1) @db.SmallInt
   deleted_flag             Boolean?           @default(false)
-  created_by               String?            @db.VarChar(20)
+  created_by               String?            @db.VarChar(100)
   created_at               DateTime?          @default(now()) @db.Timestamp(6)
-  updated_by               String?            @db.VarChar(20)
+  updated_by               String?            @db.VarChar(100)
   updated_at               DateTime?          @default(now()) @db.Timestamp(6)
   ideal_body_weight        Decimal?           @db.Decimal(6, 2)
   chemotherapy_cycle       chemotherapy_cycle @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: Cascade, map: "fk_chemo_vitals_cycle")
@@ -825,10 +830,10 @@ model chemotherapy_vitals {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model clinical_parameter {
   id               BigInt    @id @default(autoincrement())
-  parameter_key    String    @unique(map: "uq_clinical_parameter_key") @db.VarChar(50)
-  value            String    @db.VarChar(50)
-  unit             String?   @db.VarChar(20)
-  guideline_source String?   @db.VarChar(150)
+  parameter_key    String    @unique(map: "uq_clinical_parameter_key") @db.VarChar(100)
+  value            String    @db.VarChar(100)
+  unit             String?   @db.VarChar(100)
+  guideline_source String?   @db.VarChar(100)
   description      String?
   updated_at       DateTime? @default(now()) @db.Timestamp(6)
 }
@@ -836,23 +841,23 @@ model clinical_parameter {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model clinical_test_master {
   id           BigInt    @id @default(autoincrement())
-  testid       String    @unique @db.VarChar(20)
-  testcode     String    @unique @db.VarChar(20)
-  testname     String    @db.VarChar(200)
+  testid       String    @unique @db.VarChar(100)
+  testcode     String    @unique @db.VarChar(100)
+  testname     String    @db.VarChar(100)
   category     String?   @db.VarChar(100)
   department   String?   @db.VarChar(100)
   sampletype   String?   @db.VarChar(100)
   normalrange  String?   @db.VarChar(100)
-  unit         String?   @db.VarChar(50)
+  unit         String?   @db.VarChar(100)
   testcharge   Decimal?  @db.Decimal(10, 2)
-  isactive     String?   @db.VarChar(20)
+  isactive     String?   @db.VarChar(100)
   createddate  DateTime? @default(now()) @db.Timestamp(6)
   modifieddate DateTime? @default(now()) @db.Timestamp(6)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model department_master {
-  department_id       String                @id(map: "department_pkey") @db.VarChar(20)
+  department_id       String                @id(map: "department_pkey") @db.VarChar(100)
   department_name     String                @db.VarChar(100)
   appointment_history appointment_history[]
   chemotherapy_master chemotherapy_master[]
@@ -869,18 +874,18 @@ model department_master {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model derived_fields {
   id                      BigInt                  @id @default(autoincrement())
-  derived_id              String                  @unique(map: "uq_derived_fields_id") @db.VarChar(20)
-  staging_detail_id       String                  @unique(map: "uq_derived_fields_staging_detail") @db.VarChar(20)
-  breast_mol_subtype      String?                 @db.VarChar(50)
-  ajcc_stage              String?                 @db.VarChar(20)
-  icd10_auto              String?                 @db.VarChar(10)
-  icd_o3_auto             String?                 @db.VarChar(20)
-  pdl1_score_type         String?                 @db.VarChar(10)
+  derived_id              String                  @unique(map: "uq_derived_fields_id") @db.VarChar(100)
+  staging_detail_id       String                  @unique(map: "uq_derived_fields_staging_detail") @db.VarChar(100)
+  breast_mol_subtype      String?                 @db.VarChar(100)
+  ajcc_stage              String?                 @db.VarChar(100)
+  icd10_auto              String?                 @db.VarChar(100)
+  icd_o3_auto             String?                 @db.VarChar(100)
+  pdl1_score_type         String?                 @db.VarChar(100)
   germline_referral_flag  Boolean?                @default(false)
   lynch_syndrome_flag     Boolean?                @default(false)
-  eln_risk                String?                 @db.VarChar(20)
+  eln_risk                String?                 @db.VarChar(100)
   lymphoma_deauville      Int?                    @db.SmallInt
-  tnbc_subtype            String?                 @db.VarChar(20)
+  tnbc_subtype            String?                 @db.VarChar(100)
   suggested_therapy       String?
   recommended_tests       String?
   derived_at              DateTime?               @default(now()) @db.Timestamp(6)
@@ -890,17 +895,17 @@ model derived_fields {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model diagnosis {
   id                         BigInt                       @id @default(autoincrement())
-  diagnosis_id               String                       @unique @db.VarChar(20)
-  diagnosis_name             String                       @db.VarChar(200)
-  icd_code                   String?                      @db.VarChar(20)
-  icd_version                String?                      @db.VarChar(20)
+  diagnosis_id               String                       @unique @db.VarChar(100)
+  diagnosis_name             String                       @db.VarChar(100)
+  icd_code                   String?                      @db.VarChar(100)
+  icd_version                String?                      @db.VarChar(100)
   diagnosis_category         String?                      @db.VarChar(100)
   diagnosis_description      String?
-  diagnosis_alias            String?                      @db.VarChar(200)
+  diagnosis_alias            String?                      @db.VarChar(100)
   disease_group              String?                      @db.VarChar(100)
   body_system                String?                      @db.VarChar(100)
   body_site                  String?                      @db.VarChar(100)
-  severity_level             String?                      @db.VarChar(30)
+  severity_level             String?                      @db.VarChar(100)
   is_chronic                 Boolean?                     @default(false)
   is_contagious              Boolean?                     @default(false)
   is_notifiable              Boolean?                     @default(false)
@@ -909,9 +914,9 @@ model diagnosis {
   followup_required          Boolean?                     @default(false)
   followup_days              Int?
   active_status              Int?                         @default(1) @db.SmallInt
-  created_by                 String?                      @db.VarChar(20)
+  created_by                 String?                      @db.VarChar(100)
   created_at                 DateTime?                    @default(now()) @db.Timestamp(6)
-  diagnosis_catogory_id      String?                      @db.VarChar
+  diagnosis_catogory_id      String?                      @db.VarChar(100)
   chemotherapy_master        chemotherapy_master[]
   chemotherapy_plan          chemotherapy_plan[]
   diagnosis_medicine_mapping diagnosis_medicine_mapping[]
@@ -924,13 +929,13 @@ model diagnosis {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model diagnosis_medicine_mapping {
   id              BigInt          @id @default(autoincrement())
-  mapping_id      String          @unique @db.VarChar(20)
-  diagnosis_id    String          @db.VarChar(20)
-  medicine_id     String          @db.VarChar(20)
+  mapping_id      String          @unique @db.VarChar(100)
+  diagnosis_id    String          @db.VarChar(100)
+  medicine_id     String          @db.VarChar(100)
   is_primary      Boolean?        @default(false)
   dosage          String?         @db.VarChar(100)
   frequency       String?         @db.VarChar(100)
-  duration        String?         @db.VarChar(50)
+  duration        String?         @db.VarChar(100)
   instructions    String?
   created_at      DateTime?       @default(now()) @db.Timestamp(6)
   diagnosis       diagnosis       @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: Cascade, map: "fk_dm_diagnosis")
@@ -940,23 +945,23 @@ model diagnosis_medicine_mapping {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model doctor_leave {
   id                                                        BigInt      @id @default(autoincrement())
-  leave_id                                                  String      @unique @db.VarChar(20)
-  employee_id                                               String      @db.VarChar(20)
-  replacement_employee_id                                   String?     @db.VarChar(20)
+  leave_id                                                  String      @unique @db.VarChar(100)
+  employee_id                                               String      @db.VarChar(100)
+  replacement_employee_id                                   String?     @db.VarChar(100)
   leave_start_date                                          DateTime    @db.Date
   leave_end_date                                            DateTime    @db.Date
   leave_reason                                              String      @db.VarChar(500)
   status                                                    LeaveStatus @default(PENDING)
-  requested_by                                              String      @db.VarChar(20)
+  requested_by                                              String      @db.VarChar(100)
   requested_at                                              DateTime    @default(now()) @db.Timestamp(6)
-  approved_by                                               String?     @db.VarChar(20)
+  approved_by                                               String?     @db.VarChar(100)
   approved_at                                               DateTime?   @db.Timestamp(6)
-  rejected_by                                               String?     @db.VarChar(20)
+  rejected_by                                               String?     @db.VarChar(100)
   rejected_at                                               DateTime?   @db.Timestamp(6)
   remarks                                                   String?     @db.VarChar(500)
-  leave_type                                                String?     @db.VarChar
+  leave_type                                                String?     @db.VarChar(100)
   total_leave_days                                          BigInt?
-  branch_id                                                 String      @db.VarChar
+  branch_id                                                 String      @db.VarChar(100)
   user_table_doctor_leave_approved_byTouser_table           user_table? @relation("doctor_leave_approved_byTouser_table", fields: [approved_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_doctor_leave_approved_by")
   branch                                                    branch      @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_doctor_leave_branch")
   employees_doctor_leave_employee_idToemployees             employees   @relation("doctor_leave_employee_idToemployees", fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_doctor_leave_employee")
@@ -967,10 +972,10 @@ model doctor_leave {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model doctor_profile {
-  employee_id          String    @unique @db.VarChar
+  employee_id          String    @unique @db.VarChar(100)
   specialization       String?   @db.VarChar(100)
-  qualification        String?   @db.VarChar(150)
-  license_no           String?   @unique @db.VarChar(50)
+  qualification        String?   @db.VarChar(100)
+  license_no           String?   @unique @db.VarChar(100)
   consultation_minutes Int       @default(15)
   id                   BigInt    @id @default(autoincrement())
   doctor_bio           String?   @db.VarChar
@@ -980,18 +985,18 @@ model doctor_profile {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model doctor_schedule {
   schedule_id          BigInt                @id @default(autoincrement())
-  employee_id          String                @db.VarChar
-  branch_id            String                @db.VarChar(10)
+  employee_id          String                @db.VarChar(100)
+  branch_id            String                @db.VarChar(100)
   created_at           DateTime              @default(now()) @db.Timestamptz(6)
-  day_of_week          String?               @db.VarChar(15)
-  shift_name           String?               @db.VarChar(50)
-  start_time           DateTime?             @db.Time(6)
-  end_time             DateTime?             @db.Time(6)
+  day_of_week          String?               @db.VarChar(100)
+  shift_name           String?               @db.VarChar(100)
+  start_time           DateTime              @db.Time(6)
+  end_time             DateTime              @db.Time(6)
   consultation_minutes Int?                  @default(20)
   is_active            Boolean?              @default(true)
   effective_from       DateTime?             @db.Timestamptz(6)
   effective_to         DateTime?             @db.Timestamptz(6)
-  deleted_by           String?               @db.VarChar
+  deleted_by           String?               @db.VarChar(100)
   appointment_history  appointment_history[]
   employees            employees             @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
   branch               branch                @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_doctor_schedule_branch")
@@ -1001,15 +1006,15 @@ model doctor_schedule {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model doctor_schedule_change {
   change_id   BigInt                   @id @default(autoincrement())
-  employee_id String                   @db.VarChar(20)
-  branch_id   String                   @db.VarChar(10)
+  employee_id String                   @db.VarChar(100)
+  branch_id   String                   @db.VarChar(100)
   change_date DateTime                 @db.Date
   mode        DoctorScheduleChangeMode
   start_time  DateTime?                @db.Time(6)
   end_time    DateTime?                @db.Time(6)
-  reason      String?                  @db.VarChar(255)
+  reason      String?                  @db.VarChar(100)
   is_active   Boolean                  @default(true)
-  created_by  String?                  @db.VarChar(20)
+  created_by  String?                  @db.VarChar(100)
   created_at  DateTime                 @default(now()) @db.Timestamptz(6)
   updated_at  DateTime                 @db.Timestamptz(6)
   branch      branch                   @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, onUpdate: NoAction)
@@ -1024,21 +1029,21 @@ model doctor_schedule_change {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model doctor_transfer {
   id                                                           BigInt                            @id @default(autoincrement())
-  transfer_id                                                  String                            @unique @db.VarChar(20)
-  employee_id                                                  String                            @db.VarChar(20)
-  new_branch_id                                                String                            @db.VarChar(10)
-  old_department_id                                            String?                           @db.VarChar(20)
-  new_department_id                                            String?                           @db.VarChar(20)
+  transfer_id                                                  String                            @unique @db.VarChar(100)
+  employee_id                                                  String                            @db.VarChar(100)
+  new_branch_id                                                String                            @db.VarChar(100)
+  old_department_id                                            String?                           @db.VarChar(100)
+  new_department_id                                            String?                           @db.VarChar(100)
   effective_date                                               DateTime                          @db.Date
   new_schedule                                                 Json
   transfer_reason                                              String
-  status                                                       String                            @default("PENDING_CONFIRMATION") @db.VarChar(30)
-  action_taken                                                 String?                           @db.VarChar(20)
+  status                                                       String                            @default("PENDING_CONFIRMATION") @db.VarChar(100)
+  action_taken                                                 String?                           @db.VarChar(100)
   affected_appointment_count                                   Int                               @default(0)
-  replacement_employee_id                                      String?                           @db.VarChar(20)
-  requested_by                                                 String                            @db.VarChar(20)
+  replacement_employee_id                                      String?                           @db.VarChar(100)
+  requested_by                                                 String                            @db.VarChar(100)
   requested_at                                                 DateTime                          @default(now()) @db.Timestamp(6)
-  confirmed_by                                                 String?                           @db.VarChar(20)
+  confirmed_by                                                 String?                           @db.VarChar(100)
   confirmed_at                                                 DateTime?                         @db.Timestamp(6)
   completed_at                                                 DateTime?                         @db.Timestamp(6)
   closing_schedule_ids                                         BigInt[]
@@ -1052,18 +1057,18 @@ model doctor_transfer {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model doctor_transfer_appointment_log {
   id                   BigInt              @id @default(autoincrement())
-  transfer_id          String              @db.VarChar(20)
-  appointment_id       String              @db.VarChar(20)
-  action               String              @db.VarChar(20)
-  old_employee_id      String              @db.VarChar(20)
-  old_branch_id        String              @db.VarChar(10)
+  transfer_id          String              @db.VarChar(100)
+  appointment_id       String              @db.VarChar(100)
+  action               String              @db.VarChar(100)
+  old_employee_id      String              @db.VarChar(100)
+  old_branch_id        String              @db.VarChar(100)
   old_schedule_id      BigInt?
   old_appointment_date DateTime            @db.Date
   old_appointment_time DateTime            @db.Time(6)
-  new_employee_id      String?             @db.VarChar(20)
-  new_branch_id        String?             @db.VarChar(10)
+  new_employee_id      String?             @db.VarChar(100)
+  new_branch_id        String?             @db.VarChar(100)
   new_schedule_id      BigInt?
-  result_status        String              @db.VarChar(20)
+  result_status        String              @db.VarChar(100)
   notes                String?
   created_at           DateTime            @default(now()) @db.Timestamp(6)
   appointment_history  appointment_history @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade)
@@ -1073,45 +1078,45 @@ model doctor_transfer_appointment_log {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model employees {
   id                                                                                 BigInt                         @id @default(autoincrement())
-  user_id                                                                            String?                        @unique(map: "uq_employees_user_id") @db.VarChar(20)
-  first_name                                                                         String                         @db.VarChar(50)
-  middle_name                                                                        String?                        @db.VarChar(50)
-  last_name                                                                          String                         @db.VarChar(50)
-  blood_group                                                                        String?                        @db.VarChar(5)
-  nationality                                                                        String?                        @db.VarChar(50)
-  marital_status                                                                     String?                        @db.VarChar(20)
-  mobile_no                                                                          String?                        @db.VarChar(15)
+  user_id                                                                            String?                        @unique(map: "uq_employees_user_id") @db.VarChar(100)
+  first_name                                                                         String                         @db.VarChar(100)
+  middle_name                                                                        String?                        @db.VarChar(100)
+  last_name                                                                          String                         @db.VarChar(100)
+  blood_group                                                                        String?                        @db.VarChar(100)
+  nationality                                                                        String?                        @db.VarChar(100)
+  marital_status                                                                     String?                        @db.VarChar(100)
+  mobile_no                                                                          String?                        @db.VarChar(100)
   parmanent_address                                                                  String?                        @db.VarChar(255)
   current_address                                                                    String?                        @db.VarChar(255)
   emergency_contact_name                                                             String?                        @db.VarChar(100)
-  emergency_contact_relationship                                                     String?                        @db.VarChar(50)
-  emergency_contact_number                                                           String?                        @db.VarChar(15)
-  aadhaar_no                                                                         String?                        @db.VarChar(20)
-  pan_no                                                                             String?                        @db.VarChar(20)
-  passport_no                                                                        String?                        @db.VarChar(20)
+  emergency_contact_relationship                                                     String?                        @db.VarChar(100)
+  emergency_contact_number                                                           String?                        @db.VarChar(100)
+  aadhaar_no                                                                         String?                        @db.VarChar(100)
+  pan_no                                                                             String?                        @db.VarChar(100)
+  passport_no                                                                        String?                        @db.VarChar(100)
   designation                                                                        String?                        @db.VarChar(100)
   specialization                                                                     String?                        @db.VarChar(100)
   qualification                                                                      String?                        @db.VarChar(255)
   license_no                                                                         String?                        @db.VarChar(100)
   joining_date                                                                       DateTime?                      @db.Date
-  branch_id                                                                          String?                        @db.VarChar(10)
+  branch_id                                                                          String?                        @db.VarChar(100)
   emp_status                                                                         Boolean?
-  email                                                                              String?                        @db.VarChar(50)
-  department_id                                                                      String?                        @db.VarChar(20)
-  employee_id                                                                        String?                        @unique(map: "uq_employee_id") @db.VarChar(20)
+  email                                                                              String?                        @db.VarChar(100)
+  department_id                                                                      String?                        @db.VarChar(100)
+  employee_id                                                                        String?                        @unique(map: "uq_employee_id") @db.VarChar(100)
   employee_photo_URL                                                                 String?                        @db.VarChar
-  employee_state                                                                     String?                        @db.VarChar
-  employee_district                                                                  String?                        @db.VarChar
-  employee_area                                                                      String?                        @db.VarChar
+  employee_state                                                                     String?                        @db.VarChar(100)
+  employee_district                                                                  String?                        @db.VarChar(100)
+  employee_area                                                                      String?                        @db.VarChar(100)
   employee_pincode                                                                   BigInt?
   employee_no_experence                                                              BigInt?
-  emp_gender                                                                         String?                        @db.VarChar
+  emp_gender                                                                         String?                        @db.VarChar(100)
   emp_DOB                                                                            String?                        @db.VarChar
-  permanent_employee_state                                                           String?                        @db.VarChar
-  permanent_employee_district                                                        String?                        @db.VarChar
-  permanent_employee_area                                                            String?                        @db.VarChar
+  permanent_employee_state                                                           String?                        @db.VarChar(100)
+  permanent_employee_district                                                        String?                        @db.VarChar(100)
+  permanent_employee_area                                                            String?                        @db.VarChar(100)
   permanent_employee_pincode                                                         BigInt?
-  qualification_id                                                                   String?                        @db.VarChar(20)
+  qualification_id                                                                   String?                        @db.VarChar(100)
   deleted_at                                                                         DateTime?                      @db.Timestamp(6)
   appointment_history                                                                appointment_history[]
   chemotherapy_administration_chemotherapy_administration_verified_byToemployees     chemotherapy_administration[]  @relation("chemotherapy_administration_verified_byToemployees")
@@ -1152,23 +1157,23 @@ model employees {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model encounter {
   encounter_id                 BigInt                        @id @default(autoincrement())
-  encounter_no                 String                        @unique @db.VarChar(30)
-  branch_id                    String                        @db.VarChar(10)
+  encounter_no                 String                        @unique @db.VarChar(100)
+  branch_id                    String                        @db.VarChar(100)
   encounter_ts                 DateTime                      @default(now()) @db.Timestamptz(6)
-  encounter_type               String                        @default("OPD") @db.VarChar(20)
-  status                       String                        @default("OPEN") @db.VarChar(20)
+  encounter_type               String                        @default("OPD") @db.VarChar(100)
+  status                       String                        @default("OPEN") @db.VarChar(100)
   notes                        String?
   created_at                   DateTime                      @default(now()) @db.Timestamptz(6)
-  employee_id                  String?                       @db.VarChar(20)
-  patient_id                   String                        @db.VarChar(20)
-  appointment_id               String?                       @unique @db.VarChar(20)
+  employee_id                  String?                       @db.VarChar(100)
+  patient_id                   String                        @db.VarChar(100)
+  appointment_id               String?                       @unique @db.VarChar(100)
   advice                       String?
   checkout_time                DateTime?                     @db.Timestamptz(6)
   chief_complaint              String?
   clinical_notes               String?
   closed_at                    DateTime?                     @db.Timestamptz(6)
-  closed_by                    String?                       @db.VarChar(20)
-  department_id                String?                       @db.VarChar(20)
+  closed_by                    String?                       @db.VarChar(100)
+  department_id                String?                       @db.VarChar(100)
   diastolic_bp                 Int?
   follow_up_date               DateTime?                     @db.Date
   height                       Decimal?                      @db.Decimal(5, 2)
@@ -1180,9 +1185,9 @@ model encounter {
   systolic_bp                  Int?
   temperature                  Decimal?                      @db.Decimal(5, 2)
   weight                       Decimal?                      @db.Decimal(5, 2)
-  user_id                      String?                       @db.VarChar(20)
-  diagnosis_id                 String?                       @db.VarChar(20)
-  diagnosis_text               String?                       @db.VarChar
+  user_id                      String?                       @db.VarChar(100)
+  diagnosis_id                 String?                       @db.VarChar(100)
+  diagnosis_text               String?                       @db.VarChar(100)
   createdBy                    String?                       @db.VarChar
   chemotherapy_plan            chemotherapy_plan[]
   appointment_history          appointment_history?          @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade, map: "fk_encounter_appointment")
@@ -1203,9 +1208,9 @@ model encounter {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model encounter_performance_status {
   id                        BigInt                    @id @default(autoincrement())
-  encounter_no              String                    @unique @db.VarChar(30)
+  encounter_no              String                    @unique @db.VarChar(100)
   performance_status_id     BigInt
-  assessed_by               String?                   @db.VarChar(20)
+  assessed_by               String?                   @db.VarChar(100)
   assessed_at               DateTime                  @default(now()) @db.Timestamp(6)
   clinical_notes            String?                   @db.VarChar(1000)
   created_at                DateTime                  @default(now()) @db.Timestamp(6)
@@ -1220,14 +1225,14 @@ model encounter_performance_status {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model encounter_symptom {
   id             BigInt         @id @default(autoincrement())
-  encounter_no   String         @db.VarChar(30)
+  encounter_no   String         @db.VarChar(100)
   symptom_id     BigInt
-  severity       String?        @db.VarChar(30)
+  severity       String?        @db.VarChar(100)
   duration_days  Int?
   onset_date     DateTime?      @db.Date
   clinical_notes String?        @db.VarChar(1000)
-  status         String         @default("ACTIVE") @db.VarChar(20)
-  recorded_by    String?        @db.VarChar(20)
+  status         String         @default("ACTIVE") @db.VarChar(100)
+  recorded_by    String?        @db.VarChar(100)
   recorded_at    DateTime       @default(now()) @db.Timestamp(6)
   updated_at     DateTime       @default(now()) @db.Timestamp(6)
   encounter      encounter      @relation(fields: [encounter_no], references: [encounter_no])
@@ -1242,28 +1247,28 @@ model encounter_symptom {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model hospital {
-  hospital_id         String   @unique(map: "hospital_id_unique") @db.VarChar(20)
-  hospital_name       String   @db.VarChar(200)
+  hospital_id         String   @unique(map: "hospital_id_unique") @db.VarChar(100)
+  hospital_name       String   @db.VarChar(100)
   Hospital_address    String?  @db.VarChar(300)
-  pincode             String?  @db.VarChar(10)
-  contact_number      String?  @db.VarChar(15)
-  fax_number          String?  @db.VarChar(20)
-  email_id            String?  @db.VarChar(150)
-  website_address     String?  @db.VarChar(200)
-  hospital_type       String?  @db.VarChar(50)
-  hospital_license_no String?  @db.VarChar(50)
+  pincode             String?  @db.VarChar(100)
+  contact_number      String?  @db.VarChar(100)
+  fax_number          String?  @db.VarChar(100)
+  email_id            String?  @db.VarChar(100)
+  website_address     String?  @db.VarChar(100)
+  hospital_type       String?  @db.VarChar(100)
+  hospital_license_no String?  @db.VarChar(100)
   id                  BigInt   @id @default(autoincrement())
-  hospital_country    String?  @default("India") @db.VarChar
-  hospital_state      String?  @default("Tamil nadu") @db.VarChar
-  hospital_district   String?  @default("Chennai") @db.VarChar
-  hospital_area       String?  @default("Tambaram") @db.VarChar
+  hospital_country    String?  @default("India") @db.VarChar(100)
+  hospital_state      String?  @default("Tamil nadu") @db.VarChar(100)
+  hospital_district   String?  @default("Chennai") @db.VarChar(100)
+  hospital_area       String?  @default("Tambaram") @db.VarChar(100)
   branch              branch[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model id_sequences {
-  entity_name    String    @id @db.VarChar(50)
-  prefix         String    @db.VarChar(10)
+  entity_name    String    @id @db.VarChar(100)
+  prefix         String    @db.VarChar(100)
   current_number Int       @default(0)
   updated_at     DateTime? @default(now()) @db.Timestamp(6)
 }
@@ -1272,73 +1277,73 @@ model id_sequences {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model ihc_results {
   id                      BigInt                  @id @default(autoincrement())
-  ihc_id                  String                  @unique(map: "uq_ihc_results_id") @db.VarChar(20)
-  staging_detail_id       String                  @unique(map: "uq_ihc_results_staging_detail") @db.VarChar(20)
-  er_status               String?                 @db.VarChar(20)
+  ihc_id                  String                  @unique(map: "uq_ihc_results_id") @db.VarChar(100)
+  staging_detail_id       String                  @unique(map: "uq_ihc_results_staging_detail") @db.VarChar(100)
+  er_status               String?                 @db.VarChar(100)
   er_percent              Int?                    @db.SmallInt
-  pr_status               String?                 @db.VarChar(20)
+  pr_status               String?                 @db.VarChar(100)
   pr_percent              Int?                    @db.SmallInt
-  her2_ihc                String?                 @db.VarChar(20)
-  her2_fish               String?                 @db.VarChar(30)
+  her2_ihc                String?                 @db.VarChar(100)
+  her2_fish               String?                 @db.VarChar(100)
   her2_fish_ratio         Decimal?                @db.Decimal(4, 2)
   her2_avg_copy           Decimal?                @db.Decimal(6, 2)
   ki67_percent            Int?                    @db.SmallInt
   pdl1_tps                Int?                    @db.SmallInt
   pdl1_cps                Int?                    @db.SmallInt
-  pdl1_clone              String?                 @db.VarChar(20)
-  mmr_mlh1                String?                 @db.VarChar(20)
-  mmr_msh2                String?                 @db.VarChar(20)
-  mmr_msh6                String?                 @db.VarChar(20)
-  mmr_pms2                String?                 @db.VarChar(20)
-  mmr_overall             String?                 @db.VarChar(20)
-  p53_ihc                 String?                 @db.VarChar(30)
-  ar_status               String?                 @db.VarChar(20)
+  pdl1_clone              String?                 @db.VarChar(100)
+  mmr_mlh1                String?                 @db.VarChar(100)
+  mmr_msh2                String?                 @db.VarChar(100)
+  mmr_msh6                String?                 @db.VarChar(100)
+  mmr_pms2                String?                 @db.VarChar(100)
+  mmr_overall             String?                 @db.VarChar(100)
+  p53_ihc                 String?                 @db.VarChar(100)
+  ar_status               String?                 @db.VarChar(100)
   created_at              DateTime?               @default(now()) @db.Timestamp(6)
   updated_at              DateTime?               @default(now()) @db.Timestamp(6)
-  mlh1_methylation        String?                 @db.VarChar(20)
+  mlh1_methylation        String?                 @db.VarChar(100)
   oncology_staging_detail oncology_staging_detail @relation(fields: [staging_detail_id], references: [staging_detail_id], onDelete: Cascade, map: "fk_ihc_staging_detail")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model lab_history {
   id                           BigInt               @id @default(autoincrement())
-  lab_history_id               String?              @unique @db.VarChar(20)
-  patient_history_id           String?              @db.VarChar(20)
-  requested_id                 String?              @db.VarChar(20)
-  patient_full_name            String?              @db.VarChar(200)
+  lab_history_id               String?              @unique @db.VarChar(100)
+  patient_history_id           String?              @db.VarChar(100)
+  requested_id                 String?              @db.VarChar(100)
+  patient_full_name            String?              @db.VarChar(100)
   reason_for_exclusion         String?
   collection_on                DateTime?            @db.Timestamp(6)
-  requisition_no               String?              @db.VarChar(50)
-  lab_technician_name          String?              @db.VarChar(150)
+  requisition_no               String?              @db.VarChar(100)
+  lab_technician_name          String?              @db.VarChar(100)
   collection_remarks           String?
-  qr_code                      String?              @db.VarChar(255)
-  sample_id                    String?              @db.VarChar(50)
+  qr_code                      String?              @db.VarChar(100)
+  sample_id                    String?              @db.VarChar(100)
   received_datetime            DateTime?            @db.Timestamp(6)
-  received_by                  String?              @db.VarChar(150)
+  received_by                  String?              @db.VarChar(100)
   sample_verification_comments String?
-  quality_action               String?              @db.VarChar(200)
+  quality_action               String?              @db.VarChar(100)
   quality_completed_date       DateTime?            @db.Timestamp(6)
-  quality_completed_by         String?              @db.VarChar(150)
+  quality_completed_by         String?              @db.VarChar(100)
   quality_check_comment        String?
   completed_on                 DateTime?            @db.Timestamp(6)
   clinical_correlation         String?
   approve_result_remarks       String?
   sent_on                      DateTime?            @db.Timestamp(6)
-  temperature                  String?              @db.VarChar(50)
+  temperature                  String?              @db.VarChar(100)
   transport_medium             String?              @db.VarChar(100)
   container_sealed             Boolean?
   transport_time               DateTime?            @db.Timestamp(6)
-  appointment_id               String?              @db.VarChar(20)
-  branch_id                    String?              @db.VarChar(10)
-  department_id                String?              @db.VarChar(20)
-  user_id                      String?              @db.VarChar(20)
-  diagnosis_id                 String?              @db.VarChar(20)
-  employee_id                  String?              @db.VarChar(20)
-  lab_order_id                 String               @db.VarChar(20)
-  lab_order_item_id            String               @db.VarChar(20)
-  sample_collection_id         String               @db.VarChar(20)
-  lab_result_id                String?              @db.VarChar(20)
-  lab_report_id                String?              @db.VarChar(20)
+  appointment_id               String?              @db.VarChar(100)
+  branch_id                    String?              @db.VarChar(100)
+  department_id                String?              @db.VarChar(100)
+  user_id                      String?              @db.VarChar(100)
+  diagnosis_id                 String?              @db.VarChar(100)
+  employee_id                  String?              @db.VarChar(100)
+  lab_order_id                 String               @db.VarChar(100)
+  lab_order_item_id            String               @db.VarChar(100)
+  sample_collection_id         String               @db.VarChar(100)
+  lab_result_id                String?              @db.VarChar(100)
+  lab_report_id                String?              @db.VarChar(100)
   appointment_history          appointment_history? @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade, map: "fk_lab_appointment")
   branch                       branch?              @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_lab_branch")
   department_master            department_master?   @relation(fields: [department_id], references: [department_id], onDelete: Cascade, map: "fk_lab_department")
@@ -1355,27 +1360,28 @@ model lab_history {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model lab_order {
   id                    BigInt               @id @default(autoincrement())
-  lab_order_id          String               @unique @db.VarChar(20)
-  patient_history_id    String               @db.VarChar(20)
-  appointment_id        String?              @db.VarChar(20)
-  doctor_employee_id    String               @db.VarChar(20)
-  department_id         String?              @db.VarChar(20)
+  lab_order_id          String               @unique @db.VarChar(100)
+  appointment_id        String?              @db.VarChar(100)
+  doctor_employee_id    String               @db.VarChar(100)
+  department_id         String?              @db.VarChar(100)
   order_datetime        DateTime?            @default(now()) @db.Timestamp(6)
-  priority              String?              @default("Normal") @db.VarChar(20)
+  priority              String?              @default("Normal") @db.VarChar(100)
   clinical_notes        String?
   provisional_diagnosis String?
-  order_status          String?              @default("Ordered") @db.VarChar(30)
-  branch_id             String?              @db.VarChar(10)
-  user_id               String?              @db.VarChar(20)
+  order_status          String?              @default("Ordered") @db.VarChar(100)
+  branch_id             String?              @db.VarChar(100)
+  user_id               String?              @db.VarChar(100)
   created_at            DateTime?            @default(now()) @db.Timestamp(6)
   updated_at            DateTime?            @default(now()) @db.Timestamp(6)
+  patient_history_id    String?              @db.VarChar
+  lab_description       String?              @db.VarChar
   lab_history           lab_history[]
   appointment_history   appointment_history? @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade, map: "fk_lab_order_appointment")
   branch                branch?              @relation(fields: [branch_id], references: [branch_id], onDelete: Restrict, map: "fk_lab_order_branch")
   department_master     department_master?   @relation(fields: [department_id], references: [department_id], onDelete: Restrict, map: "fk_lab_order_department")
   employees             employees            @relation(fields: [doctor_employee_id], references: [employee_id], map: "fk_lab_order_doctor")
-  patient_history       patient_history      @relation(fields: [patient_history_id], references: [patient_history_id], map: "fk_lab_order_patient_history")
   user_table            user_table?          @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_lab_order_user")
+  patient_history       patient_history?     @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_order_patient_history")
   lab_order_item        lab_order_item[]
   lab_report            lab_report[]
 }
@@ -1383,19 +1389,19 @@ model lab_order {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model lab_order_item {
   id                BigInt              @id @default(autoincrement())
-  lab_order_item_id String              @unique @db.VarChar(20)
-  lab_order_id      String              @db.VarChar(20)
-  lab_test_id       String              @db.VarChar(20)
+  lab_order_item_id String              @unique @db.VarChar(100)
+  lab_order_id      String              @db.VarChar(100)
+  lab_test_id       String              @db.VarChar(100)
   quantity          Int?                @default(1)
   price             Decimal?            @default(0.00) @db.Decimal(10, 2)
   discount          Decimal?            @default(0.00) @db.Decimal(10, 2)
   net_amount        Decimal?            @default(0.00) @db.Decimal(10, 2)
-  item_status       String?             @default("Ordered") @db.VarChar(30)
+  item_status       String?             @default("Ordered") @db.VarChar(100)
   remarks           String?
   created_at        DateTime?           @default(now()) @db.Timestamp(6)
   updated_at        DateTime?           @default(now()) @db.Timestamp(6)
-  branch_id         String?             @db.VarChar(10)
-  user_id           String?             @db.VarChar(20)
+  branch_id         String?             @db.VarChar(100)
+  user_id           String?             @db.VarChar(100)
   lab_history       lab_history[]
   branch            branch?             @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_lab_order_item_branch")
   lab_order         lab_order           @relation(fields: [lab_order_id], references: [lab_order_id], onDelete: Cascade, map: "fk_lab_order_item_order")
@@ -1408,20 +1414,20 @@ model lab_order_item {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model lab_report {
   id                 BigInt        @id @default(autoincrement())
-  lab_report_id      String        @unique @db.VarChar(20)
-  lab_order_id       String        @db.VarChar(20)
-  report_number      String?       @unique @db.VarChar(50)
+  lab_report_id      String        @unique @db.VarChar(100)
+  lab_order_id       String        @db.VarChar(100)
+  report_number      String?       @unique @db.VarChar(100)
   generated_datetime DateTime?     @default(now()) @db.Timestamp(6)
-  approved_by        String?       @db.VarChar(20)
+  approved_by        String?       @db.VarChar(100)
   approved_datetime  DateTime?     @db.Timestamp(6)
-  report_status      String?       @default("Generated") @db.VarChar(30)
+  report_status      String?       @default("Generated") @db.VarChar(100)
   report_file        String?
   digital_signature  String?
   report_comment     String?
-  delivered_to       String?       @db.VarChar(150)
+  delivered_to       String?       @db.VarChar(100)
   delivered_datetime DateTime?     @db.Timestamp(6)
-  branch_id          String?       @db.VarChar(10)
-  user_id            String?       @db.VarChar(20)
+  branch_id          String?       @db.VarChar(100)
+  user_id            String?       @db.VarChar(100)
   created_at         DateTime?     @default(now()) @db.Timestamp(6)
   updated_at         DateTime?     @default(now()) @db.Timestamp(6)
   lab_history        lab_history[]
@@ -1434,18 +1440,18 @@ model lab_report {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model lab_result {
   id                   BigInt            @id @default(autoincrement())
-  lab_result_id        String            @unique @db.VarChar(20)
-  sample_collection_id String            @db.VarChar(20)
-  lab_order_item_id    String            @db.VarChar(20)
-  parameter_name       String            @db.VarChar(200)
-  result_value         String?           @db.VarChar(200)
-  abnormal_flag        String?           @db.VarChar(20)
+  lab_result_id        String            @unique @db.VarChar(100)
+  sample_collection_id String            @db.VarChar(100)
+  lab_order_item_id    String            @db.VarChar(100)
+  parameter_name       String            @db.VarChar(100)
+  result_value         String?           @db.VarChar(100)
+  abnormal_flag        String?           @db.VarChar(100)
   result_comment       String?
-  verified_by          String?           @db.VarChar(20)
+  verified_by          String?           @db.VarChar(100)
   verified_datetime    DateTime?         @db.Timestamp(6)
-  result_status        String?           @default("Pending") @db.VarChar(30)
-  branch_id            String?           @db.VarChar(10)
-  user_id              String?           @db.VarChar(20)
+  result_status        String?           @default("Pending") @db.VarChar(100)
+  branch_id            String?           @db.VarChar(100)
+  user_id              String?           @db.VarChar(100)
   created_at           DateTime?         @default(now()) @db.Timestamp(6)
   updated_at           DateTime?         @default(now()) @db.Timestamp(6)
   lab_history          lab_history[]
@@ -1459,16 +1465,16 @@ model lab_result {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model lab_test_category {
   id                   BigInt            @id @default(autoincrement())
-  lab_test_category_id String            @unique @db.VarChar(20)
+  lab_test_category_id String            @unique @db.VarChar(100)
   category_name        String            @unique @db.VarChar(100)
-  category_code        String?           @unique @db.VarChar(20)
+  category_code        String?           @unique @db.VarChar(100)
   description          String?
   display_order        Int?              @default(1)
   category_status      Int?              @default(1) @db.SmallInt
   created_at           DateTime?         @default(now()) @db.Timestamp(6)
   updated_at           DateTime?         @default(now()) @db.Timestamp(6)
-  branch_id            String?           @db.VarChar(10)
-  user_id              String?           @db.VarChar(20)
+  branch_id            String?           @db.VarChar(100)
+  user_id              String?           @db.VarChar(100)
   branch               branch?           @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_lab_category_branch")
   user_table           user_table?       @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_lab_category_user")
   lab_test_master      lab_test_master[]
@@ -1477,19 +1483,19 @@ model lab_test_category {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model lab_test_master {
   id                   BigInt            @id @default(autoincrement())
-  lab_test_id          String            @unique @db.VarChar(20)
-  lab_test_category_id String            @db.VarChar(20)
-  test_name            String            @db.VarChar(200)
-  test_code            String            @unique @db.VarChar(50)
+  lab_test_id          String            @unique @db.VarChar(100)
+  lab_test_category_id String            @db.VarChar(100)
+  test_name            String            @db.VarChar(100)
+  test_code            String            @unique @db.VarChar(100)
   sample_type          String?           @db.VarChar(100)
-  required_volume      String?           @db.VarChar(50)
-  unit                 String?           @db.VarChar(50)
+  required_volume      String?           @db.VarChar(100)
+  unit                 String?           @db.VarChar(100)
   reference_range      String?           @db.VarChar(100)
   price                Decimal?          @db.Decimal(10, 2)
   tat_hours            Int?
   test_status          Int?              @default(1) @db.SmallInt
-  branch_id            String?           @db.VarChar(10)
-  user_id              String?           @db.VarChar(20)
+  branch_id            String?           @db.VarChar(100)
+  user_id              String?           @db.VarChar(100)
   created_at           DateTime?         @default(now()) @db.Timestamp(6)
   updated_at           DateTime?         @default(now()) @db.Timestamp(6)
   lab_order_item       lab_order_item[]
@@ -1501,10 +1507,10 @@ model lab_test_master {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model login_otp {
   id          BigInt   @id @default(autoincrement())
-  otp_id      String   @unique @db.VarChar(20)
-  user_id     String   @db.VarChar(20)
-  user_type   String   @db.VarChar(20)
-  otp_code    String   @db.VarChar(6)
+  otp_id      String   @unique @db.VarChar(100)
+  user_id     String   @db.VarChar(100)
+  user_type   String   @db.VarChar(100)
+  otp_code    String   @db.VarChar(100)
   is_verified Boolean  @default(false)
   expires_at  DateTime @db.Timestamp(6)
   created_at  DateTime @default(now()) @db.Timestamp(6)
@@ -1516,38 +1522,39 @@ model login_otp {
 model medicine_master {
   id                                  BigInt                                @id @default(autoincrement())
   medicine_id                         String                                @unique @db.VarChar(100)
-  medicine_code                       String?                               @unique @db.VarChar(30)
+  medicine_code                       String?                               @unique @db.VarChar(100)
   barcode                             String?                               @db.VarChar(100)
   medicine_category                   String?                               @db.VarChar(100)
-  medicine_type                       String?                               @db.VarChar(50)
-  unit                                String?                               @db.VarChar(20)
-  medicine_name                       String                                @db.VarChar(200)
-  generic_name                        String?                               @db.VarChar(200)
-  strength                            String?                               @db.VarChar(50)
-  dosage_form                         String?                               @db.VarChar(50)
-  route                               String?                               @db.VarChar(50)
-  pack_size                           String?                               @db.VarChar(50)
-  manufacturer_name                   String?                               @db.VarChar(200)
-  supplier_name                       String?                               @db.VarChar(200)
-  hsn_code                            String?                               @db.VarChar(20)
+  medicine_type                       String?                               @db.VarChar(100)
+  unit                                String?                               @db.VarChar(100)
+  medicine_name                       String                                @db.VarChar(255)
+  generic_name                        String?                               @db.VarChar(255)
+  strength                            String?                               @db.VarChar(100)
+  dosage_form                         String?                               @db.VarChar(100)
+  route                               String?                               @db.VarChar(100)
+  pack_size                           String?                               @db.VarChar(100)
+  manufacturer_name                   String?                               @db.VarChar(100)
+  supplier_name                       String?                               @db.VarChar(100)
+  hsn_code                            String?                               @db.VarChar(100)
   gst_percent                         Decimal?                              @db.Decimal(5, 2)
   landing_cost                        Decimal?                              @db.Decimal(10, 2)
   purchase_rate                       Decimal?                              @db.Decimal(10, 2)
   mrp                                 Decimal?                              @db.Decimal(10, 2)
   selling_price                       Decimal?                              @db.Decimal(10, 2)
-  schedule_type                       String?                               @db.VarChar(20)
+  schedule_type                       String?                               @db.VarChar(100)
   prescription_required               Boolean?                              @default(true)
   is_narcotic                         Boolean?                              @default(false)
   is_high_risk                        Boolean?                              @default(false)
   is_batch_required                   Boolean?                              @default(true)
   is_expiry_required                  Boolean?                              @default(true)
-  storage_condition                   String?                               @db.VarChar(200)
+  storage_condition                   String?                               @db.VarChar(100)
   min_stock                           Int?                                  @default(0)
   max_stock                           Int?                                  @default(0)
   reorder_level                       Int?                                  @default(0)
   medicine_master_remarks             String?
   is_active                           Boolean?                              @default(true)
-  brand_name                          String?                               @db.VarChar(200)
+  brand_name                          String?                               @db.VarChar(255)
+  source_note                         String?
   chemotherapy_discharge_instructions chemotherapy_discharge_instructions[]
   chemotherapy_plan_items             chemotherapy_plan_items[]
   chemotherapy_protocol_dilutions     chemotherapy_protocol_dilutions[]
@@ -1560,35 +1567,35 @@ model medicine_master {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model molecular_results {
   id                      BigInt                  @id @default(autoincrement())
-  mol_id                  String                  @unique(map: "uq_molecular_results_id") @db.VarChar(20)
-  staging_detail_id       String                  @unique(map: "uq_molecular_results_staging_detail") @db.VarChar(20)
-  egfr_status             String?                 @db.VarChar(30)
-  egfr_mutation_type      String?                 @db.VarChar(50)
-  alk_status              String?                 @db.VarChar(30)
-  alk_test_method         String?                 @db.VarChar(20)
-  ros1_status             String?                 @db.VarChar(30)
-  kras_g12c               String?                 @db.VarChar(30)
-  kras_mutation           String?                 @db.VarChar(20)
-  braf_v600e              String?                 @db.VarChar(30)
-  brca1_germline          String?                 @db.VarChar(40)
-  brca2_germline          String?                 @db.VarChar(40)
-  brca_somatic            String?                 @db.VarChar(20)
-  hrd_status              String?                 @db.VarChar(30)
+  mol_id                  String                  @unique(map: "uq_molecular_results_id") @db.VarChar(100)
+  staging_detail_id       String                  @unique(map: "uq_molecular_results_staging_detail") @db.VarChar(100)
+  egfr_status             String?                 @db.VarChar(100)
+  egfr_mutation_type      String?                 @db.VarChar(100)
+  alk_status              String?                 @db.VarChar(100)
+  alk_test_method         String?                 @db.VarChar(100)
+  ros1_status             String?                 @db.VarChar(100)
+  kras_g12c               String?                 @db.VarChar(100)
+  kras_mutation           String?                 @db.VarChar(100)
+  braf_v600e              String?                 @db.VarChar(100)
+  brca1_germline          String?                 @db.VarChar(100)
+  brca2_germline          String?                 @db.VarChar(100)
+  brca_somatic            String?                 @db.VarChar(100)
+  hrd_status              String?                 @db.VarChar(100)
   hrd_score               Decimal?                @db.Decimal(5, 1)
-  hrd_assay               String?                 @db.VarChar(30)
-  msi_status              String?                 @db.VarChar(30)
-  msi_test_method         String?                 @db.VarChar(20)
+  hrd_assay               String?                 @db.VarChar(100)
+  msi_status              String?                 @db.VarChar(100)
+  msi_test_method         String?                 @db.VarChar(100)
   tmb                     Decimal?                @db.Decimal(5, 1)
-  tmb_assay               String?                 @db.VarChar(30)
-  ngs_panel               String?                 @db.VarChar(30)
-  flt3_itd                String?                 @db.VarChar(20)
+  tmb_assay               String?                 @db.VarChar(100)
+  ngs_panel               String?                 @db.VarChar(100)
+  flt3_itd                String?                 @db.VarChar(100)
   flt3_itd_allelic_ratio  Decimal?                @db.Decimal(4, 2)
-  flt3_tkd                String?                 @db.VarChar(20)
-  npm1_mutation           String?                 @db.VarChar(30)
-  idh1_mutation           String?                 @db.VarChar(20)
-  idh2_mutation           String?                 @db.VarChar(20)
+  flt3_tkd                String?                 @db.VarChar(100)
+  npm1_mutation           String?                 @db.VarChar(100)
+  idh1_mutation           String?                 @db.VarChar(100)
+  idh2_mutation           String?                 @db.VarChar(100)
   bcr_abl1                Decimal?                @db.Decimal(6, 2)
-  bcr_abl1_transcript     String?                 @db.VarChar(20)
+  bcr_abl1_transcript     String?                 @db.VarChar(100)
   created_at              DateTime?               @default(now()) @db.Timestamp(6)
   updated_at              DateTime?               @default(now()) @db.Timestamp(6)
   oncology_staging_detail oncology_staging_detail @relation(fields: [staging_detail_id], references: [staging_detail_id], onDelete: Cascade, map: "fk_mol_staging_detail")
@@ -1598,28 +1605,28 @@ model molecular_results {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model molecular_subtypes {
   id             BigInt       @id @default(autoincrement())
-  mol_sub_id     String       @unique(map: "uq_molecular_subtypes_id") @db.VarChar(20)
-  cancer_type_id String       @db.VarChar(20)
-  subtype_name   String       @db.VarChar(50)
-  er_rule        String?      @db.VarChar(20)
-  pr_rule        String?      @db.VarChar(20)
-  her2_rule      String?      @db.VarChar(20)
+  mol_sub_id     String       @unique(map: "uq_molecular_subtypes_id") @db.VarChar(100)
+  cancer_type_id String       @db.VarChar(100)
+  subtype_name   String       @db.VarChar(100)
+  er_rule        String?      @db.VarChar(100)
+  pr_rule        String?      @db.VarChar(100)
+  her2_rule      String?      @db.VarChar(100)
   ki67_threshold Int?         @default(14)
   colour_hex     String?      @db.Char(7)
-  badge_label    String?      @db.VarChar(50)
+  badge_label    String?      @db.VarChar(100)
   cancer_types   cancer_types @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: Cascade, map: "fk_molsub_cancer_type")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model oncology_audit_log {
   id             BigInt   @id @default(autoincrement())
-  audit_id       String   @unique(map: "uq_oncology_audit_log_id") @db.VarChar(20)
-  entity_type    String   @db.VarChar(50)
-  entity_id      String   @db.VarChar(20)
-  action         String   @db.VarChar(20)
-  performed_by   String   @db.VarChar(20)
-  patient_id     String?  @db.VarChar(20)
-  branch_id      String?  @db.VarChar(20)
+  audit_id       String   @unique(map: "uq_oncology_audit_log_id") @db.VarChar(100)
+  entity_type    String   @db.VarChar(100)
+  entity_id      String   @db.VarChar(100)
+  action         String   @db.VarChar(100)
+  performed_by   String   @db.VarChar(100)
+  patient_id     String?  @db.VarChar(100)
+  branch_id      String?  @db.VarChar(100)
   change_summary String
   performed_at   DateTime @default(now()) @db.Timestamp(6)
 
@@ -1631,30 +1638,30 @@ model oncology_audit_log {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model oncology_staging_detail {
   id                    BigInt              @id @default(autoincrement())
-  staging_detail_id     String              @unique(map: "uq_staging_detail_id") @db.VarChar(20)
-  patient_id            String              @db.VarChar(20)
-  patient_history_id    String?             @db.VarChar(20)
-  diagnosis_id          String?             @db.VarChar(20)
+  staging_detail_id     String              @unique(map: "uq_staging_detail_id") @db.VarChar(100)
+  patient_id            String              @db.VarChar(100)
+  patient_history_id    String?             @db.VarChar(100)
+  diagnosis_id          String?             @db.VarChar(100)
   visit_date            DateTime?           @db.Date
   diagnosis_date        DateTime?           @db.Date
   biopsy_date           DateTime?           @db.Date
-  consulting_oncologist String?             @db.VarChar(150)
-  cancer_type_id        String              @db.VarChar(20)
-  cancer_subtype_id     String              @db.VarChar(20)
-  icd10_code            String?             @db.VarChar(10)
-  icd_o3_topo           String?             @db.VarChar(10)
-  icd_o3_morpho         String?             @db.VarChar(20)
-  staging_system        String?             @db.VarChar(50)
-  clinical_stage        String?             @db.VarChar(20)
-  t_stage               String?             @db.VarChar(10)
-  n_stage               String?             @db.VarChar(10)
-  m_stage               String?             @db.VarChar(10)
+  consulting_oncologist String?             @db.VarChar(100)
+  cancer_type_id        String              @db.VarChar(100)
+  cancer_subtype_id     String              @db.VarChar(100)
+  icd10_code            String?             @db.VarChar(100)
+  icd_o3_topo           String?             @db.VarChar(100)
+  icd_o3_morpho         String?             @db.VarChar(100)
+  staging_system        String?             @db.VarChar(100)
+  clinical_stage        String?             @db.VarChar(100)
+  t_stage               String?             @db.VarChar(100)
+  n_stage               String?             @db.VarChar(100)
+  m_stage               String?             @db.VarChar(100)
   metastasis_sites      Json?
-  laterality            String?             @db.VarChar(10)
+  laterality            String?             @db.VarChar(100)
   performance_status    Int?                @db.SmallInt
-  employee_id           String?             @db.VarChar(20)
-  branch_id             String?             @db.VarChar(20)
-  user_id               String?             @db.VarChar(20)
+  employee_id           String?             @db.VarChar(100)
+  branch_id             String?             @db.VarChar(100)
+  user_id               String?             @db.VarChar(100)
   created_at            DateTime?           @default(now()) @db.Timestamp(6)
   updated_at            DateTime?           @default(now()) @db.Timestamp(6)
   chemotherapy_plan     chemotherapy_plan[]
@@ -1674,17 +1681,17 @@ model oncology_staging_detail {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model patient_allergy {
   id                         BigInt           @id @default(autoincrement())
-  patient_id                 String           @db.VarChar(20)
+  patient_id                 String           @db.VarChar(100)
   allergy_id                 BigInt
-  reaction                   String?          @db.VarChar(500)
-  severity                   String?          @db.VarChar(30)
-  status                     String           @default("ACTIVE") @db.VarChar(20)
+  reaction                   String?          @db.VarChar(100)
+  severity                   String?          @db.VarChar(100)
+  status                     String           @default("ACTIVE") @db.VarChar(100)
   identified_at              DateTime         @default(now()) @db.Timestamp(6)
-  identified_by              String?          @db.VarChar(20)
-  identified_at_encounter_no String?          @db.VarChar(30)
+  identified_by              String?          @db.VarChar(100)
+  identified_at_encounter_no String?          @db.VarChar(100)
   clinical_notes             String?          @db.VarChar(1000)
   updated_at                 DateTime         @default(now()) @db.Timestamp(6)
-  updated_by                 String?          @db.VarChar(20)
+  updated_by                 String?          @db.VarChar(100)
   allergy_master             allergy_master   @relation(fields: [allergy_id], references: [id], map: "fk_patient_allergy_master")
   encounter                  encounter?       @relation(fields: [identified_at_encounter_no], references: [encounter_no], onDelete: Restrict)
   employees                  employees?       @relation(fields: [identified_by], references: [employee_id], onDelete: Restrict)
@@ -1699,27 +1706,27 @@ model patient_allergy {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model patient_bio_data {
   id                             BigInt                         @id @default(autoincrement())
-  patient_id                     String                         @unique @db.VarChar(20)
-  user_id                        String?                        @db.VarChar(20)
-  branch_id                      String?                        @db.VarChar(20)
+  patient_id                     String                         @unique @db.VarChar(100)
+  user_id                        String?                        @db.VarChar(100)
+  branch_id                      String?                        @db.VarChar(100)
   patient_first_name             String                         @db.VarChar(100)
   patient_middle_name            String?                        @db.VarChar(100)
   patient_last_name              String?                        @db.VarChar(100)
-  patient_gender                 String?                        @db.VarChar(20)
+  patient_gender                 String?                        @db.VarChar(100)
   patient_dob                    DateTime?                      @db.Date
   patient_age                    Int?
-  patient_blood_group            String?                        @db.VarChar(10)
-  patient_primary_mobile         String?                        @db.VarChar(20)
-  patient_alternate_mobile       String?                        @db.VarChar(20)
-  patient_email                  String?                        @db.VarChar(150)
-  patient_marital_status         String?                        @db.VarChar(30)
+  patient_blood_group            String?                        @db.VarChar(100)
+  patient_primary_mobile         String?                        @db.VarChar(100)
+  patient_alternate_mobile       String?                        @db.VarChar(100)
+  patient_email                  String?                        @db.VarChar(100)
+  patient_marital_status         String?                        @db.VarChar(100)
   patient_nationality            String?                        @db.VarChar(100)
   patient_photo_url              String?
-  patient_type                   String?                        @db.VarChar(50)
-  patient_active                 String?                        @db.VarChar(20)
-  patient_state                  String?                        @db.VarChar
-  patient_district               String?                        @db.VarChar
-  patient_area                   String?                        @db.VarChar
+  patient_type                   String?                        @db.VarChar(100)
+  patient_active                 String?                        @db.VarChar(100)
+  patient_state                  String?                        @db.VarChar(100)
+  patient_district               String?                        @db.VarChar(100)
+  patient_area                   String?                        @db.VarChar(100)
   patient_pincode                BigInt?
   Patient_address                String?                        @db.VarChar
   Patient_Emergency_contact_name String?                        @db.VarChar
@@ -1740,16 +1747,16 @@ model patient_bio_data {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model patient_comorbidity {
   id                         BigInt           @id @default(autoincrement())
-  patient_id                 String           @db.VarChar(20)
-  diagnosis_id               String           @db.VarChar(20)
-  status                     String           @default("ACTIVE") @db.VarChar(20)
+  patient_id                 String           @db.VarChar(100)
+  diagnosis_id               String           @db.VarChar(100)
+  status                     String           @default("ACTIVE") @db.VarChar(100)
   onset_date                 DateTime?        @db.Date
   identified_at              DateTime         @default(now()) @db.Timestamp(6)
-  identified_by              String?          @db.VarChar(20)
-  identified_at_encounter_no String?          @db.VarChar(30)
+  identified_by              String?          @db.VarChar(100)
+  identified_at_encounter_no String?          @db.VarChar(100)
   clinical_notes             String?          @db.VarChar(1000)
   updated_at                 DateTime         @default(now()) @db.Timestamp(6)
-  updated_by                 String?          @db.VarChar(20)
+  updated_by                 String?          @db.VarChar(100)
   diagnosis                  diagnosis        @relation(fields: [diagnosis_id], references: [diagnosis_id])
   encounter                  encounter?       @relation(fields: [identified_at_encounter_no], references: [encounter_no], onDelete: Restrict)
   employees                  employees?       @relation(fields: [identified_by], references: [employee_id], onDelete: Restrict)
@@ -1764,9 +1771,9 @@ model patient_comorbidity {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model patient_history {
   id                         BigInt                    @id @default(autoincrement())
-  mrn_no                     String?                   @db.VarChar(30)
-  previous_hospital_name     String?                   @db.VarChar(200)
-  previous_doctor_name       String?                   @db.VarChar(200)
+  mrn_no                     String?                   @db.VarChar(100)
+  previous_hospital_name     String?                   @db.VarChar(100)
+  previous_doctor_name       String?                   @db.VarChar(100)
   previous_visit_date        DateTime?                 @db.Date
   previous_diagnosis         String?
   previous_treatment         String?
@@ -1775,7 +1782,7 @@ model patient_history {
   previous_hospitalization   String?
   allergy_history            String?
   chronic_disease            String?
-  visit_type                 String?                   @db.VarChar(30)
+  visit_type                 String?                   @db.VarChar(100)
   visit_date                 DateTime?                 @db.Date
   history_of_present_illness String?
   clinical_notes             String?
@@ -1788,8 +1795,8 @@ model patient_history {
   systolic_bp                Int?
   diastolic_bp               Int?
   oxygen_saturation          Decimal?                  @db.Decimal(5, 2)
-  blood_sugar                String?                   @db.VarChar(50)
-  severity                   String?                   @db.VarChar(30)
+  blood_sugar                String?                   @db.VarChar(100)
+  severity                   String?                   @db.VarChar(100)
   treatment_plan             String?
   procedure_done             String?
   surgery_done               String?
@@ -1797,27 +1804,27 @@ model patient_history {
   physiotherapy_notes        String?
   lab_summary                String?
   scan_summary               String?
-  admitted                   String?                   @db.VarChar(50)
+  admitted                   String?                   @db.VarChar(100)
   admission_date             DateTime?                 @db.Date
   discharge_date             DateTime?                 @db.Date
   ward                       String?                   @db.VarChar(100)
-  room                       String?                   @db.VarChar(50)
-  bed                        String?                   @db.VarChar(50)
+  room                       String?                   @db.VarChar(100)
+  bed                        String?                   @db.VarChar(100)
   discharge_summary          String?
-  treating_doctor_name       String?                   @db.VarChar(150)
-  consulting_doctor_name     String?                   @db.VarChar(150)
+  treating_doctor_name       String?                   @db.VarChar(100)
+  consulting_doctor_name     String?                   @db.VarChar(100)
   uploaded_document_url      String?
-  visit_status               String?                   @db.VarChar(30)
-  updated_by                 String?                   @db.VarChar(20)
+  visit_status               String?                   @db.VarChar(100)
+  updated_by                 String?                   @db.VarChar(100)
   updated_at                 DateTime?                 @default(now()) @db.Timestamp(6)
-  appointment_id             String?                   @db.VarChar(20)
-  user_id                    String?                   @db.VarChar(20)
-  branch_id                  String?                   @db.VarChar(20)
-  department_id              String?                   @db.VarChar(20)
-  patient_history_id         String                    @unique @db.VarChar(20)
-  patient_id                 String                    @db.VarChar
-  diagnosis_id               String?                   @db.VarChar(20)
-  employee_id                String?                   @db.VarChar(20)
+  appointment_id             String?                   @db.VarChar(100)
+  user_id                    String?                   @db.VarChar(100)
+  branch_id                  String?                   @db.VarChar(100)
+  department_id              String?                   @db.VarChar(100)
+  patient_history_id         String                    @unique @db.VarChar(100)
+  patient_id                 String                    @db.VarChar(100)
+  diagnosis_id               String?                   @db.VarChar(100)
+  employee_id                String?                   @db.VarChar(100)
   dosage_details             String?
   duration                   String?
   medicine_instruction       String?
@@ -1840,14 +1847,14 @@ model patient_history {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model performance_status_master {
   id                           BigInt                         @id @default(autoincrement())
-  code                         String                         @unique @db.VarChar(20)
+  code                         String                         @unique @db.VarChar(100)
   description                  String                         @db.VarChar(200)
   display_order                Int                            @default(0)
   is_active                    Boolean                        @default(true)
   created_at                   DateTime                       @default(now()) @db.Timestamp(6)
   updated_at                   DateTime                       @default(now()) @db.Timestamp(6)
-  created_by                   String?                        @db.VarChar(20)
-  updated_by                   String?                        @db.VarChar(20)
+  created_by                   String?                        @db.VarChar(100)
+  updated_by                   String?                        @db.VarChar(100)
   encounter_performance_status encounter_performance_status[]
 
   @@index([is_active], map: "idx_perf_status_active")
@@ -1856,20 +1863,20 @@ model performance_status_master {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model prescription {
   id                  BigInt               @id @default(autoincrement())
-  prescription_id     String               @unique @db.VarChar(20)
-  employee_id         String               @db.VarChar(20)
-  department_id       String?              @db.VarChar(20)
-  diagnosis_id        String?              @db.VarChar(20)
+  prescription_id     String               @unique @db.VarChar(100)
+  employee_id         String               @db.VarChar(100)
+  department_id       String?              @db.VarChar(100)
+  diagnosis_id        String?              @db.VarChar(100)
   prescription_date   DateTime?            @default(now()) @db.Timestamp(6)
-  patient_history_id  String?              @db.VarChar(20)
-  visit_type          String?              @db.VarChar(30)
+  patient_history_id  String?              @db.VarChar(100)
+  visit_type          String?              @db.VarChar(100)
   chief_complaint     String?
   clinical_notes      String?
   advice              String?
   followup_date       DateTime?            @db.Date
-  prescription_status String?              @db.VarChar(30)
-  branch_id           String?              @db.VarChar(20)
-  user_id             String?              @db.VarChar(20)
+  prescription_status String?              @db.VarChar(100)
+  branch_id           String?              @db.VarChar(100)
+  user_id             String?              @db.VarChar(100)
   created_at          DateTime?            @default(now()) @db.Timestamp(6)
   branch              branch?              @relation(fields: [branch_id], references: [branch_id], onDelete: Restrict, map: "fk_prescription_branch")
   department_master   department_master?   @relation(fields: [department_id], references: [department_id], onDelete: Restrict, map: "fk_prescription_department")
@@ -1883,17 +1890,17 @@ model prescription {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model prescription_items {
   id                   BigInt          @id @default(autoincrement())
-  prescription_item_id String          @unique @db.VarChar(20)
-  prescription_id      String          @db.VarChar(20)
-  medicine_id          String          @db.VarChar(20)
+  prescription_item_id String          @unique @db.VarChar(100)
+  prescription_id      String          @db.VarChar(100)
+  medicine_id          String          @db.VarChar(100)
   dosage               String?         @db.VarChar(100)
   frequency            String?         @db.VarChar(100)
   days                 Int?
-  unit                 String?         @db.VarChar(20)
-  duration             String?         @db.VarChar(50)
+  unit                 String?         @db.VarChar(100)
+  duration             String?         @db.VarChar(100)
   quantity             Int?
-  route                String?         @db.VarChar(50)
-  before_after_food    String?         @db.VarChar(30)
+  route                String?         @db.VarChar(100)
+  before_after_food    String?         @db.VarChar(100)
   morning              Boolean?        @default(false)
   afternoon            Boolean?        @default(false)
   night                Boolean?        @default(false)
@@ -1905,9 +1912,9 @@ model prescription_items {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model qualification_master {
   id                 BigInt      @id @default(autoincrement())
-  qualification_id   String      @unique @db.VarChar(20)
-  qualification_name String      @db.VarChar(150)
-  designation        String      @db.VarChar(50)
+  qualification_id   String      @unique @db.VarChar(100)
+  qualification_name String      @db.VarChar(100)
+  designation        String      @db.VarChar(100)
   is_active          Boolean     @default(true)
   created_at         DateTime    @default(now())
   updated_at         DateTime
@@ -1916,33 +1923,33 @@ model qualification_master {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model role_id_config {
-  role_type      String           @id @db.VarChar(50)
+  role_type      String           @id @db.VarChar(100)
   description    String?          @db.VarChar(100)
   created_at     DateTime?        @default(now()) @db.Timestamp(6)
-  display_name   String?          @db.VarChar(50)
+  display_name   String?          @db.VarChar(100)
   is_active      Boolean          @default(true)
   sort_order     Int              @default(0)
   updated_at     DateTime?
-  prefix         String?          @db.VarChar(20)
+  prefix         String?          @db.VarChar(100)
   RolePermission RolePermission[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model sample_collection {
   id                   BigInt         @id @default(autoincrement())
-  sample_collection_id String         @unique @db.VarChar(20)
-  lab_order_item_id    String         @db.VarChar(20)
+  sample_collection_id String         @unique @db.VarChar(100)
+  lab_order_item_id    String         @db.VarChar(100)
   barcode              String?        @unique @db.VarChar(100)
   container_type       String?        @db.VarChar(100)
   collection_datetime  DateTime?      @default(now()) @db.Timestamp(6)
-  collected_by         String?        @db.VarChar(20)
-  collection_site      String?        @db.VarChar(150)
-  collected_volume     String?        @db.VarChar(50)
-  collection_status    String?        @default("Collected") @db.VarChar(30)
+  collected_by         String?        @db.VarChar(100)
+  collection_site      String?        @db.VarChar(100)
+  collected_volume     String?        @db.VarChar(100)
+  collection_status    String?        @default("Collected") @db.VarChar(100)
   rejection_reason     String?
   remarks              String?
-  branch_id            String?        @db.VarChar(10)
-  user_id              String?        @db.VarChar(20)
+  branch_id            String?        @db.VarChar(100)
+  user_id              String?        @db.VarChar(100)
   created_at           DateTime?      @default(now()) @db.Timestamp(6)
   updated_at           DateTime?      @default(now()) @db.Timestamp(6)
   lab_history          lab_history[]
@@ -1956,33 +1963,33 @@ model sample_collection {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model staging_reference {
   id               BigInt       @id @default(autoincrement())
-  stage_ref_id     String       @unique(map: "uq_staging_reference_id") @db.VarChar(20)
-  cancer_type_id   String       @db.VarChar(20)
-  subtype_label    String?      @db.VarChar(150)
-  staging_system   String?      @db.VarChar(50)
-  stage_label      String?      @db.VarChar(50)
+  stage_ref_id     String       @unique(map: "uq_staging_reference_id") @db.VarChar(100)
+  cancer_type_id   String       @db.VarChar(100)
+  subtype_label    String?      @db.VarChar(100)
+  staging_system   String?      @db.VarChar(100)
+  stage_label      String?      @db.VarChar(100)
   tnm_criteria     String?
-  risk_system      String?      @db.VarChar(50)
-  risk_category    String?      @db.VarChar(50)
+  risk_system      String?      @db.VarChar(100)
+  risk_category    String?      @db.VarChar(100)
   risk_criteria    String?
-  os_5yr_approx    String?      @db.VarChar(30)
-  guideline_source String?      @db.VarChar(150)
+  os_5yr_approx    String?      @db.VarChar(100)
+  guideline_source String?      @db.VarChar(100)
   cancer_types     cancer_types @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: Cascade, map: "fk_staging_cancer_type")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model symptom_master {
   id                BigInt              @id @default(autoincrement())
-  code              String              @unique @db.VarChar(30)
-  name              String              @db.VarChar(150)
-  description       String?             @db.VarChar(500)
+  code              String              @unique @db.VarChar(100)
+  name              String              @db.VarChar(100)
+  description       String?             @db.VarChar(100)
   category          String?             @db.VarChar(100)
   body_system       String?             @db.VarChar(100)
   is_active         Boolean             @default(true)
   created_at        DateTime            @default(now()) @db.Timestamp(6)
   updated_at        DateTime            @default(now()) @db.Timestamp(6)
-  created_by        String?             @db.VarChar(20)
-  updated_by        String?             @db.VarChar(20)
+  created_by        String?             @db.VarChar(100)
+  updated_by        String?             @db.VarChar(100)
   encounter_symptom encounter_symptom[]
 
   @@index([is_active], map: "idx_symptom_active")
@@ -1991,17 +1998,17 @@ model symptom_master {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model user_branch_mapping {
-  user_id           String     @db.VarChar(20)
-  branch_id         String     @db.VarChar(10)
+  user_id           String     @db.VarChar(100)
+  branch_id         String     @db.VarChar(100)
   assigned_date     DateTime?  @default(now()) @db.Timestamp(6)
   status            Int?       @default(1) @db.SmallInt
   id                BigInt     @id @default(autoincrement())
-  mapping_id        String?    @db.VarChar(20)
-  employee_id       String?    @db.VarChar(20)
+  mapping_id        String?    @db.VarChar(100)
+  employee_id       String?    @db.VarChar(100)
   is_primary_branch Boolean?   @default(false)
   effective_from    DateTime?  @db.Timestamptz(6)
   effective_to      DateTime?  @db.Timestamptz(6)
-  deleted_by        String?    @db.VarChar
+  deleted_by        String?    @db.VarChar(100)
   branch            branch     @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_mapping_branch")
   employees         employees? @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_mapping_employee")
   user_table        user_table @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_mapping_user")
@@ -2010,28 +2017,28 @@ model user_branch_mapping {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model user_log {
   id          BigInt     @id @default(autoincrement())
-  log_id      String     @unique(map: "uq_user_log_log_id") @db.VarChar(20)
-  user_id     String     @db.VarChar(20)
+  log_id      String     @unique(map: "uq_user_log_log_id") @db.VarChar(100)
+  user_id     String     @db.VarChar(100)
   module_name String?    @db.VarChar(100)
-  action_type String     @db.VarChar(50)
+  action_type String     @db.VarChar(100)
   action_time DateTime?  @default(now()) @db.Timestamp(6)
-  status      String?    @db.VarChar(20)
-  branch_id   String?    @db.VarChar(10)
+  status      String?    @db.VarChar(100)
+  branch_id   String?    @db.VarChar(100)
   branch      branch?    @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_user_log_branch")
   user_table  user_table @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_user_log_user")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model user_table {
-  user_id                                            String?                   @unique(map: "user_table_user_id_unique") @db.VarChar(20)
-  role_type                                          String?                   @db.VarChar(50)
-  created_by                                         String?                   @db.VarChar(20)
-  username                                           String?                   @db.VarChar(50)
-  password                                           String?                   @db.VarChar(255)
+  user_id                                            String?                   @unique(map: "user_table_user_id_unique") @db.VarChar(100)
+  role_type                                          String?                   @db.VarChar(100)
+  created_by                                         String?                   @db.VarChar(100)
+  username                                           String?                   @db.VarChar(100)
+  password                                           String?                   @db.VarChar(100)
   user_status                                        Int?                      @default(0) @db.SmallInt
   created_at                                         DateTime?                 @default(now()) @db.Timestamp(6)
   id                                                 BigInt                    @id @default(autoincrement())
-  branch_id                                          String?                   @db.VarChar(10)
+  branch_id                                          String?                   @db.VarChar(100)
   appointment_history                                appointment_history[]
   chemotherapy_master                                chemotherapy_master[]
   chemotherapy_plan                                  chemotherapy_plan[]
