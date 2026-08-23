@@ -68,6 +68,22 @@ class EncounterController {
             });
         }
     }
+    async getCheckedInPatientsToday(req, res) {
+        try {
+            const totalPatients = await service.getCheckedInPatientsToday(req.query.employeeId, req.query.branchId);
+            return res.json({
+                success: true,
+                message: "Patients checked in today fetched successfully",
+                data: { totalPatients }
+            });
+        }
+        catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
     async getEncounterByNumber(req, res) {
         try {
             const encounter = await service.getEncounterByNumber(req.params.encounterNo);

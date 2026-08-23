@@ -94,6 +94,32 @@ export class EncounterController {
 
     }
 
+    async getCheckedInPatientsToday(req: Request, res: Response) {
+
+        try {
+
+            const totalPatients = await service.getCheckedInPatientsToday(
+                req.query.employeeId as string,
+                req.query.branchId as string
+            );
+
+            return res.json({
+                success: true,
+                message: "Patients checked in today fetched successfully",
+                data: { totalPatients }
+            });
+
+        } catch (error: any) {
+
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
     async getEncounterByNumber(req: Request, res: Response) {
 
         try {
