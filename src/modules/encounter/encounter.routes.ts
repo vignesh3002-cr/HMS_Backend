@@ -32,6 +32,14 @@ router.get(
 );
 
 router.get(
+    "/stats/patients-today",
+    authenticate,
+    authorize("encounter.read"),
+    branchScope,
+    controller.getCheckedInPatientsToday.bind(controller)
+);
+
+router.get(
     "/:encounterNo",
     authenticate,
     authorize("encounter.read"),

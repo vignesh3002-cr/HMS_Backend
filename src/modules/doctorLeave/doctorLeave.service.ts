@@ -4,9 +4,12 @@ import {
     ApplyDoctorLeaveDto,
     ApproveDoctorLeaveDto,
     RejectDoctorLeaveDto,
-    GetDoctorLeaveQuery
+    GetDoctorLeaveQuery,
+    QueueRescheduleDto
 } from "./doctorLeave.types";
 import { LEAVE_STATUS } from "./doctorLeave.constants";
+import { RESCHEDULE_QUEUE_STATUS } from "../doctor-transfer/doctorTransfer.constants";
+import { generateId } from "../../utils/idGenerator";
 
 export class DoctorLeaveService {
 
@@ -296,6 +299,166 @@ export class DoctorLeaveService {
     async getDoctorLeaves(query: GetDoctorLeaveQuery) {
 
         return this.repository.getDoctorLeaves(query);
+
+    }
+
+
+    /*
+     * =========================================================
+     * LEAVE CONFLICT LOOKUP
+     *
+     * Active (non-terminal) appointments for the doctor inside
+     * the leave range — used by the UI before applying leave.
+     * Deliberately branch-agnostic: leaves affect every
+     * branch the doctor works at.
+     * =========================================================
+     */
+
+    async getLeaveConflicts(
+        employeeId: string,
+        dto: QueueRescheduleDto
+    ) {
+
+        const startDate = new Date(
+            `${dto.date_from}T00:00:00.000Z`
+        );
+        const endDate = new Date(
+            `${dto.date_to}T00:00:00.000Z`
+        );
+
+        if (
+            isNaN(startDate.getTime()) ||
+            isNaN(endDate.getTime())
+        ) {
+            throw new Error("Invalid leave date range");
+        }
+
+        if (endDate < startDate) {
+            throw new Error(
+                "End date cannot be before start date"
+            );
+        }
+
+        const appointments =
+            await this.repository.findActiveAppointmentsInRange(
+                prisma,
+                employeeId,
+                dto.date_from,
+                dto.date_to
+            );
+
+        return appointments.map((appointment) => ({
+            appointment_id:
+                appointment.appointment_id,
+            patient_first_name:
+                appointment.patient_bio_data
+                    ?.patient_first_name ?? null,
+            patient_middle_name:
+                appointment.patient_bio_data
+                    ?.patient_middle_name ?? null,
+            patient_last_name:
+                appointment.patient_bio_data
+                    ?.patient_last_name ?? null,
+            appointment_date:
+                appointment.appointment_date,
+            appointment_time:
+                appointment.appointment_time,
+            status: appointment.status
+        }));
+
+    }
+
+
+    /*
+     * =========================================================
+     * QUEUE APPOINTMENTS FOR RESCHEDULE (LEAVE CONFLICT)
+     *
+     * Marks every active appointment of the doctor inside the
+     * leave date range as RESCHEDULE_REQUIRED and inserts a
+     * PENDING entry into the reschedule queue so staff can
+     * assign new slots from the Reschedule Queue page.
+     * =========================================================
+     */
+
+    async queueRescheduleForLeave(
+        employeeId: string,
+        dto: QueueRescheduleDto,
+        createdBy: string
+    ) {
+
+        const startDate = new Date(`${dto.date_from}T00:00:00.000Z`);
+        const endDate = new Date(`${dto.date_to}T00:00:00.000Z`);
+
+        if (
+            isNaN(startDate.getTime()) ||
+            isNaN(endDate.getTime())
+        ) {
+            throw new Error("Invalid leave date range");
+        }
+
+        if (endDate < startDate) {
+            throw new Error(
+                "End date cannot be before start date"
+            );
+        }
+
+        return prisma.$transaction(async (tx) => {
+
+            const appointments =
+                await this.repository.findActiveAppointmentsInRange(
+                    tx,
+                    employeeId,
+                    dto.date_from,
+                    dto.date_to
+                );
+
+            let queued = 0;
+
+            for (const appointment of appointments) {
+
+                await this.repository.markAppointmentRescheduleRequired(
+                    tx,
+                    appointment.appointment_id
+                );
+
+                const queueId = await generateId(
+                    tx,
+                    "RESCHEDULE_QUEUE"
+                );
+
+                await this.repository.createRescheduleQueueEntry(
+                    tx,
+                    {
+                        queue_id: queueId,
+                        appointment_id:
+                            appointment.appointment_id,
+                        patient_id: appointment.patient_id,
+                        employee_id: employeeId,
+                        branch_id: appointment.branch_id ?? "",
+                        department_id:
+                            appointment.department_id,
+                        old_schedule_id:
+                            appointment.schedule_id,
+                        old_appointment_date:
+                            appointment.appointment_date,
+                        old_appointment_time:
+                            appointment.appointment_time,
+                        transfer_id: null,
+                        priority: dto.priority ?? "NORMAL",
+                        reason:
+                            `DOCTOR_LEAVE${dto.reason ? `: ${dto.reason}` : ""}`,
+                        status: RESCHEDULE_QUEUE_STATUS.PENDING,
+                        created_by: createdBy
+                    }
+                );
+
+                queued += 1;
+
+            }
+
+            return { total: appointments.length, queued };
+
+        });
 
     }
 

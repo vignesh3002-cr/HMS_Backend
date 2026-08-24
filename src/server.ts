@@ -29,6 +29,8 @@ import qualificationMasterRoutes from "./modules/qualification-master/qualificat
 import diagnosisRoutes from "./modules/diagnosis/diagnosis.routes";
 import { startAppointmentStatusJob } from "./modules/appointment/appointment-status.job";
 import clinicalDetailsRoutes from "./modules/clinical-details/clinical-details.routes";
+import doctorLeaveRoutes from "./modules/doctorLeave/doctorLeave.routes";
+import notificationRoutes from "./modules/notification/notification.routes";
 
 import { hashPassword } from "./utils/bcrypt";
 
@@ -143,6 +145,12 @@ app.use("/api/doctors", doctorTransferRoutes);
 
 // Doctor schedule ADD / OVERRIDE / CANCEL APIs
 app.use("/api/doctor-schedule", doctorScheduleRoutes);
+
+// Doctor leave APPLY / APPROVE / REJECT / LIST APIs
+app.use("/api/doctor-leave", doctorLeaveRoutes);
+
+// In-app notifications (doctor dashboard bell)
+app.use("/api/notifications", notificationRoutes);
 
 app.use("/api/qualification-master", qualificationMasterRoutes);
 app.use("/api/appointments", appointmentRoutes);

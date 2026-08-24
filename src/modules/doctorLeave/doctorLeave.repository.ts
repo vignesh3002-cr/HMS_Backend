@@ -1,6 +1,10 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { generateId } from "../../utils/idGenerator";
+import {
+    APPOINTMENT_STATUS,
+    TERMINAL_APPOINTMENT_STATUSES
+} from "../appointment/appointment.constants";
 import { GetDoctorLeaveQuery } from "./doctorLeave.types";
 
 export class DoctorLeaveRepository {
@@ -125,6 +129,69 @@ export class DoctorLeaveRepository {
             leaves
         };
 
+    }
+
+    async findActiveAppointmentsInRange(
+        tx: Prisma.TransactionClient | typeof prisma,
+        employeeId: string,
+        dateFrom: string,
+        dateTo: string
+    ) {
+
+        return (tx as Prisma.TransactionClient).appointment_history.findMany({
+            where: {
+                employee_id: employeeId,
+                appointment_date: {
+                    gte: new Date(`${dateFrom}T00:00:00.000Z`),
+                    lte: new Date(`${dateTo}T23:59:59.999Z`)
+                },
+                status: {
+                    notIn: [
+                        ...TERMINAL_APPOINTMENT_STATUSES,
+                        APPOINTMENT_STATUS.RESCHEDULE_REQUIRED
+                    ]
+                }
+            },
+            select: {
+                appointment_id: true,
+                patient_id: true,
+                branch_id: true,
+                department_id: true,
+                schedule_id: true,
+                appointment_date: true,
+                appointment_time: true,
+                status: true,
+                patient_bio_data: {
+                    select: {
+                        patient_first_name: true,
+                        patient_middle_name: true,
+                        patient_last_name: true
+                    }
+                }
+            },
+            orderBy: [
+                { appointment_date: "asc" },
+                { appointment_time: "asc" }
+            ]
+        });
+
+    }
+
+    async markAppointmentRescheduleRequired(
+        tx: Prisma.TransactionClient,
+        appointmentId: string
+    ) {
+        return tx.appointment_history.update({
+            where: { appointment_id: appointmentId },
+            data: { status: APPOINTMENT_STATUS.RESCHEDULE_REQUIRED }
+        });
+    }
+
+    async createRescheduleQueueEntry(
+        tx: Prisma.TransactionClient,
+        data: Prisma.appointment_reschedule_queueUncheckedCreateInput
+    ) {
+        return tx.appointment_reschedule_queue.create({ data });
     }
 
 }

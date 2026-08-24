@@ -127,6 +127,21 @@ class EncounterRepository {
             include: encounterDetailInclude
         });
     }
+    async getCheckedInPatientsToday(employeeId, branchId) {
+        const today = new Date().toISOString().slice(0, 10);
+        const groups = await prisma_1.default.encounter.groupBy({
+            by: ["patient_id"],
+            where: {
+                encounter_ts: {
+                    gte: startOfDay(today),
+                    lt: startOfNextDay(today)
+                },
+                ...(employeeId ? { employee_id: employeeId } : {}),
+                ...(branchId ? { branch_id: branchId } : {})
+            }
+        });
+        return groups.length;
+    }
     async getEncounters(query) {
         const { branchId, doctorId, patientId, status, encounterType, date, dateFrom, dateTo, search, sortBy = "encounter_ts", sortOrder = "desc", page = 1, limit = 10 } = query;
         const where = {};

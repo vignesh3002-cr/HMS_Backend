@@ -8,6 +8,7 @@ const prisma_1 = __importDefault(require("../../config/prisma"));
 const encounter_repository_1 = require("./encounter.repository");
 const encounter_constants_1 = require("./encounter.constants");
 const appointment_constants_1 = require("../appointment/appointment.constants");
+const idGenerator_1 = require("../../utils/idGenerator");
 const repository = new encounter_repository_1.EncounterRepository();
 class EncounterService {
     async createEncounter(data, createdBy) {
@@ -72,6 +73,20 @@ class EncounterService {
                     status: encounter_constants_1.ENCOUNTER_STATUS.OPEN
                 });
                 await repository.updateAppointmentStatus(tx, appointment.appointment_id, appointment_constants_1.APPOINTMENT_STATUS.IN_CONSULTATION);
+                /*
+                 * In-app notification for the doctor whose
+                 * patient just checked in.
+                 */
+                await tx.appointment_notification.create({
+                    data: {
+                        notification_id: await (0, idGenerator_1.generateId)(tx, "NOTIFICATION"),
+                        appointment_id: appointment.appointment_id,
+                        channel: "IN_APP",
+                        notification_type: "CHECKIN",
+                        recipient: doctor.employee_id,
+                        status: "UNREAD"
+                    }
+                });
                 return encounter;
             });
         }
@@ -87,6 +102,9 @@ class EncounterService {
     }
     async getEncounters(query) {
         return repository.getEncounters(query);
+    }
+    async getCheckedInPatientsToday(employeeId, branchId) {
+        return repository.getCheckedInPatientsToday(employeeId, branchId);
     }
     async getEncounterByNumber(encounterNo) {
         const encounter = await repository.getEncounterByNumber(encounterNo);

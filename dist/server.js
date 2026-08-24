@@ -32,6 +32,8 @@ const qualification_master_routes_1 = __importDefault(require("./modules/qualifi
 const diagnosis_routes_1 = __importDefault(require("./modules/diagnosis/diagnosis.routes"));
 const appointment_status_job_1 = require("./modules/appointment/appointment-status.job");
 const clinical_details_routes_1 = __importDefault(require("./modules/clinical-details/clinical-details.routes"));
+const doctorLeave_routes_1 = __importDefault(require("./modules/doctorLeave/doctorLeave.routes"));
+const notification_routes_1 = __importDefault(require("./modules/notification/notification.routes"));
 const bcrypt_1 = require("./utils/bcrypt");
 // Fix BigInt serialization - Prisma returns BigInt types
 // that JSON.stringify can't handle
@@ -127,6 +129,10 @@ app.use("/api/export", export_routes_1.default);
 app.use("/api/doctors", doctorTransfer_routes_1.default);
 // Doctor schedule ADD / OVERRIDE / CANCEL APIs
 app.use("/api/doctor-schedule", doctorSchedule_routes_1.default);
+// Doctor leave APPLY / APPROVE / REJECT / LIST APIs
+app.use("/api/doctor-leave", doctorLeave_routes_1.default);
+// In-app notifications (doctor dashboard bell)
+app.use("/api/notifications", notification_routes_1.default);
 app.use("/api/qualification-master", qualification_master_routes_1.default);
 app.use("/api/appointments", appointment_routes_1.default);
 app.use("/api/encounters", encounter_routes_1.default);

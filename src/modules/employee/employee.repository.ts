@@ -919,6 +919,34 @@ return response;
 
       statusMap.set(doctorId, hasAvailableSchedule ? "ACTIVE" : "LEAVE");
     }
+
+    // 4. PENDING/APPROVED leaves override ACTIVE with LEAVE for
+    // any date inside the leave range. INACTIVE stays INACTIVE.
+    if (doctorIds.length > 0) {
+      const blockingLeaves = await prisma.doctor_leave.findMany({
+        where: {
+          employee_id: { in: doctorIds },
+          status: { in: ["PENDING", "APPROVED"] },
+          leave_start_date: { lte: dateStart },
+          leave_end_date: { gte: dateStart }
+        },
+        select: { employee_id: true }
+      });
+
+      const onLeaveSet = new Set(
+        blockingLeaves.map((leave) => leave.employee_id)
+      );
+
+      for (const doctorId of doctorIds) {
+        if (
+          onLeaveSet.has(doctorId) &&
+          statusMap.get(doctorId) === "ACTIVE"
+        ) {
+          statusMap.set(doctorId, "LEAVE");
+        }
+      }
+    }
+
     return statusMap;
   }
 }

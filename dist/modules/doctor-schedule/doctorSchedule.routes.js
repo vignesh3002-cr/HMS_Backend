@@ -10,6 +10,33 @@ const router = (0, express_1.Router)();
  */
 router.post("/change", doctorSchedule_controller_1.doctorScheduleController.createScheduleChange);
 /**
+ * Get all recurring weekly schedules for a doctor,
+ * including inactive rows
+ *
+ * GET /:employeeId/recurring?branch_id=
+ */
+router.get("/:employeeId/recurring", doctorSchedule_controller_1.doctorScheduleController.getRecurringSchedules);
+/**
+ * Toggle the recurring weekly schedule for a
+ * doctor + branch + day_of_week on/off
+ *
+ * PATCH /recurring/toggle
+ */
+router.patch("/recurring/toggle", doctorSchedule_controller_1.doctorScheduleController.toggleRecurringDay);
+/**
+ * Add a single recurring slot to the doctor_schedule template
+ * (applies to every upcoming occurrence of that weekday)
+ *
+ * POST /recurring/slot/:employeeId
+ */
+router.post("/recurring/slot/:employeeId", doctorSchedule_controller_1.doctorScheduleController.createRecurringSlot);
+/**
+ * Soft-close a single recurring slot in the doctor_schedule template
+ *
+ * DELETE /recurring/slot/:employeeId/:scheduleId
+ */
+router.delete("/recurring/slot/:employeeId/:scheduleId", doctorSchedule_controller_1.doctorScheduleController.deleteRecurringSlot);
+/**
  * Get all active schedule changes for a doctor
  *
  * GET /:employeeId/changes

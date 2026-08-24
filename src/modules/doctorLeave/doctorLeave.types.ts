@@ -15,6 +15,13 @@ export interface RejectDoctorLeaveDto {
     remarks: string;
 }
 
+export interface QueueRescheduleDto {
+    date_from: string;
+    date_to: string;
+    reason?: string;
+    priority?: "LOW" | "NORMAL" | "HIGH";
+}
+
 export interface GetDoctorLeaveQuery {
     employee_id?: string;
     status?: typeof LEAVE_STATUS[keyof typeof LEAVE_STATUS];

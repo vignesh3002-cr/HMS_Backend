@@ -180,6 +180,26 @@ export class EncounterRepository {
 
     }
 
+    async getCheckedInPatientsToday(employeeId?: string, branchId?: string) {
+
+        const today = new Date().toISOString().slice(0, 10);
+
+        const groups = await prisma.encounter.groupBy({
+            by: ["patient_id"],
+            where: {
+                encounter_ts: {
+                    gte: startOfDay(today),
+                    lt: startOfNextDay(today)
+                },
+                ...(employeeId ? { employee_id: employeeId } : {}),
+                ...(branchId ? { branch_id: branchId } : {})
+            }
+        });
+
+        return groups.length;
+
+    }
+
     async getEncounters(query: GetEncountersQuery) {
 
         const {
