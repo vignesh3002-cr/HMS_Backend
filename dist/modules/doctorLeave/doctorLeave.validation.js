@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getDoctorLeaveValidation = exports.rejectDoctorLeaveValidation = exports.approveDoctorLeaveValidation = exports.applyDoctorLeaveValidation = void 0;
+exports.getLeaveConflictsValidation = exports.queueRescheduleValidation = exports.getDoctorLeaveValidation = exports.rejectDoctorLeaveValidation = exports.approveDoctorLeaveValidation = exports.applyDoctorLeaveValidation = void 0;
 const express_validator_1 = require("express-validator");
 const doctorLeave_constants_1 = require("./doctorLeave.constants");
 exports.applyDoctorLeaveValidation = [
@@ -59,4 +59,42 @@ exports.getDoctorLeaveValidation = [
     (0, express_validator_1.query)("limit")
         .optional()
         .isInt({ min: 1, max: 100 })
+];
+exports.queueRescheduleValidation = [
+    (0, express_validator_1.param)("employeeId")
+        .notEmpty()
+        .withMessage("employeeId is required"),
+    (0, express_validator_1.body)("date_from")
+        .notEmpty()
+        .withMessage("date_from is required")
+        .isISO8601()
+        .withMessage("date_from must be a valid date (YYYY-MM-DD)"),
+    (0, express_validator_1.body)("date_to")
+        .notEmpty()
+        .withMessage("date_to is required")
+        .isISO8601()
+        .withMessage("date_to must be a valid date (YYYY-MM-DD)"),
+    (0, express_validator_1.body)("reason")
+        .optional()
+        .isLength({ max: doctorLeave_constants_1.LEAVE_REASON_MAX_LENGTH })
+        .withMessage(`Reason cannot exceed ${doctorLeave_constants_1.LEAVE_REASON_MAX_LENGTH} characters`),
+    (0, express_validator_1.body)("priority")
+        .optional()
+        .isIn(["LOW", "NORMAL", "HIGH"])
+        .withMessage("priority must be LOW, NORMAL or HIGH")
+];
+exports.getLeaveConflictsValidation = [
+    (0, express_validator_1.param)("employeeId")
+        .notEmpty()
+        .withMessage("employeeId is required"),
+    (0, express_validator_1.query)("date_from")
+        .notEmpty()
+        .withMessage("date_from is required")
+        .isISO8601()
+        .withMessage("date_from must be a valid date (YYYY-MM-DD)"),
+    (0, express_validator_1.query)("date_to")
+        .notEmpty()
+        .withMessage("date_to is required")
+        .isISO8601()
+        .withMessage("date_to must be a valid date (YYYY-MM-DD)")
 ];

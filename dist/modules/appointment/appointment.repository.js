@@ -15,7 +15,10 @@ const appointmentDetailInclude = {
             patient_middle_name: true,
             patient_last_name: true,
             patient_gender: true,
-            patient_primary_mobile: true
+            patient_primary_mobile: true,
+            patient_dob: true,
+            patient_age: true,
+            patient_blood_group: true
         }
     },
     employees: {

@@ -58,7 +58,8 @@ class OncologyRepository {
     async findCancerTypes() {
         return prisma_1.default.cancer_types.findMany({
             where: { active_status: 1 },
-            orderBy: { cancer_type: "asc" }
+            orderBy: { cancer_type: "asc" },
+            include: { staging_reference: true }
         });
     }
     async findCancerTypeById(cancerTypeId) {

@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DoctorLeaveController = void 0;
+const express_validator_1 = require("express-validator");
 const doctorLeave_service_1 = require("./doctorLeave.service");
 const doctorLeave_constants_1 = require("./doctorLeave.constants");
 class DoctorLeaveController {
@@ -109,6 +110,67 @@ class DoctorLeaveController {
         }
         catch (error) {
             console.error(error);
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    };
+    queueRescheduleForLeave = async (req, res) => {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+            const employeeId = String(req.params.employeeId);
+            const authUser = req.user;
+            const createdBy = String(authUser?.user_id ?? "SYSTEM");
+            const summary = await this.service.queueRescheduleForLeave(employeeId, {
+                date_from: req.body.date_from,
+                date_to: req.body.date_to,
+                reason: req.body.reason,
+                priority: req.body.priority
+            }, createdBy);
+            return res.json({
+                success: true,
+                message: `${summary.queued} appointment(s) added to the reschedule queue`,
+                data: summary
+            });
+        }
+        catch (error) {
+            console.error(error);
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    };
+    getLeaveConflicts = async (req, res) => {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+            const employeeId = String(req.params.employeeId);
+            const conflicts = await this.service.getLeaveConflicts(employeeId, {
+                date_from: req.query.date_from,
+                date_to: req.query.date_to
+            });
+            return res.json({
+                success: true,
+                message: "Conflicting appointments fetched successfully",
+                data: conflicts
+            });
+        }
+        catch (error) {
             return res.status(400).json({
                 success: false,
                 message: error.message

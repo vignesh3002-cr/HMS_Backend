@@ -90,3 +90,55 @@ export const getDoctorLeaveValidation = [
         .isInt({ min: 1, max: 100 })
 
 ];
+
+export const queueRescheduleValidation = [
+
+    param("employeeId")
+        .notEmpty()
+        .withMessage("employeeId is required"),
+
+    body("date_from")
+        .notEmpty()
+        .withMessage("date_from is required")
+        .isISO8601()
+        .withMessage("date_from must be a valid date (YYYY-MM-DD)"),
+
+    body("date_to")
+        .notEmpty()
+        .withMessage("date_to is required")
+        .isISO8601()
+        .withMessage("date_to must be a valid date (YYYY-MM-DD)"),
+
+    body("reason")
+        .optional()
+        .isLength({ max: LEAVE_REASON_MAX_LENGTH })
+        .withMessage(
+            `Reason cannot exceed ${LEAVE_REASON_MAX_LENGTH} characters`
+        ),
+
+    body("priority")
+        .optional()
+        .isIn(["LOW", "NORMAL", "HIGH"])
+        .withMessage("priority must be LOW, NORMAL or HIGH")
+
+];
+
+export const getLeaveConflictsValidation = [
+
+    param("employeeId")
+        .notEmpty()
+        .withMessage("employeeId is required"),
+
+    query("date_from")
+        .notEmpty()
+        .withMessage("date_from is required")
+        .isISO8601()
+        .withMessage("date_from must be a valid date (YYYY-MM-DD)"),
+
+    query("date_to")
+        .notEmpty()
+        .withMessage("date_to is required")
+        .isISO8601()
+        .withMessage("date_to must be a valid date (YYYY-MM-DD)")
+
+];

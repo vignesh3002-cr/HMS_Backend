@@ -3,6 +3,7 @@ import { EncounterRepository } from "./encounter.repository";
 import { CreateEncounterDTO, UpdateEncounterDTO, GetEncountersQuery } from "./encounter.types";
 import { ENCOUNTER_STATUS, ENCOUNTER_TYPE_DEFAULT } from "./encounter.constants";
 import { APPOINTMENT_STATUS, TERMINAL_APPOINTMENT_STATUSES } from "../appointment/appointment.constants";
+import { generateId } from "../../utils/idGenerator";
 
 const repository = new EncounterRepository();
 
@@ -109,6 +110,24 @@ export class EncounterService {
                     APPOINTMENT_STATUS.IN_CONSULTATION
                 );
 
+                /*
+                 * In-app notification for the doctor whose
+                 * patient just checked in.
+                 */
+                await tx.appointment_notification.create({
+                    data: {
+                        notification_id: await generateId(
+                            tx,
+                            "NOTIFICATION"
+                        ),
+                        appointment_id: appointment.appointment_id,
+                        channel: "IN_APP",
+                        notification_type: "CHECKIN",
+                        recipient: doctor.employee_id!,
+                        status: "UNREAD"
+                    }
+                });
+
                 return encounter;
 
             });
@@ -131,6 +150,12 @@ export class EncounterService {
     async getEncounters(query: GetEncountersQuery) {
 
         return repository.getEncounters(query);
+
+    }
+
+    async getCheckedInPatientsToday(employeeId?: string, branchId?: string) {
+
+        return repository.getCheckedInPatientsToday(employeeId, branchId);
 
     }
 

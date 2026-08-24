@@ -517,8 +517,8 @@ export class OncologyService {
             ...(dto.biopsy_date !== undefined ? { biopsy_date: dto.biopsy_date ? new Date(dto.biopsy_date) : null } : {}),
             ...(dto.consulting_oncologist !== undefined && dto.consulting_oncologist !== null ? { consulting_oncologist: dto.consulting_oncologist } : {}),
             ...(subtypeChanging ? {
-                cancer_type_id: cancerType.cancer_type_id!,
-                cancer_subtype_id: subtype.subtype_id!,
+                cancer_type_id: dto.cancer_type_id ?? existing.cancer_type_id,
+                cancer_subtype_id: subtype.subtype_id,
                 icd10_code: cascade.icd10_code,
                 icd_o3_topo: cascade.icd_o3_topo,
                 icd_o3_morpho: cascade.icd_o3_morpho,

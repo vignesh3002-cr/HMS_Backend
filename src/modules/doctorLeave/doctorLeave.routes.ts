@@ -4,7 +4,9 @@ import {
     applyDoctorLeaveValidation,
     approveDoctorLeaveValidation,
     rejectDoctorLeaveValidation,
-    getDoctorLeaveValidation
+    getDoctorLeaveValidation,
+    queueRescheduleValidation,
+    getLeaveConflictsValidation
 } from "./doctorLeave.validation";
 import { authenticate } from "../auth/auth.middleware";
 
@@ -17,6 +19,22 @@ router.post(
     authenticate,
     applyDoctorLeaveValidation,
     controller.applyLeave
+);
+
+// Queue a doctor's appointments (inside a date range) for reschedule
+router.post(
+    "/:employeeId/queue-reschedule",
+    authenticate,
+    queueRescheduleValidation,
+    controller.queueRescheduleForLeave
+);
+
+// Active appointments inside a leave date range (conflict pre-check)
+router.get(
+    "/:employeeId/conflicts",
+    authenticate,
+    getLeaveConflictsValidation,
+    controller.getLeaveConflicts
 );
 
 // Approve Leave

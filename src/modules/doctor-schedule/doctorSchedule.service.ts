@@ -4,6 +4,8 @@ import prisma from "../../config/prisma";
 import {
     CreateDoctorScheduleChangePayload,
     UpdateDoctorScheduleChangePayload,
+    ToggleRecurringSchedulePayload,
+    CreateRecurringSlotPayload,
 } from "./doctor-schedule.types";
 
 export class DoctorScheduleService {
@@ -1139,6 +1141,502 @@ export class DoctorScheduleService {
                 .padStart(2, "0");
 
         return `${hours}:${minutes}`;
+    }
+
+    /**
+     * Get all recurring weekly schedules for a doctor.
+     *
+     * Includes inactive rows so the frontend can tell
+     * whether a day was toggled off versus never having
+     * a schedule at all.
+     */
+    async getRecurringSchedules(
+        employee_id: string,
+        branch_id?: string
+    ) {
+        if (!employee_id) {
+            throw new Error(
+                "employee_id is required"
+            );
+        }
+
+        return prisma.doctor_schedule.findMany({
+            where: {
+                employee_id,
+                ...(branch_id
+                    ? { branch_id }
+                    : {}),
+            },
+            orderBy: {
+                day_of_week: "asc",
+            },
+        });
+    }
+
+    /**
+     * PATCH
+     * Toggle the recurring weekly schedule for a
+     * doctor + branch + day_of_week on/off.
+     *
+     * This edits the real weekly template
+     * (doctor_schedule.is_active), so the change is
+     * visible to every consumer of the schedule, not
+     * just this page, and it applies for every future
+     * week until toggled back on.
+     */
+    async toggleRecurringDay(
+        payload: ToggleRecurringSchedulePayload
+    ) {
+        const {
+            employee_id,
+            branch_id,
+            day_of_week,
+            is_active,
+        } = payload;
+
+        if (!employee_id) {
+            throw new Error(
+                "employee_id is required"
+            );
+        }
+
+        if (!branch_id) {
+            throw new Error(
+                "branch_id is required"
+            );
+        }
+
+        if (!day_of_week) {
+            throw new Error(
+                "day_of_week is required"
+            );
+        }
+
+        if (
+            typeof is_active !== "boolean"
+        ) {
+            throw new Error(
+                "is_active is required"
+            );
+        }
+
+        const normalizedDay =
+            day_of_week.trim().toUpperCase();
+
+        const validDays = [
+            "MONDAY",
+            "TUESDAY",
+            "WEDNESDAY",
+            "THURSDAY",
+            "FRIDAY",
+            "SATURDAY",
+            "SUNDAY",
+        ];
+
+        if (
+            !validDays.includes(normalizedDay)
+        ) {
+            throw new Error(
+                "Invalid day_of_week"
+            );
+        }
+
+        // Validate doctor
+        const employee =
+            await prisma.employees.findUnique({
+                where: {
+                    employee_id,
+                },
+
+                include: {
+                    user_table: {
+                        select: {
+                            role_type: true,
+                            user_status: true,
+                        },
+                    },
+                },
+            });
+
+        if (!employee) {
+            throw new Error(
+                "Doctor not found"
+            );
+        }
+
+        if (
+            employee.user_table?.role_type &&
+            employee.user_table.role_type !== "DOCTOR"
+        ) {
+            throw new Error(
+                "Selected employee is not a doctor"
+            );
+        }
+
+        if (
+            employee.emp_status !== true
+        ) {
+            throw new Error(
+                "Doctor is inactive. Please contact the administrator."
+            );
+        }
+
+        // Validate branch
+        const branch =
+            await prisma.branch.findUnique({
+                where: {
+                    branch_id,
+                },
+            });
+
+        if (!branch) {
+            throw new Error(
+                "Branch not found"
+            );
+        }
+
+        if (
+            branch.branch_status !== "Active"
+        ) {
+            throw new Error(
+                "Selected branch is inactive"
+            );
+        }
+
+        // Validate doctor branch mapping
+        const mapping =
+            await prisma.user_branch_mapping.findFirst({
+                where: {
+                    employee_id,
+                    branch_id,
+                    status: 1,
+                },
+            });
+
+        if (!mapping) {
+            throw new Error(
+                "Doctor is not assigned to the selected branch"
+            );
+        }
+
+        const result =
+            await prisma.doctor_schedule.updateMany({
+                where: {
+                    employee_id,
+                    branch_id,
+                    day_of_week: {
+                        equals: normalizedDay,
+                        mode: "insensitive",
+                    },
+                },
+                data: {
+                    is_active,
+                },
+            });
+
+        return {
+            updated_count: result.count,
+            is_active,
+        };
+    }
+
+    /**
+     * POST /recurring/slot
+     * Add a single recurring slot to the doctor_schedule template.
+     *
+     * The row is keyed by employee + branch + day_of_week and stored with
+     * is_active = true, so it applies to every upcoming occurrence of that
+     * weekday -- NOT a date-specific doctor_schedule_change.
+     */
+    async createRecurringSlot(
+        payload: CreateRecurringSlotPayload
+    ) {
+        const {
+            employee_id,
+            branch_id,
+            day_of_week,
+            shift_name,
+            start_time,
+            end_time,
+        } = payload;
+
+        if (!employee_id) {
+            throw new Error(
+                "employee_id is required"
+            );
+        }
+
+        if (!branch_id) {
+            throw new Error(
+                "branch_id is required"
+            );
+        }
+
+        if (!day_of_week) {
+            throw new Error(
+                "day_of_week is required"
+            );
+        }
+
+        if (!start_time || !end_time) {
+            throw new Error(
+                "start_time and end_time are required"
+            );
+        }
+
+        // Validate doctor
+        const employee =
+            await prisma.employees.findUnique({
+                where: {
+                    employee_id,
+                },
+
+                include: {
+                    user_table: {
+                        select: {
+                            role_type: true,
+                            user_status: true,
+                        },
+                    },
+                },
+            });
+
+        if (!employee) {
+            throw new Error(
+                "Doctor not found"
+            );
+        }
+
+        if (
+            employee.user_table?.role_type &&
+            employee.user_table.role_type !== "DOCTOR"
+        ) {
+            throw new Error(
+                "Selected employee is not a doctor"
+            );
+        }
+
+        if (
+            employee.emp_status !== true
+        ) {
+            throw new Error(
+                "Doctor is inactive. Please contact the administrator."
+            );
+        }
+
+        // Validate branch
+        const branch =
+            await prisma.branch.findUnique({
+                where: {
+                    branch_id,
+                },
+            });
+
+        if (!branch) {
+            throw new Error(
+                "Branch not found"
+            );
+        }
+
+        if (
+            branch.branch_status !== "Active"
+        ) {
+            throw new Error(
+                "Selected branch is inactive"
+            );
+        }
+
+        // Validate doctor branch mapping
+        const mapping =
+            await prisma.user_branch_mapping.findFirst({
+                where: {
+                    employee_id,
+                    branch_id,
+                    status: 1,
+                },
+            });
+
+        if (!mapping) {
+            throw new Error(
+                "Doctor is not assigned to the selected branch"
+            );
+        }
+
+        // Validate day_of_week
+        const normalizedDay =
+            day_of_week.trim().toUpperCase();
+
+        const validDays = [
+            "MONDAY",
+            "TUESDAY",
+            "WEDNESDAY",
+            "THURSDAY",
+            "FRIDAY",
+            "SATURDAY",
+            "SUNDAY",
+        ];
+
+        if (
+            !validDays.includes(normalizedDay)
+        ) {
+            throw new Error(
+                "Invalid day_of_week"
+            );
+        }
+
+        // Validate times
+        this.validateTimeString(
+            start_time,
+            "start_time"
+        );
+
+        this.validateTimeString(
+            end_time,
+            "end_time"
+        );
+
+        if (
+            this.timeToMinutes(start_time) >=
+            this.timeToMinutes(end_time)
+        ) {
+            throw new Error(
+                "start_time must be earlier than end_time"
+            );
+        }
+
+        // Reject overlap with existing active slots on the same day
+        const existingActive =
+            await prisma.doctor_schedule.findMany({
+                where: {
+                    employee_id,
+                    branch_id,
+                    day_of_week: {
+                        equals: normalizedDay,
+                        mode: "insensitive",
+                    },
+                    is_active: true,
+                },
+
+                select: {
+                    start_time: true,
+                    end_time: true,
+                },
+            });
+
+        const newStart =
+            this.timeToMinutes(start_time);
+
+        const newEnd =
+            this.timeToMinutes(end_time);
+
+        for (const existing of existingActive) {
+            if (
+                !existing.start_time ||
+                !existing.end_time
+            ) {
+                continue;
+            }
+
+            const existingStart =
+                this.dateToMinutes(
+                    existing.start_time
+                );
+
+            const existingEnd =
+                this.dateToMinutes(
+                    existing.end_time
+                );
+
+            const overlaps =
+                newStart < existingEnd &&
+                newEnd > existingStart;
+
+            if (overlaps) {
+                throw new Error(
+                    "The new slot overlaps with an existing active slot on the same day"
+                );
+            }
+        }
+
+        // Create the recurring slot
+        return prisma.doctor_schedule.create({
+            data: {
+                employee_id,
+                branch_id,
+                day_of_week: normalizedDay,
+                shift_name:
+                    shift_name?.trim() || null,
+                start_time:
+                    this.timeStringToDate(
+                        start_time
+                    ),
+                end_time:
+                    this.timeStringToDate(
+                        end_time
+                    ),
+                consultation_minutes: 20,
+                is_active: true,
+                effective_from: new Date(),
+            },
+        });
+    }
+
+    /**
+     * DELETE /recurring/slot
+     * Soft-close a single recurring slot in the
+     * doctor_schedule template.
+     */
+    async deleteRecurringSlot(
+        schedule_id: bigint,
+        employee_id: string,
+        actingUserId: string
+    ) {
+        if (!employee_id) {
+            throw new Error(
+                "employee_id is required"
+            );
+        }
+
+        const schedule =
+            await prisma.doctor_schedule.findUnique({
+                where: {
+                    schedule_id,
+                },
+            });
+
+        if (!schedule) {
+            throw new Error(
+                "Schedule not found"
+            );
+        }
+
+        if (
+            schedule.employee_id !== employee_id
+        ) {
+            throw new Error(
+                "Schedule does not belong to the specified employee"
+            );
+        }
+
+        if (
+            schedule.is_active === false
+        ) {
+            throw new Error(
+                "Schedule is already inactive"
+            );
+        }
+
+        return prisma.doctor_schedule.update({
+            where: {
+                schedule_id,
+            },
+
+            data: {
+                is_active: false,
+                effective_to: new Date(),
+                deleted_by: actingUserId,
+            },
+        });
     }
 }
 
