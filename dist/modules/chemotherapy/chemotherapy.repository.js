@@ -124,7 +124,10 @@ class ChemotherapyRepository {
         });
     }
     planInclude = {
-        chemotherapy_plan_items: { where: { active_status: 1 } },
+        chemotherapy_plan_items: {
+            where: { active_status: 1 },
+            include: { medicine_master: true }
+        },
         chemotherapy_cycle: { where: { active_status: 1 }, orderBy: { cycle_number: "asc" } },
         patient_bio_data: {
             select: { patient_id: true, patient_first_name: true, patient_last_name: true }

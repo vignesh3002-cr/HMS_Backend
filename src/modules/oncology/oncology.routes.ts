@@ -2,7 +2,6 @@ import { Router } from "express";
 import { OncologyController } from "./oncology.controller";
 import { authenticate } from "../auth/auth.middleware";
 import { authorize } from "../../middleware/authorize";
-import { branchScope } from "../../middleware/branchScope";
 import {
     getCancerSubtypesValidation,
     getStagingReferenceValidation,
@@ -77,7 +76,6 @@ router.get(
     "/staging-details",
     authenticate,
     authorize("oncology.diagnosis.read"),
-    branchScope,
     listStagingDetailsValidation,
     controller.listStagingDetails.bind(controller)
 );

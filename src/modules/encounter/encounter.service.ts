@@ -67,11 +67,27 @@ export class EncounterService {
             throw new Error("Doctor is not assigned to the appointment's branch");
         }
 
-        if (!appointment.schedule_id) {
+        // Check-in flips the appointment status BEFORE the encounter is
+        // created (two-step flow). If encounter creation then fails - e.g.
+        // because the linked schedule was deactivated in the meantime -
+        // the appointment stays stuck in CHECKED_IN/IN_CONSULTATION with
+        // no encounter and the consultation page reports "No active
+        // encounter found". Appointments that already prove a completed
+        // check-in may therefore have their encounter created; pre-check-in
+        // bookings tied to an inactive schedule are still rejected.
+        const alreadyCheckedIn = ([
+            APPOINTMENT_STATUS.CHECKED_IN,
+            APPOINTMENT_STATUS.IN_CONSULTATION
+        ] as string[]).includes(appointment.status ?? "");
+
+        if (!appointment.schedule_id && !alreadyCheckedIn) {
             throw new Error("Appointment has no associated doctor schedule");
         }
 
-        if (!appointment.doctor_schedule || !appointment.doctor_schedule.is_active) {
+        if (
+            !alreadyCheckedIn &&
+            (!appointment.doctor_schedule || !appointment.doctor_schedule.is_active)
+        ) {
             throw new Error("Doctor schedule is not active");
         }
 
@@ -97,7 +113,7 @@ export class EncounterService {
                     department_id: appointment.department_id,
                     appointment_id: appointment.appointment_id,
                     employee_id: doctor.employee_id!,
-                    schedule_id: appointment.schedule_id!,
+                    schedule_id: appointment.schedule_id ?? undefined,
                     encounter_type: ENCOUNTER_TYPE_DEFAULT,
                     status: ENCOUNTER_STATUS.OPEN
 

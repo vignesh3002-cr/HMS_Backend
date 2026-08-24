@@ -2,7 +2,6 @@ import { Router } from "express";
 import { ChemotherapyController } from "./chemotherapy.controller";
 import { authenticate } from "../auth/auth.middleware";
 import { authorize } from "../../middleware/authorize";
-import { branchScope } from "../../middleware/branchScope";
 import {
     previewPlanValidation,
     createPlanValidation,
@@ -106,7 +105,6 @@ router.get(
     "/plans",
     authenticate,
     authorize("chemo.plan.read"),
-    branchScope,
     listPlansValidation,
     controller.listPlans.bind(controller)
 );
