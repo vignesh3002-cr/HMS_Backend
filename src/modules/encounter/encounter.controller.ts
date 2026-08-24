@@ -66,6 +66,7 @@ export class EncounterController {
                 patientId: req.query.patientId as string,
                 status: req.query.status as string,
                 encounterType: req.query.encounterType as string,
+                appointmentId: req.query.appointmentId as string,
                 date: req.query.date as string,
                 dateFrom: req.query.dateFrom as string,
                 dateTo: req.query.dateTo as string,
