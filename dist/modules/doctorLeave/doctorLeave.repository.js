@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DoctorLeaveRepository = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const idGenerator_1 = require("../../utils/idGenerator");
+const appointment_constants_1 = require("../appointment/appointment.constants");
 class DoctorLeaveRepository {
     async generateLeaveId(tx) {
         return (0, idGenerator_1.generateId)(tx, "DOCTOR_LEAVE");
@@ -93,6 +94,53 @@ class DoctorLeaveRepository {
             totalPages: Math.ceil(total / limit),
             leaves
         };
+    }
+    async findActiveAppointmentsInRange(tx, employeeId, dateFrom, dateTo) {
+        return tx.appointment_history.findMany({
+            where: {
+                employee_id: employeeId,
+                appointment_date: {
+                    gte: new Date(`${dateFrom}T00:00:00.000Z`),
+                    lte: new Date(`${dateTo}T23:59:59.999Z`)
+                },
+                status: {
+                    notIn: [
+                        ...appointment_constants_1.TERMINAL_APPOINTMENT_STATUSES,
+                        appointment_constants_1.APPOINTMENT_STATUS.RESCHEDULE_REQUIRED
+                    ]
+                }
+            },
+            select: {
+                appointment_id: true,
+                patient_id: true,
+                branch_id: true,
+                department_id: true,
+                schedule_id: true,
+                appointment_date: true,
+                appointment_time: true,
+                status: true,
+                patient_bio_data: {
+                    select: {
+                        patient_first_name: true,
+                        patient_middle_name: true,
+                        patient_last_name: true
+                    }
+                }
+            },
+            orderBy: [
+                { appointment_date: "asc" },
+                { appointment_time: "asc" }
+            ]
+        });
+    }
+    async markAppointmentRescheduleRequired(tx, appointmentId) {
+        return tx.appointment_history.update({
+            where: { appointment_id: appointmentId },
+            data: { status: appointment_constants_1.APPOINTMENT_STATUS.RESCHEDULE_REQUIRED }
+        });
+    }
+    async createRescheduleQueueEntry(tx, data) {
+        return tx.appointment_reschedule_queue.create({ data });
     }
 }
 exports.DoctorLeaveRepository = DoctorLeaveRepository;

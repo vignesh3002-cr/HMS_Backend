@@ -64,9 +64,9 @@ export class EncounterController {
                 branchId: req.query.branchId as string,
                 doctorId: req.query.doctorId as string,
                 patientId: req.query.patientId as string,
+                appointmentId: req.query.appointmentId as string,
                 status: req.query.status as string,
                 encounterType: req.query.encounterType as string,
-                appointmentId: req.query.appointmentId as string,
                 date: req.query.date as string,
                 dateFrom: req.query.dateFrom as string,
                 dateTo: req.query.dateTo as string,
@@ -82,6 +82,32 @@ export class EncounterController {
                 success: true,
                 message: "Encounters fetched successfully",
                 data: encounters
+            });
+
+        } catch (error: any) {
+
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async getCheckedInPatientsToday(req: Request, res: Response) {
+
+        try {
+
+            const totalPatients = await service.getCheckedInPatientsToday(
+                req.query.employeeId as string,
+                req.query.branchId as string
+            );
+
+            return res.json({
+                success: true,
+                message: "Patients checked in today fetched successfully",
+                data: { totalPatients }
             });
 
         } catch (error: any) {
@@ -112,6 +138,37 @@ export class EncounterController {
         } catch (error: any) {
 
             return res.status(404).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async getEncounterByAppointment(req: Request, res: Response) {
+
+        try {
+
+            const user = (req as any).user;
+
+            const encounter = await service.getEncounterByAppointmentId(
+                req.params.appointmentId as string,
+                user?.user_id,
+                user?.role
+            );
+
+            return res.json({
+                success: true,
+                message: "Encounter fetched successfully",
+                data: encounter
+            });
+
+        } catch (error: any) {
+
+            const status = error?.status === 404 || error?.status === 403 ? error.status : 500;
+
+            return res.status(status).json({
                 success: false,
                 message: error.message
             });

@@ -3,6 +3,8 @@ import { EncounterRepository } from "./encounter.repository";
 import { CreateEncounterDTO, UpdateEncounterDTO, GetEncountersQuery } from "./encounter.types";
 import { ENCOUNTER_STATUS, ENCOUNTER_TYPE_DEFAULT } from "./encounter.constants";
 import { APPOINTMENT_STATUS, TERMINAL_APPOINTMENT_STATUSES } from "../appointment/appointment.constants";
+import { generateId } from "../../utils/idGenerator";
+import { TOP_LEVEL_ADMIN_ROLES } from "../../permissions/roles";
 
 const repository = new EncounterRepository();
 
@@ -98,7 +100,7 @@ export class EncounterService {
                     appointment_id: appointment.appointment_id,
                     employee_id: doctor.employee_id!,
                     schedule_id: appointment.schedule_id!,
-                    encounter_type: ENCOUNTER_TYPE_DEFAULT,
+                    encounter_type: appointment.Patient_type!,
                     status: ENCOUNTER_STATUS.OPEN
 
                 });
@@ -108,6 +110,24 @@ export class EncounterService {
                     appointment.appointment_id,
                     APPOINTMENT_STATUS.IN_CONSULTATION
                 );
+
+                /*
+                 * In-app notification for the doctor whose
+                 * patient just checked in.
+                 */
+                await tx.appointment_notification.create({
+                    data: {
+                        notification_id: await generateId(
+                            tx,
+                            "NOTIFICATION"
+                        ),
+                        appointment_id: appointment.appointment_id,
+                        channel: "IN_APP",
+                        notification_type: "CHECKIN",
+                        recipient: doctor.employee_id!,
+                        status: "UNREAD"
+                    }
+                });
 
                 return encounter;
 
@@ -134,6 +154,12 @@ export class EncounterService {
 
     }
 
+    async getCheckedInPatientsToday(employeeId?: string, branchId?: string) {
+
+        return repository.getCheckedInPatientsToday(employeeId, branchId);
+
+    }
+
     async getEncounterByNumber(encounterNo: string) {
 
         const encounter = await repository.getEncounterByNumber(encounterNo);
@@ -143,6 +169,57 @@ export class EncounterService {
         }
 
         return encounter;
+
+    }
+
+    /*
+     * Selection-independent lookup for clinical flows (e.g. doctor
+     * patient-consultation). Deliberately NOT behind branchScope: a doctor
+     * mapped to multiple branches with no active selection would get 403 on
+     * every scoped list query, even though the encounter itself belongs to
+     * one of their branches. Isolation is preserved by checking the caller's
+     * ACTIVE branch mappings against the encounter's own branch instead of
+     * trusting whatever branch the UI happens to have selected.
+     */
+    async getEncounterByAppointmentId(appointmentId: string, userId: string, role: string) {
+
+        const encounter = await repository.findEncounterByAppointmentId(appointmentId);
+
+        if (!encounter) {
+            const notFound: any = new Error("Encounter not found for this appointment");
+            notFound.status = 404;
+            throw notFound;
+        }
+
+        const isTopLevelAdmin = TOP_LEVEL_ADMIN_ROLES.some(
+            (r) => r.toLowerCase() === String(role ?? "").toLowerCase()
+        );
+
+        if (!isTopLevelAdmin) {
+
+            const mappings = await repository.findActiveBranchMappingsForUser(userId);
+
+            const hasAccess = mappings.some(
+                (m) => String(m.branch_id) === String(encounter.branch_id)
+            );
+
+            if (!hasAccess) {
+                const forbidden: any = new Error("Forbidden. You don't have access to this branch.");
+                forbidden.status = 403;
+                throw forbidden;
+            }
+
+        }
+
+        const details = await repository.getEncounterByNumber(encounter.encounter_no);
+
+        if (!details) {
+            const notFound: any = new Error("Encounter not found");
+            notFound.status = 404;
+            throw notFound;
+        }
+
+        return details;
 
     }
 

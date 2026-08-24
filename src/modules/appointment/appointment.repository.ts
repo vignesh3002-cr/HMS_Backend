@@ -12,7 +12,10 @@ const appointmentDetailInclude = {
             patient_middle_name: true,
             patient_last_name: true,
             patient_gender: true,
-            patient_primary_mobile: true
+            patient_primary_mobile: true,
+            patient_dob: true,
+            patient_age: true,
+            patient_blood_group: true
         }
     },
 
@@ -176,6 +179,27 @@ export class AppointmentRepository {
                 status: { notIn: NON_BLOCKING_APPOINTMENT_STATUSES }
             }
         });
+
+    }
+
+    // Distinct patients who have booked at least one appointment with this
+    // doctor (optionally scoped to a branch). groupBy on patient_id collapses
+    // repeat visits so each patient is counted only once.
+    async countDistinctPatientsForEmployee(
+        employeeId: string,
+        branchId?: string | null
+    ) {
+
+        const groups = await prisma.appointment_history.groupBy({
+            by: ["patient_id"],
+            where: {
+                employee_id: employeeId,
+                ...(branchId ? { branch_id: branchId } : {})
+            },
+            _count: { patient_id: true }
+        });
+
+        return groups.length;
 
     }
 

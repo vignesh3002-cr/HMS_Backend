@@ -29,6 +29,7 @@ import labOrderItemRoutes from "./modules/lab-order-item/lab-order-item.routes";
 import qualificationMasterRoutes from "./modules/qualification-master/qualification-master.routes";
 import diagnosisRoutes from "./modules/diagnosis/diagnosis.routes";
 import clinicalDetailsRoutes from "./modules/clinical-details/clinical-details.routes";
+import notificationRoutes from "./modules/notification/notification.routes";
 
 import { hashPassword } from "./utils/bcrypt";
 
@@ -132,9 +133,6 @@ app.use("/api/encounters", encounterRoutes);
 app.use("/api/clinical-details", clinicalDetailsRoutes);
 app.use("/api/permissions", permissionRoutes);
 app.use("/api/roles", roleRoutes);
-app.use("/api/prescriptions", prescriptionRoutes);
-app.use("/api/chemotherapy", chemotherapyRoutes);
-app.use("/api/lab-order-item", labOrderItemRoutes);
 app.use("/api/oncology", oncologyRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/export", exportRoutes);
@@ -144,16 +142,14 @@ app.use("/api/doctors", doctorTransferRoutes);
 // Doctor schedule ADD / OVERRIDE / CANCEL APIs
 app.use("/api/doctor-schedule", doctorScheduleRoutes);
 
-// Doctor leave apply / approve / reject / list APIs
+// Doctor leave APPLY / APPROVE / REJECT / LIST APIs
 app.use("/api/doctor-leave", doctorLeaveRoutes);
 
+// In-app notifications (doctor dashboard bell)
+app.use("/api/notifications", notificationRoutes);
+
 app.use("/api/qualification-master", qualificationMasterRoutes);
-app.use("/api/appointments", appointmentRoutes);
-app.use("/api/encounters", encounterRoutes);
-app.use("/api/prescriptions", prescriptionRoutes);
-app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/diagnosis", diagnosisRoutes);
-app.use("/api/doctors", doctorTransferRoutes);
 
 app.use("/api/hashpassword", async (req, res) => {
   const { password } = req.body;

@@ -79,6 +79,37 @@ export class AppointmentController {
         }
     }
 
+    async getDistinctPatientCount(req: Request, res: Response) {
+        try {
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+
+            const summary = await service.getDistinctPatientCount(
+                req.query.employeeId as string,
+                (req.query.branchId as string) || null
+            );
+
+            return res.json({
+                success: true,
+                message: "Distinct patient count fetched successfully",
+                data: summary
+            });
+
+        } catch (error: any) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+
     async getAvailableSlots(req: Request, res: Response) {
         try {
             const errors = validationResult(req);

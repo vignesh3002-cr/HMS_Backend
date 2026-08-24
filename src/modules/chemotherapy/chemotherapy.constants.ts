@@ -88,5 +88,28 @@ export const ID_ENTITY = {
     LAB_REVIEW: "CHEMOTHERAPY_LAB_REVIEW",
     FOLLOWUP: "CHEMOTHERAPY_FOLLOWUP",
     REGIMEN_PROTOCOL: "REGIMEN_PROTOCOL",
-    REGIMEN_PROTOCOL_ITEM: "REGIMEN_PROTOCOL_ITEM"
+    REGIMEN_PROTOCOL_ITEM: "REGIMEN_PROTOCOL_ITEM",
+    REGIMEN_PROTOCOL_DAY: "REGIMEN_PROTOCOL_DAY",
+    REGIMEN_PROTOCOL_DILUTION: "REGIMEN_PROTOCOL_DILUTION"
+} as const;
+
+// Generic protocols are shared reference templates available to every
+// organization. Personalizing one creates an independent organization-owned
+// copy (protocol_type = PERSONALIZED, organization_id set) that the owning
+// organization may customize without ever touching the generic source.
+export const PROTOCOL_TYPE = {
+    GENERIC: "GENERIC",
+    PERSONALIZED: "PERSONALIZED"
+} as const;
+
+export type ProtocolType = typeof PROTOCOL_TYPE[keyof typeof PROTOCOL_TYPE];
+
+// chemotherapy_regimen_protocol.active_status follows the same 1/0 smallint
+// convention used everywhere else: 1 = active/published (selectable for
+// treatment plans), 0 = inactive/draft/deactivated (not selectable).
+// A freshly personalized protocol is created with active_status = 0 and only
+// becomes selectable after an explicit activate/publish operation.
+export const PROTOCOL_ACTIVE_STATUS = {
+    ACTIVE: 1,
+    INACTIVE: 0
 } as const;

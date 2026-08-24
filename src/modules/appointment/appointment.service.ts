@@ -21,6 +21,8 @@ import {
     formatDateOnly,
     getWeekRange
 } from "./appointment.utils";
+import { generateId } from "../../utils/idGenerator";
+import { LEAVE_STATUS } from "../doctorLeave/doctorLeave.constants";
 
 const repository = new AppointmentRepository();
 
@@ -537,6 +539,29 @@ export class AppointmentService {
      * Validates doctor, branch, department and
      * effective schedule.
      */
+    /*
+     * PENDING or APPROVED leave covering the given date.
+     * Both block new bookings; REJECTED leaves never do.
+     */
+    private async getBlockingLeaveForDate(
+        employeeId: string,
+        date: Date
+    ) {
+        return prisma.doctor_leave.findFirst({
+            where: {
+                employee_id: employeeId,
+                status: {
+                    in: [
+                        LEAVE_STATUS.PENDING,
+                        LEAVE_STATUS.APPROVED
+                    ]
+                },
+                leave_start_date: { lte: date },
+                leave_end_date: { gte: date }
+            }
+        });
+    }
+
     private async validateBookingContext(
         employeeId: string,
         branchId: string,
@@ -618,6 +643,22 @@ export class AppointmentService {
                     "Department not found"
                 );
             }
+        }
+
+        /*
+         * PENDING/APPROVED leaves block booking for the
+         * whole date range they cover.
+         */
+        const blockingLeave =
+            await this.getBlockingLeaveForDate(
+                employeeId,
+                appointmentDate
+            );
+
+        if (blockingLeave) {
+            throw new Error(
+                "Doctor is on leave on the selected date"
+            );
         }
 
         const dayOfWeek =
@@ -862,76 +903,95 @@ return this.transformAppointmentFields(
                             appointmentDate
                         );
 
-                    return repository.createAppointment(
-                        tx,
-                        {
-                            appointment_id:
-                                appointmentId,
+                    const appointment =
+                        await repository.createAppointment(
+                            tx,
+                            {
+                                appointment_id:
+                                    appointmentId,
 
-                            patient_id:
-                                data.patient_id,
+                                patient_id:
+                                    data.patient_id,
 
-                            employee_id:
-                                data.employee_id,
+                                employee_id:
+                                    data.employee_id,
 
-                            branch_id:
-                                data.branch_id,
+                                branch_id:
+                                    data.branch_id,
 
-                            department_id:
-                                department?.department_id,
+                                department_id:
+                                    department?.department_id,
 
-                            schedule_id:
-                                schedule.schedule_id,
+                                schedule_id:
+                                    schedule.schedule_id,
 
-                            appointment_date:
-                                appointmentDate,
+                                appointment_date:
+                                    appointmentDate,
 
-                            appointment_time:
-                                appointmentTime,
+                                appointment_time:
+                                    appointmentTime,
 
-                            token_number:
-                                tokenNumber,
+                                token_number:
+                                    tokenNumber,
 
-                            status:
-                                APPOINTMENT_STATUS.SCHEDULED,
+                                status:
+                                    APPOINTMENT_STATUS.SCHEDULED,
 
-                            reason_for_visit:
-                                data.reason_for_visit,
+                                reason_for_visit:
+                                    data.reason_for_visit,
 
-                            referred_by:
-                                data.referred_by,
+                                referred_by:
+                                    data.referred_by,
 
-                            booking_source:
-                                data.booking_source ??
-                                "STAFF",
+                                booking_source:
+                                    data.booking_source ??
+                                    "STAFF",
 
-                            doctor_name:
-                                doctorName,
+                                doctor_name:
+                                    doctorName,
 
-                            assigned_doctor:
-                                doctorName,
+                                assigned_doctor:
+                                    doctorName,
 
-                            department:
-                                department?.department_name,
+                                department:
+                                    department?.department_name,
 
-                            created_by:
-                                createdBy,
+                                created_by:
+                                    createdBy,
 
-                            Patient_type:
-                                data.patient_type,
+                                Patient_type:
+                                    data.patient_type,
 
-                            Patient_visit_type:
-                                data.patient_visit_type
+                                Patient_visit_type:
+                                    data.patient_visit_type
+                            }
+                        );
+
+                    /*
+                     * In-app notification for the booked doctor.
+                     * Written inside the same transaction so a
+                     * booking and its notification succeed or
+                     * fail together.
+                     */
+                    await tx.appointment_notification.create({
+                        data: {
+                            notification_id: await generateId(
+                                tx,
+                                "NOTIFICATION"
+                            ),
+                            appointment_id: appointmentId,
+                            channel: "IN_APP",
+                            notification_type: "BOOKING",
+                            recipient: data.employee_id,
+                            status: "UNREAD"
                         }
-                    );
+                    });
+
+                    return appointment;
                 }
             )
         );
     }
-
-    /**
-     * Transform Prisma capital-P fields to snake_case for frontend API.
-     */
 
     /**
      * Transform Prisma capital-P fields to snake_case for frontend API.
@@ -956,6 +1016,37 @@ return this.transformAppointmentFields(
             result.appointments = result.appointments.map((a: any) => this.transformAppointmentFields(a));
         }
         return result;
+    }
+
+    /**
+     * Counts distinct patients who booked appointments with a doctor
+     * (optionally scoped to one branch).
+     */
+    async getDistinctPatientCount(
+        employeeId: string,
+        branchId?: string | null
+    ) {
+
+        const employee =
+            await repository.findEmployee(employeeId);
+
+        if (!employee) {
+            throw new Error(
+                "Doctor not found"
+            );
+        }
+
+        const totalPatients =
+            await repository.countDistinctPatientsForEmployee(
+                employeeId,
+                branchId
+            );
+
+        return {
+            employeeId,
+            branchId: branchId ?? null,
+            totalPatients
+        };
     }
 
     /**
@@ -1359,6 +1450,34 @@ return this.transformAppointmentFields(
                 dateStr
             );
 
+        /*
+         * PENDING/APPROVED leaves wipe the whole day's
+         * slot list.
+         */
+        const blockingLeave =
+            await this.getBlockingLeaveForDate(
+                employeeId,
+                appointmentDate
+            );
+
+        if (blockingLeave) {
+            return {
+                date:
+                    dateStr,
+
+                day_of_week:
+                    toDayOfWeek(appointmentDate),
+
+                slots: [],
+
+                is_on_leave: true,
+
+                leave_reason:
+                    blockingLeave.leave_reason ??
+                    null
+            };
+        }
+
         const dayOfWeek =
             toDayOfWeek(
                 appointmentDate
@@ -1519,6 +1638,27 @@ return this.transformAppointmentFields(
             parseDateOnly(
                 dateStr
             );
+
+        /*
+         * PENDING/APPROVED leaves zero out the summary
+         * for the whole day.
+         */
+        const blockingLeave =
+            await this.getBlockingLeaveForDate(
+                employeeId,
+                appointmentDate
+            );
+
+        if (blockingLeave) {
+            return {
+                date: dateStr,
+                day_of_week:
+                    toDayOfWeek(appointmentDate),
+                total_slots: 0,
+                booked_count: 0,
+                is_on_leave: true
+            };
+        }
 
         const dayOfWeek =
             toDayOfWeek(
@@ -1731,6 +1871,40 @@ return this.transformAppointmentFields(
                 anchorDate
             );
 
+        /**
+         * PENDING/APPROVED leaves overlapping the week
+         * zero out the affected days.
+         */
+        const blockingLeaves =
+            await prisma.doctor_leave.findMany({
+                where: {
+                    employee_id:
+                        employeeId,
+
+                    status: {
+                        in: [
+                            LEAVE_STATUS.PENDING,
+                            LEAVE_STATUS.APPROVED
+                        ]
+                    },
+
+                    leave_start_date: {
+                        lte: end
+                    },
+
+                    leave_end_date: {
+                        gte: start
+                    }
+                }
+            });
+
+        const isLeaveDay = (day: Date) =>
+            blockingLeaves.some(
+                (leave) =>
+                    leave.leave_start_date <= day &&
+                    leave.leave_end_date >= day
+            );
+
         let totalSlots = 0;
 
         /**
@@ -1748,6 +1922,10 @@ return this.transformAppointmentFields(
             day.setUTCDate(
                 start.getUTCDate() + i
             );
+
+            if (isLeaveDay(day)) {
+                continue;
+            }
 
             const dayOfWeek =
                 toDayOfWeek(

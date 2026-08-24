@@ -32,6 +32,21 @@ router.get(
 );
 
 router.get(
+    "/stats/patients-today",
+    authenticate,
+    authorize("encounter.read"),
+    branchScope,
+    controller.getCheckedInPatientsToday.bind(controller)
+);
+
+router.get(
+    "/by-appointment/:appointmentId",
+    authenticate,
+    authorize("encounter.read"),
+    controller.getEncounterByAppointment.bind(controller)
+);
+
+router.get(
     "/:encounterNo",
     authenticate,
     authorize("encounter.read"),

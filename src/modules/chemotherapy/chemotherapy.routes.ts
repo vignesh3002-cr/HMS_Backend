@@ -25,7 +25,19 @@ import {
     getRegimenProtocolValidation,
     createRegimenProtocolValidation,
     updateRegimenProtocolValidation,
-    addRegimenProtocolItemValidation
+    addRegimenProtocolItemValidation,
+    personalizeRegimenProtocolValidation,
+    updatePersonalizedProtocolValidation,
+    addPersonalizedProtocolItemValidation,
+    updatePersonalizedProtocolItemValidation,
+    removePersonalizedProtocolItemValidation,
+    addPersonalizedProtocolDayValidation,
+    updatePersonalizedProtocolDayValidation,
+    removePersonalizedProtocolDayValidation,
+    addPersonalizedProtocolDilutionValidation,
+    updatePersonalizedProtocolDilutionValidation,
+    removePersonalizedProtocolDilutionValidation,
+    createPersonalizedProtocolVersionValidation
 } from "./chemotherapy.validation";
 
 const router = Router();
@@ -45,12 +57,144 @@ router.get(
     controller.listRegimenProtocols.bind(controller)
 );
 
+// ---------------- Personalized regimen protocols ----------------
+// CRITICAL: all of these MUST be registered before "/regimen-protocols/:protocolId"
+// (and the ":protocolId" PUT) below - otherwise "personalized" would be captured
+// by the ":protocolId" param and these routes would 404/mis-route.
+
+router.get(
+    "/regimen-protocols/personalized",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    controller.listPersonalizedProtocols.bind(controller)
+);
+
+router.get(
+    "/regimen-protocols/personalized/:protocolId",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    getRegimenProtocolValidation,
+    controller.getPersonalizedProtocol.bind(controller)
+);
+
+router.post(
+    "/regimen-protocols/:protocolId/personalize",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    personalizeRegimenProtocolValidation,
+    controller.personalizeProtocol.bind(controller)
+);
+
+router.put(
+    "/regimen-protocols/personalized/:protocolId",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    updatePersonalizedProtocolValidation,
+    controller.updatePersonalizedProtocol.bind(controller)
+);
+
+router.post(
+    "/regimen-protocols/personalized/:protocolId/items",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    addPersonalizedProtocolItemValidation,
+    controller.addPersonalizedProtocolItem.bind(controller)
+);
+
+router.put(
+    "/regimen-protocols/personalized/:protocolId/items/:protocolItemId",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    updatePersonalizedProtocolItemValidation,
+    controller.updatePersonalizedProtocolItem.bind(controller)
+);
+
+router.delete(
+    "/regimen-protocols/personalized/:protocolId/items/:protocolItemId",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    removePersonalizedProtocolItemValidation,
+    controller.removePersonalizedProtocolItem.bind(controller)
+);
+
+router.post(
+    "/regimen-protocols/personalized/:protocolId/days",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    addPersonalizedProtocolDayValidation,
+    controller.addPersonalizedProtocolDay.bind(controller)
+);
+
+router.put(
+    "/regimen-protocols/personalized/:protocolId/days/:protocolDayId",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    updatePersonalizedProtocolDayValidation,
+    controller.updatePersonalizedProtocolDay.bind(controller)
+);
+
+router.delete(
+    "/regimen-protocols/personalized/:protocolId/days/:protocolDayId",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    removePersonalizedProtocolDayValidation,
+    controller.removePersonalizedProtocolDay.bind(controller)
+);
+
+router.post(
+    "/regimen-protocols/personalized/:protocolId/items/:protocolItemId/dilutions",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    addPersonalizedProtocolDilutionValidation,
+    controller.addPersonalizedProtocolDilution.bind(controller)
+);
+
+router.put(
+    "/regimen-protocols/personalized/:protocolId/items/:protocolItemId/dilutions/:protocolDilutionId",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    updatePersonalizedProtocolDilutionValidation,
+    controller.updatePersonalizedProtocolDilution.bind(controller)
+);
+
+router.delete(
+    "/regimen-protocols/personalized/:protocolId/items/:protocolItemId/dilutions/:protocolDilutionId",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    removePersonalizedProtocolDilutionValidation,
+    controller.removePersonalizedProtocolDilution.bind(controller)
+);
+
+router.post(
+    "/regimen-protocols/personalized/:protocolId/activate",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    getRegimenProtocolValidation,
+    controller.activatePersonalizedProtocol.bind(controller)
+);
+
+router.post(
+    "/regimen-protocols/personalized/:protocolId/version",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    createPersonalizedProtocolVersionValidation,
+    controller.createPersonalizedProtocolVersion.bind(controller)
+);
+
 router.get(
     "/regimen-protocols/:protocolId",
     authenticate,
     authorize("chemo.protocol.read"),
     getRegimenProtocolValidation,
     controller.getRegimenProtocol.bind(controller)
+);
+
+router.get(
+    "/regimen-protocols/:protocolId/discharge-medicines",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    getRegimenProtocolValidation,
+    controller.getDischargeMedicinesForProtocol.bind(controller)
 );
 
 router.post(

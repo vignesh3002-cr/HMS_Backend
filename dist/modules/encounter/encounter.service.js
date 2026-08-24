@@ -8,6 +8,8 @@ const prisma_1 = __importDefault(require("../../config/prisma"));
 const encounter_repository_1 = require("./encounter.repository");
 const encounter_constants_1 = require("./encounter.constants");
 const appointment_constants_1 = require("../appointment/appointment.constants");
+const idGenerator_1 = require("../../utils/idGenerator");
+const roles_1 = require("../../permissions/roles");
 const repository = new encounter_repository_1.EncounterRepository();
 class EncounterService {
     async createEncounter(data, createdBy) {
@@ -68,10 +70,24 @@ class EncounterService {
                     appointment_id: appointment.appointment_id,
                     employee_id: doctor.employee_id,
                     schedule_id: appointment.schedule_id,
-                    encounter_type: encounter_constants_1.ENCOUNTER_TYPE_DEFAULT,
+                    encounter_type: appointment.Patient_type,
                     status: encounter_constants_1.ENCOUNTER_STATUS.OPEN
                 });
                 await repository.updateAppointmentStatus(tx, appointment.appointment_id, appointment_constants_1.APPOINTMENT_STATUS.IN_CONSULTATION);
+                /*
+                 * In-app notification for the doctor whose
+                 * patient just checked in.
+                 */
+                await tx.appointment_notification.create({
+                    data: {
+                        notification_id: await (0, idGenerator_1.generateId)(tx, "NOTIFICATION"),
+                        appointment_id: appointment.appointment_id,
+                        channel: "IN_APP",
+                        notification_type: "CHECKIN",
+                        recipient: doctor.employee_id,
+                        status: "UNREAD"
+                    }
+                });
                 return encounter;
             });
         }
@@ -88,12 +104,49 @@ class EncounterService {
     async getEncounters(query) {
         return repository.getEncounters(query);
     }
+    async getCheckedInPatientsToday(employeeId, branchId) {
+        return repository.getCheckedInPatientsToday(employeeId, branchId);
+    }
     async getEncounterByNumber(encounterNo) {
         const encounter = await repository.getEncounterByNumber(encounterNo);
         if (!encounter) {
             throw new Error("Encounter not found");
         }
         return encounter;
+    }
+    /*
+     * Selection-independent lookup for clinical flows (e.g. doctor
+     * patient-consultation). Deliberately NOT behind branchScope: a doctor
+     * mapped to multiple branches with no active selection would get 403 on
+     * every scoped list query, even though the encounter itself belongs to
+     * one of their branches. Isolation is preserved by checking the caller's
+     * ACTIVE branch mappings against the encounter's own branch instead of
+     * trusting whatever branch the UI happens to have selected.
+     */
+    async getEncounterByAppointmentId(appointmentId, userId, role) {
+        const encounter = await repository.findEncounterByAppointmentId(appointmentId);
+        if (!encounter) {
+            const notFound = new Error("Encounter not found for this appointment");
+            notFound.status = 404;
+            throw notFound;
+        }
+        const isTopLevelAdmin = roles_1.TOP_LEVEL_ADMIN_ROLES.some((r) => r.toLowerCase() === String(role ?? "").toLowerCase());
+        if (!isTopLevelAdmin) {
+            const mappings = await repository.findActiveBranchMappingsForUser(userId);
+            const hasAccess = mappings.some((m) => String(m.branch_id) === String(encounter.branch_id));
+            if (!hasAccess) {
+                const forbidden = new Error("Forbidden. You don't have access to this branch.");
+                forbidden.status = 403;
+                throw forbidden;
+            }
+        }
+        const details = await repository.getEncounterByNumber(encounter.encounter_no);
+        if (!details) {
+            const notFound = new Error("Encounter not found");
+            notFound.status = 404;
+            throw notFound;
+        }
+        return details;
     }
     async updateEncounter(encounterNo, data) {
         const existing = await repository.getEncounterByNumber(encounterNo);
@@ -108,6 +161,16 @@ class EncounterService {
             if (!diagnosis) {
                 throw new Error("Diagnosis not found");
             }
+        }
+        // Recompute BMI whenever height or weight changes, mirroring
+        // createPatientHistory's formula (kg / m^2).
+        let bmi;
+        if (data.height !== undefined || data.weight !== undefined) {
+            const finalHeight = data.height ?? (existing.height === null ? null : Number(existing.height));
+            const finalWeight = data.weight ?? (existing.weight === null ? null : Number(existing.weight));
+            bmi = finalHeight && finalWeight && finalHeight > 0
+                ? Math.round((finalWeight / Math.pow(finalHeight / 100, 2)) * 10) / 10
+                : null;
         }
         return repository.updateEncounter(encounterNo, {
             chief_complaint: data.chief_complaint,
@@ -125,7 +188,10 @@ class EncounterService {
             diastolic_bp: data.diastolic_bp,
             temperature: data.temperature,
             respiratory_rate: data.respiratory_rate,
-            spo2: data.spo2
+            spo2: data.spo2,
+            blood_sugar: data.blood_sugar,
+            pain_score: data.pain_score,
+            ...(bmi !== undefined ? { BMI: bmi } : {})
         });
     }
     async closeEncounter(encounterNo, closedBy) {

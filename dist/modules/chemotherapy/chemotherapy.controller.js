@@ -50,7 +50,8 @@ class ChemotherapyController {
         try {
             const data = await service.listRegimenProtocols({
                 cancer_type_id: req.query.cancer_type_id,
-                subtype_id: req.query.subtype_id
+                subtype_id: req.query.subtype_id,
+                organization_id: req.user?.hospital_id ?? null
             });
             return res.json({ success: true, message: "Regimen protocols fetched successfully", data });
         }
@@ -60,8 +61,17 @@ class ChemotherapyController {
     }
     async getRegimenProtocol(req, res) {
         try {
-            const data = await service.getRegimenProtocol(req.params.protocolId);
+            const data = await service.getRegimenProtocol(req.params.protocolId, req.user?.hospital_id ?? null);
             return res.json({ success: true, message: "Regimen protocol fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async getDischargeMedicinesForProtocol(req, res) {
+        try {
+            const data = await service.getDischargeMedicinesForProtocol(req.params.protocolId, req.user?.hospital_id ?? null);
+            return res.json({ success: true, message: "Discharge medicines fetched successfully", data });
         }
         catch (error) {
             return handleError(res, error);
@@ -109,10 +119,164 @@ class ChemotherapyController {
             return handleError(res, error);
         }
     }
+    // ---------------- Personalized regimen protocols ----------------
+    async listPersonalizedProtocols(req, res) {
+        try {
+            const data = await service.listPersonalizedProtocols(req.user?.hospital_id);
+            return res.json({ success: true, message: "Personalized protocols fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async getPersonalizedProtocol(req, res) {
+        try {
+            const data = await service.getPersonalizedProtocol(req.params.protocolId, req.user?.hospital_id);
+            return res.json({ success: true, message: "Personalized protocol fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async personalizeProtocol(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.personalizeProtocol(req.params.protocolId, req.user?.hospital_id, actingUserId(req), req.body);
+            return res.status(201).json({ success: true, message: "Protocol personalized successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async updatePersonalizedProtocol(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.updatePersonalizedProtocol(req.params.protocolId, req.user?.hospital_id, actingUserId(req), req.body);
+            return res.json({ success: true, message: "Personalized protocol updated successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async addPersonalizedProtocolItem(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.addPersonalizedProtocolItem(req.params.protocolId, req.user?.hospital_id, actingUserId(req), req.body);
+            return res.status(201).json({ success: true, message: "Protocol item added successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async updatePersonalizedProtocolItem(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.updatePersonalizedProtocolItem(req.params.protocolId, req.params.protocolItemId, req.user?.hospital_id, actingUserId(req), req.body);
+            return res.json({ success: true, message: "Protocol item updated successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async removePersonalizedProtocolItem(req, res) {
+        try {
+            const data = await service.removePersonalizedProtocolItem(req.params.protocolId, req.params.protocolItemId, req.user?.hospital_id, actingUserId(req));
+            return res.json({ success: true, message: "Protocol item removed successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async addPersonalizedProtocolDay(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.addPersonalizedProtocolDay(req.params.protocolId, req.user?.hospital_id, actingUserId(req), req.body);
+            return res.status(201).json({ success: true, message: "Protocol day added successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async updatePersonalizedProtocolDay(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.updatePersonalizedProtocolDay(req.params.protocolId, req.params.protocolDayId, req.user?.hospital_id, actingUserId(req), req.body);
+            return res.json({ success: true, message: "Protocol day updated successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async removePersonalizedProtocolDay(req, res) {
+        try {
+            const data = await service.removePersonalizedProtocolDay(req.params.protocolId, req.params.protocolDayId, req.user?.hospital_id, actingUserId(req));
+            return res.json({ success: true, message: "Protocol day removed successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async addPersonalizedProtocolDilution(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.addPersonalizedProtocolDilution(req.params.protocolId, req.params.protocolItemId, req.user?.hospital_id, actingUserId(req), req.body);
+            return res.status(201).json({ success: true, message: "Dilution added successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async updatePersonalizedProtocolDilution(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.updatePersonalizedProtocolDilution(req.params.protocolId, req.params.protocolItemId, req.params.protocolDilutionId, req.user?.hospital_id, actingUserId(req), req.body);
+            return res.json({ success: true, message: "Dilution updated successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async removePersonalizedProtocolDilution(req, res) {
+        try {
+            const data = await service.removePersonalizedProtocolDilution(req.params.protocolId, req.params.protocolItemId, req.params.protocolDilutionId, req.user?.hospital_id, actingUserId(req));
+            return res.json({ success: true, message: "Dilution removed successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async activatePersonalizedProtocol(req, res) {
+        try {
+            const data = await service.activatePersonalizedProtocol(req.params.protocolId, req.user?.hospital_id, actingUserId(req));
+            return res.json({ success: true, message: "Personalized protocol activated successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async createPersonalizedProtocolVersion(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.createPersonalizedProtocolVersion(req.params.protocolId, req.user?.hospital_id, actingUserId(req), req.body);
+            return res.status(201).json({ success: true, message: "Personalized protocol version created successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
     // ---------------- Plan ----------------
     async previewPlan(req, res) {
         try {
-            const data = await service.previewPlan(req.query.staging_detail_id);
+            const data = await service.previewPlan(req.query.staging_detail_id, req.user?.hospital_id ?? null);
             return res.json({ success: true, message: "Plan preview fetched successfully", data });
         }
         catch (error) {
@@ -123,7 +287,7 @@ class ChemotherapyController {
         try {
             if (!checkValidation(req, res))
                 return;
-            const data = await service.createPlan(req.body, actingUserId(req));
+            const data = await service.createPlan(req.body, actingUserId(req), req.user?.hospital_id ?? null);
             return res.status(201).json({ success: true, message: "Chemotherapy plan created successfully", data });
         }
         catch (error) {

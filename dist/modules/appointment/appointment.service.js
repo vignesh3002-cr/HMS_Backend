@@ -8,6 +8,8 @@ const prisma_1 = __importDefault(require("../../config/prisma"));
 const appointment_repository_1 = require("./appointment.repository");
 const appointment_constants_1 = require("./appointment.constants");
 const appointment_utils_1 = require("./appointment.utils");
+const idGenerator_1 = require("../../utils/idGenerator");
+const doctorLeave_constants_1 = require("../doctorLeave/doctorLeave.constants");
 const repository = new appointment_repository_1.AppointmentRepository();
 /**
  * Fixed slot length used for doctor capacity summaries.
@@ -296,6 +298,25 @@ class AppointmentService {
      * Validates doctor, branch, department and
      * effective schedule.
      */
+    /*
+     * PENDING or APPROVED leave covering the given date.
+     * Both block new bookings; REJECTED leaves never do.
+     */
+    async getBlockingLeaveForDate(employeeId, date) {
+        return prisma_1.default.doctor_leave.findFirst({
+            where: {
+                employee_id: employeeId,
+                status: {
+                    in: [
+                        doctorLeave_constants_1.LEAVE_STATUS.PENDING,
+                        doctorLeave_constants_1.LEAVE_STATUS.APPROVED
+                    ]
+                },
+                leave_start_date: { lte: date },
+                leave_end_date: { gte: date }
+            }
+        });
+    }
     async validateBookingContext(employeeId, branchId, departmentId, appointmentDate) {
         const employee = await repository.findEmployee(employeeId);
         if (!employee) {
@@ -327,6 +348,14 @@ class AppointmentService {
             if (!department) {
                 throw new Error("Department not found");
             }
+        }
+        /*
+         * PENDING/APPROVED leaves block booking for the
+         * whole date range they cover.
+         */
+        const blockingLeave = await this.getBlockingLeaveForDate(employeeId, appointmentDate);
+        if (blockingLeave) {
+            throw new Error("Doctor is on leave on the selected date");
         }
         const dayOfWeek = (0, appointment_utils_1.toDayOfWeek)(appointmentDate);
         const normalSchedules = await repository.findActiveDoctorSchedules(employeeId, branchId, dayOfWeek);
@@ -418,7 +447,7 @@ class AppointmentService {
             }
             const appointmentId = await repository.generateAppointmentNumber(tx);
             const tokenNumber = await repository.generateTokenNumber(tx, schedule.schedule_id, appointmentDate);
-            return repository.createAppointment(tx, {
+            const appointment = await repository.createAppointment(tx, {
                 appointment_id: appointmentId,
                 patient_id: data.patient_id,
                 employee_id: data.employee_id,
@@ -440,11 +469,25 @@ class AppointmentService {
                 Patient_type: data.patient_type,
                 Patient_visit_type: data.patient_visit_type
             });
+            /*
+             * In-app notification for the booked doctor.
+             * Written inside the same transaction so a
+             * booking and its notification succeed or
+             * fail together.
+             */
+            await tx.appointment_notification.create({
+                data: {
+                    notification_id: await (0, idGenerator_1.generateId)(tx, "NOTIFICATION"),
+                    appointment_id: appointmentId,
+                    channel: "IN_APP",
+                    notification_type: "BOOKING",
+                    recipient: data.employee_id,
+                    status: "UNREAD"
+                }
+            });
+            return appointment;
         }));
     }
-    /**
-     * Transform Prisma capital-P fields to snake_case for frontend API.
-     */
     /**
      * Transform Prisma capital-P fields to snake_case for frontend API.
      */
@@ -466,6 +509,22 @@ class AppointmentService {
             result.appointments = result.appointments.map((a) => this.transformAppointmentFields(a));
         }
         return result;
+    }
+    /**
+     * Counts distinct patients who booked appointments with a doctor
+     * (optionally scoped to one branch).
+     */
+    async getDistinctPatientCount(employeeId, branchId) {
+        const employee = await repository.findEmployee(employeeId);
+        if (!employee) {
+            throw new Error("Doctor not found");
+        }
+        const totalPatients = await repository.countDistinctPatientsForEmployee(employeeId, branchId);
+        return {
+            employeeId,
+            branchId: branchId ?? null,
+            totalPatients
+        };
     }
     /**
      * Gets an appointment by appointment number.
@@ -625,6 +684,21 @@ class AppointmentService {
             throw new Error("Doctor is not assigned to the selected branch");
         }
         const appointmentDate = (0, appointment_utils_1.parseDateOnly)(dateStr);
+        /*
+         * PENDING/APPROVED leaves wipe the whole day's
+         * slot list.
+         */
+        const blockingLeave = await this.getBlockingLeaveForDate(employeeId, appointmentDate);
+        if (blockingLeave) {
+            return {
+                date: dateStr,
+                day_of_week: (0, appointment_utils_1.toDayOfWeek)(appointmentDate),
+                slots: [],
+                is_on_leave: true,
+                leave_reason: blockingLeave.leave_reason ??
+                    null
+            };
+        }
         const dayOfWeek = (0, appointment_utils_1.toDayOfWeek)(appointmentDate);
         const normalSchedules = await repository.findActiveDoctorSchedules(employeeId, branchId, dayOfWeek);
         const effectiveSchedules = await getEffectiveSchedules(employeeId, branchId, appointmentDate, normalSchedules);
@@ -691,6 +765,20 @@ class AppointmentService {
             throw new Error("Doctor is inactive. Please contact the administrator.");
         }
         const appointmentDate = (0, appointment_utils_1.parseDateOnly)(dateStr);
+        /*
+         * PENDING/APPROVED leaves zero out the summary
+         * for the whole day.
+         */
+        const blockingLeave = await this.getBlockingLeaveForDate(employeeId, appointmentDate);
+        if (blockingLeave) {
+            return {
+                date: dateStr,
+                day_of_week: (0, appointment_utils_1.toDayOfWeek)(appointmentDate),
+                total_slots: 0,
+                booked_count: 0,
+                is_on_leave: true
+            };
+        }
         const dayOfWeek = (0, appointment_utils_1.toDayOfWeek)(appointmentDate);
         /**
          * Find branches from normal schedules.
@@ -784,6 +872,29 @@ class AppointmentService {
         }
         const anchorDate = (0, appointment_utils_1.parseDateOnly)(dateStr);
         const { start, end } = (0, appointment_utils_1.getWeekRange)(anchorDate);
+        /**
+         * PENDING/APPROVED leaves overlapping the week
+         * zero out the affected days.
+         */
+        const blockingLeaves = await prisma_1.default.doctor_leave.findMany({
+            where: {
+                employee_id: employeeId,
+                status: {
+                    in: [
+                        doctorLeave_constants_1.LEAVE_STATUS.PENDING,
+                        doctorLeave_constants_1.LEAVE_STATUS.APPROVED
+                    ]
+                },
+                leave_start_date: {
+                    lte: end
+                },
+                leave_end_date: {
+                    gte: start
+                }
+            }
+        });
+        const isLeaveDay = (day) => blockingLeaves.some((leave) => leave.leave_start_date <= day &&
+            leave.leave_end_date >= day);
         let totalSlots = 0;
         /**
          * Process Monday through Sunday.
@@ -791,6 +902,9 @@ class AppointmentService {
         for (let i = 0; i < 7; i++) {
             const day = new Date(start);
             day.setUTCDate(start.getUTCDate() + i);
+            if (isLeaveDay(day)) {
+                continue;
+            }
             const dayOfWeek = (0, appointment_utils_1.toDayOfWeek)(day);
             /**
              * Normal schedule branches.

@@ -88,6 +88,17 @@ class EncounterRepository {
             }
         });
     }
+    async findActiveBranchMappingsForUser(userId) {
+        return prisma_1.default.user_branch_mapping.findMany({
+            where: {
+                user_id: userId,
+                status: 1
+            },
+            select: {
+                branch_id: true
+            }
+        });
+    }
     async findEncounterByAppointmentId(appointmentId) {
         return prisma_1.default.encounter.findUnique({
             where: { appointment_id: appointmentId }
@@ -127,8 +138,23 @@ class EncounterRepository {
             include: encounterDetailInclude
         });
     }
+    async getCheckedInPatientsToday(employeeId, branchId) {
+        const today = new Date().toISOString().slice(0, 10);
+        const groups = await prisma_1.default.encounter.groupBy({
+            by: ["patient_id"],
+            where: {
+                encounter_ts: {
+                    gte: startOfDay(today),
+                    lt: startOfNextDay(today)
+                },
+                ...(employeeId ? { employee_id: employeeId } : {}),
+                ...(branchId ? { branch_id: branchId } : {})
+            }
+        });
+        return groups.length;
+    }
     async getEncounters(query) {
-        const { branchId, doctorId, patientId, status, encounterType, date, dateFrom, dateTo, search, sortBy = "encounter_ts", sortOrder = "desc", page = 1, limit = 10 } = query;
+        const { branchId, doctorId, patientId, status, encounterType, appointmentId, date, dateFrom, dateTo, search, sortBy = "encounter_ts", sortOrder = "desc", page = 1, limit = 10 } = query;
         const where = {};
         if (branchId)
             where.branch_id = branchId;
@@ -136,10 +162,14 @@ class EncounterRepository {
             where.employee_id = doctorId;
         if (patientId)
             where.patient_id = patientId;
+        if (appointmentId)
+            where.appointment_id = appointmentId;
         if (status)
             where.status = status;
         if (encounterType)
             where.encounter_type = encounterType;
+        if (appointmentId)
+            where.appointment_id = appointmentId;
         if (date) {
             where.encounter_ts = {
                 gte: startOfDay(date),

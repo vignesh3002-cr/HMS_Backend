@@ -203,6 +203,18 @@ export const getDoctorWeekSlotSummaryValidation = [
 
 ];
 
+export const getPatientCountValidation = [
+
+    query("employeeId")
+        .notEmpty()
+        .withMessage("Doctor is required"),
+
+    query("branchId")
+        .optional()
+        .notEmpty()
+
+];
+
 export const getAppointmentsValidation = [
 
     query("page")

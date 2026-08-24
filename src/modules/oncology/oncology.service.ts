@@ -509,13 +509,13 @@ export class OncologyService {
             params
         );
 
-        const stagingChanges = {
-            ...(dto.patient_history_id !== undefined ? { patient_history_id: dto.patient_history_id } : {}),
-            ...(dto.diagnosis_id !== undefined ? { diagnosis_id: dto.diagnosis_id } : {}),
+        const stagingChanges: Prisma.oncology_staging_detailUncheckedUpdateInput = {
+            ...(dto.patient_history_id !== undefined && dto.patient_history_id !== null ? { patient_history_id: dto.patient_history_id } : {}),
+            ...(dto.diagnosis_id !== undefined && dto.diagnosis_id !== null ? { diagnosis_id: dto.diagnosis_id } : {}),
             ...(dto.visit_date !== undefined ? { visit_date: dto.visit_date ? new Date(dto.visit_date) : null } : {}),
             ...(dto.diagnosis_date !== undefined ? { diagnosis_date: dto.diagnosis_date ? new Date(dto.diagnosis_date) : null } : {}),
             ...(dto.biopsy_date !== undefined ? { biopsy_date: dto.biopsy_date ? new Date(dto.biopsy_date) : null } : {}),
-            ...(dto.consulting_oncologist !== undefined ? { consulting_oncologist: dto.consulting_oncologist } : {}),
+            ...(dto.consulting_oncologist !== undefined && dto.consulting_oncologist !== null ? { consulting_oncologist: dto.consulting_oncologist } : {}),
             ...(subtypeChanging ? {
                 cancer_type_id: dto.cancer_type_id ?? existing.cancer_type_id,
                 cancer_subtype_id: subtype.subtype_id,
@@ -524,15 +524,15 @@ export class OncologyService {
                 icd_o3_morpho: cascade.icd_o3_morpho,
                 staging_system: cascade.staging_system
             } : {}),
-            ...(dto.clinical_stage !== undefined ? { clinical_stage: dto.clinical_stage } : {}),
-            ...(dto.t_stage !== undefined ? { t_stage: dto.t_stage } : {}),
-            ...(dto.n_stage !== undefined ? { n_stage: dto.n_stage } : {}),
-            ...(dto.m_stage !== undefined ? { m_stage: dto.m_stage } : {}),
+            ...(dto.clinical_stage !== undefined && dto.clinical_stage !== null ? { clinical_stage: dto.clinical_stage } : {}),
+            ...(dto.t_stage !== undefined && dto.t_stage !== null ? { t_stage: dto.t_stage } : {}),
+            ...(dto.n_stage !== undefined && dto.n_stage !== null ? { n_stage: dto.n_stage } : {}),
+            ...(dto.m_stage !== undefined && dto.m_stage !== null ? { m_stage: dto.m_stage } : {}),
             ...(dto.metastasis_sites !== undefined ? { metastasis_sites: jsonOrUndefined(dto.metastasis_sites) } : {}),
-            ...(dto.laterality !== undefined ? { laterality: dto.laterality } : {}),
-            ...(dto.performance_status !== undefined ? { performance_status: dto.performance_status } : {}),
-            ...(dto.employee_id !== undefined ? { employee_id: dto.employee_id } : {}),
-            ...(dto.branch_id !== undefined ? { branch_id: dto.branch_id } : {})
+            ...(dto.laterality !== undefined && dto.laterality !== null ? { laterality: dto.laterality } : {}),
+            ...(dto.performance_status !== undefined && dto.performance_status !== null ? { performance_status: dto.performance_status } : {}),
+            ...(dto.employee_id !== undefined && dto.employee_id !== null ? { employee_id: dto.employee_id } : {}),
+            ...(dto.branch_id !== undefined && dto.branch_id !== null ? { branch_id: dto.branch_id } : {})
         };
 
         await prisma.$transaction(async (tx) => {
