@@ -74,7 +74,29 @@ async function findReferenceSchedule(employeeId, branchId) {
             start_time: "asc"
         }
     });
-    return schedule;
+    if (schedule) {
+        return schedule;
+    }
+    // Fallback anchor: an ADD/OVERRIDE-only date at a branch where the
+    // doctor has no OTHER recurring row still needs a real doctor_schedule
+    // row for appointment_history.schedule_id. Any active row of this
+    // doctor works as that anchor - the appointment itself keeps its own
+    // branch_id, so this does not move the booking to another branch.
+    const anyActiveSchedule = await prisma_1.default.doctor_schedule.findFirst({
+        where: {
+            employee_id: employeeId,
+            is_active: true
+        },
+        orderBy: [
+            {
+                branch_id: "asc"
+            },
+            {
+                start_time: "asc"
+            }
+        ]
+    });
+    return anyActiveSchedule;
 }
 /**
  * Converts normal weekly schedules into
@@ -376,7 +398,7 @@ class AppointmentService {
             throw new Error("This doctor already has an appointment at the selected date and time");
         }
         const doctorName = `${employee.first_name} ${employee.last_name}`.trim();
-        return prisma_1.default.$transaction(async (tx) => {
+        return this.transformAppointmentFields(await prisma_1.default.$transaction(async (tx) => {
             await repository.lockDoctorSchedule(tx, schedule.schedule_id);
             const stillDuplicate = await tx.appointment_history.findFirst({
                 where: {
@@ -414,15 +436,36 @@ class AppointmentService {
                 doctor_name: doctorName,
                 assigned_doctor: doctorName,
                 department: department?.department_name,
-                created_by: createdBy
+                created_by: createdBy,
+                Patient_type: data.patient_type,
+                Patient_visit_type: data.patient_visit_type
             });
-        });
+        }));
+    }
+    /**
+     * Transform Prisma capital-P fields to snake_case for frontend API.
+     */
+    /**
+     * Transform Prisma capital-P fields to snake_case for frontend API.
+     */
+    transformAppointmentFields(appointment) {
+        if (!appointment)
+            return appointment;
+        return {
+            ...appointment,
+            patient_type: appointment.Patient_type,
+            patient_visit_type: appointment.Patient_visit_type,
+        };
     }
     /**
      * Gets appointments.
      */
     async getAppointments(query) {
-        return repository.getAppointments(query);
+        const result = await repository.getAppointments(query);
+        if (result.appointments) {
+            result.appointments = result.appointments.map((a) => this.transformAppointmentFields(a));
+        }
+        return result;
     }
     /**
      * Gets an appointment by appointment number.
@@ -432,7 +475,7 @@ class AppointmentService {
         if (!appointment) {
             throw new Error("Appointment not found");
         }
-        return appointment;
+        return this.transformAppointmentFields(appointment);
     }
     /**
      * Updates/reschedules an appointment.
@@ -495,7 +538,9 @@ class AppointmentService {
                 appointment_date: appointmentDate,
                 appointment_time: appointmentTime,
                 reason_for_visit: data.reason_for_visit,
-                referred_by: data.referred_by
+                referred_by: data.referred_by,
+                Patient_type: data.patient_type,
+                Patient_visit_type: data.patient_visit_type
             };
             if (scheduleChanged) {
                 updateData.employee_id =
@@ -520,7 +565,7 @@ class AppointmentService {
             for (const queue of openQueues) {
                 await repository.closeRescheduleQueueEntry(tx, queue.queue_id, actingUserId);
             }
-            return updated;
+            return this.transformAppointmentFields(updated);
         });
     }
     /**
@@ -539,19 +584,7 @@ class AppointmentService {
             !cancelReason) {
             throw new Error("Cancellation reason is required when cancelling an appointment");
         }
-        /**
-         * cancelledBy is accepted here so the controller
-         * can pass the authenticated user.
-         *
-         * The current repository method accepts:
-         * appointmentNo, status, cancelReason
-         *
-         * Therefore cancelledBy is intentionally not passed
-         * to the repository until the repository supports
-         * that fourth parameter.
-         */
-        void cancelledBy;
-        return repository.updateAppointmentStatus(appointmentNo, status, cancelReason);
+        return this.transformAppointmentFields(await repository.updateAppointmentStatus(appointmentNo, status, cancelReason, cancelledBy));
     }
     /**
      * Cancels an appointment.

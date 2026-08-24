@@ -21,13 +21,13 @@ import auditRoutes from "./modules/audit/audit.routes";
 import exportRoutes from "./modules/export/export.routes";
 import doctorTransferRoutes from "./modules/doctor-transfer/doctorTransfer.routes";
 import doctorScheduleRoutes from "./modules/doctor-schedule/doctorSchedule.routes";
+import doctorLeaveRoutes from "./modules/doctorLeave/doctorLeave.routes";
 import labTestCategoryRoutes from "./modules/lab-test-category/lab-test-category.routes";
 import labTestMasterRoutes from "./modules/lab-test-master/lab-test-master.routes";
 import labOrderRoutes from "./modules/lab-order/lab-order-routes";
 import labOrderItemRoutes from "./modules/lab-order-item/lab-order-item.routes";
 import qualificationMasterRoutes from "./modules/qualification-master/qualification-master.routes";
 import diagnosisRoutes from "./modules/diagnosis/diagnosis.routes";
-import { startAppointmentStatusJob } from "./modules/appointment/appointment-status.job";
 import clinicalDetailsRoutes from "./modules/clinical-details/clinical-details.routes";
 
 import { hashPassword } from "./utils/bcrypt";
@@ -144,6 +144,9 @@ app.use("/api/doctors", doctorTransferRoutes);
 // Doctor schedule ADD / OVERRIDE / CANCEL APIs
 app.use("/api/doctor-schedule", doctorScheduleRoutes);
 
+// Doctor leave apply / approve / reject / list APIs
+app.use("/api/doctor-leave", doctorLeaveRoutes);
+
 app.use("/api/qualification-master", qualificationMasterRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/encounters", encounterRoutes);
@@ -165,7 +168,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
 
     console.log(`Server running on port ${PORT}`);
-
-    startAppointmentStatusJob();
 
 });

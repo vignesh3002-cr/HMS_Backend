@@ -18,6 +18,10 @@ export interface CreateAppointmentDTO {
 
     booking_source?: string;
 
+    patient_type?: string;
+
+    patient_visit_type?: string;
+
 }
 
 export interface UpdateAppointmentDTO {
@@ -35,6 +39,10 @@ export interface UpdateAppointmentDTO {
     reason_for_visit?: string;
 
     referred_by?: string;
+
+    patient_type?: string;
+
+    patient_visit_type?: string;
 
 }
 

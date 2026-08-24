@@ -42,7 +42,7 @@ importers:
         specifier: ^9.0.3
         version: 9.0.3
       prisma:
-        specifier: ^7.8.0
+        specifier: ^7.9.0
         version: 7.9.0(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3)
       scripts:
         specifier: ^0.1.0
