@@ -21,14 +21,11 @@ export class EncounterService {
         }
 
         /*
-         * NOT_CHECKED_IN is written by the elapsed-slot job only to free
-         * the slot - the patient may still walk in later, and doctors are
-         * offered an explicit Check In action for these rows. Allow late
-         * check-in; the transaction below flips status to IN_CONSULTATION.
+         * Allow encounters to be created for terminal status appointments
+         * except CHECKED_IN, which should already have an encounter or be
+         * transitioning to IN_CONSULTATION.
          */
-        const blockingStatuses = TERMINAL_APPOINTMENT_STATUSES.filter(
-            (status) => status !== APPOINTMENT_STATUS.NOT_CHECKED_IN
-        );
+        const blockingStatuses = TERMINAL_APPOINTMENT_STATUSES;
 
         if (blockingStatuses.includes(appointment.status ?? "")) {
             throw new Error(

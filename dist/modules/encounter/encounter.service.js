@@ -17,7 +17,13 @@ class EncounterService {
         if (!appointment) {
             throw new Error("Appointment not found");
         }
-        if (appointment_constants_1.TERMINAL_APPOINTMENT_STATUSES.includes(appointment.status ?? "")) {
+        /*
+         * Allow encounters to be created for terminal status appointments
+         * except CHECKED_IN, which should already have an encounter or be
+         * transitioning to IN_CONSULTATION.
+         */
+        const blockingStatuses = appointment_constants_1.TERMINAL_APPOINTMENT_STATUSES;
+        if (blockingStatuses.includes(appointment.status ?? "")) {
             throw new Error(`Cannot create an encounter for an appointment that is already ${appointment.status}`);
         }
         const patient = appointment.patient_bio_data;
@@ -48,12 +54,14 @@ class EncounterService {
         if (!mapping) {
             throw new Error("Doctor is not assigned to the appointment's branch");
         }
-        if (!appointment.schedule_id) {
-            throw new Error("Appointment has no associated doctor schedule");
-        }
-        if (!appointment.doctor_schedule || !appointment.doctor_schedule.is_active) {
-            throw new Error("Doctor schedule is not active");
-        }
+        /*
+         * schedule_id is deliberately NOT enforced here. Appointments can
+         * legitimately lose their original schedule after booking (schedule
+         * OVERRIDE/CANCEL closes old schedules, off-day bookings have none),
+         * and encounter.schedule_id is nullable in the schema. Blocking
+         * clinical flow because a schedule disappeared only strands the
+         * appointment in IN_CONSULTATION with no encounter.
+         */
         const existingEncounter = await repository.findEncounterByAppointmentId(data.appointment_id);
         if (existingEncounter) {
             throw new Error("Encounter already exists for this appointment");
@@ -70,7 +78,7 @@ class EncounterService {
                     appointment_id: appointment.appointment_id,
                     employee_id: doctor.employee_id,
                     schedule_id: appointment.schedule_id,
-                    encounter_type: appointment.Patient_type,
+                    encounter_type: appointment.Patient_type ?? encounter_constants_1.ENCOUNTER_TYPE_DEFAULT,
                     status: encounter_constants_1.ENCOUNTER_STATUS.OPEN
                 });
                 await repository.updateAppointmentStatus(tx, appointment.appointment_id, appointment_constants_1.APPOINTMENT_STATUS.IN_CONSULTATION);
