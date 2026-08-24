@@ -13,7 +13,6 @@ export class ChemotherapyRepository {
     async findCancerTypeById(cancerTypeId: string) {
 
         return prisma.cancer_types.findUnique({ where: { cancer_type_id: cancerTypeId } });
-
     }
 
     async findCancerSubtypeById(subtypeId: string) {
@@ -33,6 +32,18 @@ export class ChemotherapyRepository {
         return prisma.chemotherapy_regimen_protocol.findMany({
             where: {
                 active_status: 1,
+                // Generic protocols are globally available. Personalized
+                // protocols are only ever shown to their owning organization
+                // (organization_id filter) - an unauthenticated/global browse
+                // never exposes them.
+                ...(filters.organization_id
+                    ? {
+                        OR: [
+                            { protocol_type: { not: "PERSONALIZED" } },
+                            { organization_id: filters.organization_id }
+                        ]
+                    }
+                    : { protocol_type: { not: "PERSONALIZED" } }),
                 ...(filters.cancer_type_id ? { cancer_type_id: filters.cancer_type_id } : {}),
                 // A null subtype_id on the protocol means "applies to the whole
                 // cancer type" - so filtering by a specific subtype should
@@ -89,6 +100,13 @@ export class ChemotherapyRepository {
         return tx.chemotherapy_regimen_protocol_items.create({ data });
     }
 
+    async updateRegimenProtocolItem(tx: Prisma.TransactionClient, protocolItemId: string, data: Prisma.chemotherapy_regimen_protocol_itemsUncheckedUpdateInput) {
+        return tx.chemotherapy_regimen_protocol_items.update({
+            where: { protocol_item_id: protocolItemId },
+            data
+        });
+    }
+
     async findRegimenProtocolItemById(protocolItemId: string) {
         return prisma.chemotherapy_regimen_protocol_items.findUnique({ where: { protocol_item_id: protocolItemId } });
     }
@@ -101,6 +119,113 @@ export class ChemotherapyRepository {
     }
 
     // -----------------------------------------------------------------
+    // Organization-specific personalized protocols (protocol hierarchy:
+    // protocol -> days -> items -> dilutions)
+    // -----------------------------------------------------------------
+
+    private personalizedProtocolInclude = {
+        chemotherapy_regimen_protocol_days: { where: { active_status: 1 }, orderBy: { day_number: "asc" as const } },
+        chemotherapy_regimen_protocol_items: {
+            where: { active_status: 1 },
+            orderBy: { drug_sequence: "asc" as const },
+            include: {
+                medicine_master: true,
+                chemotherapy_protocol_dilutions: { where: { active_status: 1 } }
+            }
+        },
+        cancer_types: { select: { cancer_type_id: true, cancer_type: true } },
+        cancer_subtypes: { select: { subtype_id: true, subtype_name: true } }
+    } satisfies Prisma.chemotherapy_regimen_protocolInclude;
+
+    async findRegimenProtocolByIdFull(protocolId: string) {
+        return prisma.chemotherapy_regimen_protocol.findUnique({
+            where: { protocol_id: protocolId },
+            include: this.personalizedProtocolInclude
+        });
+    }
+
+    async findPersonalizedProtocolById(protocolId: string, organizationId: string) {
+        return prisma.chemotherapy_regimen_protocol.findFirst({
+            where: { protocol_id: protocolId, organization_id: organizationId, protocol_type: "PERSONALIZED" },
+            include: this.personalizedProtocolInclude
+        });
+    }
+
+    async listPersonalizedProtocols(organizationId: string) {
+        return prisma.chemotherapy_regimen_protocol.findMany({
+            where: { organization_id: organizationId, protocol_type: "PERSONALIZED" },
+            include: this.personalizedProtocolInclude,
+            orderBy: { created_at: "desc" }
+        });
+    }
+
+    async findHospitalById(hospitalId: string) {
+        return prisma.hospital.findUnique({ where: { hospital_id: hospitalId } });
+    }
+
+    async countPlansUsingProtocol(protocolId: string) {
+        return prisma.chemotherapy_plan.count({
+            where: { source_protocol_id: protocolId, deleted_flag: false }
+        });
+    }
+
+    async generateRegimenProtocolDayId(tx: Prisma.TransactionClient) {
+        return generateId(tx, ID_ENTITY.REGIMEN_PROTOCOL_DAY);
+    }
+
+    async generateRegimenProtocolDilutionId(tx: Prisma.TransactionClient) {
+        return generateId(tx, ID_ENTITY.REGIMEN_PROTOCOL_DILUTION);
+    }
+
+    async createRegimenProtocolDay(tx: Prisma.TransactionClient, data: Prisma.chemotherapy_regimen_protocol_daysUncheckedCreateInput) {
+        return tx.chemotherapy_regimen_protocol_days.create({ data });
+    }
+
+    async updateRegimenProtocolDay(tx: Prisma.TransactionClient, protocolDayId: string, data: Prisma.chemotherapy_regimen_protocol_daysUncheckedUpdateInput) {
+        return tx.chemotherapy_regimen_protocol_days.updateMany({
+            where: { protocol_day_id: protocolDayId },
+            data: { ...data, updated_at: new Date() }
+        });
+    }
+
+    async deactivateRegimenProtocolDay(tx: Prisma.TransactionClient, protocolDayId: string) {
+        return tx.chemotherapy_regimen_protocol_days.updateMany({
+            where: { protocol_day_id: protocolDayId },
+            data: { active_status: 0, updated_at: new Date() }
+        });
+    }
+
+    async findRegimenProtocolDayById(protocolDayId: string) {
+        return prisma.chemotherapy_regimen_protocol_days.findFirst({ where: { protocol_day_id: protocolDayId } });
+    }
+
+    async findRegimenProtocolDaysByProtocolId(protocolId: string) {
+        return prisma.chemotherapy_regimen_protocol_days.findMany({ where: { protocol_id: protocolId } });
+    }
+
+    async createRegimenProtocolDilution(tx: Prisma.TransactionClient, data: Prisma.chemotherapy_protocol_dilutionsUncheckedCreateInput) {
+        return tx.chemotherapy_protocol_dilutions.create({ data });
+    }
+
+    async updateRegimenProtocolDilution(tx: Prisma.TransactionClient, protocolDilutionId: string, data: Prisma.chemotherapy_protocol_dilutionsUncheckedUpdateInput) {
+        return tx.chemotherapy_protocol_dilutions.update({
+            where: { protocol_dilution_id: protocolDilutionId },
+            data: { ...data, updated_at: new Date() }
+        });
+    }
+
+    async deactivateRegimenProtocolDilution(tx: Prisma.TransactionClient, protocolDilutionId: string) {
+        return tx.chemotherapy_protocol_dilutions.update({
+            where: { protocol_dilution_id: protocolDilutionId },
+            data: { active_status: 0, updated_at: new Date() }
+        });
+    }
+
+    async findRegimenProtocolDilutionById(protocolDilutionId: string) {
+        return prisma.chemotherapy_protocol_dilutions.findUnique({ where: { protocol_dilution_id: protocolDilutionId } });
+    }
+
+    // -----------------------------------------------------------------
     // Supporting entity lookups (existence checks only - these tables
     // belong to other modules)
     // -----------------------------------------------------------------
@@ -108,6 +233,12 @@ export class ChemotherapyRepository {
     async findMedicineById(medicineId: string) {
 
         return prisma.medicine_master.findUnique({ where: { medicine_id: medicineId } });
+
+    }
+
+    async findActiveMedicineById(medicineId: string) {
+
+        return prisma.medicine_master.findFirst({ where: { medicine_id: medicineId, is_active: true } });
 
     }
 

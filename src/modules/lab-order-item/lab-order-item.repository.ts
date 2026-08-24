@@ -23,7 +23,11 @@ export class LabOrderItemRepository {
         return prisma.lab_order_item.findMany({
 
             include: {
-                lab_order: true,
+                lab_order: {
+                    include: {
+                        patient_history: true
+                    }
+                },
                 lab_test_master: true
             }
 
@@ -40,7 +44,11 @@ export class LabOrderItemRepository {
             },
 
             include: {
-                lab_order: true,
+                lab_order: {
+                    include: {
+                        patient_history: true
+                    }
+                },
                 lab_test_master: true
             }
 

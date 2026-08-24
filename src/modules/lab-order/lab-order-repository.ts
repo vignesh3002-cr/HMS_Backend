@@ -120,6 +120,15 @@ class LabOrderRepository {
 
     }
 
+    async findMostRecentPatientHistory(patient_id: string) {
+
+        return prisma.patient_history.findFirst({
+            where: { patient_id },
+            orderBy: { id: "desc" }
+        });
+
+    }
+
     async findDoctor(employee_id: string) {
 
         return prisma.employees.findUnique({

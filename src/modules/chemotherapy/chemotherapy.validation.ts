@@ -42,6 +42,177 @@ export const updateRegimenProtocolValidation = [
 
 ];
 
+// ---------------- Personalized regimen protocols ----------------
+
+export const protocolIdParamValidation = [
+
+    param("protocolId").notEmpty()
+
+];
+
+export const personalizeRegimenProtocolValidation = [
+
+    param("protocolId").notEmpty(),
+    body("regimen_name").optional().notEmpty(),
+    body("treatment_intent").optional({ nullable: true }).notEmpty(),
+    body("standard_cycles").optional({ nullable: true }).isInt({ min: 1 }),
+    body("cycle_interval_days").optional({ nullable: true }).isInt({ min: 1 }),
+    body("guideline_source").optional({ nullable: true }).notEmpty(),
+    body("notes").optional({ nullable: true }).notEmpty(),
+    body("composition").optional({ nullable: true }).notEmpty(),
+    body("additional_notes").optional({ nullable: true }).notEmpty(),
+    body("no_of_days").optional({ nullable: true }).isInt({ min: 1 }),
+    body("day_care_referred").optional({ nullable: true }).isBoolean(),
+    body("create_day_care_appointment").optional({ nullable: true }).isBoolean(),
+    body("protocol_version").optional({ nullable: true }).notEmpty(),
+    body("days").optional({ nullable: true }).isArray(),
+    body("days.*.protocol_day_id").optional().notEmpty(),
+    body("days.*.day_number").isInt({ min: 1 }).withMessage("Each day requires a day_number >= 1"),
+    body("days.*.day_sequence").optional({ nullable: true }).isInt({ min: 1 }),
+    body("days.*.same_as_day_one").optional({ nullable: true }).isBoolean(),
+    body("days.*.active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 }),
+    body("items").optional({ nullable: true }).isArray(),
+    body("items.*.protocol_item_id").optional().notEmpty(),
+    body("items.*.medicine_id").notEmpty().withMessage("Each item requires a medicine_id"),
+    body("items.*.drug_role").optional().isIn(Object.values(DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(DRUG_ROLE).join(", ")}`),
+    body("items.*.drug_sequence").isInt({ min: 1 }).withMessage("Each item requires a drug_sequence >= 1"),
+    body("items.*.dosage").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("items.*.infusion_duration_minutes").optional({ nullable: true }).isInt({ min: 0 }),
+    body("items.*.administration_day").optional({ nullable: true }).isInt({ min: 1 }),
+    body("items.*.cycle_day").optional({ nullable: true }).isInt({ min: 1 }),
+    body("items.*.protocol_dose").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("items.*.active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 }),
+    body("items.*.dilutions").optional({ nullable: true }).isArray(),
+    body("items.*.dilutions.*.medicine_id").optional({ nullable: true }).notEmpty(),
+    body("items.*.dilutions.*.dose").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("items.*.dilutions.*.dilution_volume").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("items.*.dilutions.*.active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 })
+
+];
+
+export const updatePersonalizedProtocolValidation = [
+
+    param("protocolId").notEmpty(),
+    body("regimen_name").optional().notEmpty(),
+    body("treatment_intent").optional({ nullable: true }).notEmpty(),
+    body("standard_cycles").optional({ nullable: true }).isInt({ min: 1 }),
+    body("cycle_interval_days").optional({ nullable: true }).isInt({ min: 1 }),
+    body("guideline_source").optional({ nullable: true }).notEmpty(),
+    body("notes").optional({ nullable: true }).notEmpty(),
+    body("composition").optional({ nullable: true }).notEmpty(),
+    body("additional_notes").optional({ nullable: true }).notEmpty(),
+    body("no_of_days").optional({ nullable: true }).isInt({ min: 1 }),
+    body("day_care_referred").optional({ nullable: true }).isBoolean(),
+    body("create_day_care_appointment").optional({ nullable: true }).isBoolean(),
+    body("protocol_version").optional({ nullable: true }).notEmpty()
+
+];
+
+export const addPersonalizedProtocolItemValidation = [
+
+    param("protocolId").notEmpty(),
+    body("medicine_id").notEmpty().withMessage("medicine_id is required"),
+    body("drug_sequence").isInt({ min: 1 }).withMessage("drug_sequence must be at least 1"),
+    body("drug_role").optional().isIn(Object.values(DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(DRUG_ROLE).join(", ")}`),
+    body("dosage").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("infusion_duration_minutes").optional({ nullable: true }).isInt({ min: 0 }),
+    body("administration_day").optional({ nullable: true }).isInt({ min: 1 }),
+    body("cycle_day").optional({ nullable: true }).isInt({ min: 1 }),
+    body("protocol_dose").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 })
+
+];
+
+export const updatePersonalizedProtocolItemValidation = [
+
+    param("protocolId").notEmpty(),
+    param("protocolItemId").notEmpty(),
+    body("medicine_id").optional().notEmpty(),
+    body("drug_sequence").optional().isInt({ min: 1 }),
+    body("drug_role").optional().isIn(Object.values(DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(DRUG_ROLE).join(", ")}`),
+    body("dosage").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("infusion_duration_minutes").optional({ nullable: true }).isInt({ min: 0 }),
+    body("administration_day").optional({ nullable: true }).isInt({ min: 1 }),
+    body("cycle_day").optional({ nullable: true }).isInt({ min: 1 }),
+    body("protocol_dose").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 })
+
+];
+
+export const removePersonalizedProtocolItemValidation = [
+
+    param("protocolId").notEmpty(),
+    param("protocolItemId").notEmpty()
+
+];
+
+export const addPersonalizedProtocolDayValidation = [
+
+    param("protocolId").notEmpty(),
+    body("day_number").isInt({ min: 1 }).withMessage("day_number must be at least 1"),
+    body("day_sequence").optional({ nullable: true }).isInt({ min: 1 }),
+    body("same_as_day_one").optional({ nullable: true }).isBoolean(),
+    body("active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 })
+
+];
+
+export const updatePersonalizedProtocolDayValidation = [
+
+    param("protocolId").notEmpty(),
+    param("protocolDayId").notEmpty(),
+    body("day_number").optional().isInt({ min: 1 }),
+    body("day_sequence").optional({ nullable: true }).isInt({ min: 1 }),
+    body("same_as_day_one").optional({ nullable: true }).isBoolean(),
+    body("active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 })
+
+];
+
+export const removePersonalizedProtocolDayValidation = [
+
+    param("protocolId").notEmpty(),
+    param("protocolDayId").notEmpty()
+
+];
+
+export const addPersonalizedProtocolDilutionValidation = [
+
+    param("protocolId").notEmpty(),
+    param("protocolItemId").notEmpty(),
+    body("medicine_id").optional({ nullable: true }).notEmpty(),
+    body("dose").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dilution_volume").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 })
+
+];
+
+export const updatePersonalizedProtocolDilutionValidation = [
+
+    param("protocolId").notEmpty(),
+    param("protocolItemId").notEmpty(),
+    param("protocolDilutionId").notEmpty(),
+    body("medicine_id").optional({ nullable: true }).notEmpty(),
+    body("dose").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dilution_volume").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 })
+
+];
+
+export const removePersonalizedProtocolDilutionValidation = [
+
+    param("protocolId").notEmpty(),
+    param("protocolItemId").notEmpty(),
+    param("protocolDilutionId").notEmpty()
+
+];
+
+export const createPersonalizedProtocolVersionValidation = [
+
+    param("protocolId").notEmpty(),
+    body("reason").optional({ nullable: true }).notEmpty(),
+    body("notes").optional({ nullable: true }).notEmpty()
+
+];
+
 export const addRegimenProtocolItemValidation = [
 
     param("protocolId").notEmpty(),

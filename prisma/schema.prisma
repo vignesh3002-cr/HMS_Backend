@@ -109,6 +109,8 @@ model appointment_history {
   cancelled_by                    String?                           @db.VarChar(100)
   notification_status             String?                           @db.VarChar(100)
   Reason_for_cancelling           String?
+  Patient_visit_type              String?                           @db.VarChar
+  Patient_type                    String?                           @db.VarChar
   employees                       employees?                        @relation(fields: [employee_id], references: [employee_id], onDelete: Cascade)
   doctor_schedule                 doctor_schedule?                  @relation(fields: [schedule_id], references: [schedule_id], onDelete: NoAction, onUpdate: NoAction)
   branch                          branch?                           @relation(fields: [branch_id], references: [branch_id], onDelete: Restrict, map: "fk_appointment_branch")
@@ -585,7 +587,11 @@ model chemotherapy_plan {
   regimen_code                  String?                        @db.VarChar(100)
   protocol_name                 String?                        @db.VarChar(100)
   protocol_version              String?                        @db.VarChar(100)
+<<<<<<< HEAD
+  treatment_type                String?                        @db.VarChar(100)
+=======
   treatment_goal                String?                        @db.VarChar(100)
+>>>>>>> a1c82ea81f0380e392e7c3a5cdcf3dfaa0a540ac
   treatment_intent              String?                        @db.VarChar(100)
   cancer_stage                  String?                        @db.VarChar(100)
   cancer_type                   String?                        @db.VarChar(100)
@@ -612,6 +618,10 @@ model chemotherapy_plan {
   subtype_id                    String?                        @db.VarChar(100)
   staging_detail_id             String?                        @db.VarChar(100)
   source_protocol_id            String?                        @db.VarChar(100)
+<<<<<<< HEAD
+  treatment_goal                String?                        @db.VarChar(50)
+=======
+>>>>>>> a1c82ea81f0380e392e7c3a5cdcf3dfaa0a540ac
   chemotherapy_cycle            chemotherapy_cycle[]
   appointment_history           appointment_history?           @relation(fields: [appointment_id], references: [appointment_id], map: "fk_chemo_plan_appointment")
   branch                        branch                         @relation(fields: [branch_id], references: [branch_id], map: "fk_chemo_plan_branch")
@@ -731,6 +741,24 @@ model chemotherapy_regimen_protocol {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_regimen_protocol_days {
+<<<<<<< HEAD
+  id                                  BigInt                               @id @default(autoincrement())
+  protocol_day_id                     String                               @db.VarChar(100)
+  protocol_id                         String                               @db.VarChar(100)
+  day_number                          Int
+  day_sequence                        Int?
+  same_as_day_one                     Boolean?                             @default(false)
+  source_day_resource_id              String?                              @db.VarChar(100)
+  active_status                       Int?                                 @default(1) @db.SmallInt
+  created_by                          String?                              @db.VarChar(100)
+  created_at                          DateTime?                            @default(now()) @db.Timestamp(6)
+  updated_by                          String?                              @db.VarChar(100)
+  updated_at                          DateTime?                            @default(now()) @db.Timestamp(6)
+  protocol_item_id                    String?                              @db.VarChar
+  medicine_count                      BigInt?
+  chemotherapy_regimen_protocol_items chemotherapy_regimen_protocol_items? @relation(fields: [protocol_item_id], references: [protocol_item_id], onDelete: Restrict)
+  chemotherapy_regimen_protocol       chemotherapy_regimen_protocol        @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_protocol_day_protocol")
+=======
   id                            BigInt                        @id @default(autoincrement())
   protocol_day_id               String                        @unique(map: "uq_protocol_day_id") @db.VarChar(100)
   protocol_id                   String                        @db.VarChar(100)
@@ -746,10 +774,47 @@ model chemotherapy_regimen_protocol_days {
   chemotherapy_regimen_protocol chemotherapy_regimen_protocol @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_protocol_day_protocol")
 
   @@unique([protocol_id, day_number], map: "uq_protocol_day")
+>>>>>>> a1c82ea81f0380e392e7c3a5cdcf3dfaa0a540ac
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_regimen_protocol_items {
+<<<<<<< HEAD
+  id                                 BigInt                               @id @default(autoincrement())
+  protocol_item_id                   String                               @unique(map: "uq_regimen_protocol_item_id") @db.VarChar(100)
+  protocol_id                        String                               @db.VarChar(100)
+  medicine_id                        String                               @db.VarChar(100)
+  drug_role                          String                               @default("PRIMARY") @db.VarChar(100)
+  drug_sequence                      Int
+  drug_type                          String?                              @db.VarChar(100)
+  dosage                             Decimal?                             @db.Decimal(10, 2)
+  dosage_unit                        String?                              @db.VarChar(100)
+  dose_calculation_method            String?                              @db.VarChar(100)
+  administration_route               String?                              @db.VarChar(100)
+  infusion_type                      String?                              @db.VarChar(100)
+  infusion_duration_minutes          Int?
+  administration_day                 Int?
+  cycle_day                          Int?
+  frequency                          String?                              @db.VarChar(100)
+  timing_relative_to_primary         String?                              @db.VarChar(100)
+  remarks                            String?
+  active_status                      Int?                                 @default(1) @db.SmallInt
+  drug_brand_name                    String?                              @db.VarChar(100)
+  protocol_dose                      Decimal?                             @db.Decimal(10, 2)
+  protocol_dose_unit                 String?                              @db.VarChar(100)
+  protocol_dose_text                 String?                              @db.VarChar(100)
+  dose_change                        Decimal?                             @db.Decimal(10, 2)
+  dose_reduction                     Decimal?                             @db.Decimal(10, 2)
+  patient_dose                       Decimal?                             @db.Decimal(10, 2)
+  patient_dose_unit                  String?                              @db.VarChar(100)
+  previous_toxicity                  String?
+  administration_detail              String?
+  source_resource_id                 String?                              @db.VarChar(100)
+  chemotherapy_protocol_dilutions    chemotherapy_protocol_dilutions[]
+  chemotherapy_regimen_protocol_days chemotherapy_regimen_protocol_days[]
+  medicine_master                    medicine_master                      @relation(fields: [medicine_id], references: [medicine_id], map: "fk_regimen_protocol_item_medicine")
+  chemotherapy_regimen_protocol      chemotherapy_regimen_protocol        @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_regimen_protocol_item_protocol")
+=======
   id                              BigInt                            @id @default(autoincrement())
   protocol_item_id                String                            @unique(map: "uq_regimen_protocol_item_id") @db.VarChar(100)
   protocol_id                     String                            @db.VarChar(100)
@@ -783,6 +848,7 @@ model chemotherapy_regimen_protocol_items {
   chemotherapy_protocol_dilutions chemotherapy_protocol_dilutions[]
   medicine_master                 medicine_master                   @relation(fields: [medicine_id], references: [medicine_id], map: "fk_regimen_protocol_item_medicine")
   chemotherapy_regimen_protocol   chemotherapy_regimen_protocol     @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_regimen_protocol_item_protocol")
+>>>>>>> a1c82ea81f0380e392e7c3a5cdcf3dfaa0a540ac
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -985,8 +1051,13 @@ model doctor_schedule {
   created_at           DateTime              @default(now()) @db.Timestamptz(6)
   day_of_week          String?               @db.VarChar(100)
   shift_name           String?               @db.VarChar(100)
+<<<<<<< HEAD
+  start_time           DateTime              @db.Time(6)
+  end_time             DateTime              @db.Time(6)
+=======
   start_time           DateTime?             @db.Time(6)
   end_time             DateTime?             @db.Time(6)
+>>>>>>> a1c82ea81f0380e392e7c3a5cdcf3dfaa0a540ac
   consultation_minutes Int?                  @default(20)
   is_active            Boolean?              @default(true)
   effective_from       DateTime?             @db.Timestamptz(6)
@@ -1356,7 +1427,10 @@ model lab_history {
 model lab_order {
   id                    BigInt               @id @default(autoincrement())
   lab_order_id          String               @unique @db.VarChar(100)
+<<<<<<< HEAD
+=======
   patient_history_id    String               @db.VarChar(100)
+>>>>>>> a1c82ea81f0380e392e7c3a5cdcf3dfaa0a540ac
   appointment_id        String?              @db.VarChar(100)
   doctor_employee_id    String               @db.VarChar(100)
   department_id         String?              @db.VarChar(100)
@@ -1369,13 +1443,15 @@ model lab_order {
   user_id               String?              @db.VarChar(100)
   created_at            DateTime?            @default(now()) @db.Timestamp(6)
   updated_at            DateTime?            @default(now()) @db.Timestamp(6)
+  patient_history_id    String?              @db.VarChar
+  lab_description       String?              @db.VarChar
   lab_history           lab_history[]
   appointment_history   appointment_history? @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade, map: "fk_lab_order_appointment")
   branch                branch?              @relation(fields: [branch_id], references: [branch_id], onDelete: Restrict, map: "fk_lab_order_branch")
   department_master     department_master?   @relation(fields: [department_id], references: [department_id], onDelete: Restrict, map: "fk_lab_order_department")
   employees             employees            @relation(fields: [doctor_employee_id], references: [employee_id], map: "fk_lab_order_doctor")
-  patient_history       patient_history      @relation(fields: [patient_history_id], references: [patient_history_id], map: "fk_lab_order_patient_history")
   user_table            user_table?          @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_lab_order_user")
+  patient_history       patient_history?     @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_order_patient_history")
   lab_order_item        lab_order_item[]
   lab_report            lab_report[]
 }

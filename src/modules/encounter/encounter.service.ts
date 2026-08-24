@@ -100,7 +100,7 @@ export class EncounterService {
                     appointment_id: appointment.appointment_id,
                     employee_id: doctor.employee_id!,
                     schedule_id: appointment.schedule_id!,
-                    encounter_type: ENCOUNTER_TYPE_DEFAULT,
+                    encounter_type: appointment.Patient_type!,
                     status: ENCOUNTER_STATUS.OPEN
 
                 });
