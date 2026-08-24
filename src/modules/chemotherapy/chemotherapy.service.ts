@@ -146,6 +146,16 @@ export class ChemotherapyService {
 
     }
 
+    async getDischargeMedicinesForProtocol(protocolId: string, organizationId?: string | null) {
+
+        // Reuse the protocol read path so existence + personalized-protocol
+        // org isolation are enforced before returning its discharge medicines.
+        await this.getRegimenProtocol(protocolId, organizationId);
+
+        return this.repository.listDischargeMedicinesForProtocol(protocolId);
+
+    }
+
     async createRegimenProtocol(dto: CreateRegimenProtocolDto, actingUserId: string) {
 
         const cancerType = await this.repository.findCancerTypeById(dto.cancer_type_id);
