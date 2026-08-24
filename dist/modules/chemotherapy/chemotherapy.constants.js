@@ -7,7 +7,7 @@
 // the soft-delete convention used everywhere else in this codebase (doctor
 // schedules, appointments) - nothing here is ever hard-deleted.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ID_ENTITY = exports.DRUG_ROLE = exports.PLAN_CONFIRMATION_RULE = exports.CYCLE_ADMINISTRABLE_STATUSES = exports.CYCLE_TERMINAL_STATUSES = exports.CYCLE_STATUS_TRANSITIONS = exports.CYCLE_STATUS = exports.PLAN_TERMINAL_STATUSES = exports.PLAN_STATUS_TRANSITIONS = exports.PLAN_STATUS = void 0;
+exports.PROTOCOL_ACTIVE_STATUS = exports.PROTOCOL_TYPE = exports.ID_ENTITY = exports.DRUG_ROLE = exports.PLAN_CONFIRMATION_RULE = exports.CYCLE_ADMINISTRABLE_STATUSES = exports.CYCLE_TERMINAL_STATUSES = exports.CYCLE_STATUS_TRANSITIONS = exports.CYCLE_STATUS = exports.PLAN_TERMINAL_STATUSES = exports.PLAN_STATUS_TRANSITIONS = exports.PLAN_STATUS = void 0;
 exports.PLAN_STATUS = {
     PLANNED: "PLANNED",
     ACTIVE: "ACTIVE",
@@ -77,5 +77,24 @@ exports.ID_ENTITY = {
     LAB_REVIEW: "CHEMOTHERAPY_LAB_REVIEW",
     FOLLOWUP: "CHEMOTHERAPY_FOLLOWUP",
     REGIMEN_PROTOCOL: "REGIMEN_PROTOCOL",
-    REGIMEN_PROTOCOL_ITEM: "REGIMEN_PROTOCOL_ITEM"
+    REGIMEN_PROTOCOL_ITEM: "REGIMEN_PROTOCOL_ITEM",
+    REGIMEN_PROTOCOL_DAY: "REGIMEN_PROTOCOL_DAY",
+    REGIMEN_PROTOCOL_DILUTION: "REGIMEN_PROTOCOL_DILUTION"
+};
+// Generic protocols are shared reference templates available to every
+// organization. Personalizing one creates an independent organization-owned
+// copy (protocol_type = PERSONALIZED, organization_id set) that the owning
+// organization may customize without ever touching the generic source.
+exports.PROTOCOL_TYPE = {
+    GENERIC: "GENERIC",
+    PERSONALIZED: "PERSONALIZED"
+};
+// chemotherapy_regimen_protocol.active_status follows the same 1/0 smallint
+// convention used everywhere else: 1 = active/published (selectable for
+// treatment plans), 0 = inactive/draft/deactivated (not selectable).
+// A freshly personalized protocol is created with active_status = 0 and only
+// becomes selectable after an explicit activate/publish operation.
+exports.PROTOCOL_ACTIVE_STATUS = {
+    ACTIVE: 1,
+    INACTIVE: 0
 };

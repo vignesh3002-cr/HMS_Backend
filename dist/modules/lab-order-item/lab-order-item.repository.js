@@ -14,7 +14,11 @@ class LabOrderItemRepository {
     async findAll() {
         return prisma_1.default.lab_order_item.findMany({
             include: {
-                lab_order: true,
+                lab_order: {
+                    include: {
+                        patient_history: true
+                    }
+                },
                 lab_test_master: true
             }
         });
@@ -25,7 +29,11 @@ class LabOrderItemRepository {
                 lab_order_item_id
             },
             include: {
-                lab_order: true,
+                lab_order: {
+                    include: {
+                        patient_history: true
+                    }
+                },
                 lab_test_master: true
             }
         });

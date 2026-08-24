@@ -4,8 +4,13 @@ exports.updateLabOrderValidation = exports.createLabOrderValidation = void 0;
 const express_validator_1 = require("express-validator");
 exports.createLabOrderValidation = [
     (0, express_validator_1.body)("patient_history_id")
+        .optional()
         .notEmpty()
-        .withMessage("Patient History ID is required"),
+        .withMessage("Patient History ID cannot be empty"),
+    (0, express_validator_1.body)("patient_id")
+        .optional()
+        .notEmpty()
+        .withMessage("Patient ID cannot be empty"),
     (0, express_validator_1.body)("doctor_employee_id")
         .notEmpty()
         .withMessage("Doctor Employee ID is required"),

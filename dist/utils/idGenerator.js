@@ -19,6 +19,10 @@ const ENTITY_TARGET = {
     SAMPLE_COLLECTION: { table: "sample_collection", column: "sample_collection_id" },
     USER: { table: "user_table", column: "user_id" },
     DOCTOR_TRANSFER: { table: "doctor_transfer", column: "transfer_id" },
+    REGIMEN_PROTOCOL: { table: "chemotherapy_regimen_protocol", column: "protocol_id" },
+    REGIMEN_PROTOCOL_ITEM: { table: "chemotherapy_regimen_protocol_items", column: "protocol_item_id" },
+    REGIMEN_PROTOCOL_DAY: { table: "chemotherapy_regimen_protocol_days", column: "protocol_day_id" },
+    REGIMEN_PROTOCOL_DILUTION: { table: "chemotherapy_protocol_dilutions", column: "protocol_dilution_id" },
 };
 async function generateId(tx, entity) {
     // Lock the row

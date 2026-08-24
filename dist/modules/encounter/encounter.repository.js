@@ -88,6 +88,17 @@ class EncounterRepository {
             }
         });
     }
+    async findActiveBranchMappingsForUser(userId) {
+        return prisma_1.default.user_branch_mapping.findMany({
+            where: {
+                user_id: userId,
+                status: 1
+            },
+            select: {
+                branch_id: true
+            }
+        });
+    }
     async findEncounterByAppointmentId(appointmentId) {
         return prisma_1.default.encounter.findUnique({
             where: { appointment_id: appointmentId }
@@ -143,7 +154,7 @@ class EncounterRepository {
         return groups.length;
     }
     async getEncounters(query) {
-        const { branchId, doctorId, patientId, status, encounterType, date, dateFrom, dateTo, search, sortBy = "encounter_ts", sortOrder = "desc", page = 1, limit = 10 } = query;
+        const { branchId, doctorId, patientId, appointmentId, status, encounterType, date, dateFrom, dateTo, search, sortBy = "encounter_ts", sortOrder = "desc", page = 1, limit = 10 } = query;
         const where = {};
         if (branchId)
             where.branch_id = branchId;
@@ -151,6 +162,8 @@ class EncounterRepository {
             where.employee_id = doctorId;
         if (patientId)
             where.patient_id = patientId;
+        if (appointmentId)
+            where.appointment_id = appointmentId;
         if (status)
             where.status = status;
         if (encounterType)
