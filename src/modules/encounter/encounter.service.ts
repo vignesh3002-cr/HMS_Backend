@@ -20,7 +20,17 @@ export class EncounterService {
             throw new Error("Appointment not found");
         }
 
-        if (TERMINAL_APPOINTMENT_STATUSES.includes(appointment.status ?? "")) {
+        /*
+         * NOT_CHECKED_IN is written by the elapsed-slot job only to free
+         * the slot - the patient may still walk in later, and doctors are
+         * offered an explicit Check In action for these rows. Allow late
+         * check-in; the transaction below flips status to IN_CONSULTATION.
+         */
+        const blockingStatuses = TERMINAL_APPOINTMENT_STATUSES.filter(
+            (status) => status !== APPOINTMENT_STATUS.NOT_CHECKED_IN
+        );
+
+        if (blockingStatuses.includes(appointment.status ?? "")) {
             throw new Error(
                 `Cannot create an encounter for an appointment that is already ${appointment.status}`
             );
@@ -69,13 +79,14 @@ export class EncounterService {
             throw new Error("Doctor is not assigned to the appointment's branch");
         }
 
-        if (!appointment.schedule_id) {
-            throw new Error("Appointment has no associated doctor schedule");
-        }
-
-        if (!appointment.doctor_schedule || !appointment.doctor_schedule.is_active) {
-            throw new Error("Doctor schedule is not active");
-        }
+        /*
+         * schedule_id is deliberately NOT enforced here. Appointments can
+         * legitimately lose their original schedule after booking (schedule
+         * OVERRIDE/CANCEL closes old schedules, off-day bookings have none),
+         * and encounter.schedule_id is nullable in the schema. Blocking
+         * clinical flow because a schedule disappeared only strands the
+         * appointment in IN_CONSULTATION with no encounter.
+         */
 
         const existingEncounter = await repository.findEncounterByAppointmentId(
             data.appointment_id
@@ -99,8 +110,8 @@ export class EncounterService {
                     department_id: appointment.department_id,
                     appointment_id: appointment.appointment_id,
                     employee_id: doctor.employee_id!,
-                    schedule_id: appointment.schedule_id!,
-                    encounter_type: appointment.Patient_type!,
+                    schedule_id: appointment.schedule_id,
+                    encounter_type: appointment.Patient_type ?? ENCOUNTER_TYPE_DEFAULT,
                     status: ENCOUNTER_STATUS.OPEN
 
                 });
