@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAppointmentsValidation = exports.getDoctorWeekSlotSummaryValidation = exports.getDoctorSlotSummaryValidation = exports.getAvailableSlotsValidation = exports.cancelAppointmentValidation = exports.updateAppointmentStatusValidation = exports.updateAppointmentValidation = exports.createAppointmentValidation = void 0;
+exports.getAppointmentsValidation = exports.getPatientCountValidation = exports.getDoctorWeekSlotSummaryValidation = exports.getDoctorSlotSummaryValidation = exports.getAvailableSlotsValidation = exports.cancelAppointmentValidation = exports.updateAppointmentStatusValidation = exports.updateAppointmentValidation = exports.createAppointmentValidation = void 0;
 const express_validator_1 = require("express-validator");
 const appointment_constants_1 = require("./appointment.constants");
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -119,6 +119,14 @@ exports.getDoctorWeekSlotSummaryValidation = [
         .withMessage("Date is required")
         .isISO8601()
         .withMessage("Date must be a valid date (YYYY-MM-DD)")
+];
+exports.getPatientCountValidation = [
+    (0, express_validator_1.query)("employeeId")
+        .notEmpty()
+        .withMessage("Doctor is required"),
+    (0, express_validator_1.query)("branchId")
+        .optional()
+        .notEmpty()
 ];
 exports.getAppointmentsValidation = [
     (0, express_validator_1.query)("page")
