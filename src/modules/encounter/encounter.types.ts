@@ -29,6 +29,7 @@ export interface GetEncountersQuery {
     branchId?: string;
     doctorId?: string;
     patientId?: string;
+    appointmentId?: string;
     status?: string;
     encounterType?: string;
 

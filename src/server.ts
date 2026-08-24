@@ -134,9 +134,6 @@ app.use("/api/encounters", encounterRoutes);
 app.use("/api/clinical-details", clinicalDetailsRoutes);
 app.use("/api/permissions", permissionRoutes);
 app.use("/api/roles", roleRoutes);
-app.use("/api/prescriptions", prescriptionRoutes);
-app.use("/api/chemotherapy", chemotherapyRoutes);
-app.use("/api/lab-order-item", labOrderItemRoutes);
 app.use("/api/oncology", oncologyRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/export", exportRoutes);
@@ -153,12 +150,7 @@ app.use("/api/doctor-leave", doctorLeaveRoutes);
 app.use("/api/notifications", notificationRoutes);
 
 app.use("/api/qualification-master", qualificationMasterRoutes);
-app.use("/api/appointments", appointmentRoutes);
-app.use("/api/encounters", encounterRoutes);
-app.use("/api/prescriptions", prescriptionRoutes);
-app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/diagnosis", diagnosisRoutes);
-app.use("/api/doctors", doctorTransferRoutes);
 
 app.use("/api/hashpassword", async (req, res) => {
   const { password } = req.body;
