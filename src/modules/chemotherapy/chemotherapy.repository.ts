@@ -60,7 +60,17 @@ export class ChemotherapyRepository {
 
         return prisma.chemotherapy_regimen_protocol.findUnique({
             where: { protocol_id: protocolId },
-            include: this.protocolInclude,
+            include: this.protocolInclude
+        });
+
+    }
+
+    async listDischargeMedicinesForProtocol(protocolId: string) {
+
+        return prisma.chemotherapy_discharge_instructions.findMany({
+            where: { protocol_id: protocolId, active_status: 1 },
+            include: { medicine_master: true },
+            orderBy: { drug_sequence: "asc" }
         });
 
     }
