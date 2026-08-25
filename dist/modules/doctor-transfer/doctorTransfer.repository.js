@@ -175,6 +175,77 @@ class DoctorTransferRepository {
     // the closing branches, because the whole branch is closing; a slot-level
     // move only matches schedule-less (schedule_id NULL) appointments, so
     // other slots at the same branch stay out of scope.
+    /**
+     * Data needed to compute which appointments a DATE_CHANGE would strand:
+     * the recurring template rows for that branch plus every active
+     * schedule-change on the exact date (optionally excluding the row being
+     * updated/deleted).
+     */
+    async fetchDataForDateChangeImpact(employeeId, branchId, changeDate, excludeChangeId) {
+        const [templateSchedules, activeChanges] = await Promise.all([
+            prisma_1.default.doctor_schedule.findMany({
+                where: {
+                    employee_id: employeeId,
+                    branch_id: branchId,
+                    is_active: true
+                },
+                select: { day_of_week: true, start_time: true, end_time: true }
+            }),
+            prisma_1.default.doctor_schedule_change.findMany({
+                where: {
+                    employee_id: employeeId,
+                    branch_id: branchId,
+                    change_date: changeDate,
+                    is_active: true
+                },
+                select: {
+                    change_id: true,
+                    mode: true,
+                    start_time: true,
+                    end_time: true
+                }
+            })
+        ]);
+        const changes = excludeChangeId
+            ? activeChanges.filter((chg) => chg.change_id !== excludeChangeId)
+            : activeChanges;
+        return { templateSchedules, changes };
+    }
+    /** Appointments booked for this doctor+branch ON the exact change date
+     *  (today or later), excluding terminal statuses - these are the rows
+     *  a date-change could strand. */
+    async findDayAppointments(employeeId, branchId, changeDate) {
+        const dayEnd = new Date(changeDate.getTime() + 24 * 60 * 60 * 1000);
+        return prisma_1.default.appointment_history.findMany({
+            where: {
+                employee_id: employeeId,
+                branch_id: branchId,
+                appointment_date: { gte: changeDate, lt: dayEnd },
+                OR: [
+                    { status: null },
+                    { status: { notIn: appointment_constants_1.TERMINAL_APPOINTMENT_STATUSES } }
+                ]
+            },
+            select: {
+                appointment_id: true,
+                patient_id: true,
+                branch_id: true,
+                department_id: true,
+                schedule_id: true,
+                appointment_date: true,
+                appointment_time: true,
+                status: true,
+                patient_bio_data: {
+                    select: {
+                        patient_first_name: true,
+                        patient_last_name: true,
+                        patient_primary_mobile: true
+                    }
+                }
+            },
+            orderBy: { appointment_time: "asc" }
+        });
+    }
     async findFutureAppointmentsByScheduleIds(scheduleIds, effectiveDate, options, page = 1, limit = 200) {
         const fallbackConds = [];
         if (options?.branchIds?.length) {

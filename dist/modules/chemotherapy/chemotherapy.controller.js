@@ -68,6 +68,15 @@ class ChemotherapyController {
             return handleError(res, error);
         }
     }
+    async getDischargeMedicinesForProtocol(req, res) {
+        try {
+            const data = await service.getDischargeMedicinesForProtocol(req.params.protocolId, req.user?.hospital_id ?? null);
+            return res.json({ success: true, message: "Discharge medicines fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
     async createRegimenProtocol(req, res) {
         try {
             if (!checkValidation(req, res))

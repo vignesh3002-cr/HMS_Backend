@@ -1,0 +1,37 @@
+0000000000000000000000000000000000000000 76cceaf2512006d088db55639bd6406203913317 badcadet <daniel123abraham@gmail.com> 1784892452 +0530	clone: from https://github.com/vignesh3002-cr/HMS_Backend.git
+76cceaf2512006d088db55639bd6406203913317 a6051899119e99756b4d066815d0ef5f5ee573d3 badcadet <daniel123abraham@gmail.com> 1784902788 +0530	commit: no changes
+a6051899119e99756b4d066815d0ef5f5ee573d3 374da06f17e557b15c0529fe0aee7712838703c4 badcadet <daniel123abraham@gmail.com> 1784902868 +0530	commit (merge): no changes
+374da06f17e557b15c0529fe0aee7712838703c4 4fcde64690ee76b8422db863731bd82b0f338f03 badcadet <daniel123abraham@gmail.com> 1784925630 +0530	commit: major changes in creating employees
+4fcde64690ee76b8422db863731bd82b0f338f03 de66edf1ab56a4650f9aac698070f6eb17e76cec badcadet <daniel123abraham@gmail.com> 1784926199 +0530	commit: no changes
+de66edf1ab56a4650f9aac698070f6eb17e76cec 8c70d9a34b5656b1a88f2a625fa72763cce16cdf badcadet <daniel123abraham@gmail.com> 1785155762 +0530	commit: backendsrc--> middleware--> authorize.ts , src-->modules--> auth, branch, employee, patient.ts changed
+8c70d9a34b5656b1a88f2a625fa72763cce16cdf 4174340ddff25866840ae8c9d0dca5d578467b66 badcadet <daniel123abraham@gmail.com> 1785230346 +0530	commit: importing data
+4174340ddff25866840ae8c9d0dca5d578467b66 01b14461380514a960de0276ec5764765abc1cff badcadet <daniel123abraham@gmail.com> 1785231989 +0530	commit (merge): no changes
+01b14461380514a960de0276ec5764765abc1cff 8180f8149664c0fb29eb4fc4fc0d547be65326cf badcadet <daniel123abraham@gmail.com> 1785243436 +0530	commit: want to pull the details
+8180f8149664c0fb29eb4fc4fc0d547be65326cf ef1adecabba4c06829d6173d0d9da3774e8f16be badcadet <daniel123abraham@gmail.com> 1785314328 +0530	commit (merge): no changes
+ef1adecabba4c06829d6173d0d9da3774e8f16be 5e7db84c242bd19ce9aba90e41ce869005890ed8 badcadet <daniel123abraham@gmail.com> 1785328736 +0530	commit: no changes
+5e7db84c242bd19ce9aba90e41ce869005890ed8 858bd7b36aafe89064e9fd23520f5ae3df7178ed badcadet <daniel123abraham@gmail.com> 1785338920 +0530	commit: no changes
+858bd7b36aafe89064e9fd23520f5ae3df7178ed 4bd698b391dd2765e9497ad2defb0d14fa6d1ac7 badcadet <daniel123abraham@gmail.com> 1785417127 +0530	commit: no changes
+4bd698b391dd2765e9497ad2defb0d14fa6d1ac7 22b6ee9b4427dd00e07ec0489f649e6a5e6d14b2 badcadet <daniel123abraham@gmail.com> 1785417141 +0530	pull origin main: Merge made by the 'ort' strategy.
+22b6ee9b4427dd00e07ec0489f649e6a5e6d14b2 4557e0a976c9a9ee28314b22791ca08dd6d0ef8f badcadet <daniel123abraham@gmail.com> 1785417422 +0530	commit: no changes
+4557e0a976c9a9ee28314b22791ca08dd6d0ef8f 806a66882f2fc896ee6a398a4069a8d50a8c834e badcadet <daniel123abraham@gmail.com> 1785430558 +0530	commit: server.ts change
+806a66882f2fc896ee6a398a4069a8d50a8c834e 4f6a3e8390fa7b8cf767205a9301dc33c7cd538f badcadet <daniel123abraham@gmail.com> 1785430792 +0530	commit: verification
+4f6a3e8390fa7b8cf767205a9301dc33c7cd538f f1a1da960d7e916301564735cf5077f668f5bc06 badcadet <daniel123abraham@gmail.com> 1785500893 +0530	commit: errors
+f1a1da960d7e916301564735cf5077f668f5bc06 b4e10d9219e4858bda4a60c57cd47d0c3f002eda badcadet <daniel123abraham@gmail.com> 1785565016 +0530	commit (merge): no changes
+b4e10d9219e4858bda4a60c57cd47d0c3f002eda a430ca9ba6608e611b8e0041162a90cf3433d7ed badcadet <daniel123abraham@gmail.com> 1785760690 +0530	commit: permission pages
+a430ca9ba6608e611b8e0041162a90cf3433d7ed d600fb11b2f73930ba9cd343458cd5dd068964fc badcadet <daniel123abraham@gmail.com> 1785820705 +0530	commit: permission created
+d600fb11b2f73930ba9cd343458cd5dd068964fc d3dc2db7eccb4ea71847ea0a6366b196d3437a2a badcadet <daniel123abraham@gmail.com> 1785820983 +0530	commit (merge): permission changes
+d3dc2db7eccb4ea71847ea0a6366b196d3437a2a c907e177feccc1add8e0e7d8363aa6049bd48c0b badcadet <daniel123abraham@gmail.com> 1785822216 +0530	commit: prisma changes
+c907e177feccc1add8e0e7d8363aa6049bd48c0b 0a8fdcbc6838eddba90bba2049f5294dba65cd77 badcadet <daniel123abraham@gmail.com> 1785835359 +0530	commit: permission changed
+0a8fdcbc6838eddba90bba2049f5294dba65cd77 119b83b27e5278ad3666caf64f8c5de8c11fabf4 badcadet <daniel123abraham@gmail.com> 1786105618 +0530	commit: backend changes
+119b83b27e5278ad3666caf64f8c5de8c11fabf4 e53413168bc65ca9ee32550cb1b518a284a9b45f badcadet <daniel123abraham@gmail.com> 1786367726 +0530	commit: backend changes
+e53413168bc65ca9ee32550cb1b518a284a9b45f 74155d0a6b4c634005895addf3f66801cb2316cf badcadet <daniel123abraham@gmail.com> 1786368386 +0530	commit: backend changes
+74155d0a6b4c634005895addf3f66801cb2316cf 3daf8148a9c8267d331597811103050fbd92ddf6 badcadet <daniel123abraham@gmail.com> 1786585406 +0530	commit: no changes
+3daf8148a9c8267d331597811103050fbd92ddf6 54e96a47893b18dd1514d2eceeb9e53a4ede1975 badcadet <daniel123abraham@gmail.com> 1786586118 +0530	commit (merge): no changes
+54e96a47893b18dd1514d2eceeb9e53a4ede1975 d8ab2a81e737fe739d58e975d19b558f46f37bd6 badcadet <daniel123abraham@gmail.com> 1786626421 +0530	commit (merge): backend changes
+d8ab2a81e737fe739d58e975d19b558f46f37bd6 63ef7be18be50c8014b6cf6f4af5e2728ae79f79 badcadet <daniel123abraham@gmail.com> 1786626613 +0530	commit (merge): backend changes
+63ef7be18be50c8014b6cf6f4af5e2728ae79f79 96953570bde28d3fd986d48fa9284f7ebf260af1 badcadet <daniel123abraham@gmail.com> 1786781944 +0530	commit: minorbackend changes
+96953570bde28d3fd986d48fa9284f7ebf260af1 3ffd1997e782594cc2de20b38c7107b61765ab45 badcadet <daniel123abraham@gmail.com> 1786783906 +0530	commit (merge): backend minor changes
+3ffd1997e782594cc2de20b38c7107b61765ab45 98a82899666883ed0c7507f3cb70e7736e8b81b2 badcadet <daniel123abraham@gmail.com> 1787120867 +0530	commit: doctor transfer and appointment
+98a82899666883ed0c7507f3cb70e7736e8b81b2 da81364022f6dcbc6c24a21f0265b367186c1bfd badcadet <daniel123abraham@gmail.com> 1787122187 +0530	commit (merge): doctor transfer and appointment
+da81364022f6dcbc6c24a21f0265b367186c1bfd b74196eac6e96fd476b8919f60bcf3b5c9a68ae2 badcadet <daniel123abraham@gmail.com> 1787136628 +0530	commit: no changes
+b74196eac6e96fd476b8919f60bcf3b5c9a68ae2 c893f9de518721a2c090ea9f5bb3defeab903bad badcadet <daniel123abraham@gmail.com> 1787296207 +0530	commit (merge): no changes

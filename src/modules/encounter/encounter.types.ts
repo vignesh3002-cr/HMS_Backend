@@ -21,6 +21,8 @@ export interface UpdateEncounterDTO {
     temperature?: number;
     respiratory_rate?: number;
     spo2?: number;
+    blood_sugar?: number;
+    pain_score?: number;
 
 }
 

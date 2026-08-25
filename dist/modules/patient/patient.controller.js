@@ -93,5 +93,30 @@ class PatientController {
             });
         }
     }
+    async createPatientHistory(req, res) {
+        try {
+            const createdBy = req.user?.employee_id || req.user?.user_id || "SYSTEM";
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+            const history = await service.createPatientHistory(req.body, createdBy);
+            return res.status(201).json({
+                success: true,
+                message: "Vitals recorded successfully",
+                data: history
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
 }
 exports.PatientController = PatientController;

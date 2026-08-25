@@ -51,7 +51,14 @@ class ChemotherapyRepository {
     async findRegimenProtocolById(protocolId) {
         return prisma_1.default.chemotherapy_regimen_protocol.findUnique({
             where: { protocol_id: protocolId },
-            include: this.protocolInclude,
+            include: this.protocolInclude
+        });
+    }
+    async listDischargeMedicinesForProtocol(protocolId) {
+        return prisma_1.default.chemotherapy_discharge_instructions.findMany({
+            where: { protocol_id: protocolId, active_status: 1 },
+            include: { medicine_master: true },
+            orderBy: { drug_sequence: "asc" }
         });
     }
     async findRegimenProtocolByCode(cancerTypeId, subtypeId, regimenCode) {

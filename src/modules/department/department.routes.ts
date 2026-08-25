@@ -10,10 +10,12 @@ router.get("/test", (req, res) => {
     res.json({ message: "Department route is working" });
 });
 
+// Listing departments requires only authentication: it is non-sensitive
+// reference data (id/name pairs) needed by doctor-facing forms such as the
+// schedule slot modal, and the DOCTOR role has no department.read grant.
 router.get(
     "/",
     authenticate,
-    authorize("department.read"),
     departmentController.getAllDepartments.bind(departmentController)
 );
 

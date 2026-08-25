@@ -220,9 +220,9 @@ export class EncounterRepository {
             branchId,
             doctorId,
             patientId,
-            appointmentId,
             status,
             encounterType,
+            appointmentId,
             date,
             dateFrom,
             dateTo,
@@ -241,6 +241,7 @@ export class EncounterRepository {
         if (appointmentId) where.appointment_id = appointmentId;
         if (status) where.status = status;
         if (encounterType) where.encounter_type = encounterType;
+        if (appointmentId) where.appointment_id = appointmentId;
 
         if (date) {
 

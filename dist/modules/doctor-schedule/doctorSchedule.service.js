@@ -156,27 +156,39 @@ class DoctorScheduleService {
             }
         }
         // --------------------------------------------------
-        // 10. Prevent overlapping ADD ranges
+        // 10. Prevent overlapping ADD / OVERRIDE ranges
+        //
+        // Compared against every active ADD or OVERRIDE change for this
+        // doctor on the same date across ALL branches - a doctor cannot be
+        // double-booked anywhere on that day, regardless of branch.
         // --------------------------------------------------
-        if (mode === "ADD" &&
+        if ((mode === "ADD" ||
+            mode === "OVERRIDE") &&
             start_time &&
             end_time) {
-            const existingAdds = await prisma_1.default.doctor_schedule_change.findMany({
+            const existingRanges = await prisma_1.default.doctor_schedule_change.findMany({
                 where: {
                     employee_id,
-                    branch_id,
                     change_date: parsedDate,
-                    mode: "ADD",
+                    mode: {
+                        in: [
+                            "ADD",
+                            "OVERRIDE"
+                        ]
+                    },
                     is_active: true,
                 },
                 select: {
+                    branch_id: true,
+                    mode: true,
                     start_time: true,
                     end_time: true,
                 },
             });
             const newStart = this.timeToMinutes(start_time);
             const newEnd = this.timeToMinutes(end_time);
-            for (const existing of existingAdds) {
+            const formatMinutes = (value) => `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
+            for (const existing of existingRanges) {
                 if (!existing.start_time ||
                     !existing.end_time) {
                     continue;
@@ -188,7 +200,8 @@ class DoctorScheduleService {
                     newEnd >
                         existingStart;
                 if (overlaps) {
-                    throw new Error("The ADD schedule overlaps with an existing active ADD schedule");
+                    throw new Error(`The ${mode} schedule overlaps an existing ${existing.mode} change ` +
+                        `(${formatMinutes(existingStart)}-${formatMinutes(existingEnd)}) at branch ${existing.branch_id}`);
                 }
             }
         }
@@ -325,30 +338,43 @@ class DoctorScheduleService {
             }
         }
         // --------------------------------------------------
-        // 7. Prevent overlapping ADD schedules
+        // 7. Prevent overlapping ADD / OVERRIDE ranges
+        //
+        // Same rule as on create: compare against every active ADD or
+        // OVERRIDE for this doctor on the same date across ALL branches.
+        // This change itself is excluded so editing a range in place never
+        // false-positives against its own row.
         // --------------------------------------------------
-        if (finalMode === "ADD" &&
+        if ((finalMode === "ADD" ||
+            finalMode === "OVERRIDE") &&
             finalStartTime &&
             finalEndTime) {
-            const existingAdds = await prisma_1.default.doctor_schedule_change.findMany({
+            const existingRanges = await prisma_1.default.doctor_schedule_change.findMany({
                 where: {
                     employee_id: existingChange.employee_id,
-                    branch_id: existingChange.branch_id,
                     change_date: finalChangeDate,
-                    mode: "ADD",
+                    mode: {
+                        in: [
+                            "ADD",
+                            "OVERRIDE"
+                        ]
+                    },
                     is_active: true,
                     NOT: {
                         change_id,
                     },
                 },
                 select: {
+                    branch_id: true,
+                    mode: true,
                     start_time: true,
                     end_time: true,
                 },
             });
             const newStart = this.timeToMinutes(finalStartTime);
             const newEnd = this.timeToMinutes(finalEndTime);
-            for (const existing of existingAdds) {
+            const formatMinutes = (value) => `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
+            for (const existing of existingRanges) {
                 if (!existing.start_time ||
                     !existing.end_time) {
                     continue;
@@ -360,7 +386,8 @@ class DoctorScheduleService {
                     newEnd >
                         existingStart;
                 if (overlaps) {
-                    throw new Error("The ADD schedule overlaps with an existing active ADD schedule");
+                    throw new Error(`The ${finalMode} schedule overlaps an existing ${existing.mode} change ` +
+                        `(${formatMinutes(existingStart)}-${formatMinutes(existingEnd)}) at branch ${existing.branch_id}`);
                 }
             }
         }
@@ -885,6 +912,45 @@ class DoctorScheduleService {
                 effective_to: new Date(),
                 deleted_by: actingUserId,
             },
+        });
+    }
+    /**
+     * Transaction-aware low-level appliers used by the transfer flow so a
+     * confirmed DATE_CHANGE can be written inside confirmTransfer's own
+     * transaction. Validation already happened at initiation time.
+     */
+    async applyCreateChangeTx(tx, data) {
+        return tx.doctor_schedule_change.create({
+            data: {
+                employee_id: data.employee_id,
+                branch_id: data.branch_id,
+                change_date: data.change_date,
+                mode: data.mode,
+                start_time: data.start_time,
+                end_time: data.end_time,
+                reason: data.reason ?? null,
+                is_active: true,
+                created_by: data.created_by ?? null,
+                updated_at: new Date()
+            }
+        });
+    }
+    async applyUpdateChangeTx(tx, change_id, data) {
+        return tx.doctor_schedule_change.update({
+            where: { change_id },
+            data: {
+                ...(data.mode ? { mode: data.mode } : {}),
+                ...(data.start_time !== undefined ? { start_time: data.start_time } : {}),
+                ...(data.end_time !== undefined ? { end_time: data.end_time } : {}),
+                ...(data.reason !== undefined ? { reason: data.reason } : {}),
+                updated_at: new Date()
+            }
+        });
+    }
+    async applyDeactivateChangeTx(tx, change_id) {
+        return tx.doctor_schedule_change.update({
+            where: { change_id },
+            data: { is_active: false, updated_at: new Date() }
         });
     }
 }

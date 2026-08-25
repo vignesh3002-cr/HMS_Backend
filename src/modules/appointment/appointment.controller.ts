@@ -268,11 +268,12 @@ export class AppointmentController {
                 });
             }
 
-            // IMPORTANT:
-            // updateAppointmentStatus currently accepts only 2 arguments.
+            const cancelledBy = req.body.cancelled_by || (req as any).user?.user_id || (req as any).user?.id || null;
             const appointment = await service.updateAppointmentStatus(
                 req.params.appointmentNo as string,
-                req.body.status
+                req.body.status,
+                req.body.cancel_reason,
+                cancelledBy
             );
 
             return res.json({
@@ -302,6 +303,7 @@ export class AppointmentController {
             }
 
             const cancelledBy =
+                req.body.cancelled_by ||
                 (req as any).user?.user_id ||
                 (req as any).user?.id ||
                 null;

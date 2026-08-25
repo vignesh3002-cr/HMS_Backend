@@ -143,4 +143,41 @@ export class PatientController {
 
     }
 
+    async createPatientHistory(req: Request, res: Response) {
+
+        try {
+
+            const createdBy = (req as any).user?.employee_id || (req as any).user?.user_id || "SYSTEM";
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const history = await service.createPatientHistory(req.body, createdBy);
+
+            return res.status(201).json({
+                success: true,
+                message: "Vitals recorded successfully",
+                data: history
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
 }
