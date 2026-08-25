@@ -4,7 +4,6 @@ const express_1 = require("express");
 const chemotherapy_controller_1 = require("./chemotherapy.controller");
 const auth_middleware_1 = require("../auth/auth.middleware");
 const authorize_1 = require("../../middleware/authorize");
-const branchScope_1 = require("../../middleware/branchScope");
 const chemotherapy_validation_1 = require("./chemotherapy.validation");
 const router = (0, express_1.Router)();
 const controller = new chemotherapy_controller_1.ChemotherapyController();
@@ -21,7 +20,7 @@ router.delete("/regimen-protocols/:protocolId/items/:protocolItemId", auth_middl
 // ---------------- Plan ----------------
 router.get("/plans/preview", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.previewPlanValidation, controller.previewPlan.bind(controller));
 router.post("/plans", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.create"), chemotherapy_validation_1.createPlanValidation, controller.createPlan.bind(controller));
-router.get("/plans", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), branchScope_1.branchScope, chemotherapy_validation_1.listPlansValidation, controller.listPlans.bind(controller));
+router.get("/plans", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.listPlansValidation, controller.listPlans.bind(controller));
 router.get("/plans/:planId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.planIdParamValidation, controller.getPlan.bind(controller));
 router.put("/plans/:planId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.updatePlanValidation, controller.updatePlan.bind(controller));
 router.patch("/plans/:planId/status", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.planStatusValidation, controller.changePlanStatus.bind(controller));

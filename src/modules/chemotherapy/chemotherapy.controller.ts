@@ -99,6 +99,19 @@ export class ChemotherapyController {
 
     }
 
+    async listDischargeMedicines(req: Request, res: Response) {
+
+        try {
+
+            const data = await service.listDischargeMedicines(req.params.protocolId as string);
+            return res.json({ success: true, message: "Discharge medicines fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
     async createRegimenProtocol(req: Request, res: Response) {
 
         try {

@@ -45,6 +45,14 @@ router.get(
 );
 
 router.get(
+    "/regimen-protocols/:protocolId/discharge-medicines",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    getRegimenProtocolValidation,
+    controller.listDischargeMedicines.bind(controller)
+);
+
+router.get(
     "/regimen-protocols/:protocolId",
     authenticate,
     authorize("chemo.protocol.read"),
