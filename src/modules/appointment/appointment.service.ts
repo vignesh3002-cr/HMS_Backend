@@ -159,7 +159,32 @@ async function findReferenceSchedule(
             }
         });
 
-    return schedule as DoctorSchedule | null;
+    if (schedule) {
+        return schedule as DoctorSchedule | null;
+    }
+
+    // Fallback anchor: an ADD/OVERRIDE-only date at a branch where the
+    // doctor has no OTHER recurring row still needs a real doctor_schedule
+    // row for appointment_history.schedule_id. Any active row of this
+    // doctor works as that anchor - the appointment itself keeps its own
+    // branch_id, so this does not move the booking to another branch.
+    const anyActiveSchedule =
+        await prisma.doctor_schedule.findFirst({
+            where: {
+                employee_id: employeeId,
+                is_active: true
+            },
+            orderBy: [
+                {
+                    branch_id: "asc"
+                },
+                {
+                    start_time: "asc"
+                }
+            ]
+        });
+
+    return anyActiveSchedule as DoctorSchedule | null;
 }
 
 /**
@@ -828,20 +853,77 @@ export class AppointmentService {
         const doctorName =
             `${employee.first_name} ${employee.last_name}`.trim();
 
-        return prisma.$transaction(
-            async (tx) => {
+return this.transformAppointmentFields(
+            await prisma.$transaction(
+                async (tx) => {
 
-                await repository.lockDoctorSchedule(
-                    tx,
-                    schedule.schedule_id
-                );
+                    await repository.lockDoctorSchedule(
+                        tx,
+                        schedule.schedule_id
+                    );
 
-                const stillDuplicate =
-                    await tx.appointment_history.findFirst(
-                        {
-                            where: {
+                    const stillDuplicate =
+                        await tx.appointment_history.findFirst(
+                            {
+                                where: {
+                                    employee_id:
+                                        data.employee_id,
+
+                                    appointment_date:
+                                        appointmentDate,
+
+                                    appointment_time:
+                                        appointmentTime,
+
+                                    status: {
+                                        notIn: [
+                                            "CANCELLED",
+                                            "NO_SHOW"
+                                        ]
+                                    }
+                                }
+                            }
+                        );
+
+                    if (stillDuplicate) {
+                        throw new Error(
+                            "This doctor already has an appointment at the selected date and time"
+                        );
+                    }
+
+                    const appointmentId =
+                        await repository.generateAppointmentNumber(
+                            tx
+                        );
+
+                    const tokenNumber =
+                        await repository.generateTokenNumber(
+                            tx,
+                            schedule.schedule_id,
+                            appointmentDate
+                        );
+
+                    const appointment =
+                        await repository.createAppointment(
+                            tx,
+                            {
+                                appointment_id:
+                                    appointmentId,
+
+                                patient_id:
+                                    data.patient_id,
+
                                 employee_id:
                                     data.employee_id,
+
+                                branch_id:
+                                    data.branch_id,
+
+                                department_id:
+                                    department?.department_id,
+
+                                schedule_id:
+                                    schedule.schedule_id,
 
                                 appointment_date:
                                     appointmentDate,
@@ -849,115 +931,78 @@ export class AppointmentService {
                                 appointment_time:
                                     appointmentTime,
 
-                                status: {
-                                    notIn: [
-                                        "CANCELLED",
-                                        "NO_SHOW"
-                                    ]
-                                }
+                                token_number:
+                                    tokenNumber,
+
+                                status:
+                                    APPOINTMENT_STATUS.SCHEDULED,
+
+                                reason_for_visit:
+                                    data.reason_for_visit,
+
+                                referred_by:
+                                    data.referred_by,
+
+                                booking_source:
+                                    data.booking_source ??
+                                    "STAFF",
+
+                                doctor_name:
+                                    doctorName,
+
+                                assigned_doctor:
+                                    doctorName,
+
+                                department:
+                                    department?.department_name,
+
+                                created_by:
+                                    createdBy,
+
+                                Patient_type:
+                                    data.patient_type,
+
+                                Patient_visit_type:
+                                    data.patient_visit_type
                             }
-                        }
-                    );
+                        );
 
-                if (stillDuplicate) {
-                    throw new Error(
-                        "This doctor already has an appointment at the selected date and time"
-                    );
+                    /*
+                     * In-app notification for the booked doctor.
+                     * Written inside the same transaction so a
+                     * booking and its notification succeed or
+                     * fail together.
+                     */
+                    await tx.appointment_notification.create({
+                        data: {
+                            notification_id: await generateId(
+                                tx,
+                                "NOTIFICATION"
+                            ),
+                            appointment_id: appointmentId,
+                            channel: "IN_APP",
+                            notification_type: "BOOKING",
+                            recipient: data.employee_id,
+                            status: "UNREAD"
+                        }
+                    });
+
+                    return appointment;
                 }
-
-                const appointmentId =
-                    await repository.generateAppointmentNumber(
-                        tx
-                    );
-
-                const tokenNumber =
-                    await repository.generateTokenNumber(
-                        tx,
-                        schedule.schedule_id,
-                        appointmentDate
-                    );
-
-                const appointment =
-                    await repository.createAppointment(
-                        tx,
-                        {
-                            appointment_id:
-                                appointmentId,
-
-                            patient_id:
-                                data.patient_id,
-
-                            employee_id:
-                                data.employee_id,
-
-                            branch_id:
-                                data.branch_id,
-
-                            department_id:
-                                department?.department_id,
-
-                            schedule_id:
-                                schedule.schedule_id,
-
-                            appointment_date:
-                                appointmentDate,
-
-                            appointment_time:
-                                appointmentTime,
-
-                            token_number:
-                                tokenNumber,
-
-                            status:
-                                APPOINTMENT_STATUS.SCHEDULED,
-
-                            reason_for_visit:
-                                data.reason_for_visit,
-
-                            referred_by:
-                                data.referred_by,
-
-                            booking_source:
-                                data.booking_source ??
-                                "STAFF",
-
-                            doctor_name:
-                                doctorName,
-
-                            assigned_doctor:
-                                doctorName,
-
-                            department:
-                                department?.department_name,
-
-                            created_by:
-                                createdBy
-                        }
-                    );
-
-                /*
-                 * In-app notification for the booked doctor.
-                 * Written inside the same transaction so a
-                 * booking and its notification succeed or
-                 * fail together.
-                 */
-                await tx.appointment_notification.create({
-                    data: {
-                        notification_id: await generateId(
-                            tx,
-                            "NOTIFICATION"
-                        ),
-                        appointment_id: appointmentId,
-                        channel: "IN_APP",
-                        notification_type: "BOOKING",
-                        recipient: data.employee_id,
-                        status: "UNREAD"
-                    }
-                });
-
-                return appointment;
-            }
+            )
         );
+    }
+
+    /**
+     * Transform Prisma capital-P fields to snake_case for frontend API.
+     */
+    private transformAppointmentFields(appointment: any): any {
+        if (!appointment) return appointment;
+        return {
+            ...appointment,
+            patient_type: appointment.Patient_type,
+            patient_visit_type: appointment.Patient_visit_type,
+        };
     }
 
     /**
@@ -966,9 +1011,42 @@ export class AppointmentService {
     async getAppointments(
         query: GetAppointmentsQuery
     ) {
-        return repository.getAppointments(
-            query
-        );
+        const result = await repository.getAppointments(query);
+        if (result.appointments) {
+            result.appointments = result.appointments.map((a: any) => this.transformAppointmentFields(a));
+        }
+        return result;
+    }
+
+    /**
+     * Counts distinct patients who booked appointments with a doctor
+     * (optionally scoped to one branch).
+     */
+    async getDistinctPatientCount(
+        employeeId: string,
+        branchId?: string | null
+    ) {
+
+        const employee =
+            await repository.findEmployee(employeeId);
+
+        if (!employee) {
+            throw new Error(
+                "Doctor not found"
+            );
+        }
+
+        const totalPatients =
+            await repository.countDistinctPatientsForEmployee(
+                employeeId,
+                branchId
+            );
+
+        return {
+            employeeId,
+            branchId: branchId ?? null,
+            totalPatients
+        };
     }
 
     /**
@@ -989,7 +1067,7 @@ export class AppointmentService {
             );
         }
 
-        return appointment;
+        return this.transformAppointmentFields(appointment);
     }
 
     /**
@@ -1159,7 +1237,13 @@ export class AppointmentService {
                         data.reason_for_visit,
 
                     referred_by:
-                        data.referred_by
+                        data.referred_by,
+
+                    Patient_type:
+                        data.patient_type,
+
+                    Patient_visit_type:
+                        data.patient_visit_type
                 };
 
                 if (scheduleChanged) {
@@ -1214,7 +1298,7 @@ export class AppointmentService {
                     );
                 }
 
-                return updated;
+                return this.transformAppointmentFields(updated);
             }
         );
     }
@@ -1260,23 +1344,13 @@ export class AppointmentService {
             );
         }
 
-        /**
-         * cancelledBy is accepted here so the controller
-         * can pass the authenticated user.
-         *
-         * The current repository method accepts:
-         * appointmentNo, status, cancelReason
-         *
-         * Therefore cancelledBy is intentionally not passed
-         * to the repository until the repository supports
-         * that fourth parameter.
-         */
-        void cancelledBy;
-
-        return repository.updateAppointmentStatus(
-            appointmentNo,
-            status,
-            cancelReason
+        return this.transformAppointmentFields(
+            await repository.updateAppointmentStatus(
+                appointmentNo,
+                status,
+                cancelReason,
+                cancelledBy
+            )
         );
     }
 

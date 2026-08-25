@@ -79,6 +79,37 @@ export class AppointmentController {
         }
     }
 
+    async getDistinctPatientCount(req: Request, res: Response) {
+        try {
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+
+            const summary = await service.getDistinctPatientCount(
+                req.query.employeeId as string,
+                (req.query.branchId as string) || null
+            );
+
+            return res.json({
+                success: true,
+                message: "Distinct patient count fetched successfully",
+                data: summary
+            });
+
+        } catch (error: any) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+
     async getAvailableSlots(req: Request, res: Response) {
         try {
             const errors = validationResult(req);
@@ -237,11 +268,12 @@ export class AppointmentController {
                 });
             }
 
-            // IMPORTANT:
-            // updateAppointmentStatus currently accepts only 2 arguments.
+            const cancelledBy = req.body.cancelled_by || (req as any).user?.user_id || (req as any).user?.id || null;
             const appointment = await service.updateAppointmentStatus(
                 req.params.appointmentNo as string,
-                req.body.status
+                req.body.status,
+                req.body.cancel_reason,
+                cancelledBy
             );
 
             return res.json({
@@ -271,6 +303,7 @@ export class AppointmentController {
             }
 
             const cancelledBy =
+                req.body.cancelled_by ||
                 (req as any).user?.user_id ||
                 (req as any).user?.id ||
                 null;

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authorizeRoles = exports.authorizeSelfPhoto = exports.authorizeNoSelf = exports.authorizeSelfOrPermission = exports.ADMIN_ROLES = exports.authorize = void 0;
+exports.authorizeScheduleChange = exports.authorizeRoles = exports.authorizeSelfPhoto = exports.authorizeNoSelf = exports.authorizeSelfOrPermission = exports.ADMIN_ROLES = exports.authorize = void 0;
 const permission_service_1 = require("../modules/permission/permission.service");
 const prisma_1 = __importDefault(require("../config/prisma"));
 const authorize = (permissionKey) => {
@@ -162,3 +162,55 @@ const authorizeRoles = (...roles) => {
     };
 };
 exports.authorizeRoles = authorizeRoles;
+// Roles allowed to manage ANY doctor's date-specific schedule changes
+// (ADD / OVERRIDE / CANCEL). Everyone else may only manage their OWN
+// schedule change records.
+const SCHEDULE_CHANGE_MANAGER_ROLES = [
+    "SUPER_ADMIN",
+    "HEAD_ADMIN",
+    "ADMIN",
+    "BRANCH_ADMIN",
+];
+// Gate for the doctor-schedule ADD / OVERRIDE / CANCEL endpoints.
+//
+// Rule:
+//   - admins (SUPER_ADMIN / HEAD_ADMIN / ADMIN / BRANCH_ADMIN) may manage any
+//     doctor's schedule changes
+//   - the doctor themselves may manage their OWN schedule changes
+//   - every other role is denied
+//
+// `getTargetEmployeeId` returns the employee_id the request is trying to
+// act on. For create it comes from the body, for list from the route param,
+// and for update/cancel it is resolved from the schedule-change record.
+//
+// `authenticate` must run before this middleware so req.user is populated.
+const authorizeScheduleChange = (getTargetEmployeeId) => {
+    return async (req, res, next) => {
+        const authReq = req;
+        if (!authReq.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+            });
+        }
+        const userRole = String(authReq.user.role ?? authReq.user.role_type ?? "").toUpperCase();
+        if (SCHEDULE_CHANGE_MANAGER_ROLES.includes(userRole)) {
+            return next();
+        }
+        const own = await prisma_1.default.employees.findUnique({
+            where: { user_id: authReq.user.user_id },
+            select: { employee_id: true },
+        });
+        const targetEmployeeId = await getTargetEmployeeId(authReq);
+        if (own?.employee_id &&
+            targetEmployeeId &&
+            own.employee_id === targetEmployeeId) {
+            return next();
+        }
+        return res.status(403).json({
+            success: false,
+            message: "Forbidden. Only the doctor themselves or an admin can manage this schedule.",
+        });
+    };
+};
+exports.authorizeScheduleChange = authorizeScheduleChange;

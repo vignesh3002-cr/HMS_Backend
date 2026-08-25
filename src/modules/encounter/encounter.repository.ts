@@ -106,6 +106,20 @@ export class EncounterRepository {
 
     }
 
+    async findActiveBranchMappingsForUser(userId: string) {
+
+        return prisma.user_branch_mapping.findMany({
+            where: {
+                user_id: userId,
+                status: 1
+            },
+            select: {
+                branch_id: true
+            }
+        });
+
+    }
+
     async findEncounterByAppointmentId(appointmentId: string) {
 
         return prisma.encounter.findUnique({
@@ -208,6 +222,7 @@ export class EncounterRepository {
             patientId,
             status,
             encounterType,
+            appointmentId,
             date,
             dateFrom,
             dateTo,
@@ -223,8 +238,10 @@ export class EncounterRepository {
         if (branchId) where.branch_id = branchId;
         if (doctorId) where.employee_id = doctorId;
         if (patientId) where.patient_id = patientId;
+        if (appointmentId) where.appointment_id = appointmentId;
         if (status) where.status = status;
         if (encounterType) where.encounter_type = encounterType;
+        if (appointmentId) where.appointment_id = appointmentId;
 
         if (date) {
 

@@ -40,6 +40,13 @@ router.get(
 );
 
 router.get(
+    "/by-appointment/:appointmentId",
+    authenticate,
+    authorize("encounter.read"),
+    controller.getEncounterByAppointment.bind(controller)
+);
+
+router.get(
     "/:encounterNo",
     authenticate,
     authorize("encounter.read"),

@@ -24,15 +24,14 @@ const audit_routes_1 = __importDefault(require("./modules/audit/audit.routes"));
 const export_routes_1 = __importDefault(require("./modules/export/export.routes"));
 const doctorTransfer_routes_1 = __importDefault(require("./modules/doctor-transfer/doctorTransfer.routes"));
 const doctorSchedule_routes_1 = __importDefault(require("./modules/doctor-schedule/doctorSchedule.routes"));
+const doctorLeave_routes_1 = __importDefault(require("./modules/doctorLeave/doctorLeave.routes"));
 const lab_test_category_routes_1 = __importDefault(require("./modules/lab-test-category/lab-test-category.routes"));
 const lab_test_master_routes_1 = __importDefault(require("./modules/lab-test-master/lab-test-master.routes"));
 const lab_order_routes_1 = __importDefault(require("./modules/lab-order/lab-order-routes"));
 const lab_order_item_routes_1 = __importDefault(require("./modules/lab-order-item/lab-order-item.routes"));
 const qualification_master_routes_1 = __importDefault(require("./modules/qualification-master/qualification-master.routes"));
 const diagnosis_routes_1 = __importDefault(require("./modules/diagnosis/diagnosis.routes"));
-const appointment_status_job_1 = require("./modules/appointment/appointment-status.job");
 const clinical_details_routes_1 = __importDefault(require("./modules/clinical-details/clinical-details.routes"));
-const doctorLeave_routes_1 = __importDefault(require("./modules/doctorLeave/doctorLeave.routes"));
 const notification_routes_1 = __importDefault(require("./modules/notification/notification.routes"));
 const bcrypt_1 = require("./utils/bcrypt");
 // Fix BigInt serialization - Prisma returns BigInt types
@@ -120,9 +119,6 @@ app.use("/api/encounters", encounter_routes_1.default);
 app.use("/api/clinical-details", clinical_details_routes_1.default);
 app.use("/api/permissions", permission_routes_1.default);
 app.use("/api/roles", role_routes_1.default);
-app.use("/api/prescriptions", prescription_routes_1.default);
-app.use("/api/chemotherapy", chemotherapy_routes_1.default);
-app.use("/api/lab-order-item", lab_order_item_routes_1.default);
 app.use("/api/oncology", oncology_routes_1.default);
 app.use("/api/audit", audit_routes_1.default);
 app.use("/api/export", export_routes_1.default);
@@ -134,12 +130,7 @@ app.use("/api/doctor-leave", doctorLeave_routes_1.default);
 // In-app notifications (doctor dashboard bell)
 app.use("/api/notifications", notification_routes_1.default);
 app.use("/api/qualification-master", qualification_master_routes_1.default);
-app.use("/api/appointments", appointment_routes_1.default);
-app.use("/api/encounters", encounter_routes_1.default);
-app.use("/api/prescriptions", prescription_routes_1.default);
-app.use("/api/chemotherapy", chemotherapy_routes_1.default);
 app.use("/api/diagnosis", diagnosis_routes_1.default);
-app.use("/api/doctors", doctorTransfer_routes_1.default);
 app.use("/api/hashpassword", async (req, res) => {
     const { password } = req.body;
     const hashedPassword = await (0, bcrypt_1.hashPassword)(password);
@@ -148,5 +139,4 @@ app.use("/api/hashpassword", async (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-    (0, appointment_status_job_1.startAppointmentStatusJob)();
 });

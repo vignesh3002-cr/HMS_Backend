@@ -636,6 +636,25 @@ class EmployeeRepository {
             select: { employee_id: true, branch_id: true }
         });
         const scheduleSet = new Set(schedules.map(s => `${s.employee_id}|${s.branch_id}`));
+        // 2b. Date-specific schedule changes (created from the doctor's Day/Week
+        // view). An ADD/OVERRIDE pinned to the EXACT date makes the doctor
+        // active even when the weekday has no recurring template row; a CANCEL
+        // pinned to that date takes them off regardless of the template.
+        const changes = await prisma_1.default.doctor_schedule_change.findMany({
+            where: {
+                employee_id: { in: doctorIds },
+                is_active: true,
+                change_date: dateStart,
+                ...(branchId ? { branch_id: branchId } : {})
+            },
+            select: { employee_id: true, branch_id: true, mode: true }
+        });
+        const overrideKeys = new Set(changes
+            .filter(c => c.mode === "ADD" || c.mode === "OVERRIDE")
+            .map(c => `${c.employee_id}|${c.branch_id}`));
+        const cancelKeys = new Set(changes
+            .filter(c => c.mode === "CANCEL")
+            .map(c => `${c.employee_id}|${c.branch_id}`));
         // 3. Compute one status per doctor. With a branch filter the status is
         // for that exact branch. Without one, aggregate across the doctor's
         // assigned branches: any branch with an active schedule for this day of
@@ -652,8 +671,12 @@ class EmployeeRepository {
                 ? assignedBranches.includes(branchId) ? [branchId] : []
                 : assignedBranches;
             const hasAvailableSchedule = branches.some((br) => {
+                // CANCEL on this exact date removes that branch's availability even
+                // if its weekly template says otherwise.
+                if (cancelKeys.has(`${doctorId}|${br}`))
+                    return false;
                 const key = `${doctorId}|${br}`;
-                return scheduleSet.has(key);
+                return scheduleSet.has(key) || overrideKeys.has(key);
             });
             statusMap.set(doctorId, hasAvailableSchedule ? "ACTIVE" : "LEAVE");
         }

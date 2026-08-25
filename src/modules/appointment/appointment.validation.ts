@@ -38,10 +38,22 @@ export const createAppointmentValidation = [
         .isString(),
 
     body("referred_by")
+        .if(body("patient_type").equals("Referral"))
+        .notEmpty()
+        .withMessage("Referred by is required for Referral patient type")
+        .bail()
         .optional()
         .isString(),
 
     body("booking_source")
+        .optional()
+        .isString(),
+
+    body("patient_type")
+        .optional()
+        .isString(),
+
+    body("patient_visit_type")
         .optional()
         .isString()
 
@@ -79,6 +91,18 @@ export const updateAppointmentValidation = [
         .isString(),
 
     body("referred_by")
+        .if(body("patient_type").equals("Referral"))
+        .notEmpty()
+        .withMessage("Referred by is required for Referral patient type")
+        .bail()
+        .optional()
+        .isString(),
+
+    body("patient_type")
+        .optional()
+        .isString(),
+
+    body("patient_visit_type")
         .optional()
         .isString()
 
@@ -104,7 +128,15 @@ export const updateAppointmentStatusValidation = [
 
     body("cancel_reason")
         .optional()
-        .isString()
+        .isString(),
+
+    body("cancelled_by")
+        .if(body("status").equals(APPOINTMENT_STATUS.CANCELLED))
+        .notEmpty()
+        .withMessage("Cancelled by is required when cancelling an appointment")
+        .bail()
+        .optional()
+        .isString(),
 
 ];
 
@@ -115,7 +147,13 @@ export const cancelAppointmentValidation = [
 
     body("cancel_reason")
         .notEmpty()
-        .withMessage("Cancellation reason is required")
+        .withMessage("Cancellation reason is required"),
+
+    body("cancelled_by")
+        .notEmpty()
+        .withMessage("Cancelled by is required")
+        .bail()
+        .isString(),
 
 ];
 
@@ -162,6 +200,18 @@ export const getDoctorWeekSlotSummaryValidation = [
         .withMessage("Date is required")
         .isISO8601()
         .withMessage("Date must be a valid date (YYYY-MM-DD)")
+
+];
+
+export const getPatientCountValidation = [
+
+    query("employeeId")
+        .notEmpty()
+        .withMessage("Doctor is required"),
+
+    query("branchId")
+        .optional()
+        .notEmpty()
 
 ];
 

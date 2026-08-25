@@ -820,6 +820,30 @@ async softDeleteSchedule(employeeId: string, scheduleId: number, actingUserId: s
         if (schedule.employee_id !== employeeId) {
             throw new Error("Schedule does not belong to the specified employee");
         }
+
+        // Safety guard: never silently close a slot that still has upcoming
+        // appointments on it - those bookings would be stranded with no
+        // working hours to serve them. Direct the admin to the doctor's
+        // Schedule page, where cancellation runs through the transfer flow
+        // (transfer / reschedule / cancel choices per appointment).
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+
+        const upcomingAppointments = await tx.appointment_history.findMany({
+            where: {
+                schedule_id: scheduleId,
+                appointment_date: { gte: todayStart },
+                OR: [{ status: null }, { status: { notIn: ["CANCELLED"] } }],
+            },
+            select: { appointment_id: true },
+        });
+
+        if (upcomingAppointments.length > 0) {
+            throw new Error(
+                `${upcomingAppointments.length} upcoming appointment(s) are booked on this slot. ` +
+                    "Cancel it from the doctor's Schedule page so they can be transferred or rescheduled first."
+            );
+        }
         await repository.closeSchedule(tx, scheduleId, actingUserId);
     });
     return {

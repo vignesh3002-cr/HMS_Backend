@@ -21,15 +21,14 @@ import auditRoutes from "./modules/audit/audit.routes";
 import exportRoutes from "./modules/export/export.routes";
 import doctorTransferRoutes from "./modules/doctor-transfer/doctorTransfer.routes";
 import doctorScheduleRoutes from "./modules/doctor-schedule/doctorSchedule.routes";
+import doctorLeaveRoutes from "./modules/doctorLeave/doctorLeave.routes";
 import labTestCategoryRoutes from "./modules/lab-test-category/lab-test-category.routes";
 import labTestMasterRoutes from "./modules/lab-test-master/lab-test-master.routes";
 import labOrderRoutes from "./modules/lab-order/lab-order-routes";
 import labOrderItemRoutes from "./modules/lab-order-item/lab-order-item.routes";
 import qualificationMasterRoutes from "./modules/qualification-master/qualification-master.routes";
 import diagnosisRoutes from "./modules/diagnosis/diagnosis.routes";
-import { startAppointmentStatusJob } from "./modules/appointment/appointment-status.job";
 import clinicalDetailsRoutes from "./modules/clinical-details/clinical-details.routes";
-import doctorLeaveRoutes from "./modules/doctorLeave/doctorLeave.routes";
 import notificationRoutes from "./modules/notification/notification.routes";
 
 import { hashPassword } from "./utils/bcrypt";
@@ -134,9 +133,6 @@ app.use("/api/encounters", encounterRoutes);
 app.use("/api/clinical-details", clinicalDetailsRoutes);
 app.use("/api/permissions", permissionRoutes);
 app.use("/api/roles", roleRoutes);
-app.use("/api/prescriptions", prescriptionRoutes);
-app.use("/api/chemotherapy", chemotherapyRoutes);
-app.use("/api/lab-order-item", labOrderItemRoutes);
 app.use("/api/oncology", oncologyRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/export", exportRoutes);
@@ -153,12 +149,7 @@ app.use("/api/doctor-leave", doctorLeaveRoutes);
 app.use("/api/notifications", notificationRoutes);
 
 app.use("/api/qualification-master", qualificationMasterRoutes);
-app.use("/api/appointments", appointmentRoutes);
-app.use("/api/encounters", encounterRoutes);
-app.use("/api/prescriptions", prescriptionRoutes);
-app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/diagnosis", diagnosisRoutes);
-app.use("/api/doctors", doctorTransferRoutes);
 
 app.use("/api/hashpassword", async (req, res) => {
   const { password } = req.body;
@@ -173,7 +164,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
 
     console.log(`Server running on port ${PORT}`);
-
-    startAppointmentStatusJob();
 
 });

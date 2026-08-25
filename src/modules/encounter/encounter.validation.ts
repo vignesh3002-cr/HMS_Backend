@@ -32,7 +32,9 @@ export const updateEncounterValidation = [
     body("diastolic_bp").optional().isInt({ min: 0 }),
     body("temperature").optional().isFloat({ min: 0 }),
     body("respiratory_rate").optional().isInt({ min: 0 }),
-    body("spo2").optional().isInt({ min: 0, max: 100 })
+    body("spo2").optional().isInt({ min: 0, max: 100 }),
+    body("blood_sugar").optional().isFloat({ min: 0 }),
+    body("pain_score").optional().isInt({ min: 0, max: 10 })
 
 ];
 

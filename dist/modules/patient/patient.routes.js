@@ -12,4 +12,5 @@ router.post("/create", auth_middleware_1.authenticate, (0, authorize_1.authorize
 router.get("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("patient.read"), branchScope_1.branchScope, controller.getPatients.bind(controller));
 router.get("/:patientId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("patient.read"), controller.getPatientById.bind(controller));
 router.put("/:patientId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("patient.update"), patient_validation_1.updatePatientValidation, controller.updatePatient.bind(controller));
+router.post("/history", auth_middleware_1.authenticate, (0, authorize_1.authorize)("patient.update"), patient_validation_1.createPatientHistoryValidation, controller.createPatientHistory.bind(controller));
 exports.default = router;

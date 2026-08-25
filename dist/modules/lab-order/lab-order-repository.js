@@ -75,6 +75,12 @@ class LabOrderRepository {
             }
         });
     }
+    async findMostRecentPatientHistory(patient_id) {
+        return prisma_1.default.patient_history.findFirst({
+            where: { patient_id },
+            orderBy: { id: "desc" }
+        });
+    }
     async findDoctor(employee_id) {
         return prisma_1.default.employees.findUnique({
             where: {

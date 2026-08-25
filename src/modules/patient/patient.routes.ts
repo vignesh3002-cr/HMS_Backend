@@ -5,7 +5,8 @@ import { authorize } from "../../middleware/authorize";
 import { branchScope } from "../../middleware/branchScope";
 import {
     createPatientValidation,
-    updatePatientValidation
+    updatePatientValidation,
+    createPatientHistoryValidation
 } from "./patient.validation";
 
 const router = Router();
@@ -35,6 +36,14 @@ router.put(
     authorize("patient.update"),
     updatePatientValidation,
     controller.updatePatient.bind(controller)
+);
+
+router.post(
+    "/history",
+    authenticate,
+    authorize("patient.update"),
+    createPatientHistoryValidation,
+    controller.createPatientHistory.bind(controller)
 );
 
 export default router;

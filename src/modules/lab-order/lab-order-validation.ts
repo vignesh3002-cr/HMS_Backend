@@ -3,8 +3,14 @@ import { body } from "express-validator";
 export const createLabOrderValidation = [
 
     body("patient_history_id")
+        .optional()
         .notEmpty()
-        .withMessage("Patient History ID is required"),
+        .withMessage("Patient History ID cannot be empty"),
+
+    body("patient_id")
+        .optional()
+        .notEmpty()
+        .withMessage("Patient ID cannot be empty"),
 
     body("doctor_employee_id")
         .notEmpty()

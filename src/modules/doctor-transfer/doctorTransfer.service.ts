@@ -31,8 +31,10 @@ import {
     InitiateTransferDto,
     ConfirmTransferDto,
     RescheduleQueueActionDto,
-    GetRescheduleQueueQuery
+    GetRescheduleQueueQuery,
+    ScheduleChangeRequestDto
 } from "./doctorTransfer.types";
+import { DoctorScheduleService } from "../doctor-schedule/doctorSchedule.service";
 
 type ScheduleSnapshotEntry = WorkingHourDto & { consultation_minutes: number };
 
@@ -345,6 +347,325 @@ private async applySlotMove(
 
     }
 
+    // ==================================================================
+    // DATE_CHANGE transfers - ADD / OVERRIDE / CANCEL on one exact date,
+    // protected like recurring slots: affected appointments are detected
+    // and, when any exist, the change waits in PENDING_CONFIRMATION until
+    // Transfer / Reschedule / Cancel-all is chosen.
+    // ==================================================================
+
+    /**
+     * Effective availability windows for one date+branch, mirroring
+     * getEffectiveSchedules rules: CANCEL wipes the whole day, OVERRIDE
+     * replaces template hours, ADD appends extra windows.
+     */
+    private buildDateWindows(
+        weekday: string,
+        templates: { day_of_week: string | null; start_time: Date | null; end_time: Date | null }[],
+        changes: { mode: string; start_time: Date | null; end_time: Date | null }[]
+    ): Array<{ s: number; e: number }> {
+
+        if (changes.some((chg) => chg.mode === "CANCEL")) return [];
+
+        let base = templates
+            .filter((t) => (t.day_of_week ?? "").trim().toUpperCase() === weekday && t.start_time && t.end_time)
+            .map((t) => ({ s: timeToMinutes(t.start_time!), e: timeToMinutes(t.end_time!) }));
+
+        const overrides = changes.filter((c) => c.mode === "OVERRIDE" && c.start_time && c.end_time);
+        if (overrides.length > 0) {
+            base = overrides.map((o) => ({ s: timeToMinutes(o.start_time!), e: timeToMinutes(o.end_time!) }));
+        }
+
+        const adds = changes
+            .filter((c) => c.mode === "ADD" && c.start_time && c.end_time)
+            .map((a) => ({ s: timeToMinutes(a.start_time!), e: timeToMinutes(a.end_time!) }));
+
+        return [...base, ...adds];
+
+    }
+
+    private async initiateDateChangeTransfer(
+        employeeId: string,
+        employee: { user_id?: string | null; department_id?: string | null },
+        dto: InitiateTransferDto,
+        sc: ScheduleChangeRequestDto,
+        requestedBy: string
+    ) {
+
+        if (dto.old_branch_id || (dto.close_schedule_ids && dto.close_schedule_ids.length > 0)) {
+            throw new Error("schedule_change cannot be combined with old_branch_id or close_schedule_ids");
+        }
+
+        if (dto.working_hours && dto.working_hours.length > 0) {
+            throw new Error("Provide either working_hours or schedule_change, not both");
+        }
+
+        if (!sc.branch_id?.trim()) {
+            throw new Error("New branch is required");
+        }
+
+        const changeDate = parseDateOnly(sc.change_date);
+
+        // Past dates are frozen: they can never be added, updated or deleted.
+        if (changeDate.getTime() < todayDateOnly().getTime()) {
+            throw new Error("Past-dated schedule changes cannot be added, updated or deleted.");
+        }
+
+        if (!["CREATE", "UPDATE", "DELETE"].includes(sc.action)) {
+            throw new Error("Invalid schedule_change.action");
+        }
+
+        if (!["ADD", "OVERRIDE", "CANCEL"].includes(sc.mode)) {
+            throw new Error("Invalid schedule_change.mode");
+        }
+
+        let startTime: Date | null = null;
+        let endTime: Date | null = null;
+
+        if (sc.mode !== "CANCEL") {
+            if (!sc.start_time || !sc.end_time) {
+                throw new Error(`${sc.mode} requires start_time and end_time`);
+            }
+            if (timeStringToMinutes(sc.start_time) >= timeStringToMinutes(sc.end_time)) {
+                throw new Error("start_time must be earlier than end_time");
+            }
+            startTime = timeStringToDate(sc.start_time);
+            endTime = timeStringToDate(sc.end_time);
+        } else if (sc.start_time || sc.end_time) {
+            throw new Error("CANCEL must not carry start_time or end_time");
+        }
+
+        let excludeId: bigint | undefined;
+
+        if (sc.action === "UPDATE" || sc.action === "DELETE") {
+
+            if (!sc.change_id) {
+                throw new Error("change_id is required to update or delete a schedule change");
+            }
+
+            excludeId = BigInt(sc.change_id);
+
+            const row = await prisma.doctor_schedule_change.findFirst({
+                where: { change_id: excludeId, employee_id: employeeId }
+            });
+
+            if (!row || !row.is_active) {
+                throw new Error("Schedule change not found or already removed");
+            }
+
+        } else if (sc.mode !== "ADD") {
+
+            // CREATE non-ADD mirrors the duplicate rule: only ONE active
+            // change of any mode per doctor+branch+date.
+            const dup = await prisma.doctor_schedule_change.findFirst({
+                where: {
+                    employee_id: employeeId,
+                    branch_id: sc.branch_id,
+                    change_date: changeDate,
+                    is_active: true
+                }
+            });
+
+            if (dup) {
+                throw new Error(`An active ${dup.mode} schedule change already exists for this branch and date`);
+            }
+
+        }
+
+        // Cross-branch overlap rule (mirrors create/update steps): an ADD /
+        // OVERRIDE may not overlap any other active ADD/OVERRIDE on the same
+        // date regardless of branch.
+        if ((sc.action === "CREATE" || sc.action === "UPDATE") && sc.mode !== "CANCEL") {
+
+            const others = await prisma.doctor_schedule_change.findMany({
+                where: {
+                    employee_id: employeeId,
+                    change_date: changeDate,
+                    is_active: true,
+                    mode: { in: ["ADD", "OVERRIDE"] },
+                    ...(excludeId ? { NOT: { change_id: excludeId } } : {})
+                },
+                select: { branch_id: true, mode: true, start_time: true, end_time: true }
+            });
+
+            const ns = timeToMinutes(startTime!);
+            const ne = timeToMinutes(endTime!);
+
+            for (const other of others) {
+                if (!other.start_time || !other.end_time) continue;
+                const os = timeToMinutes(other.start_time);
+                const oe = timeToMinutes(other.end_time);
+                if (ns < oe && ne > os) {
+                    throw new Error(
+                        `This ${sc.mode} overlaps an existing ${other.mode} at branch ${other.branch_id}. Nothing was saved.`
+                    );
+                }
+            }
+
+        }
+
+        // Coverage: which booked appointments would lose their window?
+        const weekday = toDayOfWeek(changeDate);
+        const impact = await this.repository.fetchDataForDateChangeImpact(
+            employeeId,
+            sc.branch_id,
+            changeDate,
+            excludeId
+        );
+
+        const proposed = [] as Array<{ mode: string; start_time: Date | null; end_time: Date | null }>;
+        if (sc.action === "CREATE" || sc.action === "UPDATE") {
+            proposed.push({ mode: sc.mode as string, start_time: startTime, end_time: endTime });
+        }
+
+        const afterWindows = this.buildDateWindows(weekday, impact.templateSchedules, [
+            ...impact.changes.map((chg) => ({
+                mode: chg.mode as string,
+                start_time: chg.start_time,
+                end_time: chg.end_time
+            })),
+            ...proposed
+        ]);
+
+        const dayAppointments = await this.repository.findDayAppointments(
+            employeeId,
+            sc.branch_id,
+            changeDate
+        );
+
+        const affected = dayAppointments.filter((appt) => {
+            if (!appt.appointment_time) return false;
+            const t = timeToMinutes(appt.appointment_time);
+            return !afterWindows.some((w) => t >= w.s && t < w.e);
+        });
+
+        const snapshotEntry = { __type: "DATE_CHANGE", ...sc };
+        const effectiveDate = parseDateOnly(sc.change_date);
+        const reasonText = dto.transfer_reason?.trim() || `${sc.action} ${sc.mode} on ${sc.change_date}`;
+
+        if (affected.length === 0) {
+
+            // Nothing to protect - apply instantly and record COMPLETED.
+            await prisma.$transaction(async (tx) => {
+                await this.applyDateChangeTx(tx, employeeId, sc, requestedBy);
+            });
+
+            const transferId = await this.repository.generateTransferId(prisma);
+            const now = new Date();
+
+            const completed = await this.repository.createDoctorTransfer(prisma, {
+                transfer_id: transferId,
+                employee_id: employeeId,
+                new_branch_id: sc.branch_id,
+                old_department_id: employee.department_id ?? null,
+                new_department_id: employee.department_id ?? null,
+                effective_date: effectiveDate,
+                new_schedule: [snapshotEntry] as unknown as Prisma.InputJsonValue,
+                closing_schedule_ids: [],
+                transfer_reason: reasonText,
+                status: TRANSFER_STATUS.COMPLETED,
+                affected_appointment_count: 0,
+                requested_by: requestedBy,
+                confirmed_by: requestedBy,
+                confirmed_at: now,
+                completed_at: now
+            });
+
+            return {
+                transfer_id: completed.transfer_id,
+                status: TRANSFER_STATUS.COMPLETED,
+                message: "Schedule change applied.",
+                affected_appointment_count: 0
+            };
+
+        }
+
+        // Affected appointments exist -> PENDING_CONFIRMATION popup flow.
+        const summaries = [];
+
+        for (const appt of affected) {
+            const base = this.mapAppointmentSummary(appt as any);
+            const eligible = await this.findEligibleReplacementDoctors(
+                appt.branch_id!,
+                employee.department_id ?? null,
+                employeeId,
+                weekday,
+                appt.appointment_time!
+            );
+            summaries.push({ ...base, eligible_replacement_doctors: eligible });
+        }
+
+        const pendingTransferId = await this.repository.generateTransferId(prisma);
+
+        const pending = await this.repository.createDoctorTransfer(prisma, {
+            transfer_id: pendingTransferId,
+            employee_id: employeeId,
+            new_branch_id: sc.branch_id,
+            old_department_id: employee.department_id ?? null,
+            new_department_id: employee.department_id ?? null,
+            effective_date: effectiveDate,
+            new_schedule: [snapshotEntry] as unknown as Prisma.InputJsonValue,
+            closing_schedule_ids: [],
+            transfer_reason: reasonText,
+            status: TRANSFER_STATUS.PENDING_CONFIRMATION,
+            affected_appointment_count: affected.length,
+            requested_by: requestedBy
+        });
+
+        return {
+            transfer_id: pending.transfer_id,
+            status: TRANSFER_STATUS.PENDING_CONFIRMATION,
+            message: `${affected.length} appointment(s) on ${sc.change_date} would be stranded by this change. Administrator action is required.`,
+            affected_appointment_count: affected.length,
+            appointments: summaries,
+            actions_required: TRANSFER_ACTION_VALUES
+        };
+
+    }
+
+    private async applyDateChangeTx(
+        tx: any,
+        employeeId: string,
+        sc: ScheduleChangeRequestDto,
+        actingUserId: string
+    ) {
+
+        const changeDate = parseDateOnly(sc.change_date);
+        const startTime = sc.mode !== "CANCEL" && sc.start_time ? timeStringToDate(sc.start_time) : null;
+        const endTime = sc.mode !== "CANCEL" && sc.end_time ? timeStringToDate(sc.end_time) : null;
+
+        const scheduleService = new DoctorScheduleService();
+
+        if (sc.action === "CREATE") {
+            await scheduleService.applyCreateChangeTx(tx, {
+                employee_id: employeeId,
+                branch_id: sc.branch_id,
+                change_date: changeDate,
+                mode: sc.mode as any,
+                start_time: startTime,
+                end_time: endTime,
+                reason: sc.reason ?? null,
+                created_by: actingUserId
+            });
+            return;
+        }
+
+        const changeId = BigInt(sc.change_id!);
+
+        if (sc.action === "UPDATE") {
+            await scheduleService.applyUpdateChangeTx(tx, changeId, {
+                mode: sc.mode as any,
+                ...(startTime ? { start_time: startTime } : {}),
+                ...(endTime ? { end_time: endTime } : {}),
+                ...(sc.reason !== undefined ? { reason: sc.reason } : {})
+            });
+            return;
+        }
+
+        await scheduleService.applyDeactivateChangeTx(tx, changeId);
+
+    }
+
     private async findEligibleReplacementDoctors(
         branchId: string,
         departmentId: string | null,
@@ -495,10 +816,28 @@ private async applySlotMove(
             throw new Error("Effective date cannot be in the past");
         }
 
-        this.validateWorkingHours(dto.working_hours, dto.new_branch_id);
+        // A close-only slot move (e.g. cancelling a slot from the Scheduled
+        // page) closes existing rows and creates nothing, so it legitimately
+        // carries no working_hours. Any other request must bring at least
+        // one entry - validated here instead of express-validator because
+        // the route-level rule had to become optional for close-only moves.
+        if (dto.working_hours && dto.working_hours.length > 0) {
+            this.validateWorkingHours(dto.working_hours, dto.new_branch_id);
+        } else if (!(mode === "ADD_BRANCH" && (requestedCloseScheduleIds.length > 0 || Boolean(dto.schedule_change)))) {
+            throw new Error("At least one working hour entry is required for the new branch");
+        }
 
+        // ======================================================
+        // DATE_CHANGE FLOW - ADD / OVERRIDE / CANCEL on one exact
+        // date, routed through the transfer machinery so affected
+        // appointments receive the same Transfer / Reschedule /
+        // Cancel popup as recurring-slot moves.
+        // ======================================================
+        if (dto.schedule_change) {
+            return await this.initiateDateChangeTransfer(employeeId, employee, dto, dto.schedule_change, requestedBy);
+        }
         const consultationMinutes = dto.consultation_minutes ?? 20;
-        const scheduleSnapshot: ScheduleSnapshotEntry[] = dto.working_hours.map((hour) => ({
+        const scheduleSnapshot: ScheduleSnapshotEntry[] = (dto.working_hours ?? []).map((hour) => ({
             ...hour,
             consultation_minutes: consultationMinutes
         }));
@@ -522,7 +861,7 @@ private async applySlotMove(
             }
         }
 
-        const conflictingSchedules = this.findConflictingSchedules(schedulesStaying, dto.working_hours);
+        const conflictingSchedules = this.findConflictingSchedules(schedulesStaying, dto.working_hours ?? []);
 
         const describeConflict = (s: (typeof conflictingSchedules)[number]) =>
             `${s.day_of_week} ${formatTimeOfDay(s.start_time!)}–${formatTimeOfDay(s.end_time!)} at branch ${s.branch_id}`;
@@ -954,11 +1293,37 @@ let closedBranchIds: string[];
             // affected appointments must match what is actually being closed
             // right now - otherwise bookings can be missed or schedules can
             // look "not transferred" after the transfer completes.
+            // Split the stored snapshot: DATE_CHANGE transfers carry their
+            // payload tagged inside new_schedule; everything else is treated
+            // as normal working-hour entries (none for date changes).
+            const snapshotEntries = ((transfer.new_schedule ?? []) as any[]);
+            const dateChangeEntry = snapshotEntries.find((e) => e && e.__type === "DATE_CHANGE") as ScheduleChangeRequestDto | undefined;
+            const workingSnapshot = snapshotEntries.filter((e) => !(e && e.__type === "DATE_CHANGE")) as unknown as ScheduleSnapshotEntry[];
             const activeSchedulesNow = await this.repository.findAllActiveSchedulesInTx(tx, employeeId);
             const closingScheduleIdsNow = this.findConflictingSchedules(
                 activeSchedulesNow,
-                transfer.new_schedule as unknown as ScheduleSnapshotEntry[]
+                workingSnapshot
             ).map((s) => s.schedule_id);
+
+            // Rows explicitly requested at initiate time (slot-level moves
+            // and close-only cancels) must still close even when a conflict
+            // re-scan cannot rediscover them - a close-only cancel has an
+            // empty new_schedule snapshot and therefore produces zero
+            // conflicts on its own.
+            const seenClosingIds = new Set(
+                closingScheduleIdsNow.map((id) => id.toString())
+            );
+
+            for (const storedId of transfer.closing_schedule_ids ?? []) {
+
+                const key = storedId.toString();
+
+                if (!seenClosingIds.has(key)) {
+                    seenClosingIds.add(key);
+                    closingScheduleIdsNow.push(storedId);
+                }
+
+            }
 
             if (dto.old_branch_id) {
 
@@ -1154,7 +1519,7 @@ if (dto.old_branch_id) {
                     new_branch_id: transfer.new_branch_id,
                     new_department_id: transfer.new_department_id,
                     effective_date: transfer.effective_date,
-                    new_schedule: transfer.new_schedule as unknown as ScheduleSnapshotEntry[],
+                    new_schedule: workingSnapshot,
                     closing_schedule_ids: closingScheduleIdsNow,
                     deletedBy: dto.action === TRANSFER_ACTION.TRANSFER ? confirmedBy : null
                 });
@@ -1168,10 +1533,16 @@ if (dto.old_branch_id) {
                     new_branch_id: transfer.new_branch_id,
                     new_department_id: transfer.new_department_id,
                     effective_date: transfer.effective_date,
-                    new_schedule: transfer.new_schedule as unknown as ScheduleSnapshotEntry[],
+                    new_schedule: workingSnapshot,
                     closing_schedule_ids: closingScheduleIdsNow,
                     deletedBy: null
                 });
+            }
+
+            // A confirmed DATE_CHANGE applies its stored change atomically
+            // with the appointment actions above.
+            if (dateChangeEntry) {
+                await this.applyDateChangeTx(tx, employeeId, dateChangeEntry, confirmedBy);
             }
 
             const now = new Date();

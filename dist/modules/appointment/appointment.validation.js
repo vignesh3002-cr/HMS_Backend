@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAppointmentsValidation = exports.getDoctorWeekSlotSummaryValidation = exports.getDoctorSlotSummaryValidation = exports.getAvailableSlotsValidation = exports.cancelAppointmentValidation = exports.updateAppointmentStatusValidation = exports.updateAppointmentValidation = exports.createAppointmentValidation = void 0;
+exports.getAppointmentsValidation = exports.getPatientCountValidation = exports.getDoctorWeekSlotSummaryValidation = exports.getDoctorSlotSummaryValidation = exports.getAvailableSlotsValidation = exports.cancelAppointmentValidation = exports.updateAppointmentStatusValidation = exports.updateAppointmentValidation = exports.createAppointmentValidation = void 0;
 const express_validator_1 = require("express-validator");
 const appointment_constants_1 = require("./appointment.constants");
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -31,9 +31,19 @@ exports.createAppointmentValidation = [
         .optional()
         .isString(),
     (0, express_validator_1.body)("referred_by")
+        .if((0, express_validator_1.body)("patient_type").equals("Referral"))
+        .notEmpty()
+        .withMessage("Referred by is required for Referral patient type")
+        .bail()
         .optional()
         .isString(),
     (0, express_validator_1.body)("booking_source")
+        .optional()
+        .isString(),
+    (0, express_validator_1.body)("patient_type")
+        .optional()
+        .isString(),
+    (0, express_validator_1.body)("patient_visit_type")
         .optional()
         .isString()
 ];
@@ -61,6 +71,16 @@ exports.updateAppointmentValidation = [
         .optional()
         .isString(),
     (0, express_validator_1.body)("referred_by")
+        .if((0, express_validator_1.body)("patient_type").equals("Referral"))
+        .notEmpty()
+        .withMessage("Referred by is required for Referral patient type")
+        .bail()
+        .optional()
+        .isString(),
+    (0, express_validator_1.body)("patient_type")
+        .optional()
+        .isString(),
+    (0, express_validator_1.body)("patient_visit_type")
         .optional()
         .isString()
 ];
@@ -78,14 +98,26 @@ exports.updateAppointmentStatusValidation = [
         .withMessage("Cancellation reason is required when cancelling an appointment"),
     (0, express_validator_1.body)("cancel_reason")
         .optional()
-        .isString()
+        .isString(),
+    (0, express_validator_1.body)("cancelled_by")
+        .if((0, express_validator_1.body)("status").equals(appointment_constants_1.APPOINTMENT_STATUS.CANCELLED))
+        .notEmpty()
+        .withMessage("Cancelled by is required when cancelling an appointment")
+        .bail()
+        .optional()
+        .isString(),
 ];
 exports.cancelAppointmentValidation = [
     (0, express_validator_1.param)("appointmentNo")
         .notEmpty(),
     (0, express_validator_1.body)("cancel_reason")
         .notEmpty()
-        .withMessage("Cancellation reason is required")
+        .withMessage("Cancellation reason is required"),
+    (0, express_validator_1.body)("cancelled_by")
+        .notEmpty()
+        .withMessage("Cancelled by is required")
+        .bail()
+        .isString(),
 ];
 exports.getAvailableSlotsValidation = [
     (0, express_validator_1.query)("employeeId")
@@ -119,6 +151,14 @@ exports.getDoctorWeekSlotSummaryValidation = [
         .withMessage("Date is required")
         .isISO8601()
         .withMessage("Date must be a valid date (YYYY-MM-DD)")
+];
+exports.getPatientCountValidation = [
+    (0, express_validator_1.query)("employeeId")
+        .notEmpty()
+        .withMessage("Doctor is required"),
+    (0, express_validator_1.query)("branchId")
+        .optional()
+        .notEmpty()
 ];
 exports.getAppointmentsValidation = [
     (0, express_validator_1.query)("page")

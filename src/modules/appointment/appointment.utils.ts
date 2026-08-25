@@ -61,6 +61,24 @@ export function timeStringToMinutes(time: string): number {
     const [hours, minutes] = time.split(":").map(Number);
     return hours * 60 + minutes;
 }
+// Asia/Kolkata (IST) is the hospital's reference timezone. IST is UTC+05:30
+// with no daylight saving, so "now" in IST is just UTC now shifted by a fixed
+// offset -- independent of the host/server timezone (Local dev vs Vercel).
+const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
+
+export function getNowInIST(): Date {
+    return new Date(Date.now() + IST_OFFSET_MS);
+}
+
+export function getTodayInIST(): string {
+    return formatDateOnly(getNowInIST());
+}
+
+export function getNowMinutesInIST(): number {
+    const now = getNowInIST();
+    return now.getUTCHours() * 60 + now.getUTCMinutes();
+}
+
 
 // Slots only include start times that leave a full consultation before end_time,
 // so a shift never has a slot booked that would run past the doctor's working hours.

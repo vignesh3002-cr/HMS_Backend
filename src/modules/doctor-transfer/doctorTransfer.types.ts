@@ -1,5 +1,32 @@
 import { WorkingHourDto } from "../employee/employee.types";
 
+// Date-specific schedule change (doctor_schedule_change) carried through
+// the transfer flow so ADD / OVERRIDE / CANCEL notes receive the same
+// appointment protection as recurring slots: affected bookings are found,
+// and when any exist the change waits in PENDING_CONFIRMATION until the
+// admin picks Transfer / Reschedule / Cancel-all.
+export interface ScheduleChangeRequestDto {
+
+    action: "CREATE" | "UPDATE" | "DELETE";
+
+    mode: "ADD" | "OVERRIDE" | "CANCEL";
+
+    branch_id: string;
+
+    change_date: string; // YYYY-MM-DD
+
+    // Required for CREATE / UPDATE unless mode === "CANCEL" (CANCEL wipes
+    // the whole date and must not carry times).
+    start_time?: string;
+
+    end_time?: string;
+
+    reason?: string;
+
+    // Required for UPDATE / DELETE - targets an active doctor_schedule_change.
+    change_id?: number;
+
+}
 export interface InitiateTransferDto {
 
     // "TRANSFER"  -> doctor LEAVES the source branch: the old mapping is
@@ -30,6 +57,11 @@ export interface InitiateTransferDto {
     working_hours: WorkingHourDto[];
 
     consultation_minutes?: number;
+
+    // Optional: when present this request manages a single-date schedule
+    // change instead of recurring working hours (working_hours / close-
+    // schedule_ids logic is skipped entirely).
+    schedule_change?: ScheduleChangeRequestDto;
 
 }
 

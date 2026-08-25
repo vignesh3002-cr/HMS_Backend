@@ -1,4 +1,4 @@
-import { DoctorScheduleChangeMode } from "@prisma/client";
+import { DoctorScheduleChangeMode, Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 
 import {
@@ -283,29 +283,44 @@ export class DoctorScheduleService {
         }
 
         // --------------------------------------------------
-        // 10. Prevent overlapping ADD ranges
+        // 10. Prevent overlapping ADD / OVERRIDE ranges
+        //
+        // Compared against every active ADD or OVERRIDE change for this
+        // doctor on the same date across ALL branches - a doctor cannot be
+        // double-booked anywhere on that day, regardless of branch.
         // --------------------------------------------------
 
         if (
-            mode === "ADD" &&
+            (
+                mode === "ADD" ||
+                mode === "OVERRIDE"
+            ) &&
             start_time &&
             end_time
         ) {
 
-            const existingAdds =
+            const existingRanges =
                 await prisma.doctor_schedule_change.findMany({
                     where: {
                         employee_id,
-                        branch_id,
                         change_date:
                             parsedDate,
-                        mode:
-                            "ADD",
+                        mode: {
+                            in: [
+                                "ADD",
+                                "OVERRIDE"
+                            ]
+                        },
                         is_active:
                             true,
                     },
 
                     select: {
+                        branch_id:
+                            true,
+
+                        mode: true,
+
                         start_time:
                             true,
 
@@ -324,9 +339,12 @@ export class DoctorScheduleService {
                     end_time
                 );
 
+            const formatMinutes = (value: number) =>
+                `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
+
             for (
                 const existing
-                of existingAdds
+                of existingRanges
             ) {
 
                 if (
@@ -354,7 +372,8 @@ export class DoctorScheduleService {
 
                 if (overlaps) {
                     throw new Error(
-                        "The ADD schedule overlaps with an existing active ADD schedule"
+                        `The ${mode} schedule overlaps an existing ${existing.mode} change ` +
+                            `(${formatMinutes(existingStart)}-${formatMinutes(existingEnd)}) at branch ${existing.branch_id}`
                     );
                 }
             }
@@ -631,29 +650,38 @@ export class DoctorScheduleService {
         }
 
         // --------------------------------------------------
-        // 7. Prevent overlapping ADD schedules
+        // 7. Prevent overlapping ADD / OVERRIDE ranges
+        //
+        // Same rule as on create: compare against every active ADD or
+        // OVERRIDE for this doctor on the same date across ALL branches.
+        // This change itself is excluded so editing a range in place never
+        // false-positives against its own row.
         // --------------------------------------------------
 
         if (
-            finalMode === "ADD" &&
+            (
+                finalMode === "ADD" ||
+                finalMode === "OVERRIDE"
+            ) &&
             finalStartTime &&
             finalEndTime
         ) {
 
-            const existingAdds =
+            const existingRanges =
                 await prisma.doctor_schedule_change.findMany({
                     where: {
                         employee_id:
                             existingChange.employee_id,
 
-                        branch_id:
-                            existingChange.branch_id,
-
                         change_date:
                             finalChangeDate,
 
-                        mode:
-                            "ADD",
+                        mode: {
+                            in: [
+                                "ADD",
+                                "OVERRIDE"
+                            ]
+                        },
 
                         is_active:
                             true,
@@ -664,6 +692,11 @@ export class DoctorScheduleService {
                     },
 
                     select: {
+                        branch_id:
+                            true,
+
+                        mode: true,
+
                         start_time:
                             true,
 
@@ -682,9 +715,12 @@ export class DoctorScheduleService {
                     finalEndTime
                 );
 
+            const formatMinutes = (value: number) =>
+                `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
+
             for (
                 const existing
-                of existingAdds
+                of existingRanges
             ) {
 
                 if (
@@ -712,7 +748,8 @@ export class DoctorScheduleService {
 
                 if (overlaps) {
                     throw new Error(
-                        "The ADD schedule overlaps with an existing active ADD schedule"
+                        `The ${finalMode} schedule overlaps an existing ${existing.mode} change ` +
+                            `(${formatMinutes(existingStart)}-${formatMinutes(existingEnd)}) at branch ${existing.branch_id}`
                     );
                 }
             }
@@ -1638,7 +1675,68 @@ export class DoctorScheduleService {
             },
         });
     }
-}
+    /**
+     * Transaction-aware low-level appliers used by the transfer flow so a
+     * confirmed DATE_CHANGE can be written inside confirmTransfer's own
+     * transaction. Validation already happened at initiation time.
+     */
+    async applyCreateChangeTx(
+        tx: Prisma.TransactionClient,
+        data: {
+            employee_id: string;
+            branch_id: string;
+            change_date: Date;
+            mode: DoctorScheduleChangeMode;
+            start_time: Date | null;
+            end_time: Date | null;
+            reason?: string | null;
+            created_by?: string | null;
+        }
+    ) {
+        return tx.doctor_schedule_change.create({
+            data: {
+                employee_id: data.employee_id,
+                branch_id: data.branch_id,
+                change_date: data.change_date,
+                mode: data.mode,
+                start_time: data.start_time,
+                end_time: data.end_time,
+                reason: data.reason ?? null,
+                is_active: true,
+                created_by: data.created_by ?? null,
+                updated_at: new Date()
+            }
+        });
+    }
+
+    async applyUpdateChangeTx(
+        tx: Prisma.TransactionClient,
+        change_id: bigint,
+        data: {
+            mode?: DoctorScheduleChangeMode;
+            start_time?: Date | null;
+            end_time?: Date | null;
+            reason?: string | null;
+        }
+    ) {
+        return tx.doctor_schedule_change.update({
+            where: { change_id },
+            data: {
+                ...(data.mode ? { mode: data.mode } : {}),
+                ...(data.start_time !== undefined ? { start_time: data.start_time } : {}),
+                ...(data.end_time !== undefined ? { end_time: data.end_time } : {}),
+                ...(data.reason !== undefined ? { reason: data.reason } : {}),
+                updated_at: new Date()
+            }
+        });
+    }
+
+    async applyDeactivateChangeTx(tx: Prisma.TransactionClient, change_id: bigint) {
+        return tx.doctor_schedule_change.update({
+            where: { change_id },
+            data: { is_active: false, updated_at: new Date() }
+        });
+    }}
 
 export const doctorScheduleService =
     new DoctorScheduleService();

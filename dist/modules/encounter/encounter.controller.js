@@ -44,6 +44,7 @@ class EncounterController {
                 branchId: req.query.branchId,
                 doctorId: req.query.doctorId,
                 patientId: req.query.patientId,
+                appointmentId: req.query.appointmentId,
                 status: req.query.status,
                 encounterType: req.query.encounterType,
                 date: req.query.date,
@@ -95,6 +96,24 @@ class EncounterController {
         }
         catch (error) {
             return res.status(404).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+    async getEncounterByAppointment(req, res) {
+        try {
+            const user = req.user;
+            const encounter = await service.getEncounterByAppointmentId(req.params.appointmentId, user?.user_id, user?.role);
+            return res.json({
+                success: true,
+                message: "Encounter fetched successfully",
+                data: encounter
+            });
+        }
+        catch (error) {
+            const status = error?.status === 404 || error?.status === 403 ? error.status : 500;
+            return res.status(status).json({
                 success: false,
                 message: error.message
             });

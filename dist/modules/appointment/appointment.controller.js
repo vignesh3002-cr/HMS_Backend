@@ -66,6 +66,30 @@ class AppointmentController {
             });
         }
     }
+    async getDistinctPatientCount(req, res) {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+            const summary = await service.getDistinctPatientCount(req.query.employeeId, req.query.branchId || null);
+            return res.json({
+                success: true,
+                message: "Distinct patient count fetched successfully",
+                data: summary
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
     async getAvailableSlots(req, res) {
         try {
             const errors = (0, express_validator_1.validationResult)(req);
@@ -188,9 +212,8 @@ class AppointmentController {
                     errors: errors.array()
                 });
             }
-            // IMPORTANT:
-            // updateAppointmentStatus currently accepts only 2 arguments.
-            const appointment = await service.updateAppointmentStatus(req.params.appointmentNo, req.body.status);
+            const cancelledBy = req.body.cancelled_by || req.user?.user_id || req.user?.id || null;
+            const appointment = await service.updateAppointmentStatus(req.params.appointmentNo, req.body.status, req.body.cancel_reason, cancelledBy);
             return res.json({
                 success: true,
                 message: "Appointment status updated successfully",
@@ -214,7 +237,8 @@ class AppointmentController {
                     errors: errors.array()
                 });
             }
-            const cancelledBy = req.user?.user_id ||
+            const cancelledBy = req.body.cancelled_by ||
+                req.user?.user_id ||
                 req.user?.id ||
                 null;
             const appointment = await service.cancelAppointment(req.params.appointmentNo, req.body.cancel_reason, cancelledBy);

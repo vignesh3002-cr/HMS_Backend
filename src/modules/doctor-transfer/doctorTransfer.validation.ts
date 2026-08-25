@@ -52,9 +52,13 @@ export const initiateTransferValidation = [
         .notEmpty()
         .withMessage("Transfer reason is required"),
 
+    // Presence/type only -- an EMPTY array is legal for close-only moves
+    // (cancel a slot via close_schedule_ids). The service still requires
+    // at least one entry whenever new rows would actually be created.
     body("working_hours")
-        .isArray({ min: 1 })
-        .withMessage("At least one working hour entry is required"),
+        .optional()
+        .isArray()
+        .withMessage("working_hours must be an array"),
 
     body("working_hours.*.branch_id")
         .notEmpty()
@@ -72,6 +76,45 @@ export const initiateTransferValidation = [
         .matches(TIME_PATTERN)
         .withMessage("end_time must be in HH:mm format"),
 
+    body("schedule_change")
+        .optional()
+        .isObject()
+        .withMessage("schedule_change must be an object"),
+
+    body("schedule_change.action")
+        .optional()
+        .isIn(["CREATE", "UPDATE", "DELETE"])
+        .withMessage("schedule_change.action must be CREATE, UPDATE or DELETE"),
+
+    body("schedule_change.mode")
+        .optional()
+        .isIn(["ADD", "OVERRIDE", "CANCEL"])
+        .withMessage("schedule_change.mode must be ADD, OVERRIDE or CANCEL"),
+
+    body("schedule_change.branch_id")
+        .optional()
+        .notEmpty()
+        .withMessage("schedule_change.branch_id is required"),
+
+    body("schedule_change.change_date")
+        .optional()
+        .matches(/^\d{4}-\d{2}-\d{2}$/)
+        .withMessage("schedule_change.change_date must be YYYY-MM-DD"),
+
+    body("schedule_change.start_time")
+        .optional()
+        .matches(TIME_PATTERN)
+        .withMessage("schedule_change.start_time must be HH:mm"),
+
+    body("schedule_change.end_time")
+        .optional()
+        .matches(TIME_PATTERN)
+        .withMessage("schedule_change.end_time must be HH:mm"),
+
+    body("schedule_change.change_id")
+        .optional()
+        .isInt({ min: 1 })
+        .withMessage("schedule_change.change_id must be a positive integer"),
     body("consultation_minutes")
         .optional()
         .isInt({ min: 1 })

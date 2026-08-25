@@ -23,6 +23,7 @@ router.get("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appo
 router.get("/available-slots", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.read"), appointment_validation_1.getAvailableSlotsValidation, controller.getAvailableSlots.bind(controller));
 router.get("/doctor-slot-summary", auth_middleware_1.authenticate, appointment_validation_1.getDoctorSlotSummaryValidation, controller.getDoctorSlotSummary.bind(controller));
 router.get("/doctor-week-slot-summary", auth_middleware_1.authenticate, appointment_validation_1.getDoctorWeekSlotSummaryValidation, controller.getDoctorWeekSlotSummary.bind(controller));
+router.get("/patient-count", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.read"), appointment_validation_1.getPatientCountValidation, controller.getDistinctPatientCount.bind(controller));
 router.get("/:appointmentNo", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.read"), controller.getAppointmentByNumber.bind(controller));
 router.put("/:appointmentNo", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.update"), appointment_validation_1.updateAppointmentValidation, controller.updateAppointment.bind(controller));
 router.patch("/:appointmentNo/status", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.update"), appointment_validation_1.updateAppointmentStatusValidation, controller.updateAppointmentStatus.bind(controller));
