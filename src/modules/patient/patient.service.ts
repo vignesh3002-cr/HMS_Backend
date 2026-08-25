@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { PatientRepository } from "./patient.repository";
 import {
@@ -6,6 +7,7 @@ import {
     UpdatePatientRequest,
     GetPatientsQuery
 } from "./patient.types";
+import { CreatePatientHistoryDTO } from "./patient-history.types";
 import { generateId } from "../../utils/idGenerator";
 
 const repository = new PatientRepository();
@@ -272,6 +274,144 @@ export class PatientService {
 
         });
 
+    }
+
+    async createPatientHistory(data: CreatePatientHistoryDTO, createdBy: string) {
+        const hasAnyVital =
+            data.systolicBp !== undefined ||
+            data.diastolicBp !== undefined ||
+            data.pulse !== undefined ||
+            data.respiratoryRate !== undefined ||
+            data.temperature !== undefined ||
+            data.oxygenSaturation !== undefined ||
+            (data.bloodSugar !== undefined && data.bloodSugar !== "") ||
+            data.weight !== undefined ||
+            data.height !== undefined ||
+            data.severity !== undefined ||
+            data.painScore !== undefined ||
+            (data.clinicalNotes !== undefined && data.clinicalNotes !== "");
+
+        if (!hasAnyVital) {
+            throw new Error("At least one vital value is required to record vitals.");
+        }
+
+        let branchId = data.branchId;
+        let departmentId = data.departmentId;
+        let employeeId = data.employeeId;
+
+        if (data.appointmentId) {
+            const appointment = await prisma.appointment_history.findUnique({
+                where: { appointment_id: data.appointmentId },
+                select: {
+                    branch_id: true,
+                    department_id: true,
+                    employee_id: true,
+                }
+            });
+
+            if (appointment) {
+                branchId ??= appointment.branch_id ?? undefined;
+                departmentId ??= appointment.department_id ?? undefined;
+                employeeId ??= appointment.employee_id ?? undefined;
+            }
+        }
+
+        // If still no branch, use createdBy's branch
+        if (!branchId) {
+            const user = await prisma.user_table.findUnique({
+                where: { user_id: createdBy },
+                select: { branch_id: true }
+            });
+            branchId ??= user?.branch_id ?? undefined;
+        }
+
+        if (!branchId) {
+            throw new Error("Branch not found for the current user. Unable to record vitals.");
+        }
+
+        let computedBmi: number | null = null;
+        if (data.height && data.weight) {
+            computedBmi = Math.round((data.weight / Math.pow(data.height / 100, 2)) * 10) / 10;
+        }
+
+        const bloodSugarRaw = data.bloodSugar !== undefined && data.bloodSugar !== null && String(data.bloodSugar).trim() !== ""
+            ? Number(data.bloodSugar)
+            : NaN;
+        const bloodSugarValue = Number.isFinite(bloodSugarRaw) ? bloodSugarRaw : null;
+
+        const painRaw = data.severity ?? data.painScore;
+        const painScoreValue = painRaw === undefined || painRaw === null ? null : BigInt(painRaw);
+
+        return prisma.$transaction(async (tx) => {
+            let encounter = data.appointmentId
+                ? await tx.encounter.findUnique({ where: { appointment_id: data.appointmentId } })
+                : null;
+
+            if (!encounter) {
+                const encounterNo = await generateId(tx, "ENCOUNTER");
+                encounter = await tx.encounter.create({
+                    data: {
+                        encounter_no: encounterNo,
+                        branch_id: branchId!,
+                        patient_id: data.patientId,
+                        appointment_id: data.appointmentId,
+                        department_id: departmentId,
+                        employee_id: employeeId,
+                        user_id: createdBy,
+                    }
+                });
+            }
+
+            // Per-field fill: only write fields that are still empty on the encounter
+            const updateData: Prisma.encounterUncheckedUpdateInput = {};
+            const fillIfEmpty = (key: string, existing: unknown, incoming: unknown) => {
+                if (incoming !== undefined && incoming !== null && (existing === null || existing === undefined)) {
+                    (updateData as Record<string, unknown>)[key] = incoming;
+                }
+            };
+
+            fillIfEmpty("systolic_bp", encounter.systolic_bp, data.systolicBp);
+            fillIfEmpty("diastolic_bp", encounter.diastolic_bp, data.diastolicBp);
+            fillIfEmpty("pulse", encounter.pulse, data.pulse);
+            fillIfEmpty("respiratory_rate", encounter.respiratory_rate, data.respiratoryRate);
+            fillIfEmpty("spo2", encounter.spo2, data.oxygenSaturation);
+            fillIfEmpty("temperature", encounter.temperature, data.temperature);
+            fillIfEmpty("weight", encounter.weight, data.weight);
+            fillIfEmpty("height", encounter.height, data.height);
+            fillIfEmpty("BMI", encounter.BMI, computedBmi);
+            fillIfEmpty("blood_sugar", encounter.blood_sugar, bloodSugarValue);
+            fillIfEmpty("pain_score", encounter.pain_score, painScoreValue);
+            fillIfEmpty("clinical_notes", encounter.clinical_notes, data.clinicalNotes);
+
+            if (Object.keys(updateData).length > 0) {
+                encounter = await tx.encounter.update({
+                    where: { encounter_no: encounter.encounter_no },
+                    data: updateData
+                });
+            }
+
+            return {
+                patientHistoryId: encounter.encounter_no,
+                patientId: encounter.patient_id,
+                appointmentId: encounter.appointment_id,
+                visitDate: encounter.encounter_ts.toISOString(),
+                systolicBp: encounter.systolic_bp,
+                diastolicBp: encounter.diastolic_bp,
+                pulse: encounter.pulse,
+                respiratoryRate: encounter.respiratory_rate,
+                temperature: encounter.temperature === null ? null : Number(encounter.temperature),
+                oxygenSaturation: encounter.spo2,
+                bloodSugar: encounter.blood_sugar === null ? null : encounter.blood_sugar.toString(),
+                weight: encounter.weight === null ? null : Number(encounter.weight),
+                height: encounter.height === null ? null : Number(encounter.height),
+                bmi: encounter.BMI === null ? null : Number(encounter.BMI),
+                painScore: encounter.pain_score === null ? null : Number(encounter.pain_score),
+                severity: encounter.pain_score === null ? null : Number(encounter.pain_score),
+                visitType: encounter.encounter_type,
+                visitStatus: encounter.status,
+                clinicalNotes: encounter.clinical_notes,
+            };
+        });
     }
 
 }

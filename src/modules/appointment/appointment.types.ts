@@ -18,6 +18,10 @@ export interface CreateAppointmentDTO {
 
     booking_source?: string;
 
+    patient_type?: string;
+
+    patient_visit_type?: string;
+
 }
 
 export interface UpdateAppointmentDTO {
@@ -36,6 +40,10 @@ export interface UpdateAppointmentDTO {
 
     referred_by?: string;
 
+    patient_type?: string;
+
+    patient_visit_type?: string;
+
 }
 
 export interface UpdateAppointmentStatusDTO {
@@ -52,6 +60,9 @@ export interface GetAppointmentsQuery {
     patientId?: string;
 
     status?: string;
+
+
+    excludeStatuses?: string[];
 
     date?: string;
 

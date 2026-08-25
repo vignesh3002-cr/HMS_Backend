@@ -21,14 +21,11 @@ export class EncounterService {
         }
 
         /*
-         * NOT_CHECKED_IN is written by the elapsed-slot job only to free
-         * the slot - the patient may still walk in later, and doctors are
-         * offered an explicit Check In action for these rows. Allow late
-         * check-in; the transaction below flips status to IN_CONSULTATION.
+         * Allow encounters to be created for terminal status appointments
+         * except CHECKED_IN, which should already have an encounter or be
+         * transitioning to IN_CONSULTATION.
          */
-        const blockingStatuses = TERMINAL_APPOINTMENT_STATUSES.filter(
-            (status) => status !== APPOINTMENT_STATUS.NOT_CHECKED_IN
-        );
+        const blockingStatuses = TERMINAL_APPOINTMENT_STATUSES;
 
         if (blockingStatuses.includes(appointment.status ?? "")) {
             throw new Error(
@@ -256,6 +253,17 @@ export class EncounterService {
 
         }
 
+        // Recompute BMI whenever height or weight changes, mirroring
+        // createPatientHistory's formula (kg / m^2).
+        let bmi: number | null | undefined;
+        if (data.height !== undefined || data.weight !== undefined) {
+            const finalHeight = data.height ?? (existing.height === null ? null : Number(existing.height));
+            const finalWeight = data.weight ?? (existing.weight === null ? null : Number(existing.weight));
+            bmi = finalHeight && finalWeight && finalHeight > 0
+                ? Math.round((finalWeight / Math.pow(finalHeight / 100, 2)) * 10) / 10
+                : null;
+        }
+
         return repository.updateEncounter(encounterNo, {
 
             chief_complaint: data.chief_complaint,
@@ -274,7 +282,11 @@ export class EncounterService {
             diastolic_bp: data.diastolic_bp,
             temperature: data.temperature,
             respiratory_rate: data.respiratory_rate,
-            spo2: data.spo2
+            spo2: data.spo2,
+            blood_sugar: data.blood_sugar,
+            pain_score: data.pain_score,
+
+            ...(bmi !== undefined ? { BMI: bmi } : {})
 
         });
 

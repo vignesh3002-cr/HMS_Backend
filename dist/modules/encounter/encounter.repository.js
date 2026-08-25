@@ -154,7 +154,7 @@ class EncounterRepository {
         return groups.length;
     }
     async getEncounters(query) {
-        const { branchId, doctorId, patientId, appointmentId, status, encounterType, date, dateFrom, dateTo, search, sortBy = "encounter_ts", sortOrder = "desc", page = 1, limit = 10 } = query;
+        const { branchId, doctorId, patientId, status, encounterType, appointmentId, date, dateFrom, dateTo, search, sortBy = "encounter_ts", sortOrder = "desc", page = 1, limit = 10 } = query;
         const where = {};
         if (branchId)
             where.branch_id = branchId;
@@ -168,6 +168,8 @@ class EncounterRepository {
             where.status = status;
         if (encounterType)
             where.encounter_type = encounterType;
+        if (appointmentId)
+            where.appointment_id = appointmentId;
         if (date) {
             where.encounter_ts = {
                 gte: startOfDay(date),

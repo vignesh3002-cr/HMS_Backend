@@ -1,10 +1,4 @@
 node_modules
 # Keep environment variables out of version control
 .env
-<<<<<<< HEAD
-EMR_Developer_Design_Guide.docx
-Cancer_EMR_Complete.xlsx
-=======
-
->>>>>>> 7a3d07f681780cc0b9d069d91b728a63f92e2e56
 /generated/prisma

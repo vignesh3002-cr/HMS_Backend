@@ -31,9 +31,19 @@ exports.createAppointmentValidation = [
         .optional()
         .isString(),
     (0, express_validator_1.body)("referred_by")
+        .if((0, express_validator_1.body)("patient_type").equals("Referral"))
+        .notEmpty()
+        .withMessage("Referred by is required for Referral patient type")
+        .bail()
         .optional()
         .isString(),
     (0, express_validator_1.body)("booking_source")
+        .optional()
+        .isString(),
+    (0, express_validator_1.body)("patient_type")
+        .optional()
+        .isString(),
+    (0, express_validator_1.body)("patient_visit_type")
         .optional()
         .isString()
 ];
@@ -61,6 +71,16 @@ exports.updateAppointmentValidation = [
         .optional()
         .isString(),
     (0, express_validator_1.body)("referred_by")
+        .if((0, express_validator_1.body)("patient_type").equals("Referral"))
+        .notEmpty()
+        .withMessage("Referred by is required for Referral patient type")
+        .bail()
+        .optional()
+        .isString(),
+    (0, express_validator_1.body)("patient_type")
+        .optional()
+        .isString(),
+    (0, express_validator_1.body)("patient_visit_type")
         .optional()
         .isString()
 ];
@@ -78,14 +98,26 @@ exports.updateAppointmentStatusValidation = [
         .withMessage("Cancellation reason is required when cancelling an appointment"),
     (0, express_validator_1.body)("cancel_reason")
         .optional()
-        .isString()
+        .isString(),
+    (0, express_validator_1.body)("cancelled_by")
+        .if((0, express_validator_1.body)("status").equals(appointment_constants_1.APPOINTMENT_STATUS.CANCELLED))
+        .notEmpty()
+        .withMessage("Cancelled by is required when cancelling an appointment")
+        .bail()
+        .optional()
+        .isString(),
 ];
 exports.cancelAppointmentValidation = [
     (0, express_validator_1.param)("appointmentNo")
         .notEmpty(),
     (0, express_validator_1.body)("cancel_reason")
         .notEmpty()
-        .withMessage("Cancellation reason is required")
+        .withMessage("Cancellation reason is required"),
+    (0, express_validator_1.body)("cancelled_by")
+        .notEmpty()
+        .withMessage("Cancelled by is required")
+        .bail()
+        .isString(),
 ];
 exports.getAvailableSlotsValidation = [
     (0, express_validator_1.query)("employeeId")
