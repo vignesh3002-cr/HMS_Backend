@@ -614,7 +614,6 @@ model chemotherapy_plan {
   subtype_id                    String?                        @db.VarChar(100)
   staging_detail_id             String?                        @db.VarChar(100)
   source_protocol_id            String?                        @db.VarChar(100)
-  treatment_goal                String?                        @db.VarChar(50)
   chemotherapy_cycle            chemotherapy_cycle[]
   appointment_history           appointment_history?           @relation(fields: [appointment_id], references: [appointment_id], map: "fk_chemo_plan_appointment")
   branch                        branch                         @relation(fields: [branch_id], references: [branch_id], map: "fk_chemo_plan_branch")
