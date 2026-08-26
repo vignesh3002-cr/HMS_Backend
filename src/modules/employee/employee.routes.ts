@@ -22,6 +22,11 @@ router.get(
     controller.getAllEmployees.bind(controller)
 );
 router.get(
+    "/me",
+    authenticate,
+    controller.getMyProfile.bind(controller)
+);
+router.get(
     "/:employeeId",
     authenticate,
     authorizeSelfOrPermission("employee.read"),
