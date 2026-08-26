@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
-import { generateId } from "../../utils/idGenerator";
+import { generateId, generateIdBatch } from "../../utils/idGenerator";
 import { GetPrescriptionsQuery } from "./prescription.types";
 
 const prescriptionItemInclude = {
@@ -110,6 +110,18 @@ export class PrescriptionRepository {
 
     }
 
+    async findMedicines(medicineIds: string[]) {
+
+        if (medicineIds.length === 0) {
+            return [];
+        }
+
+        return prisma.medicine_master.findMany({
+            where: { medicine_id: { in: medicineIds } }
+        });
+
+    }
+
     async findPatientHistoryByAppointment(appointmentId: string) {
 
         return prisma.patient_history.findFirst({
@@ -142,6 +154,15 @@ export class PrescriptionRepository {
 
     }
 
+    // One sequence lock + one update for the whole batch instead of three
+    // queries per item - keeps the createPrescription transaction far
+    // under Prisma's interactive transaction timeout.
+    async generatePrescriptionItemIds(tx: Prisma.TransactionClient, count: number) {
+
+        return generateIdBatch(tx, "PRESCRIPTION_ITEM", count);
+
+    }
+
     async createPrescription(tx: Prisma.TransactionClient, data: Prisma.prescriptionUncheckedCreateInput) {
 
         return tx.prescription.create({ data });
@@ -154,6 +175,12 @@ export class PrescriptionRepository {
             data,
             include: prescriptionItemInclude
         });
+
+    }
+
+    async createPrescriptionItems(tx: Prisma.TransactionClient, data: Prisma.prescription_itemsUncheckedCreateInput[]) {
+
+        await tx.prescription_items.createMany({ data });
 
     }
 
