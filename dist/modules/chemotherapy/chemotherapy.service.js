@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChemotherapyService = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const idGenerator_1 = require("../../utils/idGenerator");
+const roles_1 = require("../../permissions/roles");
 const chemotherapy_repository_1 = require("./chemotherapy.repository");
 const oncology_repository_1 = require("../oncology/oncology.repository");
 const chemotherapy_constants_1 = require("./chemotherapy.constants");
@@ -1493,6 +1494,28 @@ class ChemotherapyService {
     }
     async listPlans(filters) {
         return this.repository.listPlans(filters);
+    }
+    /*
+     * Latest saved plan for a patient, scoped like the encounters
+     * /latest feed - deliberately NOT behind branchScope so the
+     * patient-details page can show plan data regardless of which
+     * branch recorded it or which branch the UI has selected.
+     * Isolation mirrors getLatestEncountersForPatient: top-level
+     * admins see every branch, everyone else is limited to their
+     * ACTIVE user_branch_mapping branches, and zero mappings yields
+     * null instead of a 403.
+     */
+    async getLatestPlanForPatient(patientId, userId, role) {
+        const isTopLevelAdmin = roles_1.TOP_LEVEL_ADMIN_ROLES.some((r) => r.toLowerCase() === String(role ?? "").toLowerCase());
+        if (isTopLevelAdmin) {
+            return this.repository.findLatestPlanForPatient(patientId, null);
+        }
+        const mappings = await this.repository.findActiveBranchMappingsForUser(userId);
+        const branchIds = mappings.map((m) => String(m.branch_id));
+        if (branchIds.length === 0) {
+            return null;
+        }
+        return this.repository.findLatestPlanForPatient(patientId, branchIds);
     }
     async updatePlan(planId, dto, actingUserId) {
         const plan = await this.repository.findPlanForUpdate(prisma_1.default, planId);

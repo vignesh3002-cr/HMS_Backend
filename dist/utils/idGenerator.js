@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.generateIdBatch = generateIdBatch;
 exports.generateId = generateId;
 // Table + id column that each entity's generated ID lands in. Used to
 // detect collisions when a sequence's current_number has fallen out of
@@ -24,7 +25,15 @@ const ENTITY_TARGET = {
     REGIMEN_PROTOCOL_DAY: { table: "chemotherapy_regimen_protocol_days", column: "protocol_day_id" },
     REGIMEN_PROTOCOL_DILUTION: { table: "chemotherapy_protocol_dilutions", column: "protocol_dilution_id" },
 };
-async function generateId(tx, entity) {
+// Generates `count` consecutive ids for one entity while holding the
+// sequence row lock exactly once. Batch callers (e.g. prescription items)
+// would otherwise pay the lock-read + collision-check + sequence-update
+// cost PER id inside an interactive transaction, which blows past the
+// default 5s transaction timeout on high-latency databases (Supabase).
+async function generateIdBatch(tx, entity, count) {
+    if (count <= 0) {
+        return [];
+    }
     // Lock the row
     const rows = await tx.$queryRawUnsafe(`
         SELECT *
@@ -38,19 +47,21 @@ async function generateId(tx, entity) {
     const sequence = rows[0];
     const target = ENTITY_TARGET[entity];
     let nextNumber = sequence.current_number;
-    let generatedId;
-    do {
+    const generatedIds = [];
+    while (generatedIds.length < count) {
         nextNumber += 1;
-        generatedId = sequence.prefix +
+        const candidate = sequence.prefix +
             nextNumber
                 .toString()
                 .padStart(3, "0");
-        if (!target)
-            break;
-        const existing = await tx.$queryRawUnsafe(`SELECT 1 FROM ${target.table} WHERE ${target.column} = '${generatedId}'`);
-        if (existing.length === 0)
-            break;
-    } while (true);
+        if (target) {
+            const existing = await tx.$queryRawUnsafe(`SELECT 1 FROM ${target.table} WHERE ${target.column} = '${candidate}'`);
+            if (existing.length > 0) {
+                continue;
+            }
+        }
+        generatedIds.push(candidate);
+    }
     await tx.id_sequences.update({
         where: {
             entity_name: entity
@@ -60,5 +71,9 @@ async function generateId(tx, entity) {
             updated_at: new Date()
         }
     });
+    return generatedIds;
+}
+async function generateId(tx, entity) {
+    const [generatedId] = await generateIdBatch(tx, entity, 1);
     return generatedId;
 }
