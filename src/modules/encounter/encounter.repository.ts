@@ -128,6 +128,36 @@ export class EncounterRepository {
 
     }
 
+    /*
+     * Most recent encounters for a patient, newest first. When branchIds is
+     * null (top-level admins) every branch is included; otherwise results are
+     * restricted to the given ACTIVE branch mappings.
+     */
+    async findRecentEncountersByPatient(
+        patientId: string,
+        branchIds: string[] | null,
+        limit: number
+    ) {
+
+        return prisma.encounter.findMany({
+
+            where: {
+                patient_id: patientId,
+                ...(branchIds ? { branch_id: { in: branchIds } } : {})
+            },
+
+            include: encounterDetailInclude,
+
+            orderBy: {
+                encounter_ts: "desc"
+            },
+
+            take: limit
+
+        });
+
+    }
+
     async generateEncounterNumber(tx: Prisma.TransactionClient) {
 
         return generateId(tx, "ENCOUNTER");
