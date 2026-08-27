@@ -629,4 +629,25 @@ export class ChemotherapyRepository {
         });
     }
 
+    async listSupportiveMedicines() {
+        return prisma.medicine_master.findMany({
+            where: {
+                is_active: true,
+                medicine_category: { not: "Chemotherapy" }
+            },
+            select: {
+                medicine_id: true,
+                medicine_name: true,
+                generic_name: true,
+                medicine_category: true,
+                medicine_type: true,
+                dosage_form: true,
+                unit: true,
+                strength: true,
+                route: true,
+            },
+            orderBy: { medicine_name: "asc" }
+        });
+    }
+
 }

@@ -61,6 +61,13 @@ class ChemotherapyRepository {
             orderBy: { drug_sequence: "asc" }
         });
     }
+    async listDischargeMedicinesByProtocol(protocolId) {
+        return prisma_1.default.chemotherapy_discharge_instructions.findMany({
+            where: { protocol_id: protocolId, active_status: 1 },
+            orderBy: { drug_sequence: "asc" },
+            include: { medicine_master: true }
+        });
+    }
     async findRegimenProtocolByCode(cancerTypeId, subtypeId, regimenCode) {
         return prisma_1.default.chemotherapy_regimen_protocol.findFirst({
             where: { cancer_type_id: cancerTypeId, subtype_id: subtypeId, regimen_code: regimenCode }

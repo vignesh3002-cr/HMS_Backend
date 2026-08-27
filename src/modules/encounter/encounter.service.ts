@@ -76,31 +76,6 @@ export class EncounterService {
             throw new Error("Doctor is not assigned to the appointment's branch");
         }
 
-<<<<<<< HEAD
-        // Check-in flips the appointment status BEFORE the encounter is
-        // created (two-step flow). If encounter creation then fails - e.g.
-        // because the linked schedule was deactivated in the meantime -
-        // the appointment stays stuck in CHECKED_IN/IN_CONSULTATION with
-        // no encounter and the consultation page reports "No active
-        // encounter found". Appointments that already prove a completed
-        // check-in may therefore have their encounter created; pre-check-in
-        // bookings tied to an inactive schedule are still rejected.
-        const alreadyCheckedIn = ([
-            APPOINTMENT_STATUS.CHECKED_IN,
-            APPOINTMENT_STATUS.IN_CONSULTATION
-        ] as string[]).includes(appointment.status ?? "");
-
-        if (!appointment.schedule_id && !alreadyCheckedIn) {
-            throw new Error("Appointment has no associated doctor schedule");
-        }
-
-        if (
-            !alreadyCheckedIn &&
-            (!appointment.doctor_schedule || !appointment.doctor_schedule.is_active)
-        ) {
-            throw new Error("Doctor schedule is not active");
-        }
-=======
         /*
          * schedule_id is deliberately NOT enforced here. Appointments can
          * legitimately lose their original schedule after booking (schedule
@@ -109,7 +84,6 @@ export class EncounterService {
          * clinical flow because a schedule disappeared only strands the
          * appointment in IN_CONSULTATION with no encounter.
          */
->>>>>>> b61de0c2105b82464ebabd162de2c60a8df8c11b
 
         const existingEncounter = await repository.findEncounterByAppointmentId(
             data.appointment_id
@@ -133,13 +107,8 @@ export class EncounterService {
                     department_id: appointment.department_id,
                     appointment_id: appointment.appointment_id,
                     employee_id: doctor.employee_id!,
-<<<<<<< HEAD
-                    schedule_id: appointment.schedule_id ?? undefined,
-                    encounter_type: ENCOUNTER_TYPE_DEFAULT,
-=======
                     schedule_id: appointment.schedule_id,
                     encounter_type: appointment.Patient_type ?? ENCOUNTER_TYPE_DEFAULT,
->>>>>>> b61de0c2105b82464ebabd162de2c60a8df8c11b
                     status: ENCOUNTER_STATUS.OPEN
 
                 });

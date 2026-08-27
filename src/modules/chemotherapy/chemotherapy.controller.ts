@@ -100,19 +100,11 @@ export class ChemotherapyController {
 
     }
 
-<<<<<<< HEAD
-    async listDischargeMedicines(req: Request, res: Response) {
-
-        try {
-
-            const data = await service.listDischargeMedicines(req.params.protocolId as string);
-=======
     async getDischargeMedicinesForProtocol(req: Request, res: Response) {
 
         try {
 
             const data = await service.getDischargeMedicinesForProtocol(req.params.protocolId as string, (req as any).user?.hospital_id ?? null);
->>>>>>> b61de0c2105b82464ebabd162de2c60a8df8c11b
             return res.json({ success: true, message: "Discharge medicines fetched successfully", data });
 
         } catch (error: any) {
@@ -848,6 +840,19 @@ export class ChemotherapyController {
 
             const data = await service.listFollowups(req.params.cycleId as string);
             return res.json({ success: true, message: "Follow-ups fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async listSupportiveMedicines(req: Request, res: Response) {
+
+        try {
+
+            const data = await service.listSupportiveMedicines();
+            return res.json({ success: true, message: "Supportive medicines fetched successfully", data });
 
         } catch (error: any) {
             return handleError(res, error);

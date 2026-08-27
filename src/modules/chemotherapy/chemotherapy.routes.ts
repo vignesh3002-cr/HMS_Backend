@@ -185,7 +185,7 @@ router.get(
     authenticate,
     authorize("chemo.protocol.read"),
     getRegimenProtocolValidation,
-    controller.listDischargeMedicines.bind(controller)
+    controller.getDischargeMedicinesForProtocol.bind(controller)
 );
 
 router.get(
@@ -440,6 +440,13 @@ router.get(
     authorize("chemo.plan.read"),
     cycleIdParamValidation,
     controller.listFollowups.bind(controller)
+);
+
+router.get(
+    "/supportive-medicines",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    controller.listSupportiveMedicines.bind(controller)
 );
 
 export default router;

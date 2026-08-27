@@ -146,22 +146,6 @@ export class ChemotherapyService {
 
     }
 
-<<<<<<< HEAD
-    // ---------------------------------------------------------------
-    // Discharge (take-home) medicines saved on a regimen protocol -
-    // read-only reference rows from chemotherapy_discharge_instructions.
-    // ---------------------------------------------------------------
-
-    async listDischargeMedicines(protocolId: string) {
-
-        const protocol = await this.repository.findRegimenProtocolById(protocolId);
-
-        if (!protocol) {
-            throw new Error("Regimen protocol not found");
-        }
-
-        return this.repository.listDischargeMedicinesByProtocol(protocolId);
-=======
     async getDischargeMedicinesForProtocol(protocolId: string, organizationId?: string | null) {
 
         // Reuse the protocol read path so existence + personalized-protocol
@@ -169,7 +153,6 @@ export class ChemotherapyService {
         await this.getRegimenProtocol(protocolId, organizationId);
 
         return this.repository.listDischargeMedicinesForProtocol(protocolId);
->>>>>>> b61de0c2105b82464ebabd162de2c60a8df8c11b
 
     }
 
@@ -2944,6 +2927,10 @@ export class ChemotherapyService {
     async listFollowups(cycleId: string) {
         await this.getCycle(cycleId);
         return this.repository.listFollowupsForCycle(cycleId);
+    }
+
+    async listSupportiveMedicines() {
+        return this.repository.listSupportiveMedicines();
     }
 
 }
