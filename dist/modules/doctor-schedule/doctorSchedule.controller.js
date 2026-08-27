@@ -224,6 +224,41 @@ class DoctorScheduleController {
         }
     }
     /**
+     * PUT
+     * Update a single recurring slot in the
+     * doctor_schedule template.
+     */
+    async updateRecurringSlot(req, res) {
+        try {
+            const { employeeId, scheduleId } = req.params;
+            if (!employeeId || !scheduleId) {
+                res.status(400).json({
+                    success: false,
+                    message: "employeeId and scheduleId are required",
+                });
+                return;
+            }
+            const scheduleIdBigInt = BigInt(String(scheduleId));
+            const payload = req.body;
+            const result = await doctorSchedule_service_1.doctorScheduleService.updateRecurringSlot(scheduleIdBigInt, String(employeeId), payload);
+            res.status(200).json({
+                success: true,
+                message: "Recurring slot updated successfully",
+                data: result,
+            });
+        }
+        catch (error) {
+            console.error("Update recurring slot error:", error);
+            const message = error instanceof Error
+                ? error.message
+                : "Failed to update recurring slot";
+            res.status(400).json({
+                success: false,
+                message,
+            });
+        }
+    }
+    /**
      * PATCH
      * Update an existing schedule change
      */

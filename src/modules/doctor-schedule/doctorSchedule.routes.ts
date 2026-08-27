@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { authenticate } from "../auth/auth.middleware";
 
 import { doctorScheduleController } from "./doctorSchedule.controller";
 
@@ -11,6 +12,7 @@ const router = Router();
  */
 router.post(
     "/change",
+    authenticate,
     doctorScheduleController.createScheduleChange
 );
 
@@ -22,6 +24,7 @@ router.post(
  */
 router.get(
     "/:employeeId/recurring",
+    authenticate,
     doctorScheduleController.getRecurringSchedules
 );
 
@@ -33,6 +36,7 @@ router.get(
  */
 router.patch(
     "/recurring/toggle",
+    authenticate,
     doctorScheduleController.toggleRecurringDay
 );
 
@@ -44,6 +48,7 @@ router.patch(
  */
 router.post(
     "/recurring/slot/:employeeId",
+    authenticate,
     doctorScheduleController.createRecurringSlot
 );
 
@@ -54,7 +59,19 @@ router.post(
  */
 router.delete(
     "/recurring/slot/:employeeId/:scheduleId",
+    authenticate,
     doctorScheduleController.deleteRecurringSlot
+);
+
+/**
+ * Update a single recurring slot in the doctor_schedule template
+ *
+ * PUT /recurring/slot/:employeeId/:scheduleId
+ */
+router.put(
+    "/recurring/slot/:employeeId/:scheduleId",
+    authenticate,
+    doctorScheduleController.updateRecurringSlot
 );
 
 /**
@@ -64,6 +81,7 @@ router.delete(
  */
 router.get(
     "/:employeeId/changes",
+    authenticate,
     doctorScheduleController.getDoctorScheduleChanges
 );
 
@@ -74,6 +92,7 @@ router.get(
  */
 router.get(
     "/:employeeId/changes/:date",
+    authenticate,
     doctorScheduleController.getScheduleChangesByDate
 );
 
@@ -84,6 +103,7 @@ router.get(
  */
 router.patch(
     "/change/:changeId",
+    authenticate,
     doctorScheduleController.updateScheduleChange
 );
 
@@ -94,6 +114,7 @@ router.patch(
  */
 router.patch(
     "/change/:changeId/cancel",
+    authenticate,
     doctorScheduleController.cancelScheduleChange
 );
 

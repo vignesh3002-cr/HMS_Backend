@@ -37,6 +37,12 @@ router.post("/recurring/slot/:employeeId", doctorSchedule_controller_1.doctorSch
  */
 router.delete("/recurring/slot/:employeeId/:scheduleId", doctorSchedule_controller_1.doctorScheduleController.deleteRecurringSlot);
 /**
+ * Update a single recurring slot in the doctor_schedule template
+ *
+ * PUT /recurring/slot/:employeeId/:scheduleId
+ */
+router.put("/recurring/slot/:employeeId/:scheduleId", doctorSchedule_controller_1.doctorScheduleController.updateRecurringSlot);
+/**
  * Get all active schedule changes for a doctor
  *
  * GET /:employeeId/changes
