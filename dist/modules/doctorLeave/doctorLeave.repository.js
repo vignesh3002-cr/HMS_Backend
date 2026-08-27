@@ -44,6 +44,29 @@ class DoctorLeaveRepository {
             }
         });
     }
+    async findOverlappingLeaves(employeeId, startDate, endDate, excludeLeaveId) {
+        return prisma_1.default.doctor_leave.findFirst({
+            where: {
+                employee_id: employeeId,
+                status: {
+                    in: ["PENDING", "APPROVED"]
+                },
+                ...(excludeLeaveId ? { leave_id: { not: excludeLeaveId } } : {}),
+                AND: [
+                    {
+                        leave_start_date: {
+                            lte: new Date(`${endDate}T23:59:59.999Z`)
+                        }
+                    },
+                    {
+                        leave_end_date: {
+                            gte: new Date(`${startDate}T00:00:00.000Z`)
+                        }
+                    }
+                ]
+            }
+        });
+    }
     async applyLeave(tx, data) {
         return tx.doctor_leave.create({
             data

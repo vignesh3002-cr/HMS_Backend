@@ -1496,6 +1496,7 @@ export class DoctorScheduleService {
             shift_name,
             start_time,
             end_time,
+            consultation_minutes,
         } = payload;
 
         if (!employee_id) {
@@ -1714,7 +1715,7 @@ export class DoctorScheduleService {
                     this.timeStringToDate(
                         end_time
                     ),
-                consultation_minutes: 20,
+                consultation_minutes: consultation_minutes ?? 20,
                 is_active: true,
                 effective_from: new Date(),
             },
@@ -1737,6 +1738,7 @@ export class DoctorScheduleService {
             shift_name,
             start_time,
             end_time,
+            consultation_minutes,
         } = payload;
 
         if (!employee_id) {
@@ -1993,6 +1995,7 @@ export class DoctorScheduleService {
                     this.timeStringToDate(
                         end_time
                     ),
+                consultation_minutes: consultation_minutes ?? undefined,
             },
         });
     }

@@ -10,7 +10,11 @@ class DoctorScheduleController {
     async createScheduleChange(req, res) {
         try {
             const payload = req.body;
-            const result = await doctorSchedule_service_1.doctorScheduleService.createScheduleChange(payload);
+            const bypassHeader = (req.headers['x-bypass-pending-transfer'] || '').toString().toLowerCase();
+            const bypass = bypassHeader === 'true';
+            const authUser = req.user || {};
+            const isAdmin = ['HEAD_ADMIN', 'SUPER_ADMIN', 'BRANCH_ADMIN'].includes(authUser.role_type?.toUpperCase());
+            const result = await doctorSchedule_service_1.doctorScheduleService.createScheduleChange(payload, bypass && isAdmin);
             res.status(201).json({
                 success: true,
                 message: "Doctor schedule change created successfully",
