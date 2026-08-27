@@ -72,11 +72,19 @@ class EmployeeController {
         }
     }
     async softDeleteSchedule(req, res) {
-        const result = await service.softDeleteSchedule(String(req.params.employeeId), Number(req.params.schedule_id), req.user?.user_id || "SYSTEM");
-        return res.status(200).json({
-            success: true,
-            message: result.message
-        });
+        try {
+            const result = await service.softDeleteSchedule(String(req.params.employeeId), Number(req.params.schedule_id), req.user?.user_id || "SYSTEM");
+            return res.status(200).json({
+                success: true,
+                message: result.message
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message || "Failed to delete schedule slot"
+            });
+        }
     }
     async softDeleteEmployee(req, res) {
         try {
