@@ -24,10 +24,20 @@ const ENTITY_TARGET: Record<string, { table: string; column: string }> = {
     REGIMEN_PROTOCOL_DILUTION: { table: "chemotherapy_protocol_dilutions", column: "protocol_dilution_id" },
 };
 
-export async function generateId(
+// Generates `count` consecutive ids for one entity while holding the
+// sequence row lock exactly once. Batch callers (e.g. prescription items)
+// would otherwise pay the lock-read + collision-check + sequence-update
+// cost PER id inside an interactive transaction, which blows past the
+// default 5s transaction timeout on high-latency databases (Supabase).
+export async function generateIdBatch(
     tx: Prisma.TransactionClient,
-    entity: string
-): Promise<string> {
+    entity: string,
+    count: number
+): Promise<string[]> {
+
+    if (count <= 0) {
+        return [];
+    }
 
     // Lock the row
     const rows = await tx.$queryRawUnsafe<any[]>(`
@@ -48,26 +58,33 @@ export async function generateId(
     const target = ENTITY_TARGET[entity];
 
     let nextNumber = sequence.current_number;
-    let generatedId: string;
 
-    do {
+    const generatedIds: string[] = [];
+
+    while (generatedIds.length < count) {
 
         nextNumber += 1;
 
-        generatedId = sequence.prefix +
+        const candidate = sequence.prefix +
             nextNumber
                 .toString()
                 .padStart(3, "0");
 
-        if (!target) break;
+        if (target) {
 
-        const existing = await tx.$queryRawUnsafe<any[]>(
-            `SELECT 1 FROM ${target.table} WHERE ${target.column} = '${generatedId}'`
-        );
+            const existing = await tx.$queryRawUnsafe<any[]>(
+                `SELECT 1 FROM ${target.table} WHERE ${target.column} = '${candidate}'`
+            );
 
-        if (existing.length === 0) break;
+            if (existing.length > 0) {
+                continue;
+            }
 
-    } while (true);
+        }
+
+        generatedIds.push(candidate);
+
+    }
 
     await tx.id_sequences.update({
 
@@ -86,6 +103,17 @@ export async function generateId(
         }
 
     });
+
+    return generatedIds;
+
+}
+
+export async function generateId(
+    tx: Prisma.TransactionClient,
+    entity: string
+): Promise<string> {
+
+    const [generatedId] = await generateIdBatch(tx, entity, 1);
 
     return generatedId;
 

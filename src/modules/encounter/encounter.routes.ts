@@ -7,7 +7,8 @@ import {
     createEncounterValidation,
     updateEncounterValidation,
     closeEncounterValidation,
-    getEncountersValidation
+    getEncountersValidation,
+    getLatestEncountersValidation
 } from "./encounter.validation";
 
 const router = Router();
@@ -44,6 +45,14 @@ router.get(
     authenticate,
     authorize("encounter.read"),
     controller.getEncounterByAppointment.bind(controller)
+);
+
+router.get(
+    "/latest",
+    authenticate,
+    authorize("encounter.read"),
+    getLatestEncountersValidation,
+    controller.getLatestPatientEncounters.bind(controller)
 );
 
 router.get(

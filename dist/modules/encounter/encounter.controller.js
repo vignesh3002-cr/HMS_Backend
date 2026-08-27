@@ -119,6 +119,34 @@ class EncounterController {
             });
         }
     }
+    async getLatestPatientEncounters(req, res) {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+            const user = req.user;
+            const parsedLimit = parseInt(String(req.query.limit ?? ""), 10);
+            const encounters = await service.getLatestEncountersForPatient(String(req.query.patientId), user?.user_id, user?.role, Number.isFinite(parsedLimit) ? parsedLimit : undefined);
+            return res.json({
+                success: true,
+                message: "Latest encounters fetched successfully",
+                data: {
+                    encounters
+                }
+            });
+        }
+        catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
     async updateEncounter(req, res) {
         try {
             const errors = (0, express_validator_1.validationResult)(req);

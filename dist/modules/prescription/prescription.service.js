@@ -56,18 +56,21 @@ class PrescriptionService {
             }
             seenMedicineIds.add(item.medicine_id);
         }
-        const resolvedItems = [];
+        // One round-trip validates every medicine instead of one query
+        // per item (high-latency remote database).
+        const medicines = await repository.findMedicines(data.medicines.map((item) => item.medicine_id));
+        const foundMedicineIds = new Set(medicines.map((medicine) => medicine.medicine_id));
         for (const item of data.medicines) {
-            const medicine = await repository.findMedicine(item.medicine_id);
-            if (!medicine) {
+            if (!foundMedicineIds.has(item.medicine_id)) {
                 throw new Error(`Medicine not found: ${item.medicine_id}`);
             }
-            resolvedItems.push({
-                ...item,
-                resolved_route: item.route ?? medicine.route ?? undefined,
-                resolved_quantity: computeQuantity(item)
-            });
         }
+        const medicineRouteById = new Map(medicines.map((medicine) => [medicine.medicine_id, medicine.route ?? undefined]));
+        const resolvedItems = data.medicines.map((item) => ({
+            ...item,
+            resolved_route: item.route ?? medicineRouteById.get(item.medicine_id),
+            resolved_quantity: computeQuantity(item)
+        }));
         const diagnosisId = data.diagnosis_id ?? encounter.diagnosis_id ?? undefined;
         if (diagnosisId) {
             const diagnosis = await repository.findDiagnosis(diagnosisId);
@@ -75,6 +78,10 @@ class PrescriptionService {
                 throw new Error("Diagnosis not found");
             }
         }
+        // Interactive transaction options - the default 5000ms timeout was
+        // exceeded on multi-medicine prescriptions (remote Supabase latency
+        // x sequential id-generation queries), so both the timeout and the
+        // in-transaction work are tuned here.
         const prescriptionId = await prisma_1.default.$transaction(async (tx) => {
             let patientHistory = encounter.appointment_id
                 ? await repository.findPatientHistoryByAppointment(encounter.appointment_id)
@@ -112,27 +119,32 @@ class PrescriptionService {
                 branch_id: encounter.branch_id,
                 user_id: doctor.user_id
             });
-            for (const item of resolvedItems) {
-                const itemId = await repository.generatePrescriptionItemId(tx);
-                await repository.createPrescriptionItem(tx, {
-                    prescription_item_id: itemId,
-                    prescription_id: prescription.prescription_id,
-                    medicine_id: item.medicine_id,
-                    dosage: item.dosage,
-                    unit: item.unit,
-                    route: item.resolved_route,
-                    frequency: item.frequency,
-                    before_after_food: item.before_after_food,
-                    morning: item.morning ?? false,
-                    afternoon: item.afternoon ?? false,
-                    night: item.night ?? false,
-                    days: item.days,
-                    duration: item.duration,
-                    quantity: item.resolved_quantity,
-                    instruction: item.instruction
-                });
-            }
+            // All item ids come from one sequence lock instead of a lock +
+            // collision-check + sequence-update per item; items themselves
+            // are inserted with a single createMany. The caller re-reads the
+            // full prescription afterwards, so no per-item return is needed.
+            const itemIds = await repository.generatePrescriptionItemIds(tx, resolvedItems.length);
+            await repository.createPrescriptionItems(tx, resolvedItems.map((item, index) => ({
+                prescription_item_id: itemIds[index],
+                prescription_id: prescription.prescription_id,
+                medicine_id: item.medicine_id,
+                dosage: item.dosage,
+                unit: item.unit,
+                route: item.resolved_route,
+                frequency: item.frequency,
+                before_after_food: item.before_after_food,
+                morning: item.morning ?? false,
+                afternoon: item.afternoon ?? false,
+                night: item.night ?? false,
+                days: item.days,
+                duration: item.duration,
+                quantity: item.resolved_quantity,
+                instruction: item.instruction
+            })));
             return prescription.prescription_id;
+        }, {
+            timeout: 30000,
+            maxWait: 10000
         });
         return repository.getPrescriptionById(prescriptionId);
     }

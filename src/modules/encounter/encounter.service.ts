@@ -231,6 +231,44 @@ export class EncounterService {
 
     }
 
+    /*
+     * Latest-encounters feed for the patient vitals panel. Deliberately NOT
+     * behind branchScope: the panel must show the freshest vitals regardless
+     * of which branch recorded them or which branch the UI has selected.
+     * Isolation mirrors getEncounterByAppointmentId - top-level admins see
+     * every branch, everyone else is limited to their ACTIVE
+     * user_branch_mapping branches (no mappings yields an empty list instead
+     * of a 403 so the panel renders its empty state).
+     */
+    async getLatestEncountersForPatient(
+        patientId: string,
+        userId: string,
+        role: string,
+        limit?: number
+    ) {
+
+        const clampedLimit = Math.min(Math.max(limit ?? 10, 1), 50);
+
+        const isTopLevelAdmin = TOP_LEVEL_ADMIN_ROLES.some(
+            (r) => r.toLowerCase() === String(role ?? "").toLowerCase()
+        );
+
+        if (isTopLevelAdmin) {
+            return repository.findRecentEncountersByPatient(patientId, null, clampedLimit);
+        }
+
+        const mappings = await repository.findActiveBranchMappingsForUser(userId);
+
+        const branchIds = mappings.map((m) => String(m.branch_id));
+
+        if (branchIds.length === 0) {
+            return [];
+        }
+
+        return repository.findRecentEncountersByPatient(patientId, branchIds, clampedLimit);
+
+    }
+
     async updateEncounter(encounterNo: string, data: UpdateEncounterDTO) {
 
         const existing = await repository.getEncounterByNumber(encounterNo);
