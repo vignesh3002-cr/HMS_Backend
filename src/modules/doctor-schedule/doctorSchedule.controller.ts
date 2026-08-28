@@ -5,6 +5,7 @@ import {
     UpdateDoctorScheduleChangePayload,
     ToggleRecurringSchedulePayload,
     CreateRecurringSlotPayload,
+    UpdateRecurringSlotPayload,
 } from "./doctor-schedule.types";
 
 class DoctorScheduleController {
@@ -21,10 +22,14 @@ class DoctorScheduleController {
             const payload =
                 req.body as CreateDoctorScheduleChangePayload;
 
-            const result =
-                await doctorScheduleService.createScheduleChange(
-                    payload
-                );
+            const bypassHeader = (req.headers['x-bypass-pending-transfer'] || '').toString().toLowerCase();
+            const bypass = bypassHeader === 'true';
+            const authUser = (req as any).user || {};
+            const isAdmin = ['HEAD_ADMIN','SUPER_ADMIN','BRANCH_ADMIN'].includes(authUser.role_type?.toUpperCase());
+            const result = await doctorScheduleService.createScheduleChange(
+                payload,
+                bypass && isAdmin
+            );
 
             res.status(201).json({
                 success: true,
@@ -353,6 +358,65 @@ class DoctorScheduleController {
                 error instanceof Error
                     ? error.message
                     : "Failed to delete recurring slot";
+
+            res.status(400).json({
+                success: false,
+                message,
+            });
+        }
+    }
+
+    /**
+     * PUT
+     * Update a single recurring slot in the
+     * doctor_schedule template.
+     */
+    async updateRecurringSlot(
+        req: Request,
+        res: Response
+    ): Promise<void> {
+        try {
+            const { employeeId, scheduleId } = req.params;
+
+            if (!employeeId || !scheduleId) {
+                res.status(400).json({
+                    success: false,
+                    message: "employeeId and scheduleId are required",
+                });
+                return;
+            }
+
+            const scheduleIdBigInt =
+                BigInt(String(scheduleId));
+
+            const payload =
+                req.body as UpdateRecurringSlotPayload;
+
+            const result =
+                await doctorScheduleService.updateRecurringSlot(
+                    scheduleIdBigInt,
+                    String(employeeId),
+                    payload
+                );
+
+            res.status(200).json({
+                success: true,
+                message:
+                    "Recurring slot updated successfully",
+                data: result,
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Update recurring slot error:",
+                error
+            );
+
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to update recurring slot";
 
             res.status(400).json({
                 success: false,

@@ -713,7 +713,7 @@ private async applySlotMove(
 
     }
 
-    async initiateTransfer(employeeId: string, dto: InitiateTransferDto, requestedBy: string) {
+    async initiateTransfer(employeeId: string, dto: InitiateTransferDto, requestedBy: string, bypassPending: boolean = false) {
 
         const employee = await this.resolveDoctor(employeeId);
 
@@ -728,7 +728,7 @@ private async applySlotMove(
         // overlapping requests can close/re-create the same schedule rows.
         const pendingTransfer = await this.repository.findPendingTransfer(employeeId);
 
-        if (pendingTransfer) {
+        if (pendingTransfer && !bypassPending) {
             throw new Error(
                 `Doctor already has transfer ${pendingTransfer.transfer_id} awaiting confirmation — complete or discard it before starting a new one`
             );

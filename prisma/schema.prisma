@@ -119,6 +119,7 @@ model appointment_history {
   user_table                      user_table?                       @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_appointment_user")
   appointment_notification        appointment_notification[]
   appointment_reschedule_queue    appointment_reschedule_queue[]
+  chemotherapy_cycle              chemotherapy_cycle[]
   chemotherapy_plan               chemotherapy_plan[]
   doctor_transfer_appointment_log doctor_transfer_appointment_log[]
   encounter                       encounter?
@@ -421,8 +422,10 @@ model chemotherapy_cycle {
   created_at                  DateTime?                     @default(now()) @db.Timestamp(6)
   updated_by                  String?                       @db.VarChar(100)
   updated_at                  DateTime?                     @default(now()) @db.Timestamp(6)
+  appointment_id              String?                       @db.VarChar
   chemotherapy_administration chemotherapy_administration[]
   chemotherapy_adverse_event  chemotherapy_adverse_event[]
+  appointment_history         appointment_history?          @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction)
   chemotherapy_plan           chemotherapy_plan             @relation(fields: [chemotherapy_plan_id], references: [chemotherapy_plan_id], onDelete: Cascade, map: "fk_chemo_cycle_plan")
   chemotherapy_followup       chemotherapy_followup[]
   chemotherapy_lab_review     chemotherapy_lab_review[]
@@ -1004,20 +1007,21 @@ model doctor_schedule {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model doctor_schedule_change {
-  change_id   BigInt                   @id @default(autoincrement())
-  employee_id String                   @db.VarChar(100)
-  branch_id   String                   @db.VarChar(100)
-  change_date DateTime                 @db.Date
-  mode        DoctorScheduleChangeMode
-  start_time  DateTime?                @db.Time(6)
-  end_time    DateTime?                @db.Time(6)
-  reason      String?                  @db.VarChar(100)
-  is_active   Boolean                  @default(true)
-  created_by  String?                  @db.VarChar(100)
-  created_at  DateTime                 @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime                 @db.Timestamptz(6)
-  branch      branch                   @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, onUpdate: NoAction)
-  employees   employees                @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
+  change_id            BigInt                   @id @default(autoincrement())
+  employee_id          String                   @db.VarChar(100)
+  branch_id            String                   @db.VarChar(100)
+  change_date          DateTime                 @db.Date
+  mode                 DoctorScheduleChangeMode
+  start_time           DateTime?                @db.Time(6)
+  end_time             DateTime?                @db.Time(6)
+  reason               String?                  @db.VarChar(100)
+  is_active            Boolean                  @default(true)
+  created_by           String?                  @db.VarChar(100)
+  created_at           DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime                 @db.Timestamptz(6)
+  consultation_minutes Int?
+  branch               branch                   @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, onUpdate: NoAction)
+  employees            employees                @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([branch_id])
   @@index([change_date])

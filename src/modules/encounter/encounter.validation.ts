@@ -55,3 +55,15 @@ export const getEncountersValidation = [
     query("dateTo").optional().isISO8601()
 
 ];
+
+export const getLatestEncountersValidation = [
+
+    query("patientId")
+        .notEmpty()
+        .withMessage("Patient is required"),
+
+    query("limit")
+        .optional()
+        .isInt({ min: 1, max: 50 })
+
+];

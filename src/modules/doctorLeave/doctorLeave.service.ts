@@ -74,13 +74,18 @@ export class DoctorLeaveService {
             throw new Error("Leave reason is required");
         }
 
+        const startDateStr = dto.leave_start_date;
+        const endDateStr = dto.leave_end_date;
 
-        const pendingLeave =
-            await this.repository.findPendingLeave(employeeId);
+        const overlappingLeave = await this.repository.findOverlappingLeaves(
+            employeeId,
+            startDateStr,
+            endDateStr
+        );
 
-        if (pendingLeave) {
+        if (overlappingLeave) {
             throw new Error(
-                "Doctor already has a pending leave request"
+                `Leave overlaps with an existing ${overlappingLeave.status} leave request (${overlappingLeave.leave_id})`
             );
         }
 
@@ -166,6 +171,8 @@ export class DoctorLeaveService {
                     leave_end_date: endDate,
 
                     leave_reason: dto.leave_reason,
+
+                    leave_type: dto.leave_type ?? null,
 
                     status: leaveStatus,
 

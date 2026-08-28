@@ -5,6 +5,7 @@ export interface ApplyDoctorLeaveDto {
     leave_end_date: string;
     leave_reason: string;
     replacement_employee_id?: string;
+    leave_type?: string;
 }
 
 export interface ApproveDoctorLeaveDto {
@@ -38,6 +39,7 @@ export interface DoctorLeaveResponse {
     leave_start_date: string;
     leave_end_date: string;
     leave_reason: string;
+    leave_type?: string | null;
     status: typeof LEAVE_STATUS[keyof typeof LEAVE_STATUS];
     requested_by: string;
     requested_at: Date;

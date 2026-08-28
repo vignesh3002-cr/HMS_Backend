@@ -96,15 +96,22 @@ export class EmployeeController {
    
 }
 async softDeleteSchedule(req: Request, res: Response) {
-    const result= await service.softDeleteSchedule(
-        String(req.params.employeeId),
-        Number(req.params.schedule_id),
-        (req as any).user?.user_id || "SYSTEM"
-    );
-    return res.status(200).json({
-        success: true,
-        message: result.message
-    });
+    try {
+        const result = await service.softDeleteSchedule(
+            String(req.params.employeeId),
+            Number(req.params.schedule_id),
+            (req as any).user?.user_id || "SYSTEM"
+        );
+        return res.status(200).json({
+            success: true,
+            message: result.message
+        });
+    } catch (error: any) {
+        return res.status(400).json({
+            success: false,
+            message: error.message || "Failed to delete schedule slot"
+        });
+    }
 }
 async softDeleteEmployee(req: Request, res: Response) {
  
@@ -220,6 +227,52 @@ async getAllEmployees(req: Request, res: Response) {
             return res.status(200).json({
                 success: true,
                 message: "Photo updated successfully",
+                data: employee
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+    // GET /employees/me — the signed-in user's own full profile. Must be
+    // matched before /:employeeId (which would otherwise treat "me" as an
+    // id and fail with "Employee not found"). No branchScope here: self
+    // access is not branch-filtered.
+    async getMyProfile(req: Request, res: Response) {
+
+        try {
+
+            const userId = (req as any).user?.user_id;
+
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Unauthorized"
+                });
+            }
+
+            const own = await prisma.employees.findUnique({
+                where: { user_id: userId },
+                select: { employee_id: true },
+            });
+
+            if (!own?.employee_id) {
+                return res.status(404).json({
+                    success: false,
+                    message: "No employee profile is linked to this account."
+                });
+            }
+
+            const employee = await service.getEmployeeById(own.employee_id);
+
+            return res.status(200).json({
+                success: true,
                 data: employee
             });
 

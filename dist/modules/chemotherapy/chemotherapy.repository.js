@@ -295,6 +295,25 @@ class ChemotherapyRepository {
         ]);
         return { rows, total, page, limit };
     }
+    async findActiveBranchMappingsForUser(userId) {
+        return prisma_1.default.user_branch_mapping.findMany({
+            where: { user_id: userId, status: 1 },
+            select: { branch_id: true }
+        });
+    }
+    // Latest active plan for a patient, newest first. When branchIds is
+    // null (top-level admin) every branch is visible.
+    async findLatestPlanForPatient(patientId, branchIds) {
+        return prisma_1.default.chemotherapy_plan.findFirst({
+            where: {
+                active_status: 1,
+                patient_id: patientId,
+                ...(branchIds ? { branch_id: { in: branchIds } } : {})
+            },
+            include: this.planInclude,
+            orderBy: { created_at: "desc" }
+        });
+    }
     // -----------------------------------------------------------------
     // chemotherapy_plan_items
     // -----------------------------------------------------------------

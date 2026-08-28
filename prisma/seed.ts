@@ -178,6 +178,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 
   // RECEPTIONIST - patient/appointment only
   RECEPTIONIST: [
+    "employee.read",
     "patient.create",
     "patient.read",
     "appointment.create",
@@ -188,6 +189,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 
   // DOCTOR - own patients/appointments
   DOCTOR: [
+    "employee.read",
     "patient.read",
     "appointment.read",
     "appointment.update",
@@ -220,6 +222,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 
   // NURSE - patient care
   NURSE: [
+    "employee.read",
     "patient.read",
     "patient.update",
     "appointment.read",
@@ -243,6 +246,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 
   // PHARMACIST
   PHARMACIST: [
+    "employee.read",
     "patient.read",
     "department.read",
     "pharmacy.dispense",
@@ -258,6 +262,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 
   // LAB_TECHNICIAN
   LAB_TECHNICIAN: [
+    "employee.read",
     "patient.read",
     "department.read",
     "lab.order",

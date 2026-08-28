@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getEncountersValidation = exports.closeEncounterValidation = exports.updateEncounterValidation = exports.createEncounterValidation = void 0;
+exports.getLatestEncountersValidation = exports.getEncountersValidation = exports.closeEncounterValidation = exports.updateEncounterValidation = exports.createEncounterValidation = void 0;
 const express_validator_1 = require("express-validator");
 const encounter_constants_1 = require("./encounter.constants");
 exports.createEncounterValidation = [
@@ -42,4 +42,12 @@ exports.getEncountersValidation = [
     (0, express_validator_1.query)("date").optional().isISO8601(),
     (0, express_validator_1.query)("dateFrom").optional().isISO8601(),
     (0, express_validator_1.query)("dateTo").optional().isISO8601()
+];
+exports.getLatestEncountersValidation = [
+    (0, express_validator_1.query)("patientId")
+        .notEmpty()
+        .withMessage("Patient is required"),
+    (0, express_validator_1.query)("limit")
+        .optional()
+        .isInt({ min: 1, max: 50 })
 ];
