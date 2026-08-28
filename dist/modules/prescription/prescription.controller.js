@@ -221,5 +221,22 @@ class PrescriptionController {
             });
         }
     }
+    async getPrescriptionsByPatientHistoryId(req, res) {
+        try {
+            const patientHistoryId = String(req.params.patientHistoryId);
+            const prescriptions = await service.getPrescriptionsByPatientHistoryId(patientHistoryId);
+            return res.json({
+                success: true,
+                message: "Prescriptions fetched successfully",
+                data: prescriptions
+            });
+        }
+        catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
 }
 exports.PrescriptionController = PrescriptionController;

@@ -99,6 +99,14 @@ class PrescriptionRepository {
             where: { medicine_id: medicineId }
         });
     }
+    async findMedicines(medicineIds) {
+        if (medicineIds.length === 0) {
+            return [];
+        }
+        return prisma_1.default.medicine_master.findMany({
+            where: { medicine_id: { in: medicineIds } }
+        });
+    }
     async findPatientHistoryByAppointment(appointmentId) {
         return prisma_1.default.patient_history.findFirst({
             where: { appointment_id: appointmentId }
@@ -116,6 +124,12 @@ class PrescriptionRepository {
     async generatePrescriptionItemId(tx) {
         return (0, idGenerator_1.generateId)(tx, "PRESCRIPTION_ITEM");
     }
+    // One sequence lock + one update for the whole batch instead of three
+    // queries per item - keeps the createPrescription transaction far
+    // under Prisma's interactive transaction timeout.
+    async generatePrescriptionItemIds(tx, count) {
+        return (0, idGenerator_1.generateIdBatch)(tx, "PRESCRIPTION_ITEM", count);
+    }
     async createPrescription(tx, data) {
         return tx.prescription.create({ data });
     }
@@ -124,6 +138,9 @@ class PrescriptionRepository {
             data,
             include: prescriptionItemInclude
         });
+    }
+    async createPrescriptionItems(tx, data) {
+        await tx.prescription_items.createMany({ data });
     }
     async getPrescriptionById(prescriptionId) {
         return prisma_1.default.prescription.findUnique({
@@ -267,6 +284,17 @@ class PrescriptionRepository {
             totalPages: Math.ceil(total / limit),
             prescriptions
         };
+    }
+    async getPrescriptionsByPatientHistoryId(patientHistoryId) {
+        const where = {
+            patient_history_id: patientHistoryId
+        };
+        const prescriptions = await prisma_1.default.prescription.findMany({
+            where,
+            include: prescriptionDetailInclude,
+            orderBy: { prescription_date: "desc" }
+        });
+        return prescriptions;
     }
 }
 exports.PrescriptionRepository = PrescriptionRepository;

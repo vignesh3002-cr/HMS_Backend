@@ -230,6 +230,9 @@ export const createPlanValidation = [
     body("employee_id").notEmpty().withMessage("employee_id is required"),
     body("department_id").notEmpty().withMessage("department_id is required"),
     body("branch_id").notEmpty().withMessage("branch_id is required"),
+    // appointment_id and encounter_no are optional but allowed
+    body("appointment_id").optional({ nullable: true }).notEmpty(),
+    body("encounter_no").optional({ nullable: true }).notEmpty(),
     // protocol_id, regimen_name, planned_cycles, and plan_items have a
     // "provide it explicitly OR select a protocol_id to default it" relationship
     // that's cross-field, so only shape/type is checked here - the service

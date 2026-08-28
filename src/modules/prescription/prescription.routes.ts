@@ -12,7 +12,9 @@ import {
     deletePrescriptionItemValidation,
     getPrescriptionByIdValidation,
     updatePrescriptionValidation,
-    deletePrescriptionValidation
+    deletePrescriptionValidation,
+    getPrescriptionsByPatientHistoryIdValidation,
+    getPrescriptionsByPatientIdValidation
 } from "./prescription.validation";
 
 const router = Router();
@@ -30,6 +32,20 @@ router.get(
     authenticate,
     getPrescriptionsValidation,
     controller.getPrescriptions.bind(controller)
+);
+
+router.get(
+    "/patient-history/:patientHistoryId",
+    authenticate,
+    getPrescriptionsByPatientHistoryIdValidation,
+    controller.getPrescriptionsByPatientHistoryId.bind(controller)
+);
+
+router.get(
+    "/patient/:patientId",
+    authenticate,
+    getPrescriptionsByPatientIdValidation,
+    controller.getPrescriptionsByPatientId.bind(controller)
 );
 
 router.get(
