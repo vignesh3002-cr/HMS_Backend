@@ -262,6 +262,13 @@ router.get(
 );
 
 router.get(
+    "/plans/latest-for-patient",
+    authenticate,
+    authorize("chemo.plan.read"),
+    controller.getLatestPlanForPatient.bind(controller)
+);
+
+router.get(
     "/plans/:planId",
     authenticate,
     authorize("chemo.plan.read"),

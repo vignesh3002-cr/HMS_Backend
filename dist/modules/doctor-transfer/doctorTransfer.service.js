@@ -447,7 +447,7 @@ class DoctorTransferService {
         }
         return Array.from(eligible.values());
     }
-    async initiateTransfer(employeeId, dto, requestedBy) {
+    async initiateTransfer(employeeId, dto, requestedBy, bypassPending = false) {
         const employee = await this.resolveDoctor(employeeId);
         const mode = dto.mode ?? "ADD_BRANCH";
         if (!dto.new_branch_id) {
@@ -457,7 +457,7 @@ class DoctorTransferService {
         // must be resolved before a new one can be initiated, otherwise
         // overlapping requests can close/re-create the same schedule rows.
         const pendingTransfer = await this.repository.findPendingTransfer(employeeId);
-        if (pendingTransfer) {
+        if (pendingTransfer && !bypassPending) {
             throw new Error(`Doctor already has transfer ${pendingTransfer.transfer_id} awaiting confirmation — complete or discard it before starting a new one`);
         }
         if (dto.old_branch_id && dto.close_schedule_ids && dto.close_schedule_ids.length > 0) {

@@ -305,6 +305,25 @@ class ChemotherapyRepository {
         ]);
         return { rows, total, page, limit };
     }
+    async findActiveBranchMappingsForUser(userId) {
+        return prisma_1.default.user_branch_mapping.findMany({
+            where: { user_id: userId, status: 1 },
+            select: { branch_id: true }
+        });
+    }
+    // Latest active plan for a patient, newest first. When branchIds is
+    // null (top-level admin) every branch is visible.
+    async findLatestPlanForPatient(patientId, branchIds) {
+        return prisma_1.default.chemotherapy_plan.findFirst({
+            where: {
+                active_status: 1,
+                patient_id: patientId,
+                ...(branchIds ? { branch_id: { in: branchIds } } : {})
+            },
+            include: this.planInclude,
+            orderBy: { created_at: "desc" }
+        });
+    }
     // -----------------------------------------------------------------
     // chemotherapy_plan_items
     // -----------------------------------------------------------------
@@ -446,6 +465,26 @@ class ChemotherapyRepository {
         return prisma_1.default.chemotherapy_followup.findMany({
             where: { chemotherapy_cycle_id: cycleId, active_status: 1 },
             orderBy: { followup_date: "asc" }
+        });
+    }
+    async listSupportiveMedicines() {
+        return prisma_1.default.medicine_master.findMany({
+            where: {
+                is_active: true,
+                medicine_category: { not: "Chemotherapy" }
+            },
+            select: {
+                medicine_id: true,
+                medicine_name: true,
+                generic_name: true,
+                medicine_category: true,
+                medicine_type: true,
+                dosage_form: true,
+                unit: true,
+                strength: true,
+                route: true,
+            },
+            orderBy: { medicine_name: "asc" }
         });
     }
 }

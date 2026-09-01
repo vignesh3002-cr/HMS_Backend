@@ -37,6 +37,16 @@ export interface CreateRecurringSlotPayload {
     shift_name?: string;
     start_time: string;
     end_time: string;
+    consultation_minutes?: number;
+}
+
+export interface UpdateRecurringSlotPayload {
+    branch_id: string;
+    day_of_week: string;
+    shift_name?: string;
+    start_time: string;
+    end_time: string;
+    consultation_minutes?: number;
 }
 
 export interface RecurringScheduleResponse {

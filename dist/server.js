@@ -34,6 +34,7 @@ const diagnosis_routes_1 = __importDefault(require("./modules/diagnosis/diagnosi
 const clinical_details_routes_1 = __importDefault(require("./modules/clinical-details/clinical-details.routes"));
 const notification_routes_1 = __importDefault(require("./modules/notification/notification.routes"));
 const bcrypt_1 = require("./utils/bcrypt");
+const appointment_status_job_1 = require("./jobs/appointment-status.job");
 // Fix BigInt serialization - Prisma returns BigInt types
 // that JSON.stringify can't handle
 BigInt.prototype.toJSON = function () {
@@ -137,6 +138,10 @@ app.use("/api/hashpassword", async (req, res) => {
     res.json({ hashedPassword });
 });
 const PORT = process.env.PORT || 5000;
+// Background sweep: cancels SCHEDULED/RESCHEDULED appointments whose day
+// has fully passed (IST). Scoped strictly to those two statuses -- terminal
+// and in-flight states are never touched.
+(0, appointment_status_job_1.startAppointmentStatusJob)();
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });

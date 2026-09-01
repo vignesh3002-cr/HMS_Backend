@@ -543,6 +543,39 @@ export class ChemotherapyController {
 
     }
 
+    async getLatestPlanForPatient(req: Request, res: Response) {
+
+        try {
+
+            const patientId = String(req.query.patient_id ?? "");
+
+            if (!patientId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "patient_id is required"
+                });
+            }
+
+            const user = (req as any).user;
+
+            const plan = await service.getLatestPlanForPatient(
+                patientId,
+                user?.user_id,
+                user?.role
+            );
+
+            return res.json({
+                success: true,
+                message: "Latest chemotherapy plan fetched successfully",
+                data: plan
+            });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
     async updatePlan(req: Request, res: Response) {
 
         try {

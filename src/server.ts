@@ -32,6 +32,7 @@ import clinicalDetailsRoutes from "./modules/clinical-details/clinical-details.r
 import notificationRoutes from "./modules/notification/notification.routes";
 
 import { hashPassword } from "./utils/bcrypt";
+import { startAppointmentStatusJob } from "./jobs/appointment-status.job";
 
 // Fix BigInt serialization - Prisma returns BigInt types
 // that JSON.stringify can't handle
@@ -160,6 +161,11 @@ app.use("/api/hashpassword", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
+
+// Background sweep: cancels SCHEDULED/RESCHEDULED appointments whose day
+// has fully passed (IST). Scoped strictly to those two statuses -- terminal
+// and in-flight states are never touched.
+startAppointmentStatusJob();
 
 app.listen(PORT, () => {
 

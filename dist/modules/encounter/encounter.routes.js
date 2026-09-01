@@ -12,6 +12,7 @@ router.post("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("enc
 router.get("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), branchScope_1.branchScope, encounter_validation_1.getEncountersValidation, controller.getEncounters.bind(controller));
 router.get("/stats/patients-today", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), branchScope_1.branchScope, controller.getCheckedInPatientsToday.bind(controller));
 router.get("/by-appointment/:appointmentId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), controller.getEncounterByAppointment.bind(controller));
+router.get("/latest", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), encounter_validation_1.getLatestEncountersValidation, controller.getLatestPatientEncounters.bind(controller));
 router.get("/:encounterNo", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), controller.getEncounterByNumber.bind(controller));
 router.put("/:encounterNo/close", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), encounter_validation_1.closeEncounterValidation, controller.closeEncounter.bind(controller));
 router.put("/:encounterNo", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), encounter_validation_1.updateEncounterValidation, controller.updateEncounter.bind(controller));

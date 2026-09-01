@@ -15,7 +15,8 @@ const appointmentDetailInclude = {
             patient_primary_mobile: true,
             patient_dob: true,
             patient_age: true,
-            patient_blood_group: true
+            patient_blood_group: true,
+            patient_photo_url: true
         }
     },
 

@@ -328,6 +328,27 @@ class ChemotherapyController {
             return handleError(res, error);
         }
     }
+    async getLatestPlanForPatient(req, res) {
+        try {
+            const patientId = String(req.query.patient_id ?? "");
+            if (!patientId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "patient_id is required"
+                });
+            }
+            const user = req.user;
+            const plan = await service.getLatestPlanForPatient(patientId, user?.user_id, user?.role);
+            return res.json({
+                success: true,
+                message: "Latest chemotherapy plan fetched successfully",
+                data: plan
+            });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
     async updatePlan(req, res) {
         try {
             if (!checkValidation(req, res))
@@ -534,6 +555,15 @@ class ChemotherapyController {
         try {
             const data = await service.listFollowups(req.params.cycleId);
             return res.json({ success: true, message: "Follow-ups fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async listSupportiveMedicines(req, res) {
+        try {
+            const data = await service.listSupportiveMedicines();
+            return res.json({ success: true, message: "Supportive medicines fetched successfully", data });
         }
         catch (error) {
             return handleError(res, error);

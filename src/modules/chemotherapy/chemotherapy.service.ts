@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { generateId } from "../../utils/idGenerator";
+import { TOP_LEVEL_ADMIN_ROLES } from "../../permissions/roles";
 import { ChemotherapyRepository } from "./chemotherapy.repository";
 import { OncologyRepository } from "../oncology/oncology.repository";
 import {
@@ -2049,6 +2050,38 @@ export class ChemotherapyService {
     async listPlans(filters: PlanFilterQuery) {
 
         return this.repository.listPlans(filters);
+
+    }
+
+    /*
+     * Latest saved plan for a patient, scoped like the encounters
+     * /latest feed - deliberately NOT behind branchScope so the
+     * patient-details page can show plan data regardless of which
+     * branch recorded it or which branch the UI has selected.
+     * Isolation mirrors getLatestEncountersForPatient: top-level
+     * admins see every branch, everyone else is limited to their
+     * ACTIVE user_branch_mapping branches, and zero mappings yields
+     * null instead of a 403.
+     */
+    async getLatestPlanForPatient(patientId: string, userId: string, role: string) {
+
+        const isTopLevelAdmin = TOP_LEVEL_ADMIN_ROLES.some(
+            (r) => r.toLowerCase() === String(role ?? "").toLowerCase()
+        );
+
+        if (isTopLevelAdmin) {
+            return this.repository.findLatestPlanForPatient(patientId, null);
+        }
+
+        const mappings = await this.repository.findActiveBranchMappingsForUser(userId);
+
+        const branchIds = mappings.map((m) => String(m.branch_id));
+
+        if (branchIds.length === 0) {
+            return null;
+        }
+
+        return this.repository.findLatestPlanForPatient(patientId, branchIds);
 
     }
 
