@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSuggestedMedicinesValidation = exports.deletePrescriptionItemValidation = exports.updatePrescriptionItemValidation = exports.addPrescriptionItemValidation = exports.getPrescriptionItemsValidation = exports.deletePrescriptionValidation = exports.updatePrescriptionValidation = exports.getPrescriptionByIdValidation = exports.getPrescriptionsValidation = exports.createPrescriptionValidation = void 0;
+exports.getPrescriptionsByPatientHistoryIdValidation = exports.getSuggestedMedicinesValidation = exports.deletePrescriptionItemValidation = exports.updatePrescriptionItemValidation = exports.addPrescriptionItemValidation = exports.getPrescriptionItemsValidation = exports.deletePrescriptionValidation = exports.updatePrescriptionValidation = exports.getPrescriptionByIdValidation = exports.getPrescriptionsValidation = exports.createPrescriptionValidation = void 0;
 const express_validator_1 = require("express-validator");
 const prescription_constants_1 = require("./prescription.constants");
 const medicineItemValidation = (prefix) => {
@@ -91,4 +91,7 @@ exports.deletePrescriptionItemValidation = [
 ];
 exports.getSuggestedMedicinesValidation = [
     (0, express_validator_1.param)("diagnosisId").notEmpty()
+];
+exports.getPrescriptionsByPatientHistoryIdValidation = [
+    (0, express_validator_1.param)("patientHistoryId").notEmpty()
 ];

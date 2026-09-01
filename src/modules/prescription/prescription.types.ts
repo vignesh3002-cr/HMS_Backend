@@ -67,4 +67,5 @@ export interface GetPrescriptionsQuery {
     sortOrder?: "asc" | "desc";
     page?: number;
     limit?: number;
+    patientId?: string;
 }

@@ -59,12 +59,10 @@ const branchScope = async (req, res, next) => {
         // For branch-restricted roles, force single branch access
         if (isBranchRestricted) {
             if (allowedBranches.length > 1) {
-                // If they have multiple branches, they must explicitly select one
+                // If they have multiple branches, default to first branch if none requested
                 if (!requestedBranchId) {
-                    return res.status(403).json({
-                        success: false,
-                        message: "Please select a branch first.",
-                    });
+                    req.query.branchId = allowedBranches[0];
+                    return next();
                 }
                 if (!allowedBranches.includes(requestedBranchId)) {
                     return res.status(403).json({
@@ -92,10 +90,11 @@ const branchScope = async (req, res, next) => {
             req.query.branchId = allowedBranches[0];
             return next();
         }
-        return res.status(403).json({
-            success: false,
-            message: "Please select a branch first.",
-        });
+        // Multiple branches assigned but none requested: default to first branch
+        // instead of blocking the request. This avoids 403 for list endpoints
+        // where the client does not send branchId.
+        req.query.branchId = allowedBranches[0];
+        return next();
     }
     catch (error) {
         return res.status(500).json({

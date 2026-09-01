@@ -302,4 +302,74 @@ export class PrescriptionController {
 
     }
 
+    async getPrescriptionsByPatientHistoryId(req: Request, res: Response) {
+
+        try {
+
+            const patientHistoryId = String(req.params.patientHistoryId);
+
+            const prescriptions = await service.getPrescriptionsByPatientHistoryId(patientHistoryId);
+
+            return res.json({
+                success: true,
+                message: "Prescriptions fetched successfully",
+                data: prescriptions
+            });
+
+        } catch (error: any) {
+
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async getPrescriptionsByPatientId(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+
+            const patientId = String(req.params.patientId);
+            const result = await service.getPrescriptionsByPatientId(patientId, {
+                branchId: req.query.branchId as string | undefined,
+                doctorId: req.query.doctorId as string | undefined,
+                status: req.query.status as string | undefined,
+                dateFrom: req.query.dateFrom as string | undefined,
+                dateTo: req.query.dateTo as string | undefined,
+                search: req.query.search as string | undefined,
+                sortBy: req.query.sortBy as any,
+                sortOrder: req.query.sortOrder as any,
+                page: Number(req.query.page || 1),
+                limit: Number(req.query.limit || 10)
+            });
+
+            return res.json({
+                success: true,
+                message: "Prescriptions fetched successfully",
+                data: result
+            });
+
+        } catch (error: any) {
+
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
 }

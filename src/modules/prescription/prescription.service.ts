@@ -477,4 +477,12 @@ export class PrescriptionService {
 
     }
 
+    async getPrescriptionsByPatientHistoryId(patientHistoryId: string) {
+        return repository.getPrescriptionsByPatientHistoryId(patientHistoryId);
+    }
+
+    async getPrescriptionsByPatientId(patientId: string, query: GetPrescriptionsQuery) {
+        return repository.getPrescriptionsByPatientId(patientId, query);
+    }
+
 }

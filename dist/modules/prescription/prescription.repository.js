@@ -285,5 +285,16 @@ class PrescriptionRepository {
             prescriptions
         };
     }
+    async getPrescriptionsByPatientHistoryId(patientHistoryId) {
+        const where = {
+            patient_history_id: patientHistoryId
+        };
+        const prescriptions = await prisma_1.default.prescription.findMany({
+            where,
+            include: prescriptionDetailInclude,
+            orderBy: { prescription_date: "desc" }
+        });
+        return prescriptions;
+    }
 }
 exports.PrescriptionRepository = PrescriptionRepository;
