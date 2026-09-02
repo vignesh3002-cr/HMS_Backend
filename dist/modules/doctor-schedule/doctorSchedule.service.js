@@ -817,7 +817,7 @@ class DoctorScheduleService {
      * weekday -- NOT a date-specific doctor_schedule_change.
      */
     async createRecurringSlot(payload) {
-        const { employee_id, branch_id, day_of_week, shift_name, start_time, end_time, } = payload;
+        const { employee_id, branch_id, day_of_week, shift_name, start_time, end_time, consultation_minutes, } = payload;
         if (!employee_id) {
             throw new Error("employee_id is required");
         }
@@ -940,7 +940,7 @@ class DoctorScheduleService {
                 shift_name: shift_name?.trim() || null,
                 start_time: this.timeStringToDate(start_time),
                 end_time: this.timeStringToDate(end_time),
-                consultation_minutes: 20,
+                consultation_minutes: consultation_minutes ?? 20,
                 is_active: true,
                 effective_from: new Date(),
             },
@@ -952,7 +952,7 @@ class DoctorScheduleService {
      * doctor_schedule template.
      */
     async updateRecurringSlot(schedule_id, employee_id, payload) {
-        const { branch_id, day_of_week, shift_name, start_time, end_time, } = payload;
+        const { branch_id, day_of_week, shift_name, start_time, end_time, consultation_minutes, } = payload;
         if (!employee_id) {
             throw new Error("employee_id is required");
         }
@@ -1098,6 +1098,7 @@ class DoctorScheduleService {
                 shift_name: shift_name?.trim() || null,
                 start_time: this.timeStringToDate(start_time),
                 end_time: this.timeStringToDate(end_time),
+                consultation_minutes: consultation_minutes ?? undefined,
             },
         });
     }

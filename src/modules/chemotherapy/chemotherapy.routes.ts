@@ -26,6 +26,10 @@ import {
     createRegimenProtocolValidation,
     updateRegimenProtocolValidation,
     addRegimenProtocolItemValidation,
+    updateRegimenProtocolItemValidation,
+    addDischargeInstructionValidation,
+    updateDischargeInstructionValidation,
+    removeDischargeInstructionValidation,
     personalizeRegimenProtocolValidation,
     updatePersonalizedProtocolValidation,
     addPersonalizedProtocolItemValidation,
@@ -197,6 +201,41 @@ router.get(
     controller.getDischargeMedicinesForProtocol.bind(controller)
 );
 
+router.get(
+    "/medicines",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    controller.listAllActiveMedicines.bind(controller)
+);
+
+router.get(
+    "/medicines/dilution-medicines",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    controller.listDilutionMedicines.bind(controller)
+);
+
+router.get(
+    "/medicines/by-cancer-subtype",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    controller.getMedicinesByCancerTypeAndSubtype.bind(controller)
+);
+
+router.get(
+    "/medicines/by-role",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    controller.listMedicinesByDrugRole.bind(controller)
+);
+
+router.get(
+    "/protocol-field-options",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    controller.getProtocolFieldOptions.bind(controller)
+);
+
 router.post(
     "/regimen-protocols",
     authenticate,
@@ -221,11 +260,43 @@ router.post(
     controller.addRegimenProtocolItem.bind(controller)
 );
 
+router.put(
+    "/regimen-protocols/:protocolId/items/:protocolItemId",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    updateRegimenProtocolItemValidation,
+    controller.updateRegimenProtocolItem.bind(controller)
+);
+
 router.delete(
     "/regimen-protocols/:protocolId/items/:protocolItemId",
     authenticate,
     authorize("chemo.protocol.manage"),
     controller.removeRegimenProtocolItem.bind(controller)
+);
+
+router.post(
+    "/regimen-protocols/:protocolId/discharge-instructions",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    addDischargeInstructionValidation,
+    controller.addDischargeInstruction.bind(controller)
+);
+
+router.put(
+    "/regimen-protocols/:protocolId/discharge-instructions/:dischargeInstructionId",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    updateDischargeInstructionValidation,
+    controller.updateDischargeInstruction.bind(controller)
+);
+
+router.delete(
+    "/regimen-protocols/:protocolId/discharge-instructions/:dischargeInstructionId",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    removeDischargeInstructionValidation,
+    controller.removeDischargeInstruction.bind(controller)
 );
 
 // ---------------- Plan ----------------

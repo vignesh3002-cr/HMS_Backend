@@ -1,0 +1,5 @@
+
+> hms-backend@1.0.0 dev
+> ts-node src/server.ts
+
+Server running on port 5000
