@@ -227,16 +227,19 @@ export class EncounterRepository {
     async getCheckedInPatientsToday(employeeId?: string, branchId?: string) {
 
         const today = new Date().toISOString().slice(0, 10);
+        const todayDate = new Date(`${today}T00:00:00.000Z`);
 
-        const groups = await prisma.encounter.groupBy({
+        // Count distinct patients with appointments today that are checked in.
+        // Using appointment status IN_CONSULTATION or CHECKED_IN ensures the
+        // metric is consistent with total appointments and scoped to the same
+        // employee/branch/date.
+        const groups = await prisma.appointment_history.groupBy({
             by: ["patient_id"],
             where: {
-                encounter_ts: {
-                    gte: startOfDay(today),
-                    lt: startOfNextDay(today)
-                },
                 ...(employeeId ? { employee_id: employeeId } : {}),
-                ...(branchId ? { branch_id: branchId } : {})
+                ...(branchId ? { branch_id: branchId } : {}),
+                appointment_date: todayDate,
+                status: { in: ["IN_CONSULTATION", "CHECKED_IN"] }
             }
         });
 

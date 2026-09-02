@@ -264,6 +264,7 @@ model cancer_subtypes {
   cancer_types                  cancer_types                    @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: Cascade, map: "fk_subtype_cancer_type")
   chemotherapy_plan             chemotherapy_plan[]
   chemotherapy_regimen_protocol chemotherapy_regimen_protocol[]
+  diagnosis                     diagnosis[]
   oncology_staging_detail       oncology_staging_detail[]
 }
 
@@ -281,6 +282,7 @@ model cancer_types {
   cancer_subtypes               cancer_subtypes[]
   chemotherapy_plan             chemotherapy_plan[]
   chemotherapy_regimen_protocol chemotherapy_regimen_protocol[]
+  diagnosis                     diagnosis[]
   molecular_subtypes            molecular_subtypes[]
   oncology_staging_detail       oncology_staging_detail[]
   staging_reference             staging_reference[]
@@ -456,6 +458,7 @@ model chemotherapy_discharge_instructions {
   created_at                    DateTime?                     @default(now()) @db.Timestamp(6)
   updated_by                    String?                       @db.VarChar(100)
   updated_at                    DateTime?                     @default(now()) @db.Timestamp(6)
+  duration_days                 String?                       @db.VarChar
   medicine_master               medicine_master?              @relation(fields: [medicine_id], references: [medicine_id], onDelete: Restrict, map: "fk_discharge_medicine")
   chemotherapy_regimen_protocol chemotherapy_regimen_protocol @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_discharge_protocol")
 }
@@ -919,8 +922,12 @@ model diagnosis {
   created_by                 String?                      @db.VarChar(100)
   created_at                 DateTime?                    @default(now()) @db.Timestamp(6)
   diagnosis_catogory_id      String?                      @db.VarChar(100)
+  cancer_type_id             String?                      @db.VarChar(100)
+  cancer_subtype_id          String?                      @db.VarChar(100)
   chemotherapy_master        chemotherapy_master[]
   chemotherapy_plan          chemotherapy_plan[]
+  cancer_subtypes            cancer_subtypes?             @relation(fields: [cancer_subtype_id], references: [subtype_id], map: "fk_diagnosis_cancer_subtype")
+  cancer_types               cancer_types?                @relation(fields: [cancer_type_id], references: [cancer_type_id], map: "fk_diagnosis_cancer_type")
   diagnosis_medicine_mapping diagnosis_medicine_mapping[]
   oncology_staging_detail    oncology_staging_detail[]
   patient_comorbidity        patient_comorbidity[]

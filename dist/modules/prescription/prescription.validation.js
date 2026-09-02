@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSuggestedMedicinesValidation = exports.deletePrescriptionItemValidation = exports.updatePrescriptionItemValidation = exports.addPrescriptionItemValidation = exports.getPrescriptionItemsValidation = exports.deletePrescriptionValidation = exports.updatePrescriptionValidation = exports.getPrescriptionByIdValidation = exports.getPrescriptionsValidation = exports.createPrescriptionValidation = void 0;
+exports.getPrescriptionsByPatientIdValidation = exports.getPrescriptionsByPatientHistoryIdValidation = exports.getSuggestedMedicinesValidation = exports.deletePrescriptionItemValidation = exports.updatePrescriptionItemValidation = exports.addPrescriptionItemValidation = exports.getPrescriptionItemsValidation = exports.deletePrescriptionValidation = exports.updatePrescriptionValidation = exports.getPrescriptionByIdValidation = exports.getPrescriptionsValidation = exports.createPrescriptionValidation = void 0;
 const express_validator_1 = require("express-validator");
 const prescription_constants_1 = require("./prescription.constants");
 const medicineItemValidation = (prefix) => {
@@ -91,4 +91,17 @@ exports.deletePrescriptionItemValidation = [
 ];
 exports.getSuggestedMedicinesValidation = [
     (0, express_validator_1.param)("diagnosisId").notEmpty()
+];
+exports.getPrescriptionsByPatientHistoryIdValidation = [
+    (0, express_validator_1.param)("patientHistoryId").notEmpty()
+];
+exports.getPrescriptionsByPatientIdValidation = [
+    (0, express_validator_1.param)("patientId").notEmpty(),
+    (0, express_validator_1.query)("page").optional().isInt({ min: 1 }),
+    (0, express_validator_1.query)("limit").optional().isInt({ min: 1, max: 100 }),
+    (0, express_validator_1.query)("status").optional().isIn(prescription_constants_1.PRESCRIPTION_STATUS_VALUES),
+    (0, express_validator_1.query)("dateFrom").optional().isISO8601(),
+    (0, express_validator_1.query)("dateTo").optional().isISO8601(),
+    (0, express_validator_1.query)("sortBy").optional().isIn(["created_at", "status", "prescription_date"]),
+    (0, express_validator_1.query)("sortOrder").optional().isIn(["asc", "desc"])
 ];

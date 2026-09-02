@@ -337,5 +337,11 @@ class PrescriptionService {
         }
         return repository.getSuggestedMedicines(diagnosisId);
     }
+    async getPrescriptionsByPatientHistoryId(patientHistoryId) {
+        return repository.getPrescriptionsByPatientHistoryId(patientHistoryId);
+    }
+    async getPrescriptionsByPatientId(patientId, query) {
+        return repository.getPrescriptionsByPatientId(patientId, query);
+    }
 }
 exports.PrescriptionService = PrescriptionService;

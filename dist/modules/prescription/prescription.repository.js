@@ -285,5 +285,87 @@ class PrescriptionRepository {
             prescriptions
         };
     }
+    async getPrescriptionsByPatientHistoryId(patientHistoryId) {
+        const where = {
+            patient_history_id: patientHistoryId
+        };
+        const prescriptions = await prisma_1.default.prescription.findMany({
+            where,
+            include: prescriptionDetailInclude,
+            orderBy: { prescription_date: "desc" }
+        });
+        return prescriptions;
+    }
+    async getPrescriptionsByPatientId(patientId, query = {}) {
+        const { branchId, doctorId, status, date, dateFrom, dateTo, search, sortBy = "prescription_date", sortOrder = "desc", page = 1, limit = 10 } = query;
+        const where = {
+            patient_history: {
+                patient_id: patientId
+            }
+        };
+        if (branchId)
+            where.branch_id = branchId;
+        if (doctorId)
+            where.employee_id = doctorId;
+        if (status)
+            where.prescription_status = status;
+        if (date) {
+            where.prescription_date = {
+                gte: startOfDay(date),
+                lt: startOfNextDay(date)
+            };
+        }
+        else if (dateFrom || dateTo) {
+            where.prescription_date = {
+                ...(dateFrom ? { gte: startOfDay(dateFrom) } : {}),
+                ...(dateTo ? { lt: startOfNextDay(dateTo) } : {})
+            };
+        }
+        if (search) {
+            where.OR = [
+                { prescription_id: { contains: search, mode: "insensitive" } },
+                {
+                    patient_history: {
+                        patient_bio_data: {
+                            OR: [
+                                { patient_first_name: { contains: search, mode: "insensitive" } },
+                                { patient_last_name: { contains: search, mode: "insensitive" } }
+                            ]
+                        }
+                    }
+                },
+                {
+                    employees: {
+                        OR: [
+                            { first_name: { contains: search, mode: "insensitive" } },
+                            { last_name: { contains: search, mode: "insensitive" } }
+                        ]
+                    }
+                }
+            ];
+        }
+        const orderBy = sortBy === "created_at"
+            ? { created_at: sortOrder }
+            : sortBy === "status"
+                ? { prescription_status: sortOrder }
+                : { prescription_date: sortOrder };
+        const [prescriptions, total] = await Promise.all([
+            prisma_1.default.prescription.findMany({
+                where,
+                include: prescriptionDetailInclude,
+                orderBy,
+                skip: (page - 1) * limit,
+                take: limit
+            }),
+            prisma_1.default.prescription.count({ where })
+        ]);
+        return {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            prescriptions
+        };
+    }
 }
 exports.PrescriptionRepository = PrescriptionRepository;

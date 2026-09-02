@@ -5,6 +5,8 @@ exports.generateId = generateId;
 // Table + id column that each entity's generated ID lands in. Used to
 // detect collisions when a sequence's current_number has fallen out of
 // sync with the real data (e.g. after manual seeds/imports bypassed it).
+// padTo is the zero-padding width for the numeric portion; entities that
+// lack one keep the historical 3-digit padding.
 const ENTITY_TARGET = {
     APPOINTMENT: { table: "appointment_history", column: "appointment_id" },
     BRANCH: { table: "branch", column: "branch_id" },
@@ -20,10 +22,11 @@ const ENTITY_TARGET = {
     SAMPLE_COLLECTION: { table: "sample_collection", column: "sample_collection_id" },
     USER: { table: "user_table", column: "user_id" },
     DOCTOR_TRANSFER: { table: "doctor_transfer", column: "transfer_id" },
-    REGIMEN_PROTOCOL: { table: "chemotherapy_regimen_protocol", column: "protocol_id" },
-    REGIMEN_PROTOCOL_ITEM: { table: "chemotherapy_regimen_protocol_items", column: "protocol_item_id" },
-    REGIMEN_PROTOCOL_DAY: { table: "chemotherapy_regimen_protocol_days", column: "protocol_day_id" },
-    REGIMEN_PROTOCOL_DILUTION: { table: "chemotherapy_protocol_dilutions", column: "protocol_dilution_id" },
+    REGIMEN_PROTOCOL: { table: "chemotherapy_regimen_protocol", column: "protocol_id", padTo: 6 },
+    REGIMEN_PROTOCOL_ITEM: { table: "chemotherapy_regimen_protocol_items", column: "protocol_item_id", padTo: 7 },
+    REGIMEN_PROTOCOL_DAY: { table: "chemotherapy_regimen_protocol_days", column: "protocol_day_id", padTo: 7 },
+    REGIMEN_PROTOCOL_DILUTION: { table: "chemotherapy_protocol_dilutions", column: "protocol_dilution_id", padTo: 7 },
+    DISCHARGE_INSTRUCTION: { table: "chemotherapy_discharge_instructions", column: "discharge_instruction_id", padTo: 7 },
 };
 // Generates `count` consecutive ids for one entity while holding the
 // sequence row lock exactly once. Batch callers (e.g. prescription items)
@@ -53,7 +56,7 @@ async function generateIdBatch(tx, entity, count) {
         const candidate = sequence.prefix +
             nextNumber
                 .toString()
-                .padStart(3, "0");
+                .padStart(target?.padTo ?? 3, "0");
         if (target) {
             const existing = await tx.$queryRawUnsafe(`SELECT 1 FROM ${target.table} WHERE ${target.column} = '${candidate}'`);
             if (existing.length > 0) {

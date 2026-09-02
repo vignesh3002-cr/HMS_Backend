@@ -111,3 +111,18 @@ export const deletePrescriptionItemValidation = [
 export const getSuggestedMedicinesValidation = [
     param("diagnosisId").notEmpty()
 ];
+
+export const getPrescriptionsByPatientHistoryIdValidation = [
+    param("patientHistoryId").notEmpty()
+];
+
+export const getPrescriptionsByPatientIdValidation = [
+    param("patientId").notEmpty(),
+    query("page").optional().isInt({ min: 1 }),
+    query("limit").optional().isInt({ min: 1, max: 100 }),
+    query("status").optional().isIn(PRESCRIPTION_STATUS_VALUES),
+    query("dateFrom").optional().isISO8601(),
+    query("dateTo").optional().isISO8601(),
+    query("sortBy").optional().isIn(["created_at", "status", "prescription_date"]),
+    query("sortOrder").optional().isIn(["asc", "desc"])
+];

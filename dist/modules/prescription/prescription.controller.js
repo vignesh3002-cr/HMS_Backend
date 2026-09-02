@@ -221,5 +221,58 @@ class PrescriptionController {
             });
         }
     }
+    async getPrescriptionsByPatientHistoryId(req, res) {
+        try {
+            const patientHistoryId = String(req.params.patientHistoryId);
+            const prescriptions = await service.getPrescriptionsByPatientHistoryId(patientHistoryId);
+            return res.json({
+                success: true,
+                message: "Prescriptions fetched successfully",
+                data: prescriptions
+            });
+        }
+        catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+    async getPrescriptionsByPatientId(req, res) {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+            const patientId = String(req.params.patientId);
+            const result = await service.getPrescriptionsByPatientId(patientId, {
+                branchId: req.query.branchId,
+                doctorId: req.query.doctorId,
+                status: req.query.status,
+                dateFrom: req.query.dateFrom,
+                dateTo: req.query.dateTo,
+                search: req.query.search,
+                sortBy: req.query.sortBy,
+                sortOrder: req.query.sortOrder,
+                page: Number(req.query.page || 1),
+                limit: Number(req.query.limit || 10)
+            });
+            return res.json({
+                success: true,
+                message: "Prescriptions fetched successfully",
+                data: result
+            });
+        }
+        catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
 }
 exports.PrescriptionController = PrescriptionController;

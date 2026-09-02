@@ -31,5 +31,5 @@ exports.TOP_LEVEL_ADMIN_ROLES = [exports.HEAD_ADMIN, exports.SUPER_ADMIN];
 // reschedule queue) without needing to escalate to a top-level admin.
 exports.BRANCH_ADMIN_ROLES = [...exports.TOP_LEVEL_ADMIN_ROLES, exports.BRANCH_ADMIN];
 exports.ADMIN_ROLES = [...exports.TOP_LEVEL_ADMIN_ROLES, exports.ADMIN];
-exports.LOGIN_ENABLED_ROLES = [...exports.TOP_LEVEL_ADMIN_ROLES, exports.BRANCH_ADMIN, exports.ADMIN, exports.DOCTOR];
+exports.LOGIN_ENABLED_ROLES = [...exports.TOP_LEVEL_ADMIN_ROLES, exports.BRANCH_ADMIN, exports.ADMIN, exports.DOCTOR, exports.NURSE, exports.RECEPTIONIST, exports.PHARMACIST, exports.LAB_TECHNICIAN];
 exports.BRANCH_RESTRICTED_ROLES = [exports.BRANCH_ADMIN, exports.ADMIN];
