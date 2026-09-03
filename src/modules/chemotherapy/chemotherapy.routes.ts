@@ -520,11 +520,6 @@ router.get(
     controller.listFollowups.bind(controller)
 );
 
-router.get(
-    "/supportive-medicines",
-    authenticate,
-    authorize("chemo.protocol.read"),
-    controller.listSupportiveMedicines.bind(controller)
-);
+
 
 export default router;
