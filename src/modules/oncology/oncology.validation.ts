@@ -45,7 +45,7 @@ const molecularBodyValidation = [
 export const createStagingDetailValidation = [
 
     body("patient_id").notEmpty().withMessage("patient_id is required"),
-    body("diagnosis_id").notEmpty().withMessage("diagnosis_id is required"),
+    body("diagnosis_id").optional({ nullable: true }).notEmpty().withMessage("diagnosis_id cannot be blank when provided"),
     body("cancer_type_id").notEmpty().withMessage("cancer_type_id is required"),
     body("cancer_subtype_id").notEmpty().withMessage("cancer_subtype_id is required"),
     body("visit_date").optional({ nullable: true }).isISO8601(),

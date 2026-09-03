@@ -223,7 +223,6 @@ export interface CreatePlanDto {
 
     patient_id: string;
     staging_detail_id: string;
-    diagnosis_id: string;
     employee_id: string;
     department_id: string;
     branch_id: string;

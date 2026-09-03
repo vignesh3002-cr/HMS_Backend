@@ -226,7 +226,7 @@ export const createPlanValidation = [
 
     body("patient_id").notEmpty().withMessage("patient_id is required"),
     body("staging_detail_id").notEmpty().withMessage("staging_detail_id is required"),
-    body("diagnosis_id").notEmpty().withMessage("diagnosis_id is required"),
+   /* body("diagnosis_id").notEmpty().withMessage("diagnosis_id is required"),*/    
     body("employee_id").notEmpty().withMessage("employee_id is required"),
     body("department_id").notEmpty().withMessage("department_id is required"),
     body("branch_id").notEmpty().withMessage("branch_id is required"),
