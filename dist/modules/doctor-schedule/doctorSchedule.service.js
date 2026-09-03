@@ -1151,6 +1151,7 @@ class DoctorScheduleService {
                 start_time: data.start_time,
                 end_time: data.end_time,
                 reason: data.reason ?? null,
+                consultation_minutes: data.consultation_minutes ?? null,
                 is_active: true,
                 created_by: data.created_by ?? null,
                 updated_at: new Date()
@@ -1165,6 +1166,7 @@ class DoctorScheduleService {
                 ...(data.start_time !== undefined ? { start_time: data.start_time } : {}),
                 ...(data.end_time !== undefined ? { end_time: data.end_time } : {}),
                 ...(data.reason !== undefined ? { reason: data.reason } : {}),
+                ...(data.consultation_minutes !== undefined ? { consultation_minutes: data.consultation_minutes } : {}),
                 updated_at: new Date()
             }
         });

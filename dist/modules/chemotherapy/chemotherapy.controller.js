@@ -77,6 +77,61 @@ class ChemotherapyController {
             return handleError(res, error);
         }
     }
+    async listAllActiveMedicines(req, res) {
+        try {
+            const data = await service.listAllActiveMedicines();
+            return res.json({ success: true, message: "Medicines fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async listDilutionMedicines(req, res) {
+        try {
+            const data = await service.listDilutionMedicines();
+            return res.json({ success: true, message: "Dilution medicines fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async listMedicinesByDrugRole(req, res) {
+        try {
+            const drugRole = req.query.drug_role;
+            if (!drugRole) {
+                return res.status(400).json({ success: false, message: "drug_role is required" });
+            }
+            const data = await service.listMedicinesByDrugRole(drugRole);
+            return res.json({ success: true, message: "Medicines fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async getProtocolFieldOptions(req, res) {
+        try {
+            const data = await service.getProtocolFieldOptions();
+            return res.json({ success: true, message: "Protocol field options fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async getMedicinesByCancerTypeAndSubtype(req, res) {
+        try {
+            const cancerTypeId = req.query.cancer_type_id;
+            const subtypeId = req.query.subtype_id;
+            const drugRole = req.query.drug_role;
+            if (!cancerTypeId || !drugRole) {
+                return res.status(400).json({ success: false, message: "cancer_type_id and drug_role are required" });
+            }
+            const data = await service.getMedicinesByCancerTypeAndSubtype(cancerTypeId, subtypeId, drugRole);
+            return res.json({ success: true, message: "Medicines fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
     async createRegimenProtocol(req, res) {
         try {
             if (!checkValidation(req, res))
@@ -114,6 +169,48 @@ class ChemotherapyController {
         try {
             const data = await service.removeRegimenProtocolItem(req.params.protocolId, req.params.protocolItemId, actingUserId(req));
             return res.json({ success: true, message: "Protocol item removed successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async updateRegimenProtocolItem(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.updateRegimenProtocolItem(req.params.protocolId, req.params.protocolItemId, req.body, actingUserId(req));
+            return res.json({ success: true, message: "Protocol item updated successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async addDischargeInstruction(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.addDischargeInstruction(req.params.protocolId, req.body, actingUserId(req));
+            return res.status(201).json({ success: true, message: "Discharge instruction added successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async updateDischargeInstruction(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.updateDischargeInstruction(req.params.protocolId, req.params.dischargeInstructionId, req.body, actingUserId(req));
+            return res.json({ success: true, message: "Discharge instruction updated successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async removeDischargeInstruction(req, res) {
+        try {
+            const data = await service.removeDischargeInstruction(req.params.protocolId, req.params.dischargeInstructionId, actingUserId(req));
+            return res.json({ success: true, message: "Discharge instruction removed successfully", data });
         }
         catch (error) {
             return handleError(res, error);

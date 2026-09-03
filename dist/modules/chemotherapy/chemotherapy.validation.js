@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.planIdParamValidation = exports.cycleIdParamValidation = exports.recordFollowupValidation = exports.recordLabReviewValidation = exports.recordAdverseEventValidation = exports.recordVitalsValidation = exports.recordAdministrationValidation = exports.updateCycleValidation = exports.cycleStatusValidation = exports.createCycleValidation = exports.updatePlanItemValidation = exports.addPlanItemValidation = exports.listPlansValidation = exports.planStatusValidation = exports.updatePlanValidation = exports.createPlanValidation = exports.addRegimenProtocolItemValidation = exports.createPersonalizedProtocolVersionValidation = exports.removePersonalizedProtocolDilutionValidation = exports.updatePersonalizedProtocolDilutionValidation = exports.addPersonalizedProtocolDilutionValidation = exports.removePersonalizedProtocolDayValidation = exports.updatePersonalizedProtocolDayValidation = exports.addPersonalizedProtocolDayValidation = exports.removePersonalizedProtocolItemValidation = exports.updatePersonalizedProtocolItemValidation = exports.addPersonalizedProtocolItemValidation = exports.updatePersonalizedProtocolValidation = exports.personalizeRegimenProtocolValidation = exports.protocolIdParamValidation = exports.updateRegimenProtocolValidation = exports.createRegimenProtocolValidation = exports.getRegimenProtocolValidation = exports.listRegimenProtocolsValidation = exports.previewPlanValidation = void 0;
+exports.planIdParamValidation = exports.cycleIdParamValidation = exports.recordFollowupValidation = exports.recordLabReviewValidation = exports.recordAdverseEventValidation = exports.recordVitalsValidation = exports.recordAdministrationValidation = exports.updateCycleValidation = exports.cycleStatusValidation = exports.createCycleValidation = exports.updatePlanItemValidation = exports.addPlanItemValidation = exports.listPlansValidation = exports.planStatusValidation = exports.updatePlanValidation = exports.createPlanValidation = exports.updateRegimenProtocolItemValidation = exports.removeDischargeInstructionValidation = exports.updateDischargeInstructionValidation = exports.addDischargeInstructionValidation = exports.addRegimenProtocolItemValidation = exports.createPersonalizedProtocolVersionValidation = exports.removePersonalizedProtocolDilutionValidation = exports.updatePersonalizedProtocolDilutionValidation = exports.addPersonalizedProtocolDilutionValidation = exports.removePersonalizedProtocolDayValidation = exports.updatePersonalizedProtocolDayValidation = exports.addPersonalizedProtocolDayValidation = exports.removePersonalizedProtocolItemValidation = exports.updatePersonalizedProtocolItemValidation = exports.addPersonalizedProtocolItemValidation = exports.updatePersonalizedProtocolValidation = exports.personalizeRegimenProtocolValidation = exports.protocolIdParamValidation = exports.updateRegimenProtocolValidation = exports.createRegimenProtocolValidation = exports.getRegimenProtocolValidation = exports.listRegimenProtocolsValidation = exports.previewPlanValidation = void 0;
 const express_validator_1 = require("express-validator");
 const chemotherapy_constants_1 = require("./chemotherapy.constants");
 exports.previewPlanValidation = [
@@ -14,11 +14,20 @@ exports.getRegimenProtocolValidation = [
     (0, express_validator_1.param)("protocolId").notEmpty()
 ];
 exports.createRegimenProtocolValidation = [
-    (0, express_validator_1.body)("regimen_code").notEmpty().withMessage("regimen_code is required"),
+    // regimen_code is optional on create - it is auto-generated to match the
+    // freshly generated protocol_id (protocol_id == regimen_code).
+    (0, express_validator_1.body)("regimen_code").optional({ nullable: true }),
     (0, express_validator_1.body)("regimen_name").notEmpty().withMessage("regimen_name is required"),
     (0, express_validator_1.body)("cancer_type_id").notEmpty().withMessage("cancer_type_id is required"),
     (0, express_validator_1.body)("standard_cycles").optional({ nullable: true }).isInt({ min: 1 }),
     (0, express_validator_1.body)("cycle_interval_days").optional({ nullable: true }).isInt({ min: 1 }),
+    (0, express_validator_1.body)("no_of_days").optional({ nullable: true }).isInt({ min: 1 }),
+    (0, express_validator_1.body)("days").optional({ nullable: true }).isArray(),
+    (0, express_validator_1.body)("days.*.day_number").isInt({ min: 1 }).withMessage("Each day requires a day_number >= 1"),
+    (0, express_validator_1.body)("days.*.protocol_day_id").optional().notEmpty(),
+    (0, express_validator_1.body)("days.*.day_sequence").optional({ nullable: true }).isInt({ min: 1 }),
+    (0, express_validator_1.body)("days.*.same_as_day_one").optional({ nullable: true }).isBoolean(),
+    (0, express_validator_1.body)("days.*.active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 }),
     (0, express_validator_1.body)("items").isArray({ min: 1 }).withMessage("At least one protocol item (drug) is required"),
     (0, express_validator_1.body)("items.*.medicine_id").notEmpty().withMessage("Each protocol item requires a medicine_id"),
     (0, express_validator_1.body)("items.*.drug_sequence").isInt({ min: 1 }).withMessage("Each protocol item requires a drug_sequence >= 1"),
@@ -27,7 +36,14 @@ exports.createRegimenProtocolValidation = [
 exports.updateRegimenProtocolValidation = [
     (0, express_validator_1.param)("protocolId").notEmpty(),
     (0, express_validator_1.body)("standard_cycles").optional({ nullable: true }).isInt({ min: 1 }),
-    (0, express_validator_1.body)("cycle_interval_days").optional({ nullable: true }).isInt({ min: 1 })
+    (0, express_validator_1.body)("cycle_interval_days").optional({ nullable: true }).isInt({ min: 1 }),
+    (0, express_validator_1.body)("no_of_days").optional({ nullable: true }).isInt({ min: 1 }),
+    (0, express_validator_1.body)("days").optional({ nullable: true }).isArray(),
+    (0, express_validator_1.body)("days.*.day_number").optional().isInt({ min: 1 }),
+    (0, express_validator_1.body)("days.*.protocol_day_id").optional().notEmpty(),
+    (0, express_validator_1.body)("days.*.day_sequence").optional({ nullable: true }).isInt({ min: 1 }),
+    (0, express_validator_1.body)("days.*.same_as_day_one").optional({ nullable: true }).isBoolean(),
+    (0, express_validator_1.body)("days.*.active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 })
 ];
 // ---------------- Personalized regimen protocols ----------------
 exports.protocolIdParamValidation = [
@@ -164,7 +180,81 @@ exports.addRegimenProtocolItemValidation = [
     (0, express_validator_1.param)("protocolId").notEmpty(),
     (0, express_validator_1.body)("medicine_id").notEmpty().withMessage("medicine_id is required"),
     (0, express_validator_1.body)("drug_sequence").isInt({ min: 1 }).withMessage("drug_sequence must be at least 1"),
-    (0, express_validator_1.body)("drug_role").optional().isIn(Object.values(chemotherapy_constants_1.DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(chemotherapy_constants_1.DRUG_ROLE).join(", ")}`)
+    (0, express_validator_1.body)("drug_role").optional({ nullable: true }).isIn(Object.values(chemotherapy_constants_1.DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(chemotherapy_constants_1.DRUG_ROLE).join(", ")}`),
+    (0, express_validator_1.body)("dilutions").optional({ nullable: true }).isArray(),
+    (0, express_validator_1.body)("dilutions.*.protocol_dilution_id").optional({ nullable: true }).notEmpty(),
+    (0, express_validator_1.body)("dilutions.*.medicine_id").optional({ nullable: true }).notEmpty(),
+    (0, express_validator_1.body)("dilutions.*.form").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("dilutions.*.dose").optional({ nullable: true }).isFloat({ min: 0 }),
+    (0, express_validator_1.body)("dilutions.*.dose_unit").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("dilutions.*.dilution_volume").optional({ nullable: true }).isFloat({ min: 0 }),
+    (0, express_validator_1.body)("dilutions.*.dilution_volume_unit").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("dilutions.*.diluent").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("dilutions.*.active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 })
+];
+exports.addDischargeInstructionValidation = [
+    (0, express_validator_1.param)("protocolId").notEmpty(),
+    (0, express_validator_1.body)("medicine_id").optional({ nullable: true }).notEmpty(),
+    (0, express_validator_1.body)("drug_sequence").optional({ nullable: true }).isInt({ min: 1 }),
+    (0, express_validator_1.body)("drug_from").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("frequency").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("duration").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("patient_dose").optional({ nullable: true }).isFloat({ min: 0 }),
+    (0, express_validator_1.body)("patient_dose_unit").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("administration_detail").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("comment").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 })
+];
+exports.updateDischargeInstructionValidation = [
+    (0, express_validator_1.param)("protocolId").notEmpty(),
+    (0, express_validator_1.param)("dischargeInstructionId").notEmpty(),
+    (0, express_validator_1.body)("medicine_id").optional({ nullable: true }).notEmpty(),
+    (0, express_validator_1.body)("drug_sequence").optional({ nullable: true }).isInt({ min: 1 }),
+    (0, express_validator_1.body)("drug_from").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("frequency").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("duration").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("patient_dose").optional({ nullable: true }).isFloat({ min: 0 }),
+    (0, express_validator_1.body)("patient_dose_unit").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("administration_detail").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("comment").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 })
+];
+exports.removeDischargeInstructionValidation = [
+    (0, express_validator_1.param)("protocolId").notEmpty(),
+    (0, express_validator_1.param)("dischargeInstructionId").notEmpty()
+];
+exports.updateRegimenProtocolItemValidation = [
+    (0, express_validator_1.param)("protocolId").notEmpty(),
+    (0, express_validator_1.param)("protocolItemId").notEmpty(),
+    (0, express_validator_1.body)("medicine_id").optional({ nullable: true }).notEmpty(),
+    (0, express_validator_1.body)("drug_role").optional({ nullable: true }).isIn(Object.values(chemotherapy_constants_1.DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(chemotherapy_constants_1.DRUG_ROLE).join(", ")}`),
+    (0, express_validator_1.body)("drug_sequence").optional({ nullable: true }).isInt({ min: 1 }),
+    (0, express_validator_1.body)("drug_type").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("dosage").optional({ nullable: true }).isFloat({ min: 0 }),
+    (0, express_validator_1.body)("dosage_unit").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("dose_calculation_method").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("administration_route").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("infusion_type").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("infusion_duration_minutes").optional({ nullable: true }).isInt({ min: 0 }),
+    (0, express_validator_1.body)("administration_day").optional({ nullable: true }).isInt({ min: 1 }),
+    (0, express_validator_1.body)("cycle_day").optional({ nullable: true }).isInt({ min: 1 }),
+    (0, express_validator_1.body)("frequency").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("timing_relative_to_primary").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("patient_dose").optional({ nullable: true }).isFloat({ min: 0 }),
+    (0, express_validator_1.body)("patient_dose_unit").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("administration_detail").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("previous_toxicity").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("remarks").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("dilutions").optional({ nullable: true }).isArray(),
+    (0, express_validator_1.body)("dilutions.*.protocol_dilution_id").optional({ nullable: true }).notEmpty(),
+    (0, express_validator_1.body)("dilutions.*.medicine_id").optional({ nullable: true }).notEmpty(),
+    (0, express_validator_1.body)("dilutions.*.form").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("dilutions.*.dose").optional({ nullable: true }).isFloat({ min: 0 }),
+    (0, express_validator_1.body)("dilutions.*.dose_unit").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("dilutions.*.dilution_volume").optional({ nullable: true }).isFloat({ min: 0 }),
+    (0, express_validator_1.body)("dilutions.*.dilution_volume_unit").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("dilutions.*.diluent").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("dilutions.*.active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 }),
 ];
 exports.createPlanValidation = [
     (0, express_validator_1.body)("patient_id").notEmpty().withMessage("patient_id is required"),

@@ -79,7 +79,8 @@ exports.ID_ENTITY = {
     REGIMEN_PROTOCOL: "REGIMEN_PROTOCOL",
     REGIMEN_PROTOCOL_ITEM: "REGIMEN_PROTOCOL_ITEM",
     REGIMEN_PROTOCOL_DAY: "REGIMEN_PROTOCOL_DAY",
-    REGIMEN_PROTOCOL_DILUTION: "REGIMEN_PROTOCOL_DILUTION"
+    REGIMEN_PROTOCOL_DILUTION: "REGIMEN_PROTOCOL_DILUTION",
+    DISCHARGE_INSTRUCTION: "DISCHARGE_INSTRUCTION"
 };
 // Generic protocols are shared reference templates available to every
 // organization. Personalizing one creates an independent organization-owned

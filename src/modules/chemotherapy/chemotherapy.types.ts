@@ -1,3 +1,36 @@
+export interface RegimenProtocolDilutionInput {
+
+    protocol_dilution_id?: string;
+    source_resource_id?: string | null;
+    medicine_id?: string | null;
+    form?: string | null;
+    dose?: number | null;
+    dose_unit?: string | null;
+    dilution_volume?: number | null;
+    dilution_volume_unit?: string | null;
+    diluent?: string | null;
+    comment?: string | null;
+    active_status?: number | null;
+
+}
+
+export interface RegimenProtocolDischargeInstructionInput {
+
+    discharge_instruction_id?: string;
+    source_resource_id?: string | null;
+    medicine_id?: string | null;
+    drug_sequence?: number | null;
+    drug_from?: string | null;
+    frequency?: string | null;
+    duration?: string | null;
+    patient_dose?: number | null;
+    patient_dose_unit?: string | null;
+    administration_detail?: string | null;
+    comment?: string | null;
+    active_status?: number | null;
+
+}
+
 export interface RegimenProtocolItemDto {
 
     medicine_id: string;
@@ -14,13 +47,40 @@ export interface RegimenProtocolItemDto {
     cycle_day?: number | null;
     frequency?: string | null;
     timing_relative_to_primary?: string | null;
+    patient_dose?: number | null;
+    patient_dose_unit?: string | null;
+    administration_detail?: string | null;
+    previous_toxicity?: string | null;
     remarks?: string | null;
+    dilutions?: RegimenProtocolDilutionInput[];
 
 }
 
+export interface UpdateRegimenProtocolItemDto {
+  medicine_id?: string;
+  drug_role?: "PRIMARY" | "PREMEDICATION" | "POSTMEDICATION" | "SUPPORTIVE";
+  drug_sequence?: number;
+  drug_type?: string | null;
+  dosage?: number | null;
+  dosage_unit?: string | null;
+  dose_calculation_method?: string | null;
+  administration_route?: string | null;
+  infusion_type?: string | null;
+  infusion_duration_minutes?: number | null;
+  administration_day?: number | null;
+  cycle_day?: number | null;
+  frequency?: string | null;
+  timing_relative_to_primary?: string | null;
+  patient_dose?: number | null;
+  patient_dose_unit?: string | null;
+  administration_detail?: string | null;
+  previous_toxicity?: string | null;
+  remarks?: string | null;
+  dilutions?: RegimenProtocolDilutionInput[];
+}
 export interface CreateRegimenProtocolDto {
 
-    regimen_code: string;
+    regimen_code?: string;
     regimen_name: string;
     protocol_version?: string | null;
     cancer_type_id: string;
@@ -30,7 +90,10 @@ export interface CreateRegimenProtocolDto {
     cycle_interval_days?: number | null;
     guideline_source?: string | null;
     notes?: string | null;
+    no_of_days?: number | null;
+    days?: RegimenProtocolDayInput[];
     items: RegimenProtocolItemDto[];
+    discharge_instructions?: RegimenProtocolDischargeInstructionInput[];
 
 }
 
@@ -43,6 +106,9 @@ export interface UpdateRegimenProtocolDto {
     cycle_interval_days?: number | null;
     guideline_source?: string | null;
     notes?: string | null;
+    discharge_instructions?: RegimenProtocolDischargeInstructionInput[];
+    no_of_days?: number | null;
+    days?: RegimenProtocolDayInput[];
 
 }
 
@@ -107,6 +173,9 @@ export interface PersonalizationItemInput {
     cycle_day?: number | null;
     frequency?: string | null;
     timing_relative_to_primary?: string | null;
+    patient_dose?: number | null;
+    patient_dose_unit?: string | null;
+    administration_detail?: string | null;
     remarks?: string | null;
     drug_brand_name?: string | null;
     protocol_dose?: number | null;
@@ -120,6 +189,18 @@ export interface PersonalizationItemInput {
 }
 
 export interface PersonalizationDayInput {
+
+    protocol_day_id?: string;
+    day_number: number;
+    day_sequence?: number | null;
+    same_as_day_one?: boolean | null;
+    active_status?: 0 | 1;
+    // Identifies the source day this one was cloned from.
+    source_day_resource_id?: string | null;
+
+}
+
+export interface RegimenProtocolDayInput {
 
     protocol_day_id?: string;
     day_number: number;

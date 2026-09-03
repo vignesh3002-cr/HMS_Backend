@@ -409,7 +409,8 @@ class DoctorTransferService {
                 start_time: startTime,
                 end_time: endTime,
                 reason: sc.reason ?? null,
-                created_by: actingUserId
+                created_by: actingUserId,
+                consultation_minutes: sc.consultation_minutes ?? null
             });
             return;
         }
@@ -419,7 +420,8 @@ class DoctorTransferService {
                 mode: sc.mode,
                 ...(startTime ? { start_time: startTime } : {}),
                 ...(endTime ? { end_time: endTime } : {}),
-                ...(sc.reason !== undefined ? { reason: sc.reason } : {})
+                ...(sc.reason !== undefined ? { reason: sc.reason } : {}),
+                ...(sc.consultation_minutes !== undefined ? { consultation_minutes: sc.consultation_minutes } : {})
             });
             return;
         }

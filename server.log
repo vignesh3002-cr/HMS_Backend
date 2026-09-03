@@ -3,9 +3,12 @@
 > ts-node src/server.ts
 
 Server running on port 5000
+<<<<<<< HEAD
 Fetching employee by ID: DOC034
 Fetching employee by ID: DOC034
 Fetching employee by ID: DOC034
 Fetching employee by ID: DOC034
 Fetching employee by ID: DOC034
 Fetching employee by ID: DOC034
+=======
+>>>>>>> ff69177530de672db4f4a9ccb0cc533a8b64292e
