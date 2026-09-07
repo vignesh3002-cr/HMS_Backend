@@ -2545,5 +2545,8 @@ class ChemotherapyService {
         await this.getCycle(cycleId);
         return this.repository.listFollowupsForCycle(cycleId);
     }
+    async listSupportiveMedicines() {
+        return this.repository.listSupportiveMedicines();
+    }
 }
 exports.ChemotherapyService = ChemotherapyService;

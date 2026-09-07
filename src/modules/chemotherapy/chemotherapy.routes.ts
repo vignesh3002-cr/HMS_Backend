@@ -2,7 +2,6 @@ import { Router } from "express";
 import { ChemotherapyController } from "./chemotherapy.controller";
 import { authenticate } from "../auth/auth.middleware";
 import { authorize } from "../../middleware/authorize";
-import { branchScope } from "../../middleware/branchScope";
 import {
     previewPlanValidation,
     createPlanValidation,
@@ -186,6 +185,14 @@ router.post(
 );
 
 router.get(
+    "/regimen-protocols/:protocolId/discharge-medicines",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    getRegimenProtocolValidation,
+    controller.getDischargeMedicinesForProtocol.bind(controller)
+);
+
+router.get(
     "/regimen-protocols/:protocolId",
     authenticate,
     authorize("chemo.protocol.read"),
@@ -321,7 +328,6 @@ router.get(
     "/plans",
     authenticate,
     authorize("chemo.plan.read"),
-    branchScope,
     listPlansValidation,
     controller.listPlans.bind(controller)
 );
@@ -513,5 +519,7 @@ router.get(
     cycleIdParamValidation,
     controller.listFollowups.bind(controller)
 );
+
+
 
 export default router;

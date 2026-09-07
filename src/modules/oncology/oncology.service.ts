@@ -303,13 +303,11 @@ export class OncologyService {
 
         const { cancerType, subtype } = await this.resolveCancerTypeAndSubtype(dto.cancer_type_id, dto.cancer_subtype_id);
 
-        if (!dto.diagnosis_id) {
-            throw new Error("diagnosis_id is required");
-        }
+        const diagnosis = dto.diagnosis_id
+            ? await this.repository.findDiagnosisById(dto.diagnosis_id)
+            : null;
 
-        const diagnosis = await this.repository.findDiagnosisById(dto.diagnosis_id);
-
-        if (!diagnosis) {
+        if (dto.diagnosis_id && !diagnosis) {
             throw new Error("Diagnosis not found");
         }
 

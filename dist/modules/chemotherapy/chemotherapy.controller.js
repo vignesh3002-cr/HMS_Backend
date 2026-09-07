@@ -657,5 +657,14 @@ class ChemotherapyController {
             return handleError(res, error);
         }
     }
+    async listSupportiveMedicines(req, res) {
+        try {
+            const data = await service.listSupportiveMedicines();
+            return res.json({ success: true, message: "Supportive medicines fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
 }
 exports.ChemotherapyController = ChemotherapyController;

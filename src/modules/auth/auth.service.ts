@@ -6,8 +6,13 @@ import { generateId } from "../../utils/idGenerator";
 import { randomInt } from "crypto";
 import { sendOtpEmail } from "../../utils/mail";
 import { TOP_LEVEL_ADMIN_ROLES } from "../../permissions/roles";
+import { Prisma } from "@prisma/client";
 
 type AuthUser = NonNullable<Awaited<ReturnType<AuthRepository["findUserByUsername"]>>>;
+
+type UserBranchMapping = Prisma.user_branch_mappingGetPayload<{
+  include: { branch: true };
+}>;
 
 export class AuthService {
 
@@ -33,7 +38,7 @@ export class AuthService {
       }
 
 const activeMappings = user.user_branch_mapping?.filter(
-      (m) => m.status === 1 && m.branch?.branch_status === "Active"
+      (m: UserBranchMapping) => m.status === 1 && m.branch?.branch_status === "Active"
     );
 
       if (!activeMappings || activeMappings.length === 0) {

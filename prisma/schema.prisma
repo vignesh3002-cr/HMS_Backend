@@ -254,42 +254,40 @@ model branch {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model cancer_subtypes {
-  id                                                BigInt                          @id @default(autoincrement())
-  subtype_id                                        String                          @unique(map: "uq_cancer_subtypes_id") @db.VarChar(100)
-  cancer_type_id                                    String                          @db.VarChar(100)
-  subtype_name                                      String                          @db.VarChar(100)
-  icd_o3_morphology                                 String?                         @db.VarChar(100)
-  icd10_subtype                                     String?                         @db.VarChar(100)
-  active_status                                     Int?                            @default(1) @db.SmallInt
-  diagnosis_id                                      String?                         @db.VarChar
-  diagnosis_cancer_subtypes_diagnosis_idTodiagnosis diagnosis?                      @relation("cancer_subtypes_diagnosis_idTodiagnosis", fields: [diagnosis_id], references: [diagnosis_id])
-  cancer_types                                      cancer_types                    @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: Cascade, map: "fk_subtype_cancer_type")
-  chemotherapy_plan                                 chemotherapy_plan[]
-  chemotherapy_regimen_protocol                     chemotherapy_regimen_protocol[]
-  diagnosis                                         diagnosis[]
-  oncology_staging_detail                           oncology_staging_detail[]
+  id                            BigInt                          @id @default(autoincrement())
+  subtype_id                    String                          @unique(map: "uq_cancer_subtypes_id") @db.VarChar(100)
+  cancer_type_id                String                          @db.VarChar(100)
+  subtype_name                  String                          @db.VarChar(100)
+  icd_o3_morphology             String?                         @db.VarChar(100)
+  icd10_subtype                 String?                         @db.VarChar(100)
+  active_status                 Int?                            @default(1) @db.SmallInt
+  diagnosis_id                  String?                         @db.VarChar
+  diagnosis                     diagnosis?                      @relation(fields: [diagnosis_id], references: [diagnosis_id])
+  cancer_types                  cancer_types                    @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: Cascade, map: "fk_subtype_cancer_type")
+  chemotherapy_plan             chemotherapy_plan[]
+  chemotherapy_regimen_protocol chemotherapy_regimen_protocol[]
+  oncology_staging_detail       oncology_staging_detail[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model cancer_types {
-  id                                             BigInt                          @id @default(autoincrement())
-  cancer_type_id                                 String?                         @unique(map: "uq_cancer_types_id") @db.VarChar(100)
-  cancer_type                                    String                          @unique(map: "uq_cancer_types_name") @db.VarChar(100)
-  icd10                                          String?                         @db.VarChar(100)
-  icd_o3_topography                              String?                         @db.VarChar(100)
-  staging_system                                 String?                         @db.VarChar(100)
-  druggable_targets                              String?
-  active_status                                  Int?                            @default(1) @db.SmallInt
-  created_at                                     DateTime?                       @default(now()) @db.Timestamp(6)
-  diagnosis_id                                   String?                         @db.VarChar
-  cancer_subtypes                                cancer_subtypes[]
-  diagnosis_cancer_types_diagnosis_idTodiagnosis diagnosis?                      @relation("cancer_types_diagnosis_idTodiagnosis", fields: [diagnosis_id], references: [diagnosis_id])
-  chemotherapy_plan                              chemotherapy_plan[]
-  chemotherapy_regimen_protocol                  chemotherapy_regimen_protocol[]
-  diagnosis                                      diagnosis[]
-  molecular_subtypes                             molecular_subtypes[]
-  oncology_staging_detail                        oncology_staging_detail[]
-  staging_reference                              staging_reference[]
+  id                            BigInt                          @id @default(autoincrement())
+  cancer_type_id                String?                         @unique(map: "uq_cancer_types_id") @db.VarChar(100)
+  cancer_type                   String                          @unique(map: "uq_cancer_types_name") @db.VarChar(100)
+  icd10                         String?                         @db.VarChar(100)
+  icd_o3_topography             String?                         @db.VarChar(100)
+  staging_system                String?                         @db.VarChar(100)
+  druggable_targets             String?
+  active_status                 Int?                            @default(1) @db.SmallInt
+  created_at                    DateTime?                       @default(now()) @db.Timestamp(6)
+  diagnosis_id                  String?                         @db.VarChar
+  cancer_subtypes               cancer_subtypes[]
+  diagnosis                     diagnosis?                      @relation(fields: [diagnosis_id], references: [diagnosis_id])
+  chemotherapy_plan             chemotherapy_plan[]
+  chemotherapy_regimen_protocol chemotherapy_regimen_protocol[]
+  molecular_subtypes            molecular_subtypes[]
+  oncology_staging_detail       oncology_staging_detail[]
+  staging_reference             staging_reference[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -903,42 +901,38 @@ model derived_fields {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model diagnosis {
-  id                                                      BigInt                       @id @default(autoincrement())
-  diagnosis_id                                            String                       @unique @db.VarChar(100)
-  diagnosis_name                                          String                       @db.VarChar(100)
-  icd_code                                                String?                      @db.VarChar(100)
-  icd_version                                             String?                      @db.VarChar(100)
-  diagnosis_category                                      String?                      @db.VarChar(100)
-  diagnosis_description                                   String?
-  diagnosis_alias                                         String?                      @db.VarChar(100)
-  disease_group                                           String?                      @db.VarChar(100)
-  body_system                                             String?                      @db.VarChar(100)
-  body_site                                               String?                      @db.VarChar(100)
-  severity_level                                          String?                      @db.VarChar(100)
-  is_chronic                                              Boolean?                     @default(false)
-  is_contagious                                           Boolean?                     @default(false)
-  is_notifiable                                           Boolean?                     @default(false)
-  standard_treatment                                      String?
-  treatment_guidelines                                    String?
-  followup_required                                       Boolean?                     @default(false)
-  followup_days                                           Int?
-  active_status                                           Int?                         @default(1) @db.SmallInt
-  created_by                                              String?                      @db.VarChar(100)
-  created_at                                              DateTime?                    @default(now()) @db.Timestamp(6)
-  diagnosis_catogory_id                                   String?                      @db.VarChar(100)
-  cancer_subtype_id                                       String?                      @db.VarChar(100)
-  cancer_type_id                                          String?                      @db.VarChar(100)
-  cancer_subtypes_cancer_subtypes_diagnosis_idTodiagnosis cancer_subtypes[]            @relation("cancer_subtypes_diagnosis_idTodiagnosis")
-  cancer_types_cancer_types_diagnosis_idTodiagnosis       cancer_types[]               @relation("cancer_types_diagnosis_idTodiagnosis")
-  chemotherapy_master                                     chemotherapy_master[]
-  chemotherapy_plan                                       chemotherapy_plan[]
-  cancer_subtypes                                         cancer_subtypes?             @relation(fields: [cancer_subtype_id], references: [subtype_id], map: "fk_diagnosis_cancer_subtype")
-  cancer_types                                            cancer_types?                @relation(fields: [cancer_type_id], references: [cancer_type_id], map: "fk_diagnosis_cancer_type")
-  diagnosis_medicine_mapping                              diagnosis_medicine_mapping[]
-  oncology_staging_detail                                 oncology_staging_detail[]
-  patient_comorbidity                                     patient_comorbidity[]
-  patient_history                                         patient_history[]
-  prescription                                            prescription[]
+  id                         BigInt                       @id @default(autoincrement())
+  diagnosis_id               String                       @unique @db.VarChar(100)
+  diagnosis_name             String                       @db.VarChar(100)
+  icd_code                   String?                      @db.VarChar(100)
+  icd_version                String?                      @db.VarChar(100)
+  diagnosis_category         String?                      @db.VarChar(100)
+  diagnosis_description      String?
+  diagnosis_alias            String?                      @db.VarChar(100)
+  disease_group              String?                      @db.VarChar(100)
+  body_system                String?                      @db.VarChar(100)
+  body_site                  String?                      @db.VarChar(100)
+  severity_level             String?                      @db.VarChar(100)
+  is_chronic                 Boolean?                     @default(false)
+  is_contagious              Boolean?                     @default(false)
+  is_notifiable              Boolean?                     @default(false)
+  standard_treatment         String?
+  treatment_guidelines       String?
+  followup_required          Boolean?                     @default(false)
+  followup_days              Int?
+  active_status              Int?                         @default(1) @db.SmallInt
+  created_by                 String?                      @db.VarChar(100)
+  created_at                 DateTime?                    @default(now()) @db.Timestamp(6)
+  diagnosis_catogory_id      String?                      @db.VarChar(100)
+  cancer_subtypes            cancer_subtypes[]
+  cancer_types               cancer_types[]
+  chemotherapy_master        chemotherapy_master[]
+  chemotherapy_plan          chemotherapy_plan[]
+  diagnosis_medicine_mapping diagnosis_medicine_mapping[]
+  oncology_staging_detail    oncology_staging_detail[]
+  patient_comorbidity        patient_comorbidity[]
+  patient_history            patient_history[]
+  prescription               prescription[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

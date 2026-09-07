@@ -550,7 +550,10 @@ export class ChemotherapyRepository {
     }
 
     private planInclude = {
-        chemotherapy_plan_items: { where: { active_status: 1 } },
+        chemotherapy_plan_items: {
+            where: { active_status: 1 },
+            include: { medicine_master: true }
+        },
         chemotherapy_cycle: { where: { active_status: 1 }, orderBy: { cycle_number: "asc" as const } },
         patient_bio_data: {
             select: { patient_id: true, patient_first_name: true, patient_last_name: true }
@@ -855,6 +858,27 @@ export class ChemotherapyRepository {
         return prisma.chemotherapy_followup.findMany({
             where: { chemotherapy_cycle_id: cycleId, active_status: 1 },
             orderBy: { followup_date: "asc" }
+        });
+    }
+
+    async listSupportiveMedicines() {
+        return prisma.medicine_master.findMany({
+            where: {
+                is_active: true,
+                medicine_category: { not: "Chemotherapy" }
+            },
+            select: {
+                medicine_id: true,
+                medicine_name: true,
+                generic_name: true,
+                medicine_category: true,
+                medicine_type: true,
+                dosage_form: true,
+                unit: true,
+                strength: true,
+                route: true,
+            },
+            orderBy: { medicine_name: "asc" }
         });
     }
 

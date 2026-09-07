@@ -4,7 +4,6 @@ const express_1 = require("express");
 const chemotherapy_controller_1 = require("./chemotherapy.controller");
 const auth_middleware_1 = require("../auth/auth.middleware");
 const authorize_1 = require("../../middleware/authorize");
-const branchScope_1 = require("../../middleware/branchScope");
 const chemotherapy_validation_1 = require("./chemotherapy.validation");
 const router = (0, express_1.Router)();
 const controller = new chemotherapy_controller_1.ChemotherapyController();
@@ -32,6 +31,7 @@ router.put("/regimen-protocols/personalized/:protocolId/items/:protocolItemId/di
 router.delete("/regimen-protocols/personalized/:protocolId/items/:protocolItemId/dilutions/:protocolDilutionId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.manage"), chemotherapy_validation_1.removePersonalizedProtocolDilutionValidation, controller.removePersonalizedProtocolDilution.bind(controller));
 router.post("/regimen-protocols/personalized/:protocolId/activate", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.manage"), chemotherapy_validation_1.getRegimenProtocolValidation, controller.activatePersonalizedProtocol.bind(controller));
 router.post("/regimen-protocols/personalized/:protocolId/version", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.manage"), chemotherapy_validation_1.createPersonalizedProtocolVersionValidation, controller.createPersonalizedProtocolVersion.bind(controller));
+router.get("/regimen-protocols/:protocolId/discharge-medicines", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), chemotherapy_validation_1.getRegimenProtocolValidation, controller.getDischargeMedicinesForProtocol.bind(controller));
 router.get("/regimen-protocols/:protocolId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), chemotherapy_validation_1.getRegimenProtocolValidation, controller.getRegimenProtocol.bind(controller));
 router.get("/regimen-protocols/:protocolId/discharge-medicines", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), chemotherapy_validation_1.getRegimenProtocolValidation, controller.getDischargeMedicinesForProtocol.bind(controller));
 router.get("/medicines", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), controller.listAllActiveMedicines.bind(controller));
@@ -50,7 +50,7 @@ router.delete("/regimen-protocols/:protocolId/discharge-instructions/:dischargeI
 // ---------------- Plan ----------------
 router.get("/plans/preview", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.previewPlanValidation, controller.previewPlan.bind(controller));
 router.post("/plans", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.create"), chemotherapy_validation_1.createPlanValidation, controller.createPlan.bind(controller));
-router.get("/plans", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), branchScope_1.branchScope, chemotherapy_validation_1.listPlansValidation, controller.listPlans.bind(controller));
+router.get("/plans", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.listPlansValidation, controller.listPlans.bind(controller));
 router.get("/plans/latest-for-patient", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), controller.getLatestPlanForPatient.bind(controller));
 router.get("/plans/:planId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.planIdParamValidation, controller.getPlan.bind(controller));
 router.put("/plans/:planId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.updatePlanValidation, controller.updatePlan.bind(controller));
@@ -80,4 +80,5 @@ router.get("/cycles/:cycleId/lab-review", auth_middleware_1.authenticate, (0, au
 // ---------------- Followup ----------------
 router.post("/cycles/:cycleId/followup", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.followup.record"), chemotherapy_validation_1.recordFollowupValidation, controller.recordFollowup.bind(controller));
 router.get("/cycles/:cycleId/followup", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.cycleIdParamValidation, controller.listFollowups.bind(controller));
+router.get("/supportive-medicines", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), controller.listSupportiveMedicines.bind(controller));
 exports.default = router;

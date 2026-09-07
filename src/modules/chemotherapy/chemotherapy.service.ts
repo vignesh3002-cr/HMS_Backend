@@ -2296,11 +2296,11 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             throw new Error("The staging detail does not belong to this patient");
         }
 
-        const diagnosis = await this.repository.findDiagnosisById(dto.diagnosis_id);
+       {/* const diagnosis = await this.repository.findDiagnosisById(dto.diagnosis_id);
 
         if (!diagnosis) {
             throw new Error("Diagnosis not found");
-        }
+        }*/}
 
         const employee = await this.repository.findEmployeeById(dto.employee_id);
 
@@ -2450,7 +2450,6 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                     branch_id: dto.branch_id,
                     department_id: dto.department_id,
                     employee_id: dto.employee_id,
-                    diagnosis_id: dto.diagnosis_id
                 });
 
             }
@@ -2463,7 +2462,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 patient_id: dto.patient_id,
                 encounter_no: dto.encounter_no ?? null,
                 appointment_id: dto.appointment_id ?? null,
-                diagnosis_id: dto.diagnosis_id,
+                diagnosis_id: null!,
                 employee_id: dto.employee_id,
                 department_id: dto.department_id,
                 branch_id: dto.branch_id,
@@ -3478,6 +3477,10 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
     async listFollowups(cycleId: string) {
         await this.getCycle(cycleId);
         return this.repository.listFollowupsForCycle(cycleId);
+    }
+
+    async listSupportiveMedicines() {
+        return this.repository.listSupportiveMedicines();
     }
 
 }

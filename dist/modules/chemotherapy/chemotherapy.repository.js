@@ -80,6 +80,13 @@ class ChemotherapyRepository {
             orderBy: { drug_sequence: "asc" }
         });
     }
+<<<<<<< HEAD
+    async listDischargeMedicinesByProtocol(protocolId) {
+        return prisma_1.default.chemotherapy_discharge_instructions.findMany({
+            where: { protocol_id: protocolId, active_status: 1 },
+            orderBy: { drug_sequence: "asc" },
+            include: { medicine_master: true }
+=======
     async generateDischargeInstructionId(tx) {
         return (0, idGenerator_1.generateId)(tx, chemotherapy_constants_1.ID_ENTITY.DISCHARGE_INSTRUCTION);
     }
@@ -101,6 +108,7 @@ class ChemotherapyRepository {
     async findDischargeInstructionById(dischargeInstructionId) {
         return prisma_1.default.chemotherapy_discharge_instructions.findUnique({
             where: { discharge_instruction_id: dischargeInstructionId }
+>>>>>>> ff69177530de672db4f4a9ccb0cc533a8b64292e
         });
     }
     async findRegimenProtocolByCode(cancerTypeId, subtypeId, regimenCode) {
@@ -445,7 +453,10 @@ class ChemotherapyRepository {
         });
     }
     planInclude = {
-        chemotherapy_plan_items: { where: { active_status: 1 } },
+        chemotherapy_plan_items: {
+            where: { active_status: 1 },
+            include: { medicine_master: true }
+        },
         chemotherapy_cycle: { where: { active_status: 1 }, orderBy: { cycle_number: "asc" } },
         patient_bio_data: {
             select: { patient_id: true, patient_first_name: true, patient_last_name: true }
@@ -659,6 +670,26 @@ class ChemotherapyRepository {
         return prisma_1.default.chemotherapy_followup.findMany({
             where: { chemotherapy_cycle_id: cycleId, active_status: 1 },
             orderBy: { followup_date: "asc" }
+        });
+    }
+    async listSupportiveMedicines() {
+        return prisma_1.default.medicine_master.findMany({
+            where: {
+                is_active: true,
+                medicine_category: { not: "Chemotherapy" }
+            },
+            select: {
+                medicine_id: true,
+                medicine_name: true,
+                generic_name: true,
+                medicine_category: true,
+                medicine_type: true,
+                dosage_form: true,
+                unit: true,
+                strength: true,
+                route: true,
+            },
+            orderBy: { medicine_name: "asc" }
         });
     }
 }
