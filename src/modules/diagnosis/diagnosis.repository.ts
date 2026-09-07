@@ -5,6 +5,7 @@ import {
     DiagnosisItem,
     GetDiagnosisCategoriesQuery,
     GetDiagnosesByCategoryQuery,
+    GetDiagnosesByCancerQuery,
 } from "./diagnosis.types";
 
 export class DiagnosisRepository {
@@ -144,5 +145,57 @@ export class DiagnosisRepository {
                 created_at: true,
             },
         });
+    }
+
+    async getDiagnosesByCancer(query: GetDiagnosesByCancerQuery) {
+        const { cancerTypeId, cancerSubtypeId, search, activeOnly = true, page = 1, limit = 50 } = query;
+
+        const where: Prisma.diagnosisWhereInput = {
+            cancer_type_id: cancerTypeId,
+        };
+
+        if (cancerSubtypeId) {
+            where.cancer_subtype_id = cancerSubtypeId;
+        }
+
+        if (activeOnly) {
+            where.active_status = 1;
+        }
+
+        if (search) {
+            where.OR = [
+                { diagnosis_name: { contains: search, mode: "insensitive" } },
+                { icd_code: { contains: search, mode: "insensitive" } },
+                { diagnosis_alias: { contains: search, mode: "insensitive" } },
+            ];
+        }
+
+        const [diagnoses, total] = await Promise.all([
+            prisma.diagnosis.findMany({
+                where,
+                select: {
+                    diagnosis_id: true,
+                    diagnosis_name: true,
+                    icd_code: true,
+                    diagnosis_description: true,
+                    diagnosis_category: true,
+                    diagnosis_catogory_id: true,
+                    cancer_type_id: true,
+                    cancer_subtype_id: true,
+                },
+                orderBy: { diagnosis_name: "asc" },
+                skip: (page - 1) * limit,
+                take: limit,
+            }),
+            prisma.diagnosis.count({ where }),
+        ]);
+
+        return {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            diagnoses,
+        };
     }
 }

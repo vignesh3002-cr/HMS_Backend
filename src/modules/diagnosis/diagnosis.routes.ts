@@ -7,6 +7,7 @@ import {
     getDiagnosisCategoriesValidation,
     getDiagnosesByCategoryValidation,
     getDiagnosisByIdValidation,
+    getDiagnosesByCancerValidation,
 } from "./diagnosis.validation";
 
 const router = Router();
@@ -27,6 +28,14 @@ router.get(
     authenticate,
     getDiagnosesByCategoryValidation,
     controller.getDiagnosesByCategory.bind(controller)
+);
+
+// Get diagnoses by cancer type (and optional subtype)
+router.get(
+    "/by-cancer",
+    authenticate,
+    getDiagnosesByCancerValidation,
+    controller.getDiagnosesByCancer.bind(controller)
 );
 
 // Get single diagnosis by ID

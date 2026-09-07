@@ -52,3 +52,32 @@ export const getDiagnosisByIdValidation = [
         .isString()
         .withMessage("Diagnosis ID must be a string"),
 ];
+
+export const getDiagnosesByCancerValidation = [
+    query("cancerTypeId")
+        .notEmpty()
+        .withMessage("cancerTypeId is required")
+        .isString()
+        .withMessage("cancerTypeId must be a string"),
+    query("cancerSubtypeId")
+        .optional()
+        .isString()
+        .withMessage("cancerSubtypeId must be a string"),
+    query("search")
+        .optional()
+        .isString()
+        .trim()
+        .withMessage("Search must be a string"),
+    query("activeOnly")
+        .optional()
+        .isBoolean()
+        .withMessage("activeOnly must be a boolean"),
+    query("page")
+        .optional()
+        .isInt({ min: 1 })
+        .withMessage("Page must be a positive integer"),
+    query("limit")
+        .optional()
+        .isInt({ min: 1, max: 100 })
+        .withMessage("Limit must be between 1 and 100"),
+];
