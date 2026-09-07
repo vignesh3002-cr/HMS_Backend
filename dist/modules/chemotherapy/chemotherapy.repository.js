@@ -19,7 +19,15 @@ class ChemotherapyRepository {
     }
     protocolInclude = {
         chemotherapy_regimen_protocol_days: { where: { active_status: 1 }, orderBy: { day_number: "asc" }, include: { chemotherapy_regimen_protocol_items: { include: { medicine_master: true } } } },
-        chemotherapy_regimen_protocol_items: { where: { active_status: 1 }, orderBy: { drug_sequence: "asc" }, include: { medicine_master: true } },
+        chemotherapy_regimen_protocol_items: {
+            where: { active_status: 1 },
+            orderBy: { drug_sequence: "asc" },
+            include: {
+                medicine_master: true,
+                chemotherapy_protocol_dilutions: { where: { active_status: 1 }, orderBy: { created_at: "asc" } }
+            }
+        },
+        chemotherapy_discharge_instructions: { where: { active_status: 1 }, orderBy: { drug_sequence: "asc" }, include: { medicine_master: true } },
         cancer_types: { select: { cancer_type_id: true, cancer_type: true } },
         cancer_subtypes: { select: { subtype_id: true, subtype_name: true } }
     };

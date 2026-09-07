@@ -3,4 +3,5 @@ node_modules
 .env
 /generated/prisma
 Nvidia.ts
+nvidia.api.ts
 nvidia.routes.ts

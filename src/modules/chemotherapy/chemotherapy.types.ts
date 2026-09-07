@@ -9,6 +9,7 @@ export interface RegimenProtocolDilutionInput {
     dilution_volume?: number | null;
     dilution_volume_unit?: string | null;
     diluent?: string | null;
+    administration_day?: number | null;
     comment?: string | null;
     active_status?: number | null;
 
@@ -20,6 +21,7 @@ export interface RegimenProtocolDischargeInstructionInput {
     source_resource_id?: string | null;
     medicine_id?: string | null;
     drug_sequence?: number | null;
+    administration_day?: number | null;
     drug_from?: string | null;
     frequency?: string | null;
     duration?: string | null;

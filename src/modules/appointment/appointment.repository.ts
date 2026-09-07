@@ -321,7 +321,8 @@ export class AppointmentRepository {
                         notification_status: "NOT_REQUIRED"
                     }
                     : {})
-            }
+            },
+            include: appointmentDetailInclude
         });
 
     }

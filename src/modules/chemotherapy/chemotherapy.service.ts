@@ -231,6 +231,8 @@ export class ChemotherapyService {
                 : (ed.medicine_id === dilution.medicine_id && ed.form === dilution.form)
             );
 
+            const item = await this.repository.findRegimenProtocolItemById(itemId);
+
             const dilutionPayload = {
                 protocol_id: protocolId,
                 protocol_item_id: itemId,
@@ -303,6 +305,7 @@ export class ChemotherapyService {
                 protocol_id: protocolId,
                 medicine_id: instruction.medicine_id ?? null,
                 drug_sequence: instruction.drug_sequence ?? sequence,
+                administration_day: instruction.administration_day ?? null,
                 drug_from: instruction.drug_from ?? null,
                 frequency: instruction.frequency ?? null,
                 duration: instruction.duration ?? null,

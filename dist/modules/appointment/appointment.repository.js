@@ -216,7 +216,8 @@ class AppointmentRepository {
                         notification_status: "NOT_REQUIRED"
                     }
                     : {})
-            }
+            },
+            include: appointmentDetailInclude
         });
     }
     async getAppointmentByNumber(appointmentId) {
