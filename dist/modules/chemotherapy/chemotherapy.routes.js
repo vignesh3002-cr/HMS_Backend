@@ -80,5 +80,4 @@ router.get("/cycles/:cycleId/lab-review", auth_middleware_1.authenticate, (0, au
 // ---------------- Followup ----------------
 router.post("/cycles/:cycleId/followup", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.followup.record"), chemotherapy_validation_1.recordFollowupValidation, controller.recordFollowup.bind(controller));
 router.get("/cycles/:cycleId/followup", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.cycleIdParamValidation, controller.listFollowups.bind(controller));
-router.get("/supportive-medicines", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), controller.listSupportiveMedicines.bind(controller));
 exports.default = router;

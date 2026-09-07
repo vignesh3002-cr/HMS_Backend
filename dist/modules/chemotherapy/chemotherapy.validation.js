@@ -259,7 +259,7 @@ exports.updateRegimenProtocolItemValidation = [
 exports.createPlanValidation = [
     (0, express_validator_1.body)("patient_id").notEmpty().withMessage("patient_id is required"),
     (0, express_validator_1.body)("staging_detail_id").notEmpty().withMessage("staging_detail_id is required"),
-    (0, express_validator_1.body)("diagnosis_id").notEmpty().withMessage("diagnosis_id is required"),
+    /* body("diagnosis_id").notEmpty().withMessage("diagnosis_id is required"),*/
     (0, express_validator_1.body)("employee_id").notEmpty().withMessage("employee_id is required"),
     (0, express_validator_1.body)("department_id").notEmpty().withMessage("department_id is required"),
     (0, express_validator_1.body)("branch_id").notEmpty().withMessage("branch_id is required"),
