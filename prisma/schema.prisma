@@ -2085,20 +2085,10 @@ model user_table {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model referral {
-  id               BigInt    @id @default(autoincrement())
-  referral_id      String?   @db.VarChar(100)
-  referral_type    String?   @db.VarChar(100)
-  referral_by      String?   @db.VarChar(100)
-  referral_contact String?   @db.VarChar(100)
-  referral_notes   String?
-  created_at       DateTime? @default(now()) @db.Timestamp(6)
-  updated_at       DateTime? @default(now()) @db.Timestamp(6)
-  created_by       String?   @db.VarChar(100)
-  updated_by       String?   @db.VarChar(100)
-  patient_id       String?   @unique @db.VarChar
+  id            BigInt  @id @default(autoincrement())
+  referral_id   String? @db.VarChar(100)
+  referral_type String? @db.VarChar(100)
 
-  @@index([referral_by], map: "idx_referral_by")
-  @@index([created_at], map: "idx_referral_created_at")
   @@index([referral_type], map: "idx_referral_type")
 }
 
