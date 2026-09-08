@@ -18,6 +18,9 @@ import {
     updatePatientComorbidityValidation,
     getClinicalDetailsValidation,
     getMasterListValidation,
+    createCustomSymptomValidation,
+    createCustomAllergyValidation,
+    createCustomComorbidityValidation,
 } from './clinical-details.validation';
 
 const router = Router();
@@ -85,6 +88,28 @@ router.get(
     authenticate,
     getMasterListValidation,
     controller.getAllergies.bind(controller)
+);
+
+// Custom "Others" master creation (Doctor/Clinician access)
+router.post(
+    '/master/symptoms/custom',
+    authenticate,
+    createCustomSymptomValidation,
+    controller.createCustomSymptom.bind(controller)
+);
+
+router.post(
+    '/master/allergies/custom',
+    authenticate,
+    createCustomAllergyValidation,
+    controller.createCustomAllergy.bind(controller)
+);
+
+router.post(
+    '/master/comorbidities/custom',
+    authenticate,
+    createCustomComorbidityValidation,
+    controller.createCustomComorbidity.bind(controller)
 );
 
 // Clinical routes (Doctor/Clinician access)

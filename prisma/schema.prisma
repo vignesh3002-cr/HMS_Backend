@@ -42,8 +42,8 @@ model RolePermission {
   granted_at     DateTime       @default(now())
   revoked_at     DateTime?
   revoked_by     String?        @db.VarChar(100)
-  Permission     Permission     @relation(fields: [permission_id], references: [id])
-  role_id_config role_id_config @relation(fields: [role_type], references: [role_type])
+  Permission     Permission     @relation(fields: [permission_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  role_id_config role_id_config @relation(fields: [role_type], references: [role_type], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([role_type, permission_id])
   @@index([role_type])
@@ -111,12 +111,12 @@ model appointment_history {
   Reason_for_cancelling           String?
   Patient_visit_type              String?                           @db.VarChar
   Patient_type                    String?                           @db.VarChar
-  employees                       employees?                        @relation(fields: [employee_id], references: [employee_id], onDelete: Cascade)
+  branch                          branch?                           @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_appointment_branch")
+  department_master               department_master?                @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_appointment_department")
+  employees                       employees?                        @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
+  patient_bio_data                patient_bio_data                  @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_appointment_patient")
   doctor_schedule                 doctor_schedule?                  @relation(fields: [schedule_id], references: [schedule_id], onDelete: NoAction, onUpdate: NoAction)
-  branch                          branch?                           @relation(fields: [branch_id], references: [branch_id], onDelete: Restrict, map: "fk_appointment_branch")
-  department_master               department_master?                @relation(fields: [department_id], references: [department_id], onDelete: Cascade, map: "fk_appointment_department")
-  patient_bio_data                patient_bio_data                  @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade, map: "fk_appointment_patient")
-  user_table                      user_table?                       @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_appointment_user")
+  user_table                      user_table?                       @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_appointment_user")
   appointment_notification        appointment_notification[]
   appointment_reschedule_queue    appointment_reschedule_queue[]
   chemotherapy_cycle              chemotherapy_cycle[]
@@ -138,7 +138,7 @@ model appointment_notification {
   recipient           String?             @db.VarChar(100)
   status              String              @default("PENDING") @db.VarChar(100)
   created_at          DateTime            @default(now()) @db.Timestamp(6)
-  appointment_history appointment_history @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade)
+  appointment_history appointment_history @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -149,7 +149,7 @@ model appointment_reschedule_action_log {
   performed_by                 String                       @db.VarChar(100)
   notes                        String?
   created_at                   DateTime                     @default(now()) @db.Timestamp(6)
-  appointment_reschedule_queue appointment_reschedule_queue @relation(fields: [queue_id], references: [queue_id], onDelete: Cascade)
+  appointment_reschedule_queue appointment_reschedule_queue @relation(fields: [queue_id], references: [queue_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -177,10 +177,10 @@ model appointment_reschedule_queue {
   created_at                        DateTime                            @default(now()) @db.Timestamp(6)
   updated_at                        DateTime?                           @db.Timestamp(6)
   appointment_reschedule_action_log appointment_reschedule_action_log[]
-  appointment_history               appointment_history                 @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade)
-  branch                            branch                              @relation(fields: [branch_id], references: [branch_id])
-  patient_bio_data                  patient_bio_data                    @relation(fields: [patient_id], references: [patient_id])
-  doctor_transfer                   doctor_transfer?                    @relation(fields: [transfer_id], references: [transfer_id])
+  appointment_history               appointment_history                 @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction)
+  branch                            branch                              @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction)
+  patient_bio_data                  patient_bio_data                    @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction)
+  doctor_transfer                   doctor_transfer?                    @relation(fields: [transfer_id], references: [transfer_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -226,7 +226,7 @@ model branch {
   branch_photo_url             String?                        @db.VarChar
   appointment_history          appointment_history[]
   appointment_reschedule_queue appointment_reschedule_queue[]
-  hospital                     hospital?                      @relation(fields: [hospital_id], references: [hospital_id], onDelete: Restrict, map: "fk_branch_hospital")
+  hospital                     hospital?                      @relation(fields: [hospital_id], references: [hospital_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_branch_hospital")
   chemotherapy_master          chemotherapy_master[]
   chemotherapy_plan            chemotherapy_plan[]
   doctor_leave                 doctor_leave[]
@@ -262,8 +262,8 @@ model cancer_subtypes {
   icd10_subtype                 String?                         @db.VarChar(100)
   active_status                 Int?                            @default(1) @db.SmallInt
   diagnosis_id                  String?                         @db.VarChar
-  diagnosis                     diagnosis?                      @relation(fields: [diagnosis_id], references: [diagnosis_id])
-  cancer_types                  cancer_types                    @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: Cascade, map: "fk_subtype_cancer_type")
+  cancer_types                  cancer_types                    @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_subtype_cancer_type")
+  diagnosis                     diagnosis?                      @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction)
   chemotherapy_plan             chemotherapy_plan[]
   chemotherapy_regimen_protocol chemotherapy_regimen_protocol[]
   oncology_staging_detail       oncology_staging_detail[]
@@ -282,7 +282,7 @@ model cancer_types {
   created_at                    DateTime?                       @default(now()) @db.Timestamp(6)
   diagnosis_id                  String?                         @db.VarChar
   cancer_subtypes               cancer_subtypes[]
-  diagnosis                     diagnosis?                      @relation(fields: [diagnosis_id], references: [diagnosis_id])
+  diagnosis                     diagnosis?                      @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction)
   chemotherapy_plan             chemotherapy_plan[]
   chemotherapy_regimen_protocol chemotherapy_regimen_protocol[]
   molecular_subtypes            molecular_subtypes[]
@@ -334,10 +334,10 @@ model chemotherapy_administration {
   created_at                                                       DateTime?               @default(now()) @db.Timestamp(6)
   updated_by                                                       String?                 @db.VarChar(100)
   updated_at                                                       DateTime?               @default(now()) @db.Timestamp(6)
-  chemotherapy_cycle                                               chemotherapy_cycle      @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: Cascade, map: "fk_chemo_admin_cycle")
-  employees_chemotherapy_administration_verified_byToemployees     employees?              @relation("chemotherapy_administration_verified_byToemployees", fields: [verified_by], references: [employee_id], map: "fk_chemo_admin_doctor")
-  employees_chemotherapy_administration_administered_byToemployees employees?              @relation("chemotherapy_administration_administered_byToemployees", fields: [administered_by], references: [employee_id], map: "fk_chemo_admin_nurse")
-  chemotherapy_plan_items                                          chemotherapy_plan_items @relation(fields: [chemotherapy_plan_item_id], references: [chemotherapy_plan_item_id], map: "fk_chemo_admin_plan_item")
+  employees_chemotherapy_administration_administered_byToemployees employees?              @relation("chemotherapy_administration_administered_byToemployees", fields: [administered_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_admin_nurse")
+  chemotherapy_cycle                                               chemotherapy_cycle      @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_admin_cycle")
+  chemotherapy_plan_items                                          chemotherapy_plan_items @relation(fields: [chemotherapy_plan_item_id], references: [chemotherapy_plan_item_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_admin_plan_item")
+  employees_chemotherapy_administration_verified_byToemployees     employees?              @relation("chemotherapy_administration_verified_byToemployees", fields: [verified_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_admin_doctor")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -392,9 +392,9 @@ model chemotherapy_adverse_event {
   created_at                                                   DateTime?          @default(now()) @db.Timestamp(6)
   updated_by                                                   String?            @db.VarChar(100)
   updated_at                                                   DateTime?          @default(now()) @db.Timestamp(6)
-  chemotherapy_cycle                                           chemotherapy_cycle @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: Cascade, map: "fk_chemo_adverse_cycle")
-  employees_chemotherapy_adverse_event_physician_idToemployees employees?         @relation("chemotherapy_adverse_event_physician_idToemployees", fields: [physician_id], references: [employee_id], map: "fk_chemo_adverse_doctor")
-  employees_chemotherapy_adverse_event_reported_byToemployees  employees?         @relation("chemotherapy_adverse_event_reported_byToemployees", fields: [reported_by], references: [employee_id], map: "fk_chemo_adverse_reported_by")
+  chemotherapy_cycle                                           chemotherapy_cycle @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_adverse_cycle")
+  employees_chemotherapy_adverse_event_physician_idToemployees employees?         @relation("chemotherapy_adverse_event_physician_idToemployees", fields: [physician_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_adverse_doctor")
+  employees_chemotherapy_adverse_event_reported_byToemployees  employees?         @relation("chemotherapy_adverse_event_reported_byToemployees", fields: [reported_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_adverse_reported_by")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -430,7 +430,7 @@ model chemotherapy_cycle {
   chemotherapy_administration chemotherapy_administration[]
   chemotherapy_adverse_event  chemotherapy_adverse_event[]
   appointment_history         appointment_history?          @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction)
-  chemotherapy_plan           chemotherapy_plan             @relation(fields: [chemotherapy_plan_id], references: [chemotherapy_plan_id], onDelete: Cascade, map: "fk_chemo_cycle_plan")
+  chemotherapy_plan           chemotherapy_plan             @relation(fields: [chemotherapy_plan_id], references: [chemotherapy_plan_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_cycle_plan")
   chemotherapy_followup       chemotherapy_followup[]
   chemotherapy_lab_review     chemotherapy_lab_review[]
   chemotherapy_vitals         chemotherapy_vitals[]
@@ -461,8 +461,8 @@ model chemotherapy_discharge_instructions {
   updated_by                    String?                       @db.VarChar(100)
   updated_at                    DateTime?                     @default(now()) @db.Timestamp(6)
   duration_days                 String?                       @db.VarChar
-  medicine_master               medicine_master?              @relation(fields: [medicine_id], references: [medicine_id], onDelete: Restrict, map: "fk_discharge_medicine")
-  chemotherapy_regimen_protocol chemotherapy_regimen_protocol @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_discharge_protocol")
+  medicine_master               medicine_master?              @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_discharge_medicine")
+  chemotherapy_regimen_protocol chemotherapy_regimen_protocol @relation(fields: [protocol_id], references: [protocol_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_discharge_protocol")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -497,8 +497,8 @@ model chemotherapy_followup {
   created_at            DateTime?          @default(now()) @db.Timestamp(6)
   updated_by            String?            @db.VarChar(100)
   updated_at            DateTime?          @default(now()) @db.Timestamp(6)
-  chemotherapy_cycle    chemotherapy_cycle @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: Cascade, map: "fk_chemo_followup_cycle")
-  employees             employees?         @relation(fields: [physician_id], references: [employee_id], map: "fk_chemo_followup_doctor")
+  chemotherapy_cycle    chemotherapy_cycle @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_followup_cycle")
+  employees             employees?         @relation(fields: [physician_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_followup_doctor")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -543,8 +543,8 @@ model chemotherapy_lab_review {
   created_at            DateTime?          @default(now()) @db.Timestamp(6)
   updated_by            String?            @db.VarChar(100)
   updated_at            DateTime?          @default(now()) @db.Timestamp(6)
-  chemotherapy_cycle    chemotherapy_cycle @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: Cascade, map: "fk_chemo_lab_cycle")
-  employees             employees?         @relation(fields: [reviewed_by], references: [employee_id], map: "fk_chemo_lab_reviewed_by")
+  chemotherapy_cycle    chemotherapy_cycle @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_lab_cycle")
+  employees             employees?         @relation(fields: [reviewed_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_lab_reviewed_by")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -571,11 +571,11 @@ model chemotherapy_master {
   updated_by         String?            @db.VarChar(100)
   updated_at         DateTime?          @db.Timestamp(6)
   deleted_flag       Boolean?           @default(false)
-  diagnosis          diagnosis?         @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: Cascade)
-  branch             branch?            @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_chemo_branch")
-  department_master  department_master? @relation(fields: [department_id], references: [department_id], onDelete: Cascade, map: "fk_chemo_department")
-  patient_history    patient_history?   @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: Cascade, map: "fk_chemo_patient_history")
-  user_table         user_table?        @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_chemo_user")
+  branch             branch?            @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_branch")
+  department_master  department_master? @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_department")
+  diagnosis          diagnosis?         @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction)
+  patient_history    patient_history?   @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_patient_history")
+  user_table         user_table?        @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_user")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -623,19 +623,19 @@ model chemotherapy_plan {
   staging_detail_id             String?                        @db.VarChar(100)
   source_protocol_id            String?                        @db.VarChar(100)
   chemotherapy_cycle            chemotherapy_cycle[]
-  appointment_history           appointment_history?           @relation(fields: [appointment_id], references: [appointment_id], map: "fk_chemo_plan_appointment")
-  branch                        branch                         @relation(fields: [branch_id], references: [branch_id], map: "fk_chemo_plan_branch")
-  cancer_types                  cancer_types?                  @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: Restrict, map: "fk_chemo_plan_cancer_type")
-  department_master             department_master              @relation(fields: [department_id], references: [department_id], map: "fk_chemo_plan_department")
-  diagnosis                     diagnosis?                     @relation(fields: [diagnosis_id], references: [diagnosis_id], map: "fk_chemo_plan_diagnosis")
-  employees                     employees                      @relation(fields: [employee_id], references: [employee_id], map: "fk_chemo_plan_employee")
-  encounter                     encounter?                     @relation(fields: [encounter_no], references: [encounter_no], map: "fk_chemo_plan_encounter")
-  patient_bio_data              patient_bio_data               @relation(fields: [patient_id], references: [patient_id], map: "fk_chemo_plan_patient")
-  patient_history               patient_history                @relation(fields: [patient_history_id], references: [patient_history_id], map: "fk_chemo_plan_patient_history")
-  chemotherapy_regimen_protocol chemotherapy_regimen_protocol? @relation(fields: [source_protocol_id], references: [protocol_id], map: "fk_chemo_plan_source_protocol")
-  oncology_staging_detail       oncology_staging_detail?       @relation(fields: [staging_detail_id], references: [staging_detail_id], map: "fk_chemo_plan_staging_detail")
-  cancer_subtypes               cancer_subtypes?               @relation(fields: [subtype_id], references: [subtype_id], onDelete: Restrict, map: "fk_chemo_plan_subtype")
-  user_table                    user_table?                    @relation(fields: [user_id], references: [user_id], map: "fk_chemo_plan_user")
+  appointment_history           appointment_history?           @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_appointment")
+  branch                        branch                         @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_branch")
+  cancer_types                  cancer_types?                  @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_cancer_type")
+  department_master             department_master              @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_department")
+  diagnosis                     diagnosis?                     @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_diagnosis")
+  employees                     employees                      @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_employee")
+  encounter                     encounter?                     @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_encounter")
+  patient_history               patient_history                @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_patient_history")
+  patient_bio_data              patient_bio_data               @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_patient")
+  chemotherapy_regimen_protocol chemotherapy_regimen_protocol? @relation(fields: [source_protocol_id], references: [protocol_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_source_protocol")
+  oncology_staging_detail       oncology_staging_detail?       @relation(fields: [staging_detail_id], references: [staging_detail_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_staging_detail")
+  cancer_subtypes               cancer_subtypes?               @relation(fields: [subtype_id], references: [subtype_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_subtype")
+  user_table                    user_table?                    @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_user")
   chemotherapy_plan_items       chemotherapy_plan_items[]
 }
 
@@ -672,8 +672,8 @@ model chemotherapy_plan_items {
   updated_at                  DateTime?                     @default(now()) @db.Timestamp(6)
   drug_role                   String                        @default("PRIMARY") @db.VarChar(100)
   chemotherapy_administration chemotherapy_administration[]
-  medicine_master             medicine_master               @relation(fields: [medicine_id], references: [medicine_id], map: "fk_chemo_plan_items_medicine")
-  chemotherapy_plan           chemotherapy_plan             @relation(fields: [chemotherapy_plan_id], references: [chemotherapy_plan_id], onDelete: Cascade, map: "fk_chemo_plan_items_plan")
+  chemotherapy_plan           chemotherapy_plan             @relation(fields: [chemotherapy_plan_id], references: [chemotherapy_plan_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_items_plan")
+  medicine_master             medicine_master               @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_items_medicine")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -696,9 +696,9 @@ model chemotherapy_protocol_dilutions {
   created_at                          DateTime?                            @default(now()) @db.Timestamp(6)
   updated_by                          String?                              @db.VarChar(100)
   updated_at                          DateTime?                            @default(now()) @db.Timestamp(6)
-  chemotherapy_regimen_protocol_items chemotherapy_regimen_protocol_items? @relation(fields: [protocol_item_id], references: [protocol_item_id], map: "fk_protocol_dilution_item")
-  medicine_master                     medicine_master?                     @relation(fields: [medicine_id], references: [medicine_id], onDelete: Restrict, map: "fk_protocol_dilution_medicine")
-  chemotherapy_regimen_protocol       chemotherapy_regimen_protocol        @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_protocol_dilution_protocol")
+  medicine_master                     medicine_master?                     @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_protocol_dilution_medicine")
+  chemotherapy_regimen_protocol       chemotherapy_regimen_protocol        @relation(fields: [protocol_id], references: [protocol_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_protocol_dilution_protocol")
+  chemotherapy_regimen_protocol_items chemotherapy_regimen_protocol_items? @relation(fields: [protocol_item_id], references: [protocol_item_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_protocol_dilution_item")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -731,8 +731,8 @@ model chemotherapy_regimen_protocol {
   chemotherapy_discharge_instructions chemotherapy_discharge_instructions[]
   chemotherapy_plan                   chemotherapy_plan[]
   chemotherapy_protocol_dilutions     chemotherapy_protocol_dilutions[]
-  cancer_types                        cancer_types?                         @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: Restrict, map: "fk_regimen_protocol_cancer_type")
-  cancer_subtypes                     cancer_subtypes?                      @relation(fields: [subtype_id], references: [subtype_id], map: "fk_regimen_protocol_subtype")
+  cancer_types                        cancer_types?                         @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_regimen_protocol_cancer_type")
+  cancer_subtypes                     cancer_subtypes?                      @relation(fields: [subtype_id], references: [subtype_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_regimen_protocol_subtype")
   chemotherapy_regimen_protocol_days  chemotherapy_regimen_protocol_days[]
   chemotherapy_regimen_protocol_items chemotherapy_regimen_protocol_items[]
 
@@ -755,8 +755,8 @@ model chemotherapy_regimen_protocol_days {
   updated_at                          DateTime?                            @default(now()) @db.Timestamp(6)
   protocol_item_id                    String?                              @db.VarChar
   medicine_count                      BigInt?
-  chemotherapy_regimen_protocol_items chemotherapy_regimen_protocol_items? @relation(fields: [protocol_item_id], references: [protocol_item_id], onDelete: Restrict)
-  chemotherapy_regimen_protocol       chemotherapy_regimen_protocol        @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_protocol_day_protocol")
+  chemotherapy_regimen_protocol       chemotherapy_regimen_protocol        @relation(fields: [protocol_id], references: [protocol_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_protocol_day_protocol")
+  chemotherapy_regimen_protocol_items chemotherapy_regimen_protocol_items? @relation(fields: [protocol_item_id], references: [protocol_item_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -793,8 +793,8 @@ model chemotherapy_regimen_protocol_items {
   source_resource_id                 String?                              @db.VarChar(100)
   chemotherapy_protocol_dilutions    chemotherapy_protocol_dilutions[]
   chemotherapy_regimen_protocol_days chemotherapy_regimen_protocol_days[]
-  medicine_master                    medicine_master                      @relation(fields: [medicine_id], references: [medicine_id], map: "fk_regimen_protocol_item_medicine")
-  chemotherapy_regimen_protocol      chemotherapy_regimen_protocol        @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, map: "fk_regimen_protocol_item_protocol")
+  medicine_master                    medicine_master                      @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_regimen_protocol_item_medicine")
+  chemotherapy_regimen_protocol      chemotherapy_regimen_protocol        @relation(fields: [protocol_id], references: [protocol_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_regimen_protocol_item_protocol")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -830,8 +830,8 @@ model chemotherapy_vitals {
   updated_by               String?            @db.VarChar(100)
   updated_at               DateTime?          @default(now()) @db.Timestamp(6)
   ideal_body_weight        Decimal?           @db.Decimal(6, 2)
-  chemotherapy_cycle       chemotherapy_cycle @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: Cascade, map: "fk_chemo_vitals_cycle")
-  employees                employees?         @relation(fields: [recorded_by], references: [employee_id], map: "fk_chemo_vitals_recorded_by")
+  chemotherapy_cycle       chemotherapy_cycle @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_vitals_cycle")
+  employees                employees?         @relation(fields: [recorded_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_vitals_recorded_by")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -896,7 +896,7 @@ model derived_fields {
   suggested_therapy       String?
   recommended_tests       String?
   derived_at              DateTime?               @default(now()) @db.Timestamp(6)
-  oncology_staging_detail oncology_staging_detail @relation(fields: [staging_detail_id], references: [staging_detail_id], onDelete: Cascade, map: "fk_derived_staging_detail")
+  oncology_staging_detail oncology_staging_detail @relation(fields: [staging_detail_id], references: [staging_detail_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_derived_staging_detail")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -947,8 +947,8 @@ model diagnosis_medicine_mapping {
   duration        String?         @db.VarChar(100)
   instructions    String?
   created_at      DateTime?       @default(now()) @db.Timestamp(6)
-  diagnosis       diagnosis       @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: Cascade, map: "fk_dm_diagnosis")
-  medicine_master medicine_master @relation(fields: [medicine_id], references: [medicine_id], map: "fk_dm_medicine")
+  diagnosis       diagnosis       @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_dm_diagnosis")
+  medicine_master medicine_master @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_dm_medicine")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1007,8 +1007,8 @@ model doctor_schedule {
   effective_to         DateTime?             @db.Timestamptz(6)
   deleted_by           String?               @db.VarChar(100)
   appointment_history  appointment_history[]
+  branch               branch                @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_doctor_schedule_branch")
   employees            employees             @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
-  branch               branch                @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_doctor_schedule_branch")
   encounter            encounter[]
 }
 
@@ -1027,7 +1027,7 @@ model doctor_schedule_change {
   created_at           DateTime                 @default(now()) @db.Timestamptz(6)
   updated_at           DateTime                 @db.Timestamptz(6)
   consultation_minutes Int?
-  branch               branch                   @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, onUpdate: NoAction)
+  branch               branch                   @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction)
   employees            employees                @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([branch_id])
@@ -1058,9 +1058,9 @@ model doctor_transfer {
   completed_at                                                 DateTime?                         @db.Timestamp(6)
   closing_schedule_ids                                         BigInt[]
   appointment_reschedule_queue                                 appointment_reschedule_queue[]
-  employees_doctor_transfer_employee_idToemployees             employees                         @relation("doctor_transfer_employee_idToemployees", fields: [employee_id], references: [employee_id])
-  branch                                                       branch                            @relation(fields: [new_branch_id], references: [branch_id])
-  employees_doctor_transfer_replacement_employee_idToemployees employees?                        @relation("doctor_transfer_replacement_employee_idToemployees", fields: [replacement_employee_id], references: [employee_id])
+  employees_doctor_transfer_employee_idToemployees             employees                         @relation("doctor_transfer_employee_idToemployees", fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
+  branch                                                       branch                            @relation(fields: [new_branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction)
+  employees_doctor_transfer_replacement_employee_idToemployees employees?                        @relation("doctor_transfer_replacement_employee_idToemployees", fields: [replacement_employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
   doctor_transfer_appointment_log                              doctor_transfer_appointment_log[]
 }
 
@@ -1081,8 +1081,8 @@ model doctor_transfer_appointment_log {
   result_status        String              @db.VarChar(100)
   notes                String?
   created_at           DateTime            @default(now()) @db.Timestamp(6)
-  appointment_history  appointment_history @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade)
-  doctor_transfer      doctor_transfer     @relation(fields: [transfer_id], references: [transfer_id], onDelete: Cascade)
+  appointment_history  appointment_history @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction)
+  doctor_transfer      doctor_transfer     @relation(fields: [transfer_id], references: [transfer_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1129,8 +1129,8 @@ model employees {
   qualification_id                                                                   String?                        @db.VarChar(100)
   deleted_at                                                                         DateTime?                      @db.Timestamp(6)
   appointment_history                                                                appointment_history[]
-  chemotherapy_administration_chemotherapy_administration_verified_byToemployees     chemotherapy_administration[]  @relation("chemotherapy_administration_verified_byToemployees")
   chemotherapy_administration_chemotherapy_administration_administered_byToemployees chemotherapy_administration[]  @relation("chemotherapy_administration_administered_byToemployees")
+  chemotherapy_administration_chemotherapy_administration_verified_byToemployees     chemotherapy_administration[]  @relation("chemotherapy_administration_verified_byToemployees")
   chemotherapy_adverse_event_chemotherapy_adverse_event_physician_idToemployees      chemotherapy_adverse_event[]   @relation("chemotherapy_adverse_event_physician_idToemployees")
   chemotherapy_adverse_event_chemotherapy_adverse_event_reported_byToemployees       chemotherapy_adverse_event[]   @relation("chemotherapy_adverse_event_reported_byToemployees")
   chemotherapy_followup                                                              chemotherapy_followup[]
@@ -1144,10 +1144,10 @@ model employees {
   doctor_schedule_change                                                             doctor_schedule_change[]
   doctor_transfer_doctor_transfer_employee_idToemployees                             doctor_transfer[]              @relation("doctor_transfer_employee_idToemployees")
   doctor_transfer_doctor_transfer_replacement_employee_idToemployees                 doctor_transfer[]              @relation("doctor_transfer_replacement_employee_idToemployees")
-  qualification_master                                                               qualification_master?          @relation(fields: [qualification_id], references: [qualification_id])
-  branch                                                                             branch?                        @relation(fields: [branch_id], references: [branch_id], onDelete: Restrict, map: "fk_employee_branch")
-  department_master                                                                  department_master?             @relation(fields: [department_id], references: [department_id], onDelete: Restrict, map: "fk_employee_department")
-  user_table                                                                         user_table?                    @relation(fields: [user_id], references: [user_id], onDelete: Restrict, map: "fk_employee_user")
+  branch                                                                             branch?                        @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_employee_branch")
+  department_master                                                                  department_master?             @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_employee_department")
+  qualification_master                                                               qualification_master?          @relation(fields: [qualification_id], references: [qualification_id], onDelete: NoAction, onUpdate: NoAction)
+  user_table                                                                         user_table?                    @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_employee_user")
   encounter                                                                          encounter[]
   encounter_performance_status                                                       encounter_performance_status[]
   encounter_symptom                                                                  encounter_symptom[]
@@ -1203,13 +1203,13 @@ model encounter {
   pain_score                   BigInt?
   BMI                          Decimal?                      @db.Decimal
   chemotherapy_plan            chemotherapy_plan[]
-  appointment_history          appointment_history?          @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade, map: "fk_encounter_appointment")
-  branch                       branch                        @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_encounter_branch")
-  department_master            department_master?            @relation(fields: [department_id], references: [department_id], onDelete: Cascade, map: "fk_encounter_department")
-  employees                    employees?                    @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, map: "fk_encounter_doctor")
-  patient_bio_data             patient_bio_data              @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade, map: "fk_encounter_patient")
-  doctor_schedule              doctor_schedule?              @relation(fields: [schedule_id], references: [schedule_id], onDelete: NoAction, map: "fk_encounter_schedule")
-  user_table                   user_table?                   @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_encounter_user")
+  appointment_history          appointment_history?          @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_appointment")
+  branch                       branch                        @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_branch")
+  department_master            department_master?            @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_department")
+  employees                    employees?                    @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_doctor")
+  patient_bio_data             patient_bio_data              @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_patient")
+  doctor_schedule              doctor_schedule?              @relation(fields: [schedule_id], references: [schedule_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_schedule")
+  user_table                   user_table?                   @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_user")
   encounter_performance_status encounter_performance_status?
   encounter_symptom            encounter_symptom[]
   patient_allergy              patient_allergy[]
@@ -1228,9 +1228,9 @@ model encounter_performance_status {
   clinical_notes            String?                   @db.VarChar(1000)
   created_at                DateTime                  @default(now()) @db.Timestamp(6)
   updated_at                DateTime                  @default(now()) @db.Timestamp(6)
-  employees                 employees?                @relation(fields: [assessed_by], references: [employee_id], onDelete: Restrict)
-  encounter                 encounter                 @relation(fields: [encounter_no], references: [encounter_no], map: "fk_encounter_perf_status")
-  performance_status_master performance_status_master @relation(fields: [performance_status_id], references: [id], map: "fk_perf_status_master")
+  employees                 employees?                @relation(fields: [assessed_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
+  encounter                 encounter                 @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_perf_status")
+  performance_status_master performance_status_master @relation(fields: [performance_status_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_perf_status_master")
 
   @@index([encounter_no], map: "idx_encounter_perf_status_encounter")
 }
@@ -1248,9 +1248,9 @@ model encounter_symptom {
   recorded_by    String?        @db.VarChar(100)
   recorded_at    DateTime       @default(now()) @db.Timestamp(6)
   updated_at     DateTime       @default(now()) @db.Timestamp(6)
-  encounter      encounter      @relation(fields: [encounter_no], references: [encounter_no])
-  employees      employees?     @relation(fields: [recorded_by], references: [employee_id], onDelete: Restrict)
-  symptom_master symptom_master @relation(fields: [symptom_id], references: [id], map: "fk_encounter_symptom_master")
+  encounter      encounter      @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction)
+  employees      employees?     @relation(fields: [recorded_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
+  symptom_master symptom_master @relation(fields: [symptom_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_symptom_master")
 
   @@unique([encounter_no, symptom_id, status], map: "uq_encounter_symptom_active")
   @@index([encounter_no], map: "idx_encounter_symptom_encounter")
@@ -1314,7 +1314,7 @@ model ihc_results {
   created_at              DateTime?               @default(now()) @db.Timestamp(6)
   updated_at              DateTime?               @default(now()) @db.Timestamp(6)
   mlh1_methylation        String?                 @db.VarChar(100)
-  oncology_staging_detail oncology_staging_detail @relation(fields: [staging_detail_id], references: [staging_detail_id], onDelete: Cascade, map: "fk_ihc_staging_detail")
+  oncology_staging_detail oncology_staging_detail @relation(fields: [staging_detail_id], references: [staging_detail_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ihc_staging_detail")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1357,17 +1357,17 @@ model lab_history {
   sample_collection_id         String               @db.VarChar(100)
   lab_result_id                String?              @db.VarChar(100)
   lab_report_id                String?              @db.VarChar(100)
-  appointment_history          appointment_history? @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade, map: "fk_lab_appointment")
-  branch                       branch?              @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_lab_branch")
-  department_master            department_master?   @relation(fields: [department_id], references: [department_id], onDelete: Cascade, map: "fk_lab_department")
-  lab_order                    lab_order            @relation(fields: [lab_order_id], references: [lab_order_id], onDelete: Cascade, map: "fk_lab_history_order")
-  lab_order_item               lab_order_item       @relation(fields: [lab_order_item_id], references: [lab_order_item_id], onDelete: Cascade, map: "fk_lab_history_order_item")
-  lab_report                   lab_report?          @relation(fields: [lab_report_id], references: [lab_report_id], onDelete: Cascade, map: "fk_lab_history_report")
-  lab_result                   lab_result?          @relation(fields: [lab_result_id], references: [lab_result_id], onDelete: Cascade, map: "fk_lab_history_result")
-  sample_collection            sample_collection    @relation(fields: [sample_collection_id], references: [sample_collection_id], onDelete: Cascade, map: "fk_lab_history_sample")
-  patient_history              patient_history?     @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: Cascade, map: "fk_lab_patient_history")
-  user_table                   user_table?          @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_lab_user")
-  employees                    employees?           @relation(fields: [employee_id], references: [employee_id], onDelete: Cascade)
+  appointment_history          appointment_history? @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_appointment")
+  branch                       branch?              @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_branch")
+  department_master            department_master?   @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_department")
+  employees                    employees?           @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
+  lab_order                    lab_order            @relation(fields: [lab_order_id], references: [lab_order_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_history_order")
+  lab_order_item               lab_order_item       @relation(fields: [lab_order_item_id], references: [lab_order_item_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_history_order_item")
+  lab_report                   lab_report?          @relation(fields: [lab_report_id], references: [lab_report_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_history_report")
+  lab_result                   lab_result?          @relation(fields: [lab_result_id], references: [lab_result_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_history_result")
+  patient_history              patient_history?     @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_patient_history")
+  sample_collection            sample_collection    @relation(fields: [sample_collection_id], references: [sample_collection_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_history_sample")
+  user_table                   user_table?          @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_user")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1389,12 +1389,12 @@ model lab_order {
   patient_history_id    String?              @db.VarChar
   lab_description       String?              @db.VarChar
   lab_history           lab_history[]
-  appointment_history   appointment_history? @relation(fields: [appointment_id], references: [appointment_id], onDelete: Cascade, map: "fk_lab_order_appointment")
-  branch                branch?              @relation(fields: [branch_id], references: [branch_id], onDelete: Restrict, map: "fk_lab_order_branch")
-  department_master     department_master?   @relation(fields: [department_id], references: [department_id], onDelete: Restrict, map: "fk_lab_order_department")
-  employees             employees            @relation(fields: [doctor_employee_id], references: [employee_id], map: "fk_lab_order_doctor")
-  user_table            user_table?          @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_lab_order_user")
+  appointment_history   appointment_history? @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_order_appointment")
+  branch                branch?              @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_order_branch")
+  department_master     department_master?   @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_order_department")
+  employees             employees            @relation(fields: [doctor_employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_order_doctor")
   patient_history       patient_history?     @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: NoAction, onUpdate: NoAction)
+  user_table            user_table?          @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_order_user")
   lab_order_item        lab_order_item[]
   lab_report            lab_report[]
 }
@@ -1416,10 +1416,10 @@ model lab_order_item {
   branch_id         String?             @db.VarChar(100)
   user_id           String?             @db.VarChar(100)
   lab_history       lab_history[]
-  branch            branch?             @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_lab_order_item_branch")
-  lab_order         lab_order           @relation(fields: [lab_order_id], references: [lab_order_id], onDelete: Cascade, map: "fk_lab_order_item_order")
-  lab_test_master   lab_test_master     @relation(fields: [lab_test_id], references: [lab_test_id], map: "fk_lab_order_item_test")
-  user_table        user_table?         @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_lab_order_item_user")
+  branch            branch?             @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_order_item_branch")
+  lab_order         lab_order           @relation(fields: [lab_order_id], references: [lab_order_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_order_item_order")
+  lab_test_master   lab_test_master     @relation(fields: [lab_test_id], references: [lab_test_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_order_item_test")
+  user_table        user_table?         @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_order_item_user")
   lab_result        lab_result[]
   sample_collection sample_collection[]
 }
@@ -1444,10 +1444,10 @@ model lab_report {
   created_at         DateTime?     @default(now()) @db.Timestamp(6)
   updated_at         DateTime?     @default(now()) @db.Timestamp(6)
   lab_history        lab_history[]
-  branch             branch?       @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_lab_report_branch")
-  employees          employees?    @relation(fields: [approved_by], references: [employee_id], onDelete: Restrict, map: "fk_lab_report_employee")
-  lab_order          lab_order     @relation(fields: [lab_order_id], references: [lab_order_id], onDelete: Cascade, map: "fk_lab_report_order")
-  user_table         user_table?   @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_lab_report_user")
+  employees          employees?    @relation(fields: [approved_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_report_employee")
+  branch             branch?       @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_report_branch")
+  lab_order          lab_order     @relation(fields: [lab_order_id], references: [lab_order_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_report_order")
+  user_table         user_table?   @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_report_user")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1468,11 +1468,11 @@ model lab_result {
   created_at           DateTime?         @default(now()) @db.Timestamp(6)
   updated_at           DateTime?         @default(now()) @db.Timestamp(6)
   lab_history          lab_history[]
-  branch               branch?           @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, map: "fk_lab_result_branch")
-  employees            employees?        @relation(fields: [verified_by], references: [employee_id], onDelete: Restrict, map: "fk_lab_result_employee")
-  lab_order_item       lab_order_item    @relation(fields: [lab_order_item_id], references: [lab_order_item_id], onDelete: Cascade, map: "fk_lab_result_order_item")
-  sample_collection    sample_collection @relation(fields: [sample_collection_id], references: [sample_collection_id], onDelete: Cascade, map: "fk_lab_result_sample")
-  user_table           user_table?       @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "fk_lab_result_user")
+  branch               branch?           @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_result_branch")
+  lab_order_item       lab_order_item    @relation(fields: [lab_order_item_id], references: [lab_order_item_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_result_order_item")
+  sample_collection    sample_collection @relation(fields: [sample_collection_id], references: [sample_collection_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_result_sample")
+  user_table           user_table?       @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_result_user")
+  employees            employees?        @relation(fields: [verified_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_result_employee")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1719,7 +1719,7 @@ model patient_allergy {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model patient_bio_data {
   id                             BigInt                         @id @default(autoincrement())
-  patient_id                     String                         @unique @db.VarChar(100)
+  patient_id                     String?                        @unique @db.VarChar(100)
   user_id                        String?                        @db.VarChar(100)
   branch_id                      String?                        @db.VarChar(100)
   patient_first_name             String                         @db.VarChar(100)
@@ -1745,6 +1745,10 @@ model patient_bio_data {
   Patient_Emergency_contact_name String?                        @db.VarChar
   Emergency_contact_relation     String?                        @db.VarChar
   Patient_emergency_mobile       String?                        @db.VarChar
+  referred_by                    String?                        @db.VarChar
+  referral_contact               String?                        @db.VarChar
+  referral_type                  String?                        @db.VarChar
+  referral_notes                 String?                        @db.VarChar
   appointment_history            appointment_history[]
   appointment_reschedule_queue   appointment_reschedule_queue[]
   chemotherapy_plan              chemotherapy_plan[]
@@ -1918,6 +1922,8 @@ model prescription_items {
   afternoon            Boolean?        @default(false)
   night                Boolean?        @default(false)
   instruction          String?
+  drug_role            String?         @db.VarChar(100)
+  drug_type            String?         @db.VarChar(100)
   medicine_master      medicine_master @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_prescription_items_medicine")
   prescription         prescription    @relation(fields: [prescription_id], references: [prescription_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_prescription_items_prescription")
 }
@@ -2075,6 +2081,25 @@ model user_table {
   user_branch_mapping                                user_branch_mapping[]
   user_log                                           user_log[]
   branch                                             branch?                   @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_user_branch")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model referral {
+  id               BigInt    @id @default(autoincrement())
+  referral_id      String?   @db.VarChar(100)
+  referral_type    String?   @db.VarChar(100)
+  referral_by      String?   @db.VarChar(100)
+  referral_contact String?   @db.VarChar(100)
+  referral_notes   String?
+  created_at       DateTime? @default(now()) @db.Timestamp(6)
+  updated_at       DateTime? @default(now()) @db.Timestamp(6)
+  created_by       String?   @db.VarChar(100)
+  updated_by       String?   @db.VarChar(100)
+  patient_id       String?   @unique @db.VarChar
+
+  @@index([referral_by], map: "idx_referral_by")
+  @@index([created_at], map: "idx_referral_created_at")
+  @@index([referral_type], map: "idx_referral_type")
 }
 
 enum DoctorScheduleChangeMode {

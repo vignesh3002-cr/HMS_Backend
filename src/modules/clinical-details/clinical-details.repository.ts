@@ -174,6 +174,28 @@ export class ClinicalDetailsRepository {
         return count > 0;
     }
 
+    async findSymptomByName(name: string) {
+        return prisma.symptom_master.findFirst({
+            where: { name: { equals: name, mode: 'insensitive' } },
+        });
+    }
+
+    async findAllergyBySubstanceName(substanceName: string) {
+        return prisma.allergy_master.findFirst({
+            where: { substance_name: { equals: substanceName, mode: 'insensitive' } },
+        });
+    }
+
+    async findDiagnosisByName(diagnosisName: string) {
+        return prisma.diagnosis.findFirst({
+            where: { diagnosis_name: { equals: diagnosisName, mode: 'insensitive' } },
+        });
+    }
+
+    async createDiagnosis(data: Prisma.diagnosisUncheckedCreateInput) {
+        return prisma.diagnosis.create({ data });
+    }
+
     async findEncounterByNo(encounterNo: string) {
         return prisma.encounter.findUnique({
             where: { encounter_no: encounterNo },

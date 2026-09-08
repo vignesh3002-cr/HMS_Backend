@@ -9,6 +9,7 @@ const controller = new prescription_controller_1.PrescriptionController();
 router.post("/", auth_middleware_1.authenticate, prescription_validation_1.createPrescriptionValidation, controller.createPrescription.bind(controller));
 router.get("/", auth_middleware_1.authenticate, prescription_validation_1.getPrescriptionsValidation, controller.getPrescriptions.bind(controller));
 router.get("/patient-history/:patientHistoryId", auth_middleware_1.authenticate, prescription_validation_1.getPrescriptionsByPatientHistoryIdValidation, controller.getPrescriptionsByPatientHistoryId.bind(controller));
+router.get("/patient/:patientId", auth_middleware_1.authenticate, prescription_validation_1.getPrescriptionsByPatientIdValidation, controller.getPrescriptionsByPatientId.bind(controller));
 router.get("/suggestions/:diagnosisId", auth_middleware_1.authenticate, prescription_validation_1.getSuggestedMedicinesValidation, controller.getSuggestedMedicines.bind(controller));
 router.get("/:prescriptionId/items", auth_middleware_1.authenticate, prescription_validation_1.getPrescriptionItemsValidation, controller.getPrescriptionItems.bind(controller));
 router.post("/:prescriptionId/items", auth_middleware_1.authenticate, prescription_validation_1.addPrescriptionItemValidation, controller.addPrescriptionItem.bind(controller));

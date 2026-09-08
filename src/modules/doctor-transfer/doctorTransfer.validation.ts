@@ -115,6 +115,12 @@ export const initiateTransferValidation = [
         .optional()
         .isInt({ min: 1 })
         .withMessage("schedule_change.change_id must be a positive integer"),
+
+    body("schedule_change.consultation_minutes")
+        .optional()
+        .isInt({ min: 1 })
+        .withMessage("schedule_change.consultation_minutes must be a positive integer"),
+
     body("consultation_minutes")
         .optional()
         .isInt({ min: 1 })

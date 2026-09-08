@@ -116,7 +116,6 @@ export class DiagnosisController {
             }
 
             const query = {
-                cancerTypeId: req.query.cancerTypeId as string,
                 cancerSubtypeId: req.query.cancerSubtypeId as string | undefined,
                 search: req.query.search as string,
                 activeOnly: req.query.activeOnly === "true",

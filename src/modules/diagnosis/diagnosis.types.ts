@@ -27,7 +27,6 @@ export interface GetDiagnosesByCategoryQuery {
 }
 
 export interface GetDiagnosesByCancerQuery {
-    cancerTypeId: string;
     cancerSubtypeId?: string;
     search?: string;
     activeOnly?: boolean;

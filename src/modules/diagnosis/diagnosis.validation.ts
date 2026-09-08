@@ -54,11 +54,6 @@ export const getDiagnosisByIdValidation = [
 ];
 
 export const getDiagnosesByCancerValidation = [
-    query("cancerTypeId")
-        .notEmpty()
-        .withMessage("cancerTypeId is required")
-        .isString()
-        .withMessage("cancerTypeId must be a string"),
     query("cancerSubtypeId")
         .optional()
         .isString()

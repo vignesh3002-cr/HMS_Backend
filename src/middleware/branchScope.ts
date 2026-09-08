@@ -37,6 +37,16 @@ export const branchScope: RequestHandler = async (req, res, next) => {
         const role = String(user.role ?? "").toLowerCase();
 
         if (UNRESTRICTED_ROLES.some((r) => r.toLowerCase() === role)) {
+            // Top-level admins may view any branch; if one was requested via
+            // the query param or x-branch-id header, honor it so the branch
+            // dropdown actually filters the list. "All Branches" (no branch)
+            // is left unfiltered.
+            const requested =
+                (req.query.branchId as string | undefined) ??
+                (req.headers["x-branch-id"] as string | undefined);
+            if (requested) {
+                req.query.branchId = requested;
+            }
             return next();
         }
 
@@ -80,6 +90,10 @@ export const branchScope: RequestHandler = async (req, res, next) => {
                         message: "Forbidden. You don't have access to this branch.",
                     });
                 }
+                // Propagate the validated branch into the query param so
+                // downstream req.query.branchId consumers (employee/patient
+                // repositories) actually filter by it.
+                req.query.branchId = requestedBranchId;
                 return next();
             }
             // Single branch - auto-assign
@@ -96,6 +110,9 @@ export const branchScope: RequestHandler = async (req, res, next) => {
                 });
             }
 
+            // Propagate the validated branch into the query param so
+            // downstream req.query.branchId consumers actually filter by it.
+            req.query.branchId = requestedBranchId;
             return next();
         }
 

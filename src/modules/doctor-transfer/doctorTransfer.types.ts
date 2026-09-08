@@ -26,6 +26,10 @@ export interface ScheduleChangeRequestDto {
     // Required for UPDATE / DELETE - targets an active doctor_schedule_change.
     change_id?: number;
 
+    // Optional per-change consultation length (minutes). Carried through to
+    // doctor_schedule_change.consultation_minutes for ADD / OVERRIDE.
+    consultation_minutes?: number;
+
 }
 export interface InitiateTransferDto {
 

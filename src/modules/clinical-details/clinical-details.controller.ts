@@ -290,6 +290,90 @@ export class ClinicalDetailsController {
         }
     }
 
+    async createCustomSymptom(req: Request, res: Response) {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array(),
+                });
+            }
+
+            const createdBy = getEmployeeIdentifier(req) ?? getUserIdentifier(req);
+            const symptom = await service.createCustomSymptom(req.body, createdBy);
+
+            return res.status(201).json({
+                success: true,
+                message: 'Symptom created successfully',
+                data: symptom,
+            });
+        } catch (error: any) {
+            const status = error.message.includes('already') ? 409 : 400;
+            return res.status(status).json({
+                success: false,
+                message: error.message,
+            });
+        }
+    }
+
+    async createCustomAllergy(req: Request, res: Response) {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array(),
+                });
+            }
+
+            const createdBy = getEmployeeIdentifier(req) ?? getUserIdentifier(req);
+            const allergy = await service.createCustomAllergy(req.body, createdBy);
+
+            return res.status(201).json({
+                success: true,
+                message: 'Allergy created successfully',
+                data: allergy,
+            });
+        } catch (error: any) {
+            const status = error.message.includes('already') ? 409 : 400;
+            return res.status(status).json({
+                success: false,
+                message: error.message,
+            });
+        }
+    }
+
+    async createCustomComorbidity(req: Request, res: Response) {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array(),
+                });
+            }
+
+            const createdBy = getEmployeeIdentifier(req) ?? getUserIdentifier(req);
+            const comorbidity = await service.createCustomComorbidity(req.body, createdBy);
+
+            return res.status(201).json({
+                success: true,
+                message: 'Comorbidity created successfully',
+                data: comorbidity,
+            });
+        } catch (error: any) {
+            const status = error.message.includes('already') ? 409 : 400;
+            return res.status(status).json({
+                success: false,
+                message: error.message,
+            });
+        }
+    }
+
     async setEncounterPerformanceStatus(req: Request, res: Response) {
         try {
             const errors = validationResult(req);

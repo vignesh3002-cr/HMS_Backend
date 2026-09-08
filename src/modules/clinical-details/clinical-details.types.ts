@@ -113,6 +113,22 @@ export interface UpdatePatientComorbidityDTO {
     updatedBy?: string;
 }
 
+export interface CreateCustomSymptomDTO {
+    name: string;
+}
+
+export interface CreateCustomAllergyDTO {
+    substanceName: string;
+}
+
+export interface CreateCustomComorbidityDTO {
+    diagnosisName: string;
+    diagnosisCatogoryId?: string;
+    diagnosisCategory?: string;
+    icdCode?: string;
+    createdBy?: string;
+}
+
 export interface ClinicalDetailsQuery {
     page?: number;
     limit?: number;

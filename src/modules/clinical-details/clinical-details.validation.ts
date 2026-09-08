@@ -435,3 +435,42 @@ export const getMasterListValidation = [
         .isBoolean()
         .withMessage('isActive must be a boolean'),
 ];
+
+export const createCustomSymptomValidation = [
+    body('name')
+        .trim()
+        .notEmpty()
+        .withMessage('Symptom name is required')
+        .isLength({ max: 150 })
+        .withMessage('Symptom name must not exceed 150 characters'),
+];
+
+export const createCustomAllergyValidation = [
+    body('substanceName')
+        .trim()
+        .notEmpty()
+        .withMessage('Substance name is required')
+        .isLength({ max: 150 })
+        .withMessage('Substance name must not exceed 150 characters'),
+];
+
+export const createCustomComorbidityValidation = [
+    body('diagnosisName')
+        .trim()
+        .notEmpty()
+        .withMessage('Diagnosis name is required')
+        .isLength({ max: 100 })
+        .withMessage('Diagnosis name must not exceed 100 characters'),
+    body('diagnosisCatogoryId')
+        .optional()
+        .isLength({ max: 100 })
+        .withMessage('Invalid diagnosis category'),
+    body('diagnosisCategory')
+        .optional()
+        .isLength({ max: 100 })
+        .withMessage('Invalid diagnosis category name'),
+    body('icdCode')
+        .optional()
+        .isLength({ max: 100 })
+        .withMessage('ICD code must not exceed 100 characters'),
+];

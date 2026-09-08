@@ -2,7 +2,6 @@ import { Router } from "express";
 import { ChemotherapyController } from "./chemotherapy.controller";
 import { authenticate } from "../auth/auth.middleware";
 import { authorize } from "../../middleware/authorize";
-import { branchScope } from "../../middleware/branchScope";
 import {
     previewPlanValidation,
     createPlanValidation,
@@ -26,6 +25,10 @@ import {
     createRegimenProtocolValidation,
     updateRegimenProtocolValidation,
     addRegimenProtocolItemValidation,
+    updateRegimenProtocolItemValidation,
+    addDischargeInstructionValidation,
+    updateDischargeInstructionValidation,
+    removeDischargeInstructionValidation,
     personalizeRegimenProtocolValidation,
     updatePersonalizedProtocolValidation,
     addPersonalizedProtocolItemValidation,
@@ -182,6 +185,14 @@ router.post(
 );
 
 router.get(
+    "/regimen-protocols/:protocolId/discharge-medicines",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    getRegimenProtocolValidation,
+    controller.getDischargeMedicinesForProtocol.bind(controller)
+);
+
+router.get(
     "/regimen-protocols/:protocolId",
     authenticate,
     authorize("chemo.protocol.read"),
@@ -195,6 +206,41 @@ router.get(
     authorize("chemo.protocol.read"),
     getRegimenProtocolValidation,
     controller.getDischargeMedicinesForProtocol.bind(controller)
+);
+
+router.get(
+    "/medicines",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    controller.listAllActiveMedicines.bind(controller)
+);
+
+router.get(
+    "/medicines/dilution-medicines",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    controller.listDilutionMedicines.bind(controller)
+);
+
+router.get(
+    "/medicines/by-cancer-subtype",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    controller.getMedicinesByCancerTypeAndSubtype.bind(controller)
+);
+
+router.get(
+    "/medicines/by-role",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    controller.listMedicinesByDrugRole.bind(controller)
+);
+
+router.get(
+    "/protocol-field-options",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    controller.getProtocolFieldOptions.bind(controller)
 );
 
 router.post(
@@ -221,11 +267,43 @@ router.post(
     controller.addRegimenProtocolItem.bind(controller)
 );
 
+router.put(
+    "/regimen-protocols/:protocolId/items/:protocolItemId",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    updateRegimenProtocolItemValidation,
+    controller.updateRegimenProtocolItem.bind(controller)
+);
+
 router.delete(
     "/regimen-protocols/:protocolId/items/:protocolItemId",
     authenticate,
     authorize("chemo.protocol.manage"),
     controller.removeRegimenProtocolItem.bind(controller)
+);
+
+router.post(
+    "/regimen-protocols/:protocolId/discharge-instructions",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    addDischargeInstructionValidation,
+    controller.addDischargeInstruction.bind(controller)
+);
+
+router.put(
+    "/regimen-protocols/:protocolId/discharge-instructions/:dischargeInstructionId",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    updateDischargeInstructionValidation,
+    controller.updateDischargeInstruction.bind(controller)
+);
+
+router.delete(
+    "/regimen-protocols/:protocolId/discharge-instructions/:dischargeInstructionId",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    removeDischargeInstructionValidation,
+    controller.removeDischargeInstruction.bind(controller)
 );
 
 // ---------------- Plan ----------------
@@ -250,7 +328,6 @@ router.get(
     "/plans",
     authenticate,
     authorize("chemo.plan.read"),
-    branchScope,
     listPlansValidation,
     controller.listPlans.bind(controller)
 );
@@ -442,5 +519,7 @@ router.get(
     cycleIdParamValidation,
     controller.listFollowups.bind(controller)
 );
+
+
 
 export default router;
