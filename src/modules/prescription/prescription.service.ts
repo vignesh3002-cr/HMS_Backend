@@ -114,6 +114,15 @@ export class PrescriptionService {
             resolved_quantity: computeQuantity(item)
         }));
 
+        // Resolve drug_role/drug_type for each medicine from the patient's
+        // chemotherapy plan (derived server-side). Falls back to PRIMARY/null
+        // when no plan entry exists (e.g. non-chemo OPD prescriptions).
+        const drugMetadata = await repository.findDrugMetadata(
+            data.encounter_no,
+            encounter.patient_id,
+            data.medicines.map((item) => item.medicine_id)
+        );
+
         const diagnosisId = data.diagnosis_id ?? encounter.diagnosis_id ?? undefined;
 
         if (diagnosisId) {
@@ -183,23 +192,28 @@ export class PrescriptionService {
 
             await repository.createPrescriptionItems(
                 tx,
-                resolvedItems.map((item, index) => ({
-                    prescription_item_id: itemIds[index],
-                    prescription_id: prescription.prescription_id,
-                    medicine_id: item.medicine_id,
-                    dosage: item.dosage,
-                    unit: item.unit,
-                    route: item.resolved_route,
-                    frequency: item.frequency,
-                    before_after_food: item.before_after_food,
-                    morning: item.morning ?? false,
-                    afternoon: item.afternoon ?? false,
-                    night: item.night ?? false,
-                    days: item.days,
-                    duration: item.duration,
-                    quantity: item.resolved_quantity,
-                    instruction: item.instruction
-                }))
+                resolvedItems.map((item, index) => {
+                    const meta = drugMetadata.get(item.medicine_id);
+                    return {
+                        prescription_item_id: itemIds[index],
+                        prescription_id: prescription.prescription_id,
+                        medicine_id: item.medicine_id,
+                        dosage: item.dosage,
+                        unit: item.unit,
+                        route: item.resolved_route,
+                        frequency: item.frequency,
+                        before_after_food: item.before_after_food,
+                        morning: item.morning ?? false,
+                        afternoon: item.afternoon ?? false,
+                        night: item.night ?? false,
+                        days: item.days,
+                        duration: item.duration,
+                        quantity: item.resolved_quantity,
+                        instruction: item.instruction,
+                        drug_role: meta?.drug_role ?? item.drug_role ?? "PRIMARY",
+                        drug_type: meta?.drug_type ?? item.drug_type ?? null
+                    };
+                })
             );
 
             return prescription.prescription_id;
@@ -353,6 +367,14 @@ export class PrescriptionService {
 
         const quantity = computeQuantity(data);
 
+        const drugMetadata = await repository.findDrugMetadata(
+            "",
+            existing.patient_history?.patient_bio_data?.patient_id ?? "",
+            [data.medicine_id]
+        );
+
+        const meta = drugMetadata.get(data.medicine_id);
+
         return prisma.$transaction(async (tx) => {
 
             const itemId = await repository.generatePrescriptionItemId(tx);
@@ -372,7 +394,9 @@ export class PrescriptionService {
                 days: data.days,
                 duration: data.duration,
                 quantity,
-                instruction: data.instruction
+                instruction: data.instruction,
+                drug_role: meta?.drug_role ?? data.drug_role ?? "PRIMARY",
+                drug_type: meta?.drug_type ?? data.drug_type ?? null
             });
 
         });
@@ -425,6 +449,16 @@ export class PrescriptionService {
             days: data.days ?? item.days ?? undefined
         }) ?? item.quantity ?? undefined;
 
+        const targetMedicineId = data.medicine_id ?? item.medicine_id;
+
+        const drugMetadata = await repository.findDrugMetadata(
+            "",
+            existing.patient_history?.patient_bio_data?.patient_id ?? "",
+            [targetMedicineId]
+        );
+
+        const meta = drugMetadata.get(targetMedicineId);
+
         return repository.updatePrescriptionItem(itemId, {
             medicine_id: data.medicine_id,
             dosage: data.dosage,
@@ -438,7 +472,9 @@ export class PrescriptionService {
             days: data.days,
             duration: data.duration,
             quantity,
-            instruction: data.instruction
+            instruction: data.instruction,
+            drug_role: meta?.drug_role ?? data.drug_role ?? item.drug_role ?? "PRIMARY",
+            drug_type: meta?.drug_type ?? data.drug_type ?? item.drug_type ?? null
         });
 
     }

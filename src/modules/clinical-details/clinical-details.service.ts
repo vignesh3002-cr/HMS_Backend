@@ -13,13 +13,25 @@ import {
     UpdatePatientAllergyDTO,
     PatientComorbidityDTO,
     UpdatePatientComorbidityDTO,
+    CreateCustomSymptomDTO,
+    CreateCustomAllergyDTO,
+    CreateCustomComorbidityDTO,
     GetClinicalDetailsResponse,
     ClinicalDetailsQuery,
 } from './clinical-details.types';
-import { PERFORMANCE_STATUS_CODES, SYMPTOM_SEVERITY, ALLERGY_SEVERITY, ALLERGY_STATUS, COMORBIDITY_STATUS, ENCOUNTER_SYMPTOM_STATUS } from './clinical-details.constants';
+import { SYMPTOM_CATEGORIES, ALLERGY_TYPES, PERFORMANCE_STATUS_CODES, SYMPTOM_SEVERITY, ALLERGY_SEVERITY, ALLERGY_STATUS, COMORBIDITY_STATUS, ENCOUNTER_SYMPTOM_STATUS } from './clinical-details.constants';
 import prisma from '../../config/prisma';
 
 const repository = new ClinicalDetailsRepository();
+
+function randomToken(length = 6): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
 
 export class ClinicalDetailsService {
     async createPerformanceStatus(data: PerformanceStatusMasterDTO) {
@@ -158,6 +170,95 @@ export class ClinicalDetailsService {
 
     async getAllergies(query: ClinicalDetailsQuery & { substanceType?: string }) {
         return repository.getAllergies(query);
+    }
+
+    async createCustomSymptom(data: CreateCustomSymptomDTO, createdBy?: string) {
+        const name = data.name.trim();
+        if (!name) {
+            throw new Error('Symptom name is required');
+        }
+
+        const existing = await repository.findSymptomByName(name);
+        if (existing) {
+            throw new Error('Symptom already exists');
+        }
+
+        let code = `SYM_${randomToken()}`;
+        while (await repository.findSymptomByCode(code)) {
+            code = `SYM_${randomToken()}`;
+        }
+
+        return repository.createSymptom({
+            code,
+            name,
+            category: SYMPTOM_CATEGORIES.OTHER,
+            is_active: true,
+            created_by: createdBy,
+            updated_by: createdBy,
+        });
+    }
+
+    async createCustomAllergy(data: CreateCustomAllergyDTO, createdBy?: string) {
+        const substanceName = data.substanceName.trim();
+        if (!substanceName) {
+            throw new Error('Substance name is required');
+        }
+
+        const existing = await repository.findAllergyBySubstanceName(substanceName);
+        if (existing) {
+            throw new Error('Allergy already exists');
+        }
+
+        let code = `ALL_${randomToken()}`;
+        while (await repository.findAllergyByCode(code)) {
+            code = `ALL_${randomToken()}`;
+        }
+
+        return repository.createAllergy({
+            code,
+            substance_name: substanceName,
+            substance_type: ALLERGY_TYPES.OTHER,
+            is_active: true,
+            created_by: createdBy,
+            updated_by: createdBy,
+        });
+    }
+
+    async createCustomComorbidity(data: CreateCustomComorbidityDTO, createdBy?: string) {
+        const diagnosisName = data.diagnosisName.trim();
+        if (!diagnosisName) {
+            throw new Error('Diagnosis name is required');
+        }
+
+        const existing = await repository.findDiagnosisByName(diagnosisName);
+        if (existing) {
+            throw new Error('Comorbidity already exists');
+        }
+
+        let diagnosisId = `DIS${Date.now()}${randomToken(4)}`;
+        while (await prisma.diagnosis.findUnique({ where: { diagnosis_id: diagnosisId } })) {
+            diagnosisId = `DIS${Date.now()}${randomToken(4)}`;
+        }
+
+        const diagnosis = await repository.createDiagnosis({
+            diagnosis_id: diagnosisId,
+            diagnosis_name: diagnosisName,
+            icd_code: data.icdCode || null,
+            diagnosis_catogory_id: data.diagnosisCatogoryId || null,
+            diagnosis_category: data.diagnosisCategory || null,
+            active_status: 1,
+            created_by: createdBy,
+            created_at: new Date(),
+        });
+
+        return {
+            diagnosis_id: diagnosis.diagnosis_id,
+            diagnosis_name: diagnosis.diagnosis_name,
+            icd_code: diagnosis.icd_code,
+            diagnosis_description: diagnosis.diagnosis_description,
+            diagnosis_catogory_id: diagnosis.diagnosis_catogory_id,
+            diagnosis_category: diagnosis.diagnosis_category,
+        };
     }
 
     async setEncounterPerformanceStatus(data: EncounterPerformanceStatusDTO, assessedBy: string | null) {

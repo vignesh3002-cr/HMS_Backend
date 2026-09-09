@@ -5,6 +5,7 @@ import {
     DiagnosisItem,
     GetDiagnosisCategoriesQuery,
     GetDiagnosesByCategoryQuery,
+    GetDiagnosesByCancerQuery,
 } from "./diagnosis.types";
 
 export class DiagnosisRepository {
@@ -144,5 +145,37 @@ export class DiagnosisRepository {
                 created_at: true,
             },
         });
+    }
+
+    async getDiagnosesByCancer(query: GetDiagnosesByCancerQuery) {
+        const { cancerSubtypeId } = query;
+
+        const subtype = await prisma.cancer_subtypes.findUnique({
+            where: { subtype_id: cancerSubtypeId as string },
+            select: {
+                subtype_id: true,
+                subtype_name: true,
+                diagnosis: {
+                    select: {
+                        diagnosis_id: true,
+                        diagnosis_name: true,
+                    },
+                },
+            },
+        });
+
+        if (!subtype?.diagnosis) {
+            return {
+                cancerSubtypeName: subtype?.subtype_name ?? null,
+                diagnosis_id: null,
+                diagnosis_name: null,
+            };
+        }
+
+        return {
+            cancerSubtypeName: subtype.subtype_name,
+            diagnosis_id: subtype.diagnosis.diagnosis_id,
+            diagnosis_name: subtype.diagnosis.diagnosis_name,
+        };
     }
 }

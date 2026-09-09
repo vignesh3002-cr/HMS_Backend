@@ -25,3 +25,11 @@ export interface GetDiagnosesByCategoryQuery {
     page?: number;
     limit?: number;
 }
+
+export interface GetDiagnosesByCancerQuery {
+    cancerSubtypeId?: string;
+    search?: string;
+    activeOnly?: boolean;
+    page?: number;
+    limit?: number;
+}

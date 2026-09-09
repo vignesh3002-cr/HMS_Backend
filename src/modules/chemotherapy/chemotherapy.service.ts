@@ -2296,7 +2296,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             throw new Error("The staging detail does not belong to this patient");
         }
 
-       {/* const diagnosis = await this.repository.findDiagnosisById(dto.diagnosis_id);
+        {/*const diagnosis = await this.repository.findDiagnosisById(dto.diagnosis_id);
 
         if (!diagnosis) {
             throw new Error("Diagnosis not found");
@@ -2450,6 +2450,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                     branch_id: dto.branch_id,
                     department_id: dto.department_id,
                     employee_id: dto.employee_id,
+                    diagnosis_id: null!,
                 });
 
             }
@@ -3484,3 +3485,4 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
     }
 
 }
+

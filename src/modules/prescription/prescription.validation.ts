@@ -18,7 +18,9 @@ const medicineItemValidation = (prefix: string) => {
         body(field("days")).optional().isInt({ min: 1 }),
         body(field("duration")).optional().isString(),
         body(field("quantity")).optional().isInt({ min: 1 }),
-        body(field("instruction")).optional().isString()
+        body(field("instruction")).optional().isString(),
+        body(field("drug_role")).optional().isString(),
+        body(field("drug_type")).optional().isString()
     ];
 
 };
@@ -99,7 +101,9 @@ export const updatePrescriptionItemValidation = [
     body("days").optional().isInt({ min: 1 }),
     body("duration").optional().isString(),
     body("quantity").optional().isInt({ min: 1 }),
-    body("instruction").optional().isString()
+    body("instruction").optional().isString(),
+    body("drug_role").optional().isString(),
+    body("drug_type").optional().isString()
 
 ];
 

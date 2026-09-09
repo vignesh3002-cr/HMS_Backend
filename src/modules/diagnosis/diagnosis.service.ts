@@ -2,6 +2,7 @@ import { DiagnosisRepository } from "./diagnosis.repository";
 import {
     GetDiagnosisCategoriesQuery,
     GetDiagnosesByCategoryQuery,
+    GetDiagnosesByCancerQuery,
 } from "./diagnosis.types";
 
 const repository = new DiagnosisRepository();
@@ -21,5 +22,9 @@ export class DiagnosisService {
             throw new Error("Diagnosis not found");
         }
         return diagnosis;
+    }
+
+    async getDiagnosesByCancer(query: GetDiagnosesByCancerQuery) {
+        return repository.getDiagnosesByCancer(query);
     }
 }

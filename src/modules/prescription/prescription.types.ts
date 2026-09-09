@@ -12,6 +12,8 @@ export interface MedicineItemDto {
     duration?: string;
     quantity?: number;
     instruction?: string;
+    drug_role?: string;
+    drug_type?: string;
 }
 
 export interface CreatePrescriptionDto {
@@ -50,6 +52,8 @@ export interface UpdatePrescriptionItemDto {
     duration?: string;
     quantity?: number;
     instruction?: string;
+    drug_role?: string;
+    drug_type?: string;
 }
 
 export interface GetPrescriptionsQuery {
