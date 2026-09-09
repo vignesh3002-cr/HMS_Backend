@@ -8,6 +8,14 @@ const clinical_details_repository_1 = require("./clinical-details.repository");
 const clinical_details_constants_1 = require("./clinical-details.constants");
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const repository = new clinical_details_repository_1.ClinicalDetailsRepository();
+function randomToken(length = 6) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
 class ClinicalDetailsService {
     async createPerformanceStatus(data) {
         if (!Object.values(clinical_details_constants_1.PERFORMANCE_STATUS_CODES).includes(data.code)) {
@@ -127,6 +135,82 @@ class ClinicalDetailsService {
     }
     async getAllergies(query) {
         return repository.getAllergies(query);
+    }
+    async createCustomSymptom(data, createdBy) {
+        const name = data.name.trim();
+        if (!name) {
+            throw new Error('Symptom name is required');
+        }
+        const existing = await repository.findSymptomByName(name);
+        if (existing) {
+            throw new Error('Symptom already exists');
+        }
+        let code = `SYM_${randomToken()}`;
+        while (await repository.findSymptomByCode(code)) {
+            code = `SYM_${randomToken()}`;
+        }
+        return repository.createSymptom({
+            code,
+            name,
+            category: clinical_details_constants_1.SYMPTOM_CATEGORIES.OTHER,
+            is_active: true,
+            created_by: createdBy,
+            updated_by: createdBy,
+        });
+    }
+    async createCustomAllergy(data, createdBy) {
+        const substanceName = data.substanceName.trim();
+        if (!substanceName) {
+            throw new Error('Substance name is required');
+        }
+        const existing = await repository.findAllergyBySubstanceName(substanceName);
+        if (existing) {
+            throw new Error('Allergy already exists');
+        }
+        let code = `ALL_${randomToken()}`;
+        while (await repository.findAllergyByCode(code)) {
+            code = `ALL_${randomToken()}`;
+        }
+        return repository.createAllergy({
+            code,
+            substance_name: substanceName,
+            substance_type: clinical_details_constants_1.ALLERGY_TYPES.OTHER,
+            is_active: true,
+            created_by: createdBy,
+            updated_by: createdBy,
+        });
+    }
+    async createCustomComorbidity(data, createdBy) {
+        const diagnosisName = data.diagnosisName.trim();
+        if (!diagnosisName) {
+            throw new Error('Diagnosis name is required');
+        }
+        const existing = await repository.findDiagnosisByName(diagnosisName);
+        if (existing) {
+            throw new Error('Comorbidity already exists');
+        }
+        let diagnosisId = `DIS${Date.now()}${randomToken(4)}`;
+        while (await prisma_1.default.diagnosis.findUnique({ where: { diagnosis_id: diagnosisId } })) {
+            diagnosisId = `DIS${Date.now()}${randomToken(4)}`;
+        }
+        const diagnosis = await repository.createDiagnosis({
+            diagnosis_id: diagnosisId,
+            diagnosis_name: diagnosisName,
+            icd_code: data.icdCode || null,
+            diagnosis_catogory_id: data.diagnosisCatogoryId || null,
+            diagnosis_category: data.diagnosisCategory || null,
+            active_status: 1,
+            created_by: createdBy,
+            created_at: new Date(),
+        });
+        return {
+            diagnosis_id: diagnosis.diagnosis_id,
+            diagnosis_name: diagnosis.diagnosis_name,
+            icd_code: diagnosis.icd_code,
+            diagnosis_description: diagnosis.diagnosis_description,
+            diagnosis_catogory_id: diagnosis.diagnosis_catogory_id,
+            diagnosis_category: diagnosis.diagnosis_category,
+        };
     }
     async setEncounterPerformanceStatus(data, assessedBy) {
         const encounter = await repository.findEncounterByNo(data.encounterNo);

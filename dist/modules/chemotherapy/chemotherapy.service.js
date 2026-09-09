@@ -1635,11 +1635,11 @@ class ChemotherapyService {
         if (staging.patient_id !== dto.patient_id) {
             throw new Error("The staging detail does not belong to this patient");
         }
-        { /* const diagnosis = await this.repository.findDiagnosisById(dto.diagnosis_id);
- 
-         if (!diagnosis) {
-             throw new Error("Diagnosis not found");
-         }*/
+        { /*const diagnosis = await this.repository.findDiagnosisById(dto.diagnosis_id);
+
+        if (!diagnosis) {
+            throw new Error("Diagnosis not found");
+        }*/
         }
         const employee = await this.repository.findEmployeeById(dto.employee_id);
         if (!employee) {
@@ -1751,6 +1751,7 @@ class ChemotherapyService {
                     branch_id: dto.branch_id,
                     department_id: dto.department_id,
                     employee_id: dto.employee_id,
+                    diagnosis_id: null,
                 });
             }
             const newPlanId = await this.repository.generatePlanId(tx);

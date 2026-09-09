@@ -10,6 +10,8 @@ const controller = new diagnosis_controller_1.DiagnosisController();
 router.get("/categories", auth_middleware_1.authenticate, diagnosis_validation_1.getDiagnosisCategoriesValidation, controller.getDiagnosisCategories.bind(controller));
 // Get diagnoses by category ID
 router.get("/categories/:categoryId/diagnoses", auth_middleware_1.authenticate, diagnosis_validation_1.getDiagnosesByCategoryValidation, controller.getDiagnosesByCategory.bind(controller));
+// Get diagnoses by cancer type (and optional subtype)
+router.get("/by-cancer", auth_middleware_1.authenticate, diagnosis_validation_1.getDiagnosesByCancerValidation, controller.getDiagnosesByCancer.bind(controller));
 // Get single diagnosis by ID
 router.get("/:diagnosisId", auth_middleware_1.authenticate, diagnosis_validation_1.getDiagnosisByIdValidation, controller.getDiagnosisById.bind(controller));
 exports.default = router;

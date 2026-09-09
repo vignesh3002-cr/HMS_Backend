@@ -73,7 +73,19 @@ class PatientService {
                     Patient_address: data.current_address,
                     Patient_Emergency_contact_name: data.emergency_name,
                     Emergency_contact_relation: data.emergency_relation,
-                    Patient_emergency_mobile: data.emergency_mobile
+                    Patient_emergency_mobile: data.emergency_mobile,
+                    referral_type: data.patient_type === "Referral"
+                        ? (data.referral_type?.trim() || null)
+                        : null,
+                    referred_by: data.patient_type === "Referral"
+                        ? (data.referred_by?.trim() || null)
+                        : null,
+                    referral_contact: data.patient_type === "Referral"
+                        ? (data.referral_contact?.trim() || null)
+                        : null,
+                    referral_notes: data.patient_type === "Referral"
+                        ? (data.referral_notes?.trim() || null)
+                        : null
                 }
             });
             return {
@@ -157,6 +169,29 @@ class PatientService {
             Patient_Emergency_contact_name: data.emergency_name,
             Emergency_contact_relation: data.emergency_relation,
             Patient_emergency_mobile: data.emergency_mobile,
+            // Referral details — force NULL (clear/delete from DB) whenever patient_type is
+            // not "Referral", so stale referral data never survives an edit.
+            ...(data.patient_type !== undefined
+                ? {
+                    referral_type: data.patient_type === "Referral"
+                        ? (data.referral_type?.trim() || null)
+                        : null,
+                    referred_by: data.patient_type === "Referral"
+                        ? (data.referred_by?.trim() || null)
+                        : null,
+                    referral_contact: data.patient_type === "Referral"
+                        ? (data.referral_contact?.trim() || null)
+                        : null,
+                    referral_notes: data.patient_type === "Referral"
+                        ? (data.referral_notes?.trim() || null)
+                        : null,
+                }
+                : {
+                    ...(data.referral_type !== undefined ? { referral_type: data.referral_type?.trim() || null } : {}),
+                    ...(data.referred_by !== undefined ? { referred_by: data.referred_by?.trim() || null } : {}),
+                    ...(data.referral_contact !== undefined ? { referral_contact: data.referral_contact?.trim() || null } : {}),
+                    ...(data.referral_notes !== undefined ? { referral_notes: data.referral_notes?.trim() || null } : {}),
+                }),
             branch: data.branch_id
                 ? {
                     connect: {

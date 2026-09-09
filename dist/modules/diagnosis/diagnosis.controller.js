@@ -96,5 +96,36 @@ class DiagnosisController {
             });
         }
     }
+    async getDiagnosesByCancer(req, res) {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array(),
+                });
+            }
+            const query = {
+                cancerSubtypeId: req.query.cancerSubtypeId,
+                search: req.query.search,
+                activeOnly: req.query.activeOnly === "true",
+                page: Number(req.query.page || 1),
+                limit: Number(req.query.limit || 50),
+            };
+            const result = await service.getDiagnosesByCancer(query);
+            return res.json({
+                success: true,
+                message: "Diagnoses fetched successfully",
+                data: result,
+            });
+        }
+        catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: error.message,
+            });
+        }
+    }
 }
 exports.DiagnosisController = DiagnosisController;

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getMasterListValidation = exports.getClinicalDetailsValidation = exports.updatePatientComorbidityValidation = exports.createPatientComorbidityValidation = exports.updatePatientAllergyValidation = exports.createPatientAllergyValidation = exports.updateEncounterSymptomValidation = exports.createEncounterSymptomValidation = exports.createEncounterPerformanceStatusValidation = exports.updateAllergyValidation = exports.createAllergyValidation = exports.updateSymptomValidation = exports.createSymptomValidation = exports.updatePerformanceStatusValidation = exports.createPerformanceStatusValidation = void 0;
+exports.createCustomComorbidityValidation = exports.createCustomAllergyValidation = exports.createCustomSymptomValidation = exports.getMasterListValidation = exports.getClinicalDetailsValidation = exports.updatePatientComorbidityValidation = exports.createPatientComorbidityValidation = exports.updatePatientAllergyValidation = exports.createPatientAllergyValidation = exports.updateEncounterSymptomValidation = exports.createEncounterSymptomValidation = exports.createEncounterPerformanceStatusValidation = exports.updateAllergyValidation = exports.createAllergyValidation = exports.updateSymptomValidation = exports.createSymptomValidation = exports.updatePerformanceStatusValidation = exports.createPerformanceStatusValidation = void 0;
 const express_validator_1 = require("express-validator");
 exports.createPerformanceStatusValidation = [
     (0, express_validator_1.body)('code')
@@ -422,4 +422,40 @@ exports.getMasterListValidation = [
         .optional()
         .isBoolean()
         .withMessage('isActive must be a boolean'),
+];
+exports.createCustomSymptomValidation = [
+    (0, express_validator_1.body)('name')
+        .trim()
+        .notEmpty()
+        .withMessage('Symptom name is required')
+        .isLength({ max: 150 })
+        .withMessage('Symptom name must not exceed 150 characters'),
+];
+exports.createCustomAllergyValidation = [
+    (0, express_validator_1.body)('substanceName')
+        .trim()
+        .notEmpty()
+        .withMessage('Substance name is required')
+        .isLength({ max: 150 })
+        .withMessage('Substance name must not exceed 150 characters'),
+];
+exports.createCustomComorbidityValidation = [
+    (0, express_validator_1.body)('diagnosisName')
+        .trim()
+        .notEmpty()
+        .withMessage('Diagnosis name is required')
+        .isLength({ max: 100 })
+        .withMessage('Diagnosis name must not exceed 100 characters'),
+    (0, express_validator_1.body)('diagnosisCatogoryId')
+        .optional()
+        .isLength({ max: 100 })
+        .withMessage('Invalid diagnosis category'),
+    (0, express_validator_1.body)('diagnosisCategory')
+        .optional()
+        .isLength({ max: 100 })
+        .withMessage('Invalid diagnosis category name'),
+    (0, express_validator_1.body)('icdCode')
+        .optional()
+        .isLength({ max: 100 })
+        .withMessage('ICD code must not exceed 100 characters'),
 ];

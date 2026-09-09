@@ -35,7 +35,7 @@ class PatientRepository {
         });
     }
     async getPatients(query) {
-        const { branchId, patientType, status, search, dateFrom, dateTo, page = 1, limit = 10 } = query;
+        const { branchId, patientType, status, search, dateFrom, dateTo, page = 1, limit = 100 } = query;
         const where = {};
         if (branchId) {
             where.branch_id = branchId;

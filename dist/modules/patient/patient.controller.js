@@ -38,7 +38,7 @@ class PatientController {
                 status: req.query.status,
                 search: req.query.search,
                 page: Number(req.query.page || 1),
-                limit: Number(req.query.limit || 10)
+                limit: Number(req.query.limit || 100)
             });
             return res.json({
                 success: true,

@@ -71,6 +71,10 @@ class PrescriptionService {
             resolved_route: item.route ?? medicineRouteById.get(item.medicine_id),
             resolved_quantity: computeQuantity(item)
         }));
+        // Resolve drug_role/drug_type for each medicine from the patient's
+        // chemotherapy plan (derived server-side). Falls back to PRIMARY/null
+        // when no plan entry exists (e.g. non-chemo OPD prescriptions).
+        const drugMetadata = await repository.findDrugMetadata(data.encounter_no, encounter.patient_id, data.medicines.map((item) => item.medicine_id));
         const diagnosisId = data.diagnosis_id ?? encounter.diagnosis_id ?? undefined;
         if (diagnosisId) {
             const diagnosis = await repository.findDiagnosis(diagnosisId);
@@ -124,23 +128,28 @@ class PrescriptionService {
             // are inserted with a single createMany. The caller re-reads the
             // full prescription afterwards, so no per-item return is needed.
             const itemIds = await repository.generatePrescriptionItemIds(tx, resolvedItems.length);
-            await repository.createPrescriptionItems(tx, resolvedItems.map((item, index) => ({
-                prescription_item_id: itemIds[index],
-                prescription_id: prescription.prescription_id,
-                medicine_id: item.medicine_id,
-                dosage: item.dosage,
-                unit: item.unit,
-                route: item.resolved_route,
-                frequency: item.frequency,
-                before_after_food: item.before_after_food,
-                morning: item.morning ?? false,
-                afternoon: item.afternoon ?? false,
-                night: item.night ?? false,
-                days: item.days,
-                duration: item.duration,
-                quantity: item.resolved_quantity,
-                instruction: item.instruction
-            })));
+            await repository.createPrescriptionItems(tx, resolvedItems.map((item, index) => {
+                const meta = drugMetadata.get(item.medicine_id);
+                return {
+                    prescription_item_id: itemIds[index],
+                    prescription_id: prescription.prescription_id,
+                    medicine_id: item.medicine_id,
+                    dosage: item.dosage,
+                    unit: item.unit,
+                    route: item.resolved_route,
+                    frequency: item.frequency,
+                    before_after_food: item.before_after_food,
+                    morning: item.morning ?? false,
+                    afternoon: item.afternoon ?? false,
+                    night: item.night ?? false,
+                    days: item.days,
+                    duration: item.duration,
+                    quantity: item.resolved_quantity,
+                    instruction: item.instruction,
+                    drug_role: meta?.drug_role ?? item.drug_role ?? "PRIMARY",
+                    drug_type: meta?.drug_type ?? item.drug_type ?? null
+                };
+            }));
             return prescription.prescription_id;
         }, {
             timeout: 30000,
@@ -248,6 +257,8 @@ class PrescriptionService {
             throw new Error("This medicine already exists in the prescription");
         }
         const quantity = computeQuantity(data);
+        const drugMetadata = await repository.findDrugMetadata("", existing.patient_history?.patient_bio_data?.patient_id ?? "", [data.medicine_id]);
+        const meta = drugMetadata.get(data.medicine_id);
         return prisma_1.default.$transaction(async (tx) => {
             const itemId = await repository.generatePrescriptionItemId(tx);
             return repository.createPrescriptionItem(tx, {
@@ -265,7 +276,9 @@ class PrescriptionService {
                 days: data.days,
                 duration: data.duration,
                 quantity,
-                instruction: data.instruction
+                instruction: data.instruction,
+                drug_role: meta?.drug_role ?? data.drug_role ?? "PRIMARY",
+                drug_type: meta?.drug_type ?? data.drug_type ?? null
             });
         });
     }
@@ -300,6 +313,9 @@ class PrescriptionService {
             night: data.night ?? item.night ?? undefined,
             days: data.days ?? item.days ?? undefined
         }) ?? item.quantity ?? undefined;
+        const targetMedicineId = data.medicine_id ?? item.medicine_id;
+        const drugMetadata = await repository.findDrugMetadata("", existing.patient_history?.patient_bio_data?.patient_id ?? "", [targetMedicineId]);
+        const meta = drugMetadata.get(targetMedicineId);
         return repository.updatePrescriptionItem(itemId, {
             medicine_id: data.medicine_id,
             dosage: data.dosage,
@@ -313,7 +329,9 @@ class PrescriptionService {
             days: data.days,
             duration: data.duration,
             quantity,
-            instruction: data.instruction
+            instruction: data.instruction,
+            drug_role: meta?.drug_role ?? data.drug_role ?? item.drug_role ?? "PRIMARY",
+            drug_type: meta?.drug_type ?? data.drug_type ?? item.drug_type ?? null
         });
     }
     async deletePrescriptionItem(prescriptionId, itemId) {

@@ -107,6 +107,50 @@ class PrescriptionRepository {
             where: { medicine_id: { in: medicineIds } }
         });
     }
+    // Resolve drug_role/drug_type for a set of medicine ids from the patient's
+    // chemotherapy plan. Prefers the plan linked to the encounter, then falls
+    // back to the patient's most recent active plan. Returns a map keyed by
+    // medicine_id so the caller can default to PRIMARY/null when absent.
+    async findDrugMetadata(encounterNo, patientId, medicineIds) {
+        if (medicineIds.length === 0) {
+            return new Map();
+        }
+        const planWhere = {
+            active_status: 1,
+            chemotherapy_plan_items: {
+                some: { medicine_id: { in: medicineIds } }
+            }
+        };
+        const plan = await prisma_1.default.chemotherapy_plan.findFirst({
+            where: { ...planWhere, encounter_no: encounterNo },
+            orderBy: { created_at: "desc" }
+        }) ?? await prisma_1.default.chemotherapy_plan.findFirst({
+            where: { ...planWhere, patient_id: patientId },
+            orderBy: { created_at: "desc" }
+        });
+        if (!plan) {
+            return new Map();
+        }
+        const planItems = await prisma_1.default.chemotherapy_plan_items.findMany({
+            where: {
+                chemotherapy_plan_id: plan.chemotherapy_plan_id,
+                active_status: 1,
+                medicine_id: { in: medicineIds }
+            },
+            select: {
+                medicine_id: true,
+                drug_role: true,
+                drug_type: true
+            }
+        });
+        return new Map(planItems.map((item) => [
+            item.medicine_id,
+            {
+                drug_role: item.drug_role,
+                drug_type: item.drug_type
+            }
+        ]));
+    }
     async findPatientHistoryByAppointment(appointmentId) {
         return prisma_1.default.patient_history.findFirst({
             where: { appointment_id: appointmentId }

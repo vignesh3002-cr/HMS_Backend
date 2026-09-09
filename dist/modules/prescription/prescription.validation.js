@@ -18,7 +18,9 @@ const medicineItemValidation = (prefix) => {
         (0, express_validator_1.body)(field("days")).optional().isInt({ min: 1 }),
         (0, express_validator_1.body)(field("duration")).optional().isString(),
         (0, express_validator_1.body)(field("quantity")).optional().isInt({ min: 1 }),
-        (0, express_validator_1.body)(field("instruction")).optional().isString()
+        (0, express_validator_1.body)(field("instruction")).optional().isString(),
+        (0, express_validator_1.body)(field("drug_role")).optional().isString(),
+        (0, express_validator_1.body)(field("drug_type")).optional().isString()
     ];
 };
 exports.createPrescriptionValidation = [
@@ -83,7 +85,9 @@ exports.updatePrescriptionItemValidation = [
     (0, express_validator_1.body)("days").optional().isInt({ min: 1 }),
     (0, express_validator_1.body)("duration").optional().isString(),
     (0, express_validator_1.body)("quantity").optional().isInt({ min: 1 }),
-    (0, express_validator_1.body)("instruction").optional().isString()
+    (0, express_validator_1.body)("instruction").optional().isString(),
+    (0, express_validator_1.body)("drug_role").optional().isString(),
+    (0, express_validator_1.body)("drug_type").optional().isString()
 ];
 exports.deletePrescriptionItemValidation = [
     (0, express_validator_1.param)("prescriptionId").notEmpty(),

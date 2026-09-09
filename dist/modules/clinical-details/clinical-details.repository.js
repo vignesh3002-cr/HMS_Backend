@@ -153,6 +153,24 @@ class ClinicalDetailsRepository {
         });
         return count > 0;
     }
+    async findSymptomByName(name) {
+        return prisma_1.default.symptom_master.findFirst({
+            where: { name: { equals: name, mode: 'insensitive' } },
+        });
+    }
+    async findAllergyBySubstanceName(substanceName) {
+        return prisma_1.default.allergy_master.findFirst({
+            where: { substance_name: { equals: substanceName, mode: 'insensitive' } },
+        });
+    }
+    async findDiagnosisByName(diagnosisName) {
+        return prisma_1.default.diagnosis.findFirst({
+            where: { diagnosis_name: { equals: diagnosisName, mode: 'insensitive' } },
+        });
+    }
+    async createDiagnosis(data) {
+        return prisma_1.default.diagnosis.create({ data });
+    }
     async findEncounterByNo(encounterNo) {
         return prisma_1.default.encounter.findUnique({
             where: { encounter_no: encounterNo },

@@ -127,5 +127,33 @@ class DiagnosisRepository {
             },
         });
     }
+    async getDiagnosesByCancer(query) {
+        const { cancerSubtypeId } = query;
+        const subtype = await prisma_1.default.cancer_subtypes.findUnique({
+            where: { subtype_id: cancerSubtypeId },
+            select: {
+                subtype_id: true,
+                subtype_name: true,
+                diagnosis: {
+                    select: {
+                        diagnosis_id: true,
+                        diagnosis_name: true,
+                    },
+                },
+            },
+        });
+        if (!subtype?.diagnosis) {
+            return {
+                cancerSubtypeName: subtype?.subtype_name ?? null,
+                diagnosis_id: null,
+                diagnosis_name: null,
+            };
+        }
+        return {
+            cancerSubtypeName: subtype.subtype_name,
+            diagnosis_id: subtype.diagnosis.diagnosis_id,
+            diagnosis_name: subtype.diagnosis.diagnosis_name,
+        };
+    }
 }
 exports.DiagnosisRepository = DiagnosisRepository;

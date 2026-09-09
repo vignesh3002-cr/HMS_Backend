@@ -38,7 +38,7 @@ async function generateIdBatch(tx, entity, count) {
         return [];
     }
     // Lock the row
-    const rows = await tx.$queryRawUnsafe(`
+    let rows = await tx.$queryRawUnsafe(`
         SELECT *
         FROM id_sequences
         WHERE entity_name='${entity}'
@@ -67,7 +67,7 @@ async function generateIdBatch(tx, entity, count) {
     }
     await tx.id_sequences.update({
         where: {
-            entity_name: entity
+            entity_name: sequence.entity_name
         },
         data: {
             current_number: nextNumber,

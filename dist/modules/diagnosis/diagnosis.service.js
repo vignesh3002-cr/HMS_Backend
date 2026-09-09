@@ -17,5 +17,8 @@ class DiagnosisService {
         }
         return diagnosis;
     }
+    async getDiagnosesByCancer(query) {
+        return repository.getDiagnosesByCancer(query);
+    }
 }
 exports.DiagnosisService = DiagnosisService;
