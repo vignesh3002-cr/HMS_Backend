@@ -43,7 +43,7 @@ export async function generateIdBatch(
     }
 
     // Lock the row
-    const rows = await tx.$queryRawUnsafe<any[]>(`
+    let rows = await tx.$queryRawUnsafe<any[]>(`
         SELECT *
         FROM id_sequences
         WHERE entity_name='${entity}'
@@ -93,7 +93,7 @@ export async function generateIdBatch(
 
         where: {
 
-            entity_name: entity
+            entity_name: sequence.entity_name
 
         },
 

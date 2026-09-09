@@ -47,6 +47,7 @@ const PERMISSIONS = [
   { key: "doctor.read", name: "View Doctors", description: "View doctor list and details", category: "doctor" },
   { key: "doctor.update", name: "Edit Doctor", description: "Edit doctor information", category: "doctor" },
   { key: "doctor.transfer", name: "Transfer Doctor", description: "Initiate doctor transfers", category: "doctor" },
+  { key: "doctor.assign_global", name: "Assign Doctor to Multiple Branches", description: "Allow assigning doctors to multiple branches globally", category: "doctor" },
 
   // Report
   { key: "report.view", name: "View Reports", description: "View system reports", category: "report" },
@@ -126,6 +127,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "doctor.read",
     "doctor.update",
     "doctor.transfer",
+    "doctor.assign_global",
     "report.view",
     "report.export",
     "report.download",

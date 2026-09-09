@@ -4,6 +4,7 @@ import { EmployeeRepository } from "./employee.repository";
 import { CreateEmployeeDto, UpdateEmployeeDto, GetEmployeesQuery, WorkingHourDto } from "./employee.types";
 import { generateId } from "../../utils/idGenerator";
 import { TOP_LEVEL_ADMIN_ROLES, BRANCH_ADMIN, ADMIN } from "../../permissions/roles";
+import { permissionService } from "../permission/permission.service";
 
 const repository = new EmployeeRepository();
 let employeeId: string;
@@ -125,26 +126,38 @@ export class EmployeeService {
         }
     }
 
-    // For BRANCH_ADMIN and STAFF_ADMIN, force branch to their assigned branch
+    // For BRANCH_ADMIN and STAFF_ADMIN, force branch to their assigned branch unless creating DOCTOR with doctor.assign_global permission
     let allowedBranchIds: string[] = data.branch_ids;
     if (isBranchAdmin || isStaffAdmin) {
-        const mappings = await prisma.user_branch_mapping.findMany({
-            where: { user_id: createdBy, status: 1 },
-            select: { branch_id: true }
-        });
-        const userBranchIds = mappings.map(m => m.branch_id);
-        
-        if (userBranchIds.length === 0) {
-            throw new Error("No branch assigned to your account");
-        }
-        
-        // Force single branch - use first assigned branch
-        allowedBranchIds = [userBranchIds[0]];
-        
-        // Validate that the requested branch is within their allowed branches
-        const invalidBranches = data.branch_ids.filter(b => !userBranchIds.includes(b));
-        if (invalidBranches.length > 0) {
-            throw new Error("You can only create employees in your assigned branch(es)");
+        const canAssignDoctorGlobally = targetRole === "DOCTOR" && (
+            isTopLevelAdmin ||
+            await permissionService.hasPermission(creatorRole, "doctor.assign_global")
+        );
+
+        if (!canAssignDoctorGlobally) {
+            const mappings = await prisma.user_branch_mapping.findMany({
+                where: { user_id: createdBy, status: 1 },
+                select: { branch_id: true }
+            });
+            const userBranchIds = mappings.map(m => m.branch_id);
+            
+            if (userBranchIds.length === 0) {
+                throw new Error("No branch assigned to your account");
+            }
+            
+            // Force single branch - use first assigned branch
+            allowedBranchIds = [userBranchIds[0]];
+            
+            // Validate that the requested branch is within their allowed branches
+            const invalidBranches = data.branch_ids.filter(b => !userBranchIds.includes(b));
+            if (invalidBranches.length > 0) {
+                throw new Error("You can only create employees in your assigned branch(es)");
+            }
+        } else {
+            if (!Array.isArray(data.branch_ids) || data.branch_ids.length === 0) {
+                throw new Error("At least one branch must be assigned to the doctor");
+            }
+            allowedBranchIds = data.branch_ids;
         }
     }
 

@@ -54,7 +54,7 @@ export class PatientRepository {
             dateFrom,
             dateTo,
             page = 1,
-            limit = 10
+            limit = 100
         } = query;
 
         const where: Prisma.patient_bio_dataWhereInput = {};

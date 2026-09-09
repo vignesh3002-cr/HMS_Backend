@@ -29,7 +29,49 @@ export const createPatientValidation = [
 
     body("created_by")
         .notEmpty()
-        .withMessage("Created by is required")
+        .withMessage("Created by is required"),
+
+    // Referral details — required/validated only when patient_type is "Referral"
+    body("referral_type")
+        .if(body("patient_type").equals("Referral"))
+        .notEmpty()
+        .withMessage("Referral type is required for Referral patient type")
+        .bail()
+        .isString()
+        .withMessage("Referral type must be a string")
+        .bail()
+        .trim()
+        .isLength({ min: 1, max: 100 })
+        .withMessage("Referral type must not exceed 100 characters"),
+
+    body("referred_by")
+        .if(body("patient_type").equals("Referral"))
+        .notEmpty()
+        .withMessage("Referred by is required for Referral patient type")
+        .bail()
+        .isString()
+        .withMessage("Referred by must be a string")
+        .bail()
+        .isLength({ max: 255 })
+        .withMessage("Referred by must not exceed 255 characters"),
+
+    body("referral_contact")
+        .if(body("patient_type").equals("Referral"))
+        .optional({ nullable: true, checkFalsy: true })
+        .isString()
+        .withMessage("Referrer contact must be a string")
+        .bail()
+        .isLength({ max: 255 })
+        .withMessage("Referrer contact must not exceed 255 characters"),
+
+    body("referral_notes")
+        .if(body("patient_type").equals("Referral"))
+        .optional({ nullable: true, checkFalsy: true })
+        .isString()
+        .withMessage("Referral notes must be a string")
+        .bail()
+        .isLength({ max: 2000 })
+        .withMessage("Referral notes must not exceed 2000 characters"),
 
 ];
 
@@ -43,7 +85,49 @@ export const updatePatientValidation = [
     body("email")
         .optional()
         .isEmail()
-        .withMessage("Valid email is required")
+        .withMessage("Valid email is required"),
+
+    // Referral details — required/validated only when patient_type is "Referral"
+    body("referral_type")
+        .if(body("patient_type").equals("Referral"))
+        .notEmpty()
+        .withMessage("Referral type is required for Referral patient type")
+        .bail()
+        .isString()
+        .withMessage("Referral type must be a string")
+        .bail()
+        .trim()
+        .isLength({ min: 1, max: 100 })
+        .withMessage("Referral type must not exceed 100 characters"),
+
+    body("referred_by")
+        .if(body("patient_type").equals("Referral"))
+        .notEmpty()
+        .withMessage("Referred by is required for Referral patient type")
+        .bail()
+        .isString()
+        .withMessage("Referred by must be a string")
+        .bail()
+        .isLength({ max: 255 })
+        .withMessage("Referred by must not exceed 255 characters"),
+
+    body("referral_contact")
+        .if(body("patient_type").equals("Referral"))
+        .optional({ nullable: true, checkFalsy: true })
+        .isString()
+        .withMessage("Referrer contact must be a string")
+        .bail()
+        .isLength({ max: 255 })
+        .withMessage("Referrer contact must not exceed 255 characters"),
+
+    body("referral_notes")
+        .if(body("patient_type").equals("Referral"))
+        .optional({ nullable: true, checkFalsy: true })
+        .isString()
+        .withMessage("Referral notes must be a string")
+        .bail()
+        .isLength({ max: 2000 })
+        .withMessage("Referral notes must not exceed 2000 characters"),
 
 ];
 

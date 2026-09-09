@@ -9,6 +9,7 @@ const prisma_1 = __importDefault(require("../../config/prisma"));
 const employee_repository_1 = require("./employee.repository");
 const idGenerator_1 = require("../../utils/idGenerator");
 const roles_1 = require("../../permissions/roles");
+const permission_service_1 = require("../permission/permission.service");
 const repository = new employee_repository_1.EmployeeRepository();
 let employeeId;
 // doctor_schedule.start_time/end_time are @db.Time columns with no timezone.
@@ -109,23 +110,33 @@ class EmployeeService {
                 throw new Error("Staff Admin can only create Patient records");
             }
         }
-        // For BRANCH_ADMIN and STAFF_ADMIN, force branch to their assigned branch
+        // For BRANCH_ADMIN and STAFF_ADMIN, force branch to their assigned branch unless creating DOCTOR with doctor.assign_global permission
         let allowedBranchIds = data.branch_ids;
         if (isBranchAdmin || isStaffAdmin) {
-            const mappings = await prisma_1.default.user_branch_mapping.findMany({
-                where: { user_id: createdBy, status: 1 },
-                select: { branch_id: true }
-            });
-            const userBranchIds = mappings.map(m => m.branch_id);
-            if (userBranchIds.length === 0) {
-                throw new Error("No branch assigned to your account");
+            const canAssignDoctorGlobally = targetRole === "DOCTOR" && (isTopLevelAdmin ||
+                await permission_service_1.permissionService.hasPermission(creatorRole, "doctor.assign_global"));
+            if (!canAssignDoctorGlobally) {
+                const mappings = await prisma_1.default.user_branch_mapping.findMany({
+                    where: { user_id: createdBy, status: 1 },
+                    select: { branch_id: true }
+                });
+                const userBranchIds = mappings.map(m => m.branch_id);
+                if (userBranchIds.length === 0) {
+                    throw new Error("No branch assigned to your account");
+                }
+                // Force single branch - use first assigned branch
+                allowedBranchIds = [userBranchIds[0]];
+                // Validate that the requested branch is within their allowed branches
+                const invalidBranches = data.branch_ids.filter(b => !userBranchIds.includes(b));
+                if (invalidBranches.length > 0) {
+                    throw new Error("You can only create employees in your assigned branch(es)");
+                }
             }
-            // Force single branch - use first assigned branch
-            allowedBranchIds = [userBranchIds[0]];
-            // Validate that the requested branch is within their allowed branches
-            const invalidBranches = data.branch_ids.filter(b => !userBranchIds.includes(b));
-            if (invalidBranches.length > 0) {
-                throw new Error("You can only create employees in your assigned branch(es)");
+            else {
+                if (!Array.isArray(data.branch_ids) || data.branch_ids.length === 0) {
+                    throw new Error("At least one branch must be assigned to the doctor");
+                }
+                allowedBranchIds = data.branch_ids;
             }
         }
         const username = await repository.findUsername(data.username);

@@ -30,6 +30,7 @@ import qualificationMasterRoutes from "./modules/qualification-master/qualificat
 import diagnosisRoutes from "./modules/diagnosis/diagnosis.routes";
 import clinicalDetailsRoutes from "./modules/clinical-details/clinical-details.routes";
 import notificationRoutes from "./modules/notification/notification.routes";
+import referralRoutes from "./modules/referral/referral.routes";
 
 import { hashPassword } from "./utils/bcrypt";
 import { startAppointmentStatusJob } from "./jobs/appointment-status.job";
@@ -151,6 +152,7 @@ app.use("/api/notifications", notificationRoutes);
 
 app.use("/api/qualification-master", qualificationMasterRoutes);
 app.use("/api/diagnosis", diagnosisRoutes);
+app.use("/api/referral", referralRoutes);
 
 app.use("/api/hashpassword", async (req, res) => {
   const { password } = req.body;

@@ -25,6 +25,12 @@ export interface CreatePatientRequest {
 
     patient_type?: string;
 
+    // Referral details (only persisted when patient_type === "Referral")
+    referral_type?: string | null;
+    referred_by?: string | null;
+    referral_contact?: string | null;
+    referral_notes?: string | null;
+
     photo?: string;
 
     branch_id: string;
@@ -62,6 +68,12 @@ export interface UpdatePatientRequest {
 
     patient_type?: string;
     patient_active?: string;
+
+    // Referral details (saved as null when patient_type !== "Referral")
+    referral_type?: string | null;
+    referred_by?: string | null;
+    referral_contact?: string | null;
+    referral_notes?: string | null;
 
     photo?: string;
 
