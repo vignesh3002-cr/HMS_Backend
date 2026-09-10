@@ -27,6 +27,7 @@ router.get("/patient-count", auth_middleware_1.authenticate, (0, authorize_1.aut
 router.get("/:appointmentNo", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.read"), controller.getAppointmentByNumber.bind(controller));
 router.put("/:appointmentNo", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.update"), appointment_validation_1.updateAppointmentValidation, controller.updateAppointment.bind(controller));
 router.patch("/:appointmentNo/status", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.update"), appointment_validation_1.updateAppointmentStatusValidation, controller.updateAppointmentStatus.bind(controller));
+router.patch("/:appointmentNo/chemo-fitness", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.update"), appointment_validation_1.updateChemoFitnessValidation, controller.updateChemoFitness.bind(controller));
 // Soft cancellation only - appointments are never physically deleted.
 router.delete("/:appointmentNo", auth_middleware_1.authenticate, (0, authorize_1.authorize)("appointment.cancel"), appointment_validation_1.cancelAppointmentValidation, controller.cancelAppointment.bind(controller));
 exports.default = router;

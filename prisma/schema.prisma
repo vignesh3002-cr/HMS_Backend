@@ -108,6 +108,7 @@ model appointment_history {
   cancelled_at                    DateTime?                         @db.Timestamp(6)
   cancelled_by                    String?                           @db.VarChar(100)
   notification_status             String?                           @db.VarChar(100)
+  Reason_for_cancelling           String?
   Patient_visit_type              String?                           @db.VarChar
   Patient_type                    String?                           @db.VarChar
   chemo_fitness                   String?                           @db.VarChar(50)

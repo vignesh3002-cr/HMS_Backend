@@ -227,6 +227,37 @@ class AppointmentController {
             });
         }
     }
+    async updateChemoFitness(req, res) {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+            const appointmentNo = req.params.appointmentNo;
+            const evaluatedBy = req.user?.employee_id || req.user?.user_id || "DOCTOR";
+            const appointment = await service.updateChemoFitness(appointmentNo, {
+                fitness: req.body.fitness,
+                reason: req.body.reason,
+                notes: req.body.notes,
+                evaluatedBy
+            });
+            return res.json({
+                success: true,
+                message: "Chemotherapy fitness status updated successfully",
+                data: appointment
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
     async cancelAppointment(req, res) {
         try {
             const errors = (0, express_validator_1.validationResult)(req);

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAppointmentsValidation = exports.getPatientCountValidation = exports.getDoctorWeekSlotSummaryValidation = exports.getDoctorSlotSummaryValidation = exports.getAvailableSlotsValidation = exports.cancelAppointmentValidation = exports.updateAppointmentStatusValidation = exports.updateAppointmentValidation = exports.createAppointmentValidation = void 0;
+exports.updateChemoFitnessValidation = exports.getAppointmentsValidation = exports.getPatientCountValidation = exports.getDoctorWeekSlotSummaryValidation = exports.getDoctorSlotSummaryValidation = exports.getAvailableSlotsValidation = exports.cancelAppointmentValidation = exports.updateAppointmentStatusValidation = exports.updateAppointmentValidation = exports.createAppointmentValidation = void 0;
 const express_validator_1 = require("express-validator");
 const appointment_constants_1 = require("./appointment.constants");
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -9,6 +9,7 @@ exports.createAppointmentValidation = [
         .notEmpty()
         .withMessage("Patient is required"),
     (0, express_validator_1.body)("employee_id")
+        .if((_val, { req }) => req.body.patient_visit_type !== "Lab Visit")
         .notEmpty()
         .withMessage("Doctor is required"),
     (0, express_validator_1.body)("branch_id")
@@ -179,4 +180,24 @@ exports.getAppointmentsValidation = [
     (0, express_validator_1.query)("dateTo")
         .optional()
         .isISO8601()
+];
+exports.updateChemoFitnessValidation = [
+    (0, express_validator_1.param)("appointmentNo")
+        .notEmpty()
+        .withMessage("Appointment number is required"),
+    (0, express_validator_1.body)("fitness")
+        .notEmpty()
+        .withMessage("Fitness status is required")
+        .isIn(["FIT", "UNFIT", "PENDING"])
+        .withMessage("Fitness status must be FIT, UNFIT, or PENDING"),
+    (0, express_validator_1.body)("reason")
+        .if((value, { req }) => req.body.fitness === "UNFIT")
+        .notEmpty()
+        .withMessage("Reason is required when marking patient unfit")
+        .bail()
+        .optional()
+        .isString(),
+    (0, express_validator_1.body)("notes")
+        .optional()
+        .isString()
 ];
