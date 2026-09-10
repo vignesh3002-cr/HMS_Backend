@@ -10,6 +10,7 @@ export const createAppointmentValidation = [
         .withMessage("Patient is required"),
 
     body("employee_id")
+        .if((_val: any, { req }: any) => req.body.patient_visit_type !== "Lab Visit")
         .notEmpty()
         .withMessage("Doctor is required"),
 
@@ -240,5 +241,31 @@ export const getAppointmentsValidation = [
     query("dateTo")
         .optional()
         .isISO8601()
+
+];
+
+export const updateChemoFitnessValidation = [
+
+    param("appointmentNo")
+        .notEmpty()
+        .withMessage("Appointment number is required"),
+
+    body("fitness")
+        .notEmpty()
+        .withMessage("Fitness status is required")
+        .isIn(["FIT", "UNFIT", "PENDING"])
+        .withMessage("Fitness status must be FIT, UNFIT, or PENDING"),
+
+    body("reason")
+        .if((value: any, { req }: any) => req.body.fitness === "UNFIT")
+        .notEmpty()
+        .withMessage("Reason is required when marking patient unfit")
+        .bail()
+        .optional()
+        .isString(),
+
+    body("notes")
+        .optional()
+        .isString()
 
 ];

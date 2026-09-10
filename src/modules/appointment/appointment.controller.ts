@@ -290,6 +290,44 @@ export class AppointmentController {
         }
     }
 
+    async updateChemoFitness(req: Request, res: Response) {
+        try {
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+
+            const appointmentNo = req.params.appointmentNo as string;
+            const evaluatedBy = (req as any).user?.employee_id || (req as any).user?.user_id || "DOCTOR";
+            const appointment = await service.updateChemoFitness(
+                appointmentNo,
+                {
+                    fitness: req.body.fitness,
+                    reason: req.body.reason,
+                    notes: req.body.notes,
+                    evaluatedBy
+                }
+            );
+
+            return res.json({
+                success: true,
+                message: "Chemotherapy fitness status updated successfully",
+                data: appointment
+            });
+
+        } catch (error: any) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+
     async cancelAppointment(req: Request, res: Response) {
         try {
             const errors = validationResult(req);

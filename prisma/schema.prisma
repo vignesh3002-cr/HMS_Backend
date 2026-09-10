@@ -108,9 +108,13 @@ model appointment_history {
   cancelled_at                    DateTime?                         @db.Timestamp(6)
   cancelled_by                    String?                           @db.VarChar(100)
   notification_status             String?                           @db.VarChar(100)
-  Reason_for_cancelling           String?
   Patient_visit_type              String?                           @db.VarChar
   Patient_type                    String?                           @db.VarChar
+  chemo_fitness                   String?                           @db.VarChar(50)
+  chemo_unfit_reason              String?                           @db.VarChar(255)
+  chemo_unfit_notes               String?
+  chemo_evaluated_at              DateTime?                         @db.Timestamp(6)
+  chemo_evaluated_by              String?                           @db.VarChar(100)
   branch                          branch?                           @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_appointment_branch")
   department_master               department_master?                @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_appointment_department")
   employees                       employees?                        @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)

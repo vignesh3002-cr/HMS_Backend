@@ -4,7 +4,8 @@ import { AppointmentRepository } from "./appointment.repository";
 import {
     CreateAppointmentDTO,
     UpdateAppointmentDTO,
-    GetAppointmentsQuery
+    GetAppointmentsQuery,
+    UpdateChemoFitnessDTO
 } from "./appointment.types";
 import {
     APPOINTMENT_STATUS,
@@ -811,13 +812,70 @@ export class AppointmentService {
                 data.appointment_date
             );
 
+        if (data.patient_visit_type === "Lab Visit") {
+            const appointmentTime = timeStringToDate(data.appointment_time);
+            const branch = await repository.findBranch(data.branch_id);
+            if (!branch) {
+                throw new Error("Branch not found");
+            }
+
+            let deptId = data.department_id;
+            if (!deptId) {
+                const labDept = await prisma.department_master.findFirst({
+                    where: {
+                        branch_id: data.branch_id,
+                        department_name: { contains: "Lab", mode: "insensitive" }
+                    }
+                });
+                deptId = labDept?.department_id;
+            }
+
+            return this.transformAppointmentFields(
+                await prisma.$transaction(async (tx) => {
+                    const appointmentId = await repository.generateAppointmentNumber(tx);
+                    const countToday = await tx.appointment_history.count({
+                        where: {
+                            branch_id: data.branch_id,
+                            appointment_date: appointmentDate,
+                        }
+                    });
+                    const tokenNumber = countToday + 1;
+
+                    const appointment = await repository.createAppointment(
+                        tx,
+                        {
+                            appointment_id: appointmentId,
+                            patient_id: data.patient_id,
+                            employee_id: null,
+                            branch_id: data.branch_id,
+                            department_id: deptId,
+                            schedule_id: null,
+                            appointment_date: appointmentDate,
+                            appointment_time: appointmentTime,
+                            token_number: tokenNumber,
+                            status: APPOINTMENT_STATUS.SCHEDULED,
+                            reason_for_visit: data.reason_for_visit || "Lab Visit",
+                            referred_by: data.referred_by,
+                            booking_source: data.booking_source ?? "STAFF",
+                            doctor_name: "-",
+                            created_by: createdBy,
+                            Patient_visit_type: data.patient_visit_type,
+                            Patient_type: data.patient_type,
+                        }
+                    );
+
+                    return appointment;
+                })
+            );
+        }
+
         const {
             employee,
             department,
             schedules
         } =
             await this.validateBookingContext(
-                data.employee_id,
+                data.employee_id!,
                 data.branch_id,
                 data.department_id,
                 appointmentDate
@@ -839,7 +897,7 @@ export class AppointmentService {
 
         const duplicate =
             await repository.findDuplicateAppointment(
-                data.employee_id,
+                data.employee_id!,
                 appointmentDate,
                 appointmentTime
             );
@@ -1352,6 +1410,53 @@ return this.transformAppointmentFields(
                 cancelledBy
             )
         );
+    }
+
+    /**
+     * Updates doctor clinical chemotherapy fitness status (FIT / UNFIT / PENDING).
+     * If UNFIT, records the deferral reason and supportive notes, but preserves
+     * the appointment and outpatient consultation visit.
+     */
+    async updateChemoFitness(
+        appointmentNo: string,
+        data: UpdateChemoFitnessDTO
+    ) {
+        const existing = await repository.getAppointmentByNumber(appointmentNo);
+        if (!existing) {
+            throw new Error("Appointment not found");
+        }
+
+        const updateData: any = {
+            chemo_fitness: data.fitness,
+            chemo_unfit_reason: data.reason || null,
+            chemo_unfit_notes: data.notes || null,
+            chemo_evaluated_at: new Date(),
+            chemo_evaluated_by: data.evaluatedBy || null,
+        };
+
+        const updated = await prisma.appointment_history.update({
+            where: { appointment_id: appointmentNo },
+            data: updateData
+        });
+
+        // When marked UNFIT, automatically append clinical deferral documentation
+        // into the active encounter notes if one exists.
+        if (data.fitness === "UNFIT") {
+            const enc = await prisma.encounter.findFirst({
+                where: { appointment_id: appointmentNo }
+            });
+            if (enc) {
+                const deferralText = `\n[CHEMOTHERAPY DEFERRED FOR TODAY - UNFIT]\nReason: ${data.reason || "Unspecified"}${data.notes ? `\nNotes: ${data.notes}` : ""}\nPlan: Defer chemo cycle. Conducted OPD consultation and supportive care.\n`;
+                await prisma.encounter.update({
+                    where: { encounter_no: enc.encounter_no },
+                    data: {
+                        clinical_notes: enc.clinical_notes ? `${enc.clinical_notes}\n${deferralText}` : deferralText
+                    }
+                });
+            }
+        }
+
+        return this.transformAppointmentFields(updated);
     }
 
     /**
