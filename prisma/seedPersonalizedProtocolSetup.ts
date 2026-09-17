@@ -19,7 +19,8 @@ async function main() {
 
     const sequenceSetup = [
         { entity_name: "REGIMEN_PROTOCOL_DAY", prefix: "CPD" },
-        { entity_name: "REGIMEN_PROTOCOL_DILUTION", prefix: "RPD" }
+        { entity_name: "REGIMEN_PROTOCOL_DILUTION", prefix: "CPDIL" },
+        { entity_name: "DISCHARGE_INSTRUCTION", prefix: "CPDIS" }
     ];
 
     for (const seq of sequenceSetup) {
@@ -29,7 +30,15 @@ async function main() {
         });
 
         if (existing) {
-            console.log(`[id_sequences] ${seq.entity_name} already exists (prefix ${existing.prefix}, current ${existing.current_number}) - skipped`);
+            if (seq.entity_name === "REGIMEN_PROTOCOL_DILUTION" && existing.prefix !== "CPDIL") {
+                await prisma.id_sequences.update({
+                    where: { entity_name: seq.entity_name },
+                    data: { prefix: "CPDIL" }
+                });
+                console.log(`[id_sequences] ${seq.entity_name} prefix updated to CPDIL`);
+            } else {
+                console.log(`[id_sequences] ${seq.entity_name} already exists (prefix ${existing.prefix}, current ${existing.current_number}) - skipped`);
+            }
             continue;
         }
 

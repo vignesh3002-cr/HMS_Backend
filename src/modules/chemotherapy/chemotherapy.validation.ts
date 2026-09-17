@@ -26,7 +26,15 @@ export const createRegimenProtocolValidation = [
     // freshly generated protocol_id (protocol_id == regimen_code).
     body("regimen_code").optional({ nullable: true }),
     body("regimen_name").notEmpty().withMessage("regimen_name is required"),
-    body("cancer_type_id").notEmpty().withMessage("cancer_type_id is required"),
+    body("cancer_type_id").optional({ nullable: true }),
+    body("cancer_type_ids").optional({ nullable: true }).isArray(),
+    body("subtype_ids").optional({ nullable: true }).isArray(),
+    body().custom((value) => {
+        if (!value.cancer_type_id && (!value.cancer_type_ids || value.cancer_type_ids.length === 0)) {
+            throw new Error("cancer_type_id or cancer_type_ids is required");
+        }
+        return true;
+    }),
     body("standard_cycles").optional({ nullable: true }).isInt({ min: 1 }),
     body("cycle_interval_days").optional({ nullable: true }).isInt({ min: 1 }),
     body("no_of_days").optional({ nullable: true }).isInt({ min: 1 }),
@@ -39,13 +47,23 @@ export const createRegimenProtocolValidation = [
     body("items").isArray({ min: 1 }).withMessage("At least one protocol item (drug) is required"),
     body("items.*.medicine_id").notEmpty().withMessage("Each protocol item requires a medicine_id"),
     body("items.*.drug_sequence").isInt({ min: 1 }).withMessage("Each protocol item requires a drug_sequence >= 1"),
-    body("items.*.drug_role").optional().isIn(Object.values(DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(DRUG_ROLE).join(", ")}`)
+    body("items.*.drug_role").optional().isIn(Object.values(DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(DRUG_ROLE).join(", ")}`),
+    body("dilutions").optional({ nullable: true }).isArray(),
+    body("discharge_instructions").optional({ nullable: true }).isArray()
 
 ];
 
 export const updateRegimenProtocolValidation = [
 
     param("protocolId").notEmpty(),
+    body("regimen_name").optional().notEmpty(),
+    body("cancer_type_id").optional({ nullable: true }),
+    body("cancer_type_ids").optional({ nullable: true }).isArray(),
+    body("subtype_id").optional({ nullable: true }),
+    body("subtype_ids").optional({ nullable: true }).isArray(),
+    body("treatment_intent").optional({ nullable: true }),
+    body("guideline_source").optional({ nullable: true }),
+    body("notes").optional({ nullable: true }),
     body("standard_cycles").optional({ nullable: true }).isInt({ min: 1 }),
     body("cycle_interval_days").optional({ nullable: true }).isInt({ min: 1 }),
     body("no_of_days").optional({ nullable: true }).isInt({ min: 1 }),
@@ -54,7 +72,9 @@ export const updateRegimenProtocolValidation = [
     body("days.*.protocol_day_id").optional().notEmpty(),
     body("days.*.day_sequence").optional({ nullable: true }).isInt({ min: 1 }),
     body("days.*.same_as_day_one").optional({ nullable: true }).isBoolean(),
-    body("days.*.active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 })
+    body("days.*.active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 }),
+    body("dilutions").optional({ nullable: true }).isArray(),
+    body("discharge_instructions").optional({ nullable: true }).isArray()
 
 ];
 
@@ -195,6 +215,7 @@ export const addPersonalizedProtocolDilutionValidation = [
     param("protocolId").notEmpty(),
     param("protocolItemId").notEmpty(),
     body("medicine_id").optional({ nullable: true }).notEmpty(),
+    body("drug_brand_name").optional({ nullable: true }).isString(),
     body("dose").optional({ nullable: true }).isFloat({ min: 0 }),
     body("dilution_volume").optional({ nullable: true }).isFloat({ min: 0 }),
     body("active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 })
@@ -207,6 +228,7 @@ export const updatePersonalizedProtocolDilutionValidation = [
     param("protocolItemId").notEmpty(),
     param("protocolDilutionId").notEmpty(),
     body("medicine_id").optional({ nullable: true }).notEmpty(),
+    body("drug_brand_name").optional({ nullable: true }).isString(),
     body("dose").optional({ nullable: true }).isFloat({ min: 0 }),
     body("dilution_volume").optional({ nullable: true }).isFloat({ min: 0 }),
     body("active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 })
@@ -233,11 +255,13 @@ export const addRegimenProtocolItemValidation = [
 
     param("protocolId").notEmpty(),
     body("medicine_id").notEmpty().withMessage("medicine_id is required"),
+    body("drug_brand_name").optional({ nullable: true }).isString(),
     body("drug_sequence").isInt({ min: 1 }).withMessage("drug_sequence must be at least 1"),
     body("drug_role").optional({ nullable: true }).isIn(Object.values(DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(DRUG_ROLE).join(", ")}`),
     body("dilutions").optional({ nullable: true }).isArray(),
     body("dilutions.*.protocol_dilution_id").optional({ nullable: true }).notEmpty(),
     body("dilutions.*.medicine_id").optional({ nullable: true }).notEmpty(),
+    body("dilutions.*.drug_brand_name").optional({ nullable: true }).isString(),
     body("dilutions.*.form").optional({ nullable: true }).isString(),
     body("dilutions.*.dose").optional({ nullable: true }).isFloat({ min: 0 }),
     body("dilutions.*.dose_unit").optional({ nullable: true }).isString(),
@@ -252,10 +276,12 @@ export const addDischargeInstructionValidation = [
 
     param("protocolId").notEmpty(),
     body("medicine_id").optional({ nullable: true }).notEmpty(),
+    body("drug_brand_name").optional({ nullable: true }).isString(),
     body("drug_sequence").optional({ nullable: true }).isInt({ min: 1 }),
     body("drug_from").optional({ nullable: true }).isString(),
     body("frequency").optional({ nullable: true }).isString(),
     body("duration").optional({ nullable: true }).isString(),
+    body("duration_days").optional({ nullable: true }).isString(),
     body("patient_dose").optional({ nullable: true }).isFloat({ min: 0 }),
     body("patient_dose_unit").optional({ nullable: true }).isString(),
     body("administration_detail").optional({ nullable: true }).isString(),
@@ -269,10 +295,12 @@ export const updateDischargeInstructionValidation = [
     param("protocolId").notEmpty(),
     param("dischargeInstructionId").notEmpty(),
     body("medicine_id").optional({ nullable: true }).notEmpty(),
+    body("drug_brand_name").optional({ nullable: true }).isString(),
     body("drug_sequence").optional({ nullable: true }).isInt({ min: 1 }),
     body("drug_from").optional({ nullable: true }).isString(),
     body("frequency").optional({ nullable: true }).isString(),
     body("duration").optional({ nullable: true }).isString(),
+    body("duration_days").optional({ nullable: true }).isString(),
     body("patient_dose").optional({ nullable: true }).isFloat({ min: 0 }),
     body("patient_dose_unit").optional({ nullable: true }).isString(),
     body("administration_detail").optional({ nullable: true }).isString(),
@@ -292,6 +320,7 @@ export const updateRegimenProtocolItemValidation = [
   param("protocolId").notEmpty(),
   param("protocolItemId").notEmpty(),
   body("medicine_id").optional({ nullable: true }).notEmpty(),
+  body("drug_brand_name").optional({ nullable: true }).isString(),
   body("drug_role").optional({ nullable: true }).isIn(Object.values(DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(DRUG_ROLE).join(", ")}`),
   body("drug_sequence").optional({ nullable: true }).isInt({ min: 1 }),
   body("drug_type").optional({ nullable: true }).isString(),
@@ -313,6 +342,7 @@ export const updateRegimenProtocolItemValidation = [
   body("dilutions").optional({ nullable: true }).isArray(),
   body("dilutions.*.protocol_dilution_id").optional({ nullable: true }).notEmpty(),
   body("dilutions.*.medicine_id").optional({ nullable: true }).notEmpty(),
+  body("dilutions.*.drug_brand_name").optional({ nullable: true }).isString(),
   body("dilutions.*.form").optional({ nullable: true }).isString(),
   body("dilutions.*.dose").optional({ nullable: true }).isFloat({ min: 0 }),
   body("dilutions.*.dose_unit").optional({ nullable: true }).isString(),
