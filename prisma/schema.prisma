@@ -270,6 +270,7 @@ model cancer_subtypes {
   cancer_types                  cancer_types                    @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_subtype_cancer_type")
   diagnosis                     diagnosis?                      @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction)
   chemotherapy_plan             chemotherapy_plan[]
+  chemotherapy_protocol_cancers chemotherapy_protocol_cancers[]
   chemotherapy_regimen_protocol chemotherapy_regimen_protocol[]
   oncology_staging_detail       oncology_staging_detail[]
 }
@@ -289,6 +290,7 @@ model cancer_types {
   cancer_subtypes               cancer_subtypes[]
   diagnosis                     diagnosis?                      @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction)
   chemotherapy_plan             chemotherapy_plan[]
+  chemotherapy_protocol_cancers chemotherapy_protocol_cancers[]
   chemotherapy_regimen_protocol chemotherapy_regimen_protocol[]
   molecular_subtypes            molecular_subtypes[]
   oncology_staging_detail       oncology_staging_detail[]
@@ -449,7 +451,7 @@ model chemotherapy_discharge_instructions {
   discharge_instruction_id      String                        @unique(map: "uq_discharge_instruction_id") @db.VarChar(100)
   protocol_id                   String                        @db.VarChar(100)
   medicine_id                   String?                       @db.VarChar(100)
-  drug_sequence                 Int?
+  drug_sequence                 Decimal?                      @db.Decimal
   drug_from                     String?                       @db.VarChar(100)
   frequency                     String?                       @db.VarChar(100)
   composition                   String?
@@ -466,6 +468,7 @@ model chemotherapy_discharge_instructions {
   updated_by                    String?                       @db.VarChar(100)
   updated_at                    DateTime?                     @default(now()) @db.Timestamp(6)
   duration_days                 String?                       @db.VarChar
+  drug_brand_name               String?                       @db.VarChar
   medicine_master               medicine_master?              @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_discharge_medicine")
   chemotherapy_regimen_protocol chemotherapy_regimen_protocol @relation(fields: [protocol_id], references: [protocol_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_discharge_protocol")
 }
@@ -701,9 +704,28 @@ model chemotherapy_protocol_dilutions {
   created_at                          DateTime?                            @default(now()) @db.Timestamp(6)
   updated_by                          String?                              @db.VarChar(100)
   updated_at                          DateTime?                            @default(now()) @db.Timestamp(6)
+  drug_brand_name                     String?                              @db.VarChar
   medicine_master                     medicine_master?                     @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_protocol_dilution_medicine")
   chemotherapy_regimen_protocol       chemotherapy_regimen_protocol        @relation(fields: [protocol_id], references: [protocol_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_protocol_dilution_protocol")
   chemotherapy_regimen_protocol_items chemotherapy_regimen_protocol_items? @relation(fields: [protocol_item_id], references: [protocol_item_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_protocol_dilution_item")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model chemotherapy_protocol_cancers {
+  id                            BigInt                        @id @default(autoincrement())
+  protocol_id                   String                        @db.VarChar(100)
+  cancer_type_id                String                        @db.VarChar(100)
+  subtype_id                    String?                       @db.VarChar(100)
+  created_at                    DateTime?                     @default(now()) @db.Timestamp(6)
+  active_status                 Int?                          @default(1) @db.SmallInt
+  cancer_types                  cancer_types                  @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_protocol_cancers_cancer_type")
+  chemotherapy_regimen_protocol chemotherapy_regimen_protocol @relation(fields: [protocol_id], references: [protocol_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_protocol_cancers_protocol")
+  cancer_subtypes               cancer_subtypes?              @relation(fields: [subtype_id], references: [subtype_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_protocol_cancers_subtype")
+
+  @@unique([protocol_id, cancer_type_id, subtype_id], map: "uq_protocol_cancer_subtype")
+  @@index([protocol_id], map: "idx_protocol_cancers_proto")
+  @@index([subtype_id], map: "idx_protocol_cancers_sub")
+  @@index([cancer_type_id], map: "idx_protocol_cancers_type")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -735,6 +757,7 @@ model chemotherapy_regimen_protocol {
   source_resource_id                  String?                               @db.VarChar(100)
   chemotherapy_discharge_instructions chemotherapy_discharge_instructions[]
   chemotherapy_plan                   chemotherapy_plan[]
+  chemotherapy_protocol_cancers       chemotherapy_protocol_cancers[]
   chemotherapy_protocol_dilutions     chemotherapy_protocol_dilutions[]
   cancer_types                        cancer_types?                         @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_regimen_protocol_cancer_type")
   cancer_subtypes                     cancer_subtypes?                      @relation(fields: [subtype_id], references: [subtype_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_regimen_protocol_subtype")

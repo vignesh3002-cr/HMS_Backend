@@ -119,13 +119,25 @@ class ChemotherapyController {
     }
     async getMedicinesByCancerTypeAndSubtype(req, res) {
         try {
-            const cancerTypeId = req.query.cancer_type_id;
-            const subtypeId = req.query.subtype_id;
+            const rawCancerTypeIds = req.query.cancer_type_ids ?? req.query.cancer_type_id;
+            const rawSubtypeIds = req.query.subtype_ids ?? req.query.subtype_id;
             const drugRole = req.query.drug_role;
-            if (!cancerTypeId || !drugRole) {
-                return res.status(400).json({ success: false, message: "cancer_type_id and drug_role are required" });
+            if (!rawCancerTypeIds || !drugRole) {
+                return res.status(400).json({ success: false, message: "cancer_type_ids and drug_role are required" });
             }
-            const data = await service.getMedicinesByCancerTypeAndSubtype(cancerTypeId, subtypeId, drugRole);
+            const cancerTypeIds = Array.isArray(rawCancerTypeIds)
+                ? rawCancerTypeIds
+                : typeof rawCancerTypeIds === "string"
+                    ? rawCancerTypeIds.split(",").map((s) => s.trim()).filter(Boolean)
+                    : [];
+            const subtypeIds = rawSubtypeIds
+                ? Array.isArray(rawSubtypeIds)
+                    ? rawSubtypeIds
+                    : typeof rawSubtypeIds === "string"
+                        ? rawSubtypeIds.split(",").map((s) => s.trim()).filter(Boolean)
+                        : undefined
+                : undefined;
+            const data = await service.getMedicinesByCancerTypesAndSubtypes(cancerTypeIds, subtypeIds, drugRole);
             return res.json({ success: true, message: "Medicines fetched successfully", data });
         }
         catch (error) {

@@ -89,6 +89,11 @@ class ChemotherapyService {
         // chemotherapy_discharge_instructions relation; expose them under the
         // protocol_discharge_instructions name the builder consumes.
         protocol.protocol_discharge_instructions = protocol.chemotherapy_discharge_instructions ?? [];
+        const protocolCancers = protocol.chemotherapy_protocol_cancers ?? [];
+        const cancerTypeIds = Array.from(new Set(protocolCancers.map((c) => c.cancer_type_id).filter(Boolean)));
+        const subtypeIds = Array.from(new Set(protocolCancers.map((c) => c.subtype_id).filter(Boolean)));
+        protocol.cancer_type_ids = cancerTypeIds.length > 0 ? cancerTypeIds : (protocol.cancer_type_id ? [protocol.cancer_type_id] : []);
+        protocol.subtype_ids = subtypeIds.length > 0 ? subtypeIds : (protocol.subtype_id ? [protocol.subtype_id] : []);
         return protocol;
     }
     async getDischargeMedicinesForProtocol(protocolId, organizationId) {
@@ -109,18 +114,14 @@ class ChemotherapyService {
     async getProtocolFieldOptions() {
         return this.repository.getProtocolFieldOptions();
     }
+    async getMedicinesByCancerTypesAndSubtypes(cancerTypeIds, subtypeIds, drugRole) {
+        if (!cancerTypeIds || cancerTypeIds.length === 0) {
+            return [];
+        }
+        return this.repository.getMedicinesByCancerTypesAndSubtypes(cancerTypeIds, subtypeIds, drugRole);
+    }
     async getMedicinesByCancerTypeAndSubtype(cancerTypeId, subtypeId, drugRole) {
-        const cancerType = await this.repository.findCancerTypeById(cancerTypeId);
-        if (!cancerType) {
-            throw new Error("Cancer type not found");
-        }
-        if (subtypeId) {
-            const subtype = await this.repository.findCancerSubtypeById(subtypeId);
-            if (!subtype) {
-                throw new Error("Cancer subtype not found");
-            }
-        }
-        return this.repository.getMedicinesByCancerTypeAndSubtype(cancerTypeId, subtypeId, drugRole);
+        return this.repository.getMedicinesByCancerTypesAndSubtypes([cancerTypeId], subtypeId ? [subtypeId] : undefined, drugRole);
     }
     // Upserts the dilutions that hang off a single protocol item. The
     // match priority mirrors applyStructure: explicit protocol_dilution_id
@@ -137,6 +138,7 @@ class ChemotherapyService {
                 protocol_id: protocolId,
                 protocol_item_id: itemId,
                 medicine_id: dilution.medicine_id ?? null,
+                drug_brand_name: dilution.drug_brand_name ?? null,
                 form: dilution.form ?? null,
                 dose: dilution.dose ?? null,
                 dose_unit: dilution.dose_unit ?? null,
@@ -183,11 +185,12 @@ class ChemotherapyService {
             const payload = {
                 protocol_id: protocolId,
                 medicine_id: instruction.medicine_id ?? null,
+                drug_brand_name: instruction.drug_brand_name ?? null,
                 drug_sequence: instruction.drug_sequence ?? sequence,
-                administration_day: instruction.administration_day ?? null,
                 drug_from: instruction.drug_from ?? null,
                 frequency: instruction.frequency ?? null,
                 duration: instruction.duration ?? null,
+                duration_days: instruction.duration_days ?? null,
                 patient_dose: instruction.patient_dose ?? null,
                 patient_dose_unit: instruction.patient_dose_unit ?? null,
                 administration_detail: instruction.administration_detail ?? null,
@@ -217,19 +220,66 @@ class ChemotherapyService {
             }
         }
     }
+    // Protocol-level dilutions (hanging directly off the protocol with
+    // protocol_item_id = null). Upserts by protocol_dilution_id if provided
+    // or creates fresh rows. Unmatched active protocol-level rows are deactivated.
+    async persistProtocolDilutions(tx, protocolId, dilutions, existingDilutions, actingUserId) {
+        const keptDilutionIds = [];
+        for (const dilution of dilutions ?? []) {
+            if (!dilution.medicine_id?.trim() && !dilution.diluent?.trim()) {
+                continue;
+            }
+            const matchDilution = dilution.protocol_dilution_id
+                ? existingDilutions.find((ed) => ed.protocol_dilution_id === dilution.protocol_dilution_id)
+                : undefined;
+            const dilutionPayload = {
+                protocol_id: protocolId,
+                protocol_item_id: null,
+                medicine_id: dilution.medicine_id?.trim() || null,
+                drug_brand_name: dilution.drug_brand_name ?? null,
+                form: dilution.form ?? null,
+                dose: dilution.dose != null && String(dilution.dose).trim() !== "" ? Number(dilution.dose) : null,
+                dose_unit: dilution.dose_unit ?? null,
+                dilution_volume: dilution.dilution_volume != null && String(dilution.dilution_volume).trim() !== "" ? Number(dilution.dilution_volume) : null,
+                dilution_volume_unit: dilution.dilution_volume_unit ?? null,
+                diluent: dilution.diluent ?? null,
+                comment: dilution.comment ?? null,
+                active_status: dilution.active_status ?? chemotherapy_constants_1.PROTOCOL_ACTIVE_STATUS.ACTIVE,
+                updated_by: actingUserId
+            };
+            if (matchDilution) {
+                keptDilutionIds.push(matchDilution.protocol_dilution_id);
+                await this.repository.updateRegimenProtocolDilution(tx, matchDilution.protocol_dilution_id, dilutionPayload);
+            }
+            else {
+                const newDilutionId = await this.repository.generateRegimenProtocolDilutionId(tx);
+                keptDilutionIds.push(newDilutionId);
+                await this.repository.createRegimenProtocolDilution(tx, {
+                    protocol_dilution_id: newDilutionId,
+                    source_resource_id: dilution.source_resource_id ?? null,
+                    created_by: actingUserId,
+                    ...dilutionPayload
+                });
+            }
+        }
+        for (const existingDilution of existingDilutions) {
+            if (!keptDilutionIds.includes(existingDilution.protocol_dilution_id)) {
+                await this.repository.deactivateRegimenProtocolDilution(tx, existingDilution.protocol_dilution_id);
+            }
+        }
+    }
     async createRegimenProtocol(dto, actingUserId) {
-        const cancerType = await this.repository.findCancerTypeById(dto.cancer_type_id);
+        const cancerTypeIds = dto.cancer_type_ids && dto.cancer_type_ids.length > 0
+            ? dto.cancer_type_ids
+            : (dto.cancer_type_id ? [dto.cancer_type_id] : []);
+        const subtypeIds = dto.subtype_ids && dto.subtype_ids.length > 0
+            ? dto.subtype_ids
+            : (dto.subtype_id ? [dto.subtype_id] : []);
+        const primaryCancerTypeId = cancerTypeIds[0] || dto.cancer_type_id;
+        const primarySubtypeId = subtypeIds[0] || dto.subtype_id || null;
+        const cancerType = await this.repository.findCancerTypeById(primaryCancerTypeId);
         if (!cancerType) {
             throw new Error("Cancer type not found");
-        }
-        if (dto.subtype_id) {
-            const subtype = await this.repository.findCancerSubtypeById(dto.subtype_id);
-            if (!subtype) {
-                throw new Error("Cancer subtype not found");
-            }
-            if (subtype.cancer_type_id !== dto.cancer_type_id) {
-                throw new Error("Selected subtype does not belong to the selected cancer type");
-            }
         }
         // regimen_code is auto-generated to equal protocol_id (a freshly
         // generated globally-unique id), so no duplicate-code check is needed.
@@ -264,8 +314,8 @@ class ChemotherapyService {
                 // the personalize flow below.
                 protocol_type: chemotherapy_constants_1.PROTOCOL_TYPE.GENERIC,
                 organization_id: null,
-                cancer_type_id: dto.cancer_type_id,
-                subtype_id: dto.subtype_id ?? null,
+                cancer_type_id: primaryCancerTypeId,
+                subtype_id: primarySubtypeId,
                 treatment_intent: dto.treatment_intent ?? null,
                 standard_cycles: dto.standard_cycles ?? null,
                 cycle_interval_days: dto.cycle_interval_days ?? null,
@@ -273,6 +323,7 @@ class ChemotherapyService {
                 notes: dto.notes ?? null,
                 no_of_days: dto.no_of_days ?? 1
             });
+            await this.repository.syncProtocolCancers(tx, newProtocolId, cancerTypeIds, subtypeIds);
             for (const item of dto.items) {
                 // POST-TREATMENT (ON DISCHARGE) medications live in the
                 // chemotherapy_discharge_instructions table, not as regimen
@@ -302,12 +353,16 @@ class ChemotherapyService {
                     patient_dose_unit: item.patient_dose_unit ?? null,
                     administration_detail: item.administration_detail ?? null,
                     previous_toxicity: item.previous_toxicity ?? null,
-                    remarks: item.remarks ?? null
+                    remarks: item.remarks ?? null,
+                    drug_brand_name: item.drug_brand_name ?? null
                 });
                 await this.persistItemDilutions(tx, newProtocolId, itemId, item.dilutions ?? [], [], actingUserId);
             }
             if (dto.discharge_instructions?.length) {
                 await this.persistDischargeInstructions(tx, newProtocolId, dto.discharge_instructions, [], actingUserId);
+            }
+            if (dto.dilutions?.length) {
+                await this.persistProtocolDilutions(tx, newProtocolId, dto.dilutions, [], actingUserId);
             }
             // Sync protocol days
             const existingDays = await this.repository.findRegimenProtocolDaysByProtocolId(newProtocolId);
@@ -331,9 +386,22 @@ class ChemotherapyService {
         if (existing.protocol_type === chemotherapy_constants_1.PROTOCOL_TYPE.PERSONALIZED) {
             throw new Error("Personalized protocols must be edited through the personalized protocol endpoints");
         }
+        const hasCancerTypeChanges = dto.cancer_type_ids !== undefined || dto.cancer_type_id !== undefined;
+        let cancerTypeIds = undefined;
+        let subtypeIds = undefined;
+        if (hasCancerTypeChanges) {
+            cancerTypeIds = dto.cancer_type_ids && dto.cancer_type_ids.length > 0
+                ? dto.cancer_type_ids
+                : (dto.cancer_type_id ? [dto.cancer_type_id] : []);
+            subtypeIds = dto.subtype_ids && dto.subtype_ids.length > 0
+                ? dto.subtype_ids
+                : (dto.subtype_id ? [dto.subtype_id] : []);
+        }
         const protocolChanges = {
             ...(dto.regimen_name !== undefined ? { regimen_name: dto.regimen_name } : {}),
             ...(dto.protocol_version !== undefined ? { protocol_version: dto.protocol_version } : {}),
+            ...(cancerTypeIds !== undefined && cancerTypeIds.length > 0 ? { cancer_type_id: cancerTypeIds[0] } : {}),
+            ...(subtypeIds !== undefined ? { subtype_id: subtypeIds[0] || null } : (dto.subtype_id !== undefined ? { subtype_id: dto.subtype_id } : {})),
             ...(dto.treatment_intent !== undefined ? { treatment_intent: dto.treatment_intent } : {}),
             ...(dto.standard_cycles !== undefined ? { standard_cycles: dto.standard_cycles } : {}),
             ...(dto.cycle_interval_days !== undefined ? { cycle_interval_days: dto.cycle_interval_days } : {}),
@@ -343,6 +411,9 @@ class ChemotherapyService {
         };
         await prisma_1.default.$transaction(async (tx) => {
             await this.repository.updateRegimenProtocol(tx, protocolId, protocolChanges);
+            if (hasCancerTypeChanges && cancerTypeIds) {
+                await this.repository.syncProtocolCancers(tx, protocolId, cancerTypeIds, subtypeIds ?? []);
+            }
             if (Object.keys(protocolChanges).length > 0) {
                 await (0, audit_service_1.logAudit)(tx, {
                     entity_type: "chemotherapy_regimen_protocol",
@@ -355,6 +426,10 @@ class ChemotherapyService {
             if (dto.discharge_instructions) {
                 const existingDischarge = await this.repository.listDischargeMedicinesForProtocol(protocolId);
                 await this.persistDischargeInstructions(tx, protocolId, dto.discharge_instructions, existingDischarge, actingUserId);
+            }
+            if (dto.dilutions) {
+                const existingDilutions = await this.repository.listProtocolLevelDilutions(protocolId);
+                await this.persistProtocolDilutions(tx, protocolId, dto.dilutions, existingDilutions, actingUserId);
             }
             // Sync protocol days
             const existingDays = await this.repository.findRegimenProtocolDaysByProtocolId(protocolId);
@@ -380,10 +455,12 @@ class ChemotherapyService {
                 protocol_id: protocolId,
                 source_resource_id: instruction.source_resource_id ?? null,
                 medicine_id: instruction.medicine_id ?? null,
+                drug_brand_name: instruction.drug_brand_name ?? null,
                 drug_sequence: instruction.drug_sequence ?? null,
                 drug_from: instruction.drug_from ?? null,
                 frequency: instruction.frequency ?? null,
                 duration: instruction.duration ?? null,
+                duration_days: instruction.duration_days ?? null,
                 patient_dose: instruction.patient_dose ?? null,
                 patient_dose_unit: instruction.patient_dose_unit ?? null,
                 administration_detail: instruction.administration_detail ?? null,
@@ -419,10 +496,12 @@ class ChemotherapyService {
         await prisma_1.default.$transaction(async (tx) => {
             await this.repository.updateDischargeInstruction(tx, dischargeInstructionId, {
                 medicine_id: instruction.medicine_id ?? null,
+                drug_brand_name: instruction.drug_brand_name ?? null,
                 drug_sequence: instruction.drug_sequence ?? null,
                 drug_from: instruction.drug_from ?? null,
                 frequency: instruction.frequency ?? null,
                 duration: instruction.duration ?? null,
+                duration_days: instruction.duration_days ?? null,
                 patient_dose: instruction.patient_dose ?? null,
                 patient_dose_unit: instruction.patient_dose_unit ?? null,
                 administration_detail: instruction.administration_detail ?? null,
@@ -495,7 +574,8 @@ class ChemotherapyService {
                 patient_dose_unit: item.patient_dose_unit ?? null,
                 administration_detail: item.administration_detail ?? null,
                 previous_toxicity: item.previous_toxicity ?? null,
-                remarks: item.remarks ?? null
+                remarks: item.remarks ?? null,
+                drug_brand_name: item.drug_brand_name ?? null
             });
             await this.persistItemDilutions(tx, protocolId, itemId, item.dilutions ?? [], [], actingUserId);
             await (0, audit_service_1.logAudit)(tx, {
@@ -565,6 +645,7 @@ class ChemotherapyService {
                 administration_detail: dto.administration_detail ?? item.administration_detail,
                 previous_toxicity: dto.previous_toxicity ?? item.previous_toxicity,
                 remarks: dto.remarks ?? item.remarks,
+                drug_brand_name: dto.drug_brand_name !== undefined ? dto.drug_brand_name : item.drug_brand_name,
             };
             await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             const existingDilutions = (item.chemotherapy_protocol_dilutions ?? []).map((d) => ({
@@ -806,6 +887,7 @@ class ChemotherapyService {
                     protocol_id: protocolId,
                     protocol_item_id: itemId,
                     medicine_id: dilution.medicine_id ?? null,
+                    drug_brand_name: dilution.drug_brand_name ?? null,
                     form: dilution.form ?? null,
                     dose: dilution.dose ?? null,
                     dose_unit: dilution.dose_unit ?? null,
@@ -1002,6 +1084,7 @@ class ChemotherapyService {
             source_resource_id: item.source_resource_id ?? item.protocol_item_id,
             dilutions: (item.chemotherapy_protocol_dilutions ?? []).map((dilution) => ({
                 medicine_id: dilution.medicine_id,
+                drug_brand_name: dilution.drug_brand_name,
                 form: dilution.form,
                 dose: dilution.dose != null ? Number(dilution.dose) : null,
                 dose_unit: dilution.dose_unit,
@@ -1097,6 +1180,7 @@ class ChemotherapyService {
             source_resource_id: item.source_resource_id ?? item.protocol_item_id,
             dilutions: (item.chemotherapy_protocol_dilutions ?? []).map((dilution) => ({
                 medicine_id: dilution.medicine_id,
+                drug_brand_name: dilution.drug_brand_name,
                 form: dilution.form,
                 dose: dilution.dose != null ? Number(dilution.dose) : null,
                 dose_unit: dilution.dose_unit,
@@ -1385,6 +1469,7 @@ class ChemotherapyService {
                 protocol_id: protocolId,
                 protocol_item_id: protocolItemId,
                 medicine_id: dto.medicine_id ?? null,
+                drug_brand_name: dto.drug_brand_name ?? null,
                 form: dto.form ?? null,
                 dose: dto.dose ?? null,
                 dose_unit: dto.dose_unit ?? null,
@@ -1420,6 +1505,7 @@ class ChemotherapyService {
         }
         const dilutionChanges = {
             ...(dto.medicine_id !== undefined ? { medicine_id: dto.medicine_id } : {}),
+            ...(dto.drug_brand_name !== undefined ? { drug_brand_name: dto.drug_brand_name } : {}),
             ...(dto.form !== undefined ? { form: dto.form } : {}),
             ...(dto.dose !== undefined ? { dose: dto.dose } : {}),
             ...(dto.dose_unit !== undefined ? { dose_unit: dto.dose_unit } : {}),
@@ -1542,6 +1628,7 @@ class ChemotherapyService {
             source_resource_id: item.source_resource_id ?? item.protocol_item_id,
             dilutions: (item.chemotherapy_protocol_dilutions ?? []).map((dilution) => ({
                 medicine_id: dilution.medicine_id,
+                drug_brand_name: dilution.drug_brand_name,
                 form: dilution.form,
                 dose: dilution.dose != null ? Number(dilution.dose) : null,
                 dose_unit: dilution.dose_unit,
