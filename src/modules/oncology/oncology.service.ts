@@ -219,6 +219,30 @@ export class OncologyService {
 
     }
 
+    async listAnatomicalSites(cancerTypeId: string) {
+
+        const cancerType = await this.repository.findCancerTypeById(cancerTypeId);
+
+        if (!cancerType) {
+            throw new Error("Cancer type not found");
+        }
+
+        return this.repository.findAnatomicalSitesByType(cancerTypeId);
+
+    }
+
+    async listCancerGrades(cancerTypeId: string) {
+
+        const cancerType = await this.repository.findCancerTypeById(cancerTypeId);
+
+        if (!cancerType) {
+            throw new Error("Cancer type not found");
+        }
+
+        return this.repository.findCancerGradesByType(cancerTypeId);
+
+    }
+
     // prisma/seedOncology.ts lives outside src/'s tsconfig rootDir (it's a
     // shared CLI + service entry point, not part of the compiled app), so
     // it's loaded via require() here instead of a static TS import - ts-node
@@ -329,7 +353,13 @@ export class OncologyService {
             t_stage: dto.t_stage ?? null,
             n_stage: dto.n_stage ?? null,
             m_stage: dto.m_stage ?? null,
-            metastasis_sites: dto.metastasis_sites ?? null
+            metastasis_sites: dto.metastasis_sites ?? null,
+            laterality: dto.laterality ?? null,
+            site: dto.site ?? null,
+            grade: dto.grade ?? null,
+            grade_system: dto.grade_system ?? null,
+            pre_diagnosis: dto.pre_diagnosis ?? null,
+            disease_status: dto.disease_status ?? null
         };
 
         const ihc: IhcInput = { ...(dto.ihc ?? {}) };
@@ -377,6 +407,11 @@ export class OncologyService {
                 m_stage: dto.m_stage ?? null,
                 metastasis_sites: jsonOrUndefined(dto.metastasis_sites) ?? Prisma.JsonNull,
                 laterality: dto.laterality ?? null,
+                pre_diagnosis: dto.pre_diagnosis ?? null,
+                disease_status: dto.disease_status ?? null,
+                site: dto.site ?? null,
+                grade: dto.grade ?? null,
+                grade_system: dto.grade_system ?? null,
                 performance_status: dto.performance_status ?? null,
                 // Default to whoever actually saw the patient in the
                 // qualifying encounter, unless the caller explicitly names
@@ -483,7 +518,13 @@ export class OncologyService {
             m_stage: dto.m_stage !== undefined ? dto.m_stage : existing.m_stage,
             metastasis_sites: dto.metastasis_sites !== undefined
                 ? dto.metastasis_sites
-                : (existing.metastasis_sites as unknown as string[] | null)
+                : (existing.metastasis_sites as unknown as string[] | null),
+            laterality: dto.laterality !== undefined ? dto.laterality : existing.laterality,
+            site: dto.site !== undefined ? dto.site : existing.site,
+            grade: dto.grade !== undefined ? dto.grade : existing.grade,
+            grade_system: dto.grade_system !== undefined ? dto.grade_system : existing.grade_system,
+            pre_diagnosis: dto.pre_diagnosis !== undefined ? dto.pre_diagnosis : existing.pre_diagnosis,
+            disease_status: dto.disease_status !== undefined ? dto.disease_status : existing.disease_status
         };
 
         const ihc: IhcInput = { ...mapIhcRowToInput(existing.ihc_results), ...(dto.ihc ?? {}) };
@@ -528,6 +569,11 @@ export class OncologyService {
             ...(dto.m_stage !== undefined && dto.m_stage !== null ? { m_stage: dto.m_stage } : {}),
             ...(dto.metastasis_sites !== undefined ? { metastasis_sites: jsonOrUndefined(dto.metastasis_sites) } : {}),
             ...(dto.laterality !== undefined && dto.laterality !== null ? { laterality: dto.laterality } : {}),
+            ...(dto.pre_diagnosis !== undefined && dto.pre_diagnosis !== null ? { pre_diagnosis: dto.pre_diagnosis } : {}),
+            ...(dto.disease_status !== undefined && dto.disease_status !== null ? { disease_status: dto.disease_status } : {}),
+            ...(dto.site !== undefined && dto.site !== null ? { site: dto.site } : {}),
+            ...(dto.grade !== undefined && dto.grade !== null ? { grade: dto.grade } : {}),
+            ...(dto.grade_system !== undefined && dto.grade_system !== null ? { grade_system: dto.grade_system } : {}),
             ...(dto.performance_status !== undefined && dto.performance_status !== null ? { performance_status: dto.performance_status } : {}),
             ...(dto.employee_id !== undefined && dto.employee_id !== null ? { employee_id: dto.employee_id } : {}),
             ...(dto.branch_id !== undefined && dto.branch_id !== null ? { branch_id: dto.branch_id } : {})

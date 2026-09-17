@@ -6,6 +6,13 @@ export interface StagingInput {
     n_stage?: string | null;
     m_stage?: string | null;
     metastasis_sites?: string[] | null;
+    laterality?: string | null;
+    site?: string | null;
+    histomorphology?: string | null;
+    grade?: string | null;
+    grade_system?: string | null;
+    pre_diagnosis?: string | null;
+    disease_status?: string | null;
 
 }
 
@@ -178,6 +185,11 @@ export interface CreateStagingDetailDto {
     m_stage?: string | null;
     metastasis_sites?: string[] | null;
     laterality?: string | null;
+    pre_diagnosis?: string | null;
+    disease_status?: string | null;
+    site?: string | null;
+    grade?: string | null;
+    grade_system?: string | null;
     performance_status?: number | null;
     employee_id?: string | null;
     branch_id?: string | null;
@@ -202,6 +214,11 @@ export interface UpdateStagingDetailDto {
     m_stage?: string | null;
     metastasis_sites?: string[] | null;
     laterality?: string | null;
+    pre_diagnosis?: string | null;
+    disease_status?: string | null;
+    site?: string | null;
+    grade?: string | null;
+    grade_system?: string | null;
     performance_status?: number | null;
     employee_id?: string | null;
     branch_id?: string | null;

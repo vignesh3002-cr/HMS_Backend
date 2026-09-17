@@ -378,7 +378,9 @@ export const createPlanValidation = [
     body("plan_items").optional({ nullable: true }).isArray({ min: 1 }).withMessage("plan_items, if provided, must be a non-empty array"),
     body("plan_items.*.medicine_id").notEmpty().withMessage("Each plan item requires a medicine_id"),
     body("plan_items.*.drug_sequence").isInt({ min: 1 }).withMessage("Each plan item requires a drug_sequence >= 1"),
-    body("plan_items.*.drug_role").optional().isIn(Object.values(DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(DRUG_ROLE).join(", ")}`)
+    body("plan_items.*.drug_role").optional().isIn(Object.values(DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(DRUG_ROLE).join(", ")}`),
+    body("remarks").optional({ nullable: true }).isString(),
+    body("discussion").optional({ nullable: true }).isString()
 
 ];
 
@@ -387,7 +389,9 @@ export const updatePlanValidation = [
     param("planId").notEmpty(),
     body("planned_cycles").optional().isInt({ min: 1 }),
     body("expected_end_date").optional({ nullable: true }).isISO8601(),
-    body("consent_date").optional({ nullable: true }).isISO8601()
+    body("consent_date").optional({ nullable: true }).isISO8601(),
+    body("remarks").optional({ nullable: true }).isString(),
+    body("discussion").optional({ nullable: true }).isString()
 
 ];
 

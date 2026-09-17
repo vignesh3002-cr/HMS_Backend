@@ -43,6 +43,7 @@ export interface RegimenProtocolItemDto {
     dosage?: number | null;
     dosage_unit?: string | null;
     dose_calculation_method?: string | null;
+    dosing_basis?: string | null;
     administration_route?: string | null;
     infusion_type?: string | null;
     infusion_duration_minutes?: number | null;
@@ -68,6 +69,7 @@ export interface UpdateRegimenProtocolItemDto {
   dosage?: number | null;
   dosage_unit?: string | null;
   dose_calculation_method?: string | null;
+  dosing_basis?: string | null;
   administration_route?: string | null;
   infusion_type?: string | null;
   infusion_duration_minutes?: number | null;
@@ -180,6 +182,7 @@ export interface PersonalizationItemInput {
     dosage?: number | null;
     dosage_unit?: string | null;
     dose_calculation_method?: string | null;
+    dosing_basis?: string | null;
     administration_route?: string | null;
     infusion_type?: string | null;
     infusion_duration_minutes?: number | null;
@@ -344,6 +347,7 @@ export interface CreatePlanDto {
     consent_date?: string | null;
     insurance_type?: string | null;
     remarks?: string | null;
+    discussion?: string | null;
     // The "never auto-treat" gate - must be explicitly true regardless of
     // whether a suggested_therapy was actually computed (it's null for every
     // cancer type outside Breast/Lung, which chemo.derivation.ts doesn't
@@ -371,6 +375,7 @@ export interface UpdatePlanDto {
     consent_date?: string | null;
     insurance_type?: string | null;
     remarks?: string | null;
+    discussion?: string | null;
 
 }
 

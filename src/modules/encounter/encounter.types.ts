@@ -13,6 +13,13 @@ export interface UpdateEncounterDTO {
     advice?: string;
     follow_up_date?: string; // YYYY-MM-DD
 
+    // Consultation Summary clinical findings (added per EMR master spec).
+    history_of_present_illness?: string;
+    cns_examination?: string;
+    cvs_examination?: string;
+    per_abdomen_examination?: string;
+    clinical_findings?: string;
+
     height?: number;
     weight?: number;
     pulse?: number;

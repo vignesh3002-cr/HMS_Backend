@@ -313,6 +313,12 @@ export class EncounterService {
                 ? new Date(data.follow_up_date)
                 : undefined,
 
+            history_of_present_illness: data.history_of_present_illness,
+            cns_examination: data.cns_examination,
+            cvs_examination: data.cvs_examination,
+            per_abdomen_examination: data.per_abdomen_examination,
+            clinical_findings: data.clinical_findings,
+
             height: data.height,
             weight: data.weight,
             pulse: data.pulse,

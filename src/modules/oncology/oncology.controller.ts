@@ -135,6 +135,32 @@ export class OncologyController {
 
     }
 
+    async getAnatomicalSites(req: Request, res: Response) {
+
+        try {
+
+            const data = await service.listAnatomicalSites(req.params.cancerTypeId as string);
+            return res.json({ success: true, message: "Anatomical sites fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async getCancerGrades(req: Request, res: Response) {
+
+        try {
+
+            const data = await service.listCancerGrades(req.params.cancerTypeId as string);
+            return res.json({ success: true, message: "Cancer grades fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
     async reseedReference(req: Request, res: Response) {
 
         try {

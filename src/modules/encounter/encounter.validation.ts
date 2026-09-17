@@ -20,6 +20,12 @@ export const updateEncounterValidation = [
     body("clinical_notes").optional().isString(),
     body("advice").optional().isString(),
 
+    body("history_of_present_illness").optional().isString(),
+    body("cns_examination").optional().isString(),
+    body("cvs_examination").optional().isString(),
+    body("per_abdomen_examination").optional().isString(),
+    body("clinical_findings").optional().isString(),
+
     body("follow_up_date")
         .optional()
         .isISO8601()
