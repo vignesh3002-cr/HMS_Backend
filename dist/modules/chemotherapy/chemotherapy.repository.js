@@ -29,7 +29,15 @@ class ChemotherapyRepository {
         },
         chemotherapy_discharge_instructions: { where: { active_status: 1 }, orderBy: { drug_sequence: "asc" }, include: { medicine_master: true } },
         cancer_types: { select: { cancer_type_id: true, cancer_type: true } },
-        cancer_subtypes: { select: { subtype_id: true, subtype_name: true } }
+        cancer_subtypes: { select: { subtype_id: true, subtype_name: true } },
+        // @ts-ignore
+        chemotherapy_protocol_cancers: {
+            where: { active_status: 1 },
+            include: {
+                cancer_types: { select: { cancer_type_id: true, cancer_type: true } },
+                cancer_subtypes: { select: { subtype_id: true, subtype_name: true } }
+            }
+        }
     };
     async listRegimenProtocols(filters) {
         return prisma_1.default.chemotherapy_regimen_protocol.findMany({
@@ -47,11 +55,27 @@ class ChemotherapyRepository {
                         ]
                     }
                     : { protocol_type: { not: "PERSONALIZED" } }),
-                ...(filters.cancer_type_id ? { cancer_type_id: filters.cancer_type_id } : {}),
+                ...(filters.cancer_type_id
+                    ? {
+                        OR: [
+                            { cancer_type_id: filters.cancer_type_id },
+                            { chemotherapy_protocol_cancers: { some: { cancer_type_id: filters.cancer_type_id, active_status: 1 } } }
+                        ]
+                    }
+                    : {}),
                 // A null subtype_id on the protocol means "applies to the whole
                 // cancer type" - so filtering by a specific subtype should
                 // surface both subtype-specific AND type-wide protocols.
-                ...(filters.subtype_id ? { OR: [{ subtype_id: filters.subtype_id }, { subtype_id: null }] } : {})
+                ...(filters.subtype_id
+                    ? {
+                        OR: [
+                            { subtype_id: filters.subtype_id },
+                            { subtype_id: null },
+                            { chemotherapy_protocol_cancers: { some: { subtype_id: filters.subtype_id, active_status: 1 } } },
+                            { chemotherapy_protocol_cancers: { some: { subtype_id: null, active_status: 1 } } }
+                        ]
+                    }
+                    : {})
             },
             include: this.protocolInclude,
             orderBy: { regimen_code: "asc" }
@@ -69,7 +93,8 @@ class ChemotherapyRepository {
     // relation, so they are surfaced separately for the protocol builder.
     async listProtocolLevelDilutions(protocolId) {
         return prisma_1.default.chemotherapy_protocol_dilutions.findMany({
-            where: { protocol_id: protocolId, active_status: 1, protocol_item_id: null },
+            where: { protocol_id: protocolId, active_status: 1 },
+            include: { medicine_master: true },
             orderBy: { created_at: "asc" }
         });
     }
@@ -122,6 +147,47 @@ class ChemotherapyRepository {
             where: { protocol_id: protocolId },
             data: { ...data, updated_at: new Date() }
         });
+    }
+    async syncProtocolCancers(tx, protocolId, cancerTypeIds, subtypeIds = []) {
+        const client = tx;
+        // Remove existing associations for this protocol
+        await client.chemotherapy_protocol_cancers.deleteMany({
+            where: { protocol_id: protocolId }
+        });
+        if (!cancerTypeIds || cancerTypeIds.length === 0)
+            return;
+        for (const typeId of cancerTypeIds) {
+            const matchingSubtypes = await client.cancer_subtypes.findMany({
+                where: {
+                    cancer_type_id: typeId,
+                    subtype_id: { in: subtypeIds },
+                    active_status: 1
+                },
+                select: { subtype_id: true }
+            });
+            if (matchingSubtypes.length > 0) {
+                for (const sub of matchingSubtypes) {
+                    await client.chemotherapy_protocol_cancers.create({
+                        data: {
+                            protocol_id: protocolId,
+                            cancer_type_id: typeId,
+                            subtype_id: sub.subtype_id,
+                            active_status: 1
+                        }
+                    });
+                }
+            }
+            else {
+                await client.chemotherapy_protocol_cancers.create({
+                    data: {
+                        protocol_id: protocolId,
+                        cancer_type_id: typeId,
+                        subtype_id: null,
+                        active_status: 1
+                    }
+                });
+            }
+        }
     }
     async createRegimenProtocolItem(tx, data) {
         return tx.chemotherapy_regimen_protocol_items.create({ data });
@@ -284,22 +350,109 @@ class ChemotherapyRepository {
             if (d.medicine_master && !seen.has(d.medicine_id))
                 seen.set(d.medicine_id, d.medicine_master);
         }
+        if (seen.size === 0) {
+            return prisma_1.default.medicine_master.findMany({
+                where: { is_active: true },
+                select: {
+                    medicine_id: true,
+                    medicine_name: true,
+                    generic_name: true,
+                    strength: true,
+                    dosage_form: true,
+                    unit: true,
+                    route: true
+                },
+                orderBy: { medicine_name: "asc" }
+            });
+        }
         return [...seen.values()];
     }
-    // Distinct active medicines already used in active protocols matching the
-    // given cancer type/subtype and drug role. A protocol with null subtype
-    // applies to the whole cancer type, so both subtype-specific and
-    // type-wide protocols are included.
-    async getMedicinesByCancerTypeAndSubtype(cancerTypeId, subtypeId, drugRole) {
+    async getMedicinesByCancerTypesAndSubtypes(cancerTypeIds, subtypeIds, drugRole) {
+        if (!cancerTypeIds || cancerTypeIds.length === 0) {
+            return [];
+        }
+        const normRole = (drugRole || "").toUpperCase();
+        if (normRole === "DISCHARGE" || normRole === "POSTMEDICATION") {
+            const dischargeItems = await prisma_1.default.chemotherapy_discharge_instructions.findMany({
+                where: {
+                    active_status: 1,
+                    medicine_id: { not: null },
+                    chemotherapy_regimen_protocol: {
+                        active_status: 1,
+                        OR: [
+                            { cancer_type_id: { in: cancerTypeIds } },
+                            { chemotherapy_protocol_cancers: { some: { cancer_type_id: { in: cancerTypeIds }, active_status: 1 } } }
+                        ],
+                        ...(subtypeIds && subtypeIds.length > 0
+                            ? {
+                                OR: [
+                                    { subtype_id: { in: subtypeIds } },
+                                    { subtype_id: null },
+                                    { chemotherapy_protocol_cancers: { some: { subtype_id: { in: subtypeIds }, active_status: 1 } } },
+                                    { chemotherapy_protocol_cancers: { some: { subtype_id: null, active_status: 1 } } }
+                                ]
+                            }
+                            : {})
+                    },
+                    medicine_master: { is_active: true }
+                },
+                include: {
+                    medicine_master: {
+                        select: {
+                            medicine_id: true,
+                            medicine_name: true,
+                            generic_name: true,
+                            strength: true,
+                            dosage_form: true,
+                            unit: true,
+                            route: true
+                        }
+                    }
+                },
+                orderBy: { medicine_master: { medicine_name: "asc" } }
+            });
+            const seen = new Map();
+            for (const item of dischargeItems) {
+                if (item.medicine_id && item.medicine_master && !seen.has(item.medicine_id)) {
+                    seen.set(item.medicine_id, item.medicine_master);
+                }
+            }
+            if (seen.size === 0) {
+                return prisma_1.default.medicine_master.findMany({
+                    where: { is_active: true },
+                    select: {
+                        medicine_id: true,
+                        medicine_name: true,
+                        generic_name: true,
+                        strength: true,
+                        dosage_form: true,
+                        unit: true,
+                        route: true
+                    },
+                    orderBy: { medicine_name: "asc" }
+                });
+            }
+            return [...seen.values()];
+        }
         const items = await prisma_1.default.chemotherapy_regimen_protocol_items.findMany({
             where: {
-                drug_role: drugRole,
+                drug_role: normRole,
                 active_status: 1,
                 chemotherapy_regimen_protocol: {
-                    cancer_type_id: cancerTypeId,
                     active_status: 1,
-                    ...(subtypeId
-                        ? { OR: [{ subtype_id: subtypeId }, { subtype_id: null }] }
+                    OR: [
+                        { cancer_type_id: { in: cancerTypeIds } },
+                        { chemotherapy_protocol_cancers: { some: { cancer_type_id: { in: cancerTypeIds }, active_status: 1 } } }
+                    ],
+                    ...(subtypeIds && subtypeIds.length > 0
+                        ? {
+                            OR: [
+                                { subtype_id: { in: subtypeIds } },
+                                { subtype_id: null },
+                                { chemotherapy_protocol_cancers: { some: { subtype_id: { in: subtypeIds }, active_status: 1 } } },
+                                { chemotherapy_protocol_cancers: { some: { subtype_id: null, active_status: 1 } } }
+                            ]
+                        }
                         : {})
                 },
                 medicine_master: { is_active: true }
@@ -321,10 +474,61 @@ class ChemotherapyRepository {
         });
         const seen = new Map();
         for (const item of items) {
-            if (!seen.has(item.medicine_id))
+            if (item.medicine_id && item.medicine_master && !seen.has(item.medicine_id)) {
                 seen.set(item.medicine_id, item.medicine_master);
+            }
+        }
+        // If no matching items found in existing protocols for this combination,
+        // fall back to medicines matching this role or all active medicines
+        if (seen.size === 0) {
+            const fallbackItems = await prisma_1.default.chemotherapy_regimen_protocol_items.findMany({
+                where: {
+                    drug_role: normRole,
+                    active_status: 1,
+                    medicine_master: { is_active: true }
+                },
+                include: {
+                    medicine_master: {
+                        select: {
+                            medicine_id: true,
+                            medicine_name: true,
+                            generic_name: true,
+                            strength: true,
+                            dosage_form: true,
+                            unit: true,
+                            route: true
+                        }
+                    }
+                },
+                orderBy: { medicine_master: { medicine_name: "asc" } }
+            });
+            for (const item of fallbackItems) {
+                if (item.medicine_id && item.medicine_master && !seen.has(item.medicine_id)) {
+                    seen.set(item.medicine_id, item.medicine_master);
+                }
+            }
+            if (seen.size === 0) {
+                return prisma_1.default.medicine_master.findMany({
+                    where: { is_active: true },
+                    select: {
+                        medicine_id: true,
+                        medicine_name: true,
+                        generic_name: true,
+                        strength: true,
+                        dosage_form: true,
+                        unit: true,
+                        route: true
+                    },
+                    orderBy: { medicine_name: "asc" }
+                });
+            }
         }
         return [...seen.values()];
+    }
+    // Distinct active medicines already used in active protocols matching the
+    // given cancer type/subtype and drug role.
+    async getMedicinesByCancerTypeAndSubtype(cancerTypeId, subtypeId, drugRole) {
+        return this.getMedicinesByCancerTypesAndSubtypes([cancerTypeId], subtypeId ? [subtypeId] : undefined, drugRole);
     }
     async listMedicinesByDrugRole(drugRole) {
         const items = await prisma_1.default.chemotherapy_regimen_protocol_items.findMany({
@@ -394,12 +598,35 @@ class ChemotherapyRepository {
                 orderBy: { diluent: "asc" }
             })
         ]);
+        const standardDosageUnits = ["mg", "mg/m2", "mg/kg", "AUC", "g", "mcg"];
+        const standardForms = ["IV Infusion", "IV Piggyback", "IV Push", "IV Bag", "Oral", "SC", "Tab", "Cap"];
+        const standardDoseUnits = ["mg", "g", "mcg", "mg/m2", "mg/kg"];
+        const standardVolumeUnits = ["mL", "L"];
+        const standardDiluents = [
+            "Normal Saline (0.9% NaCl)",
+            "5% Dextrose in Water (D5W)",
+            "Sterile Water for Injection",
+            "0.45% Sodium Chloride (Half Normal Saline)",
+            "Dextrose 5% in 0.9% NaCl (D5NS)",
+            "Dextrose 5% in 0.45% NaCl (D5 1/2NS)"
+        ];
+        const mergeDistinct = (dbList, defaults) => {
+            const set = new Set();
+            for (const item of dbList) {
+                if (item?.trim())
+                    set.add(item.trim());
+            }
+            for (const def of defaults) {
+                set.add(def);
+            }
+            return Array.from(set).sort((a, b) => a.localeCompare(b));
+        };
         return {
-            dosage_units: dosageUnits.map((d) => d.dosage_unit).filter((v) => !!v),
-            dilution_forms: dilutionForms.map((d) => d.form).filter((v) => !!v),
-            dilution_dose_units: dilutionDoseUnits.map((d) => d.dose_unit).filter((v) => !!v),
-            dilution_volume_units: dilutionVolumeUnits.map((d) => d.dilution_volume_unit).filter((v) => !!v),
-            diluents: diluents.map((d) => d.diluent).filter((v) => !!v)
+            dosage_units: mergeDistinct(dosageUnits.map((d) => d.dosage_unit), standardDosageUnits),
+            dilution_forms: mergeDistinct(dilutionForms.map((d) => d.form), standardForms),
+            dilution_dose_units: mergeDistinct(dilutionDoseUnits.map((d) => d.dose_unit), standardDoseUnits),
+            dilution_volume_units: mergeDistinct(dilutionVolumeUnits.map((d) => d.dilution_volume_unit), standardVolumeUnits),
+            diluents: mergeDistinct(diluents.map((d) => d.diluent), standardDiluents)
         };
     }
     async findDepartmentById(departmentId) {
