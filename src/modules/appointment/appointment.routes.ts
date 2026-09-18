@@ -12,7 +12,8 @@ import {
     getDoctorSlotSummaryValidation,
     getDoctorWeekSlotSummaryValidation,
     getPatientCountValidation,
-    cancelAppointmentValidation
+    cancelAppointmentValidation,
+    updateChemoFitnessValidation
 } from "./appointment.validation";
 import { DoctorTransferController } from "../doctor-transfer/doctorTransfer.controller";
 import {
@@ -125,6 +126,14 @@ router.patch(
     authorize("appointment.update"),
     updateAppointmentStatusValidation,
     controller.updateAppointmentStatus.bind(controller)
+);
+
+router.patch(
+    "/:appointmentNo/chemo-fitness",
+    authenticate,
+    authorize("appointment.update"),
+    updateChemoFitnessValidation,
+    controller.updateChemoFitness.bind(controller)
 );
 
 // Soft cancellation only - appointments are never physically deleted.

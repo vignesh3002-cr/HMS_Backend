@@ -3,13 +3,13 @@ export interface RegimenProtocolDilutionInput {
     protocol_dilution_id?: string;
     source_resource_id?: string | null;
     medicine_id?: string | null;
+    drug_brand_name?: string | null;
     form?: string | null;
     dose?: number | null;
     dose_unit?: string | null;
     dilution_volume?: number | null;
     dilution_volume_unit?: string | null;
     diluent?: string | null;
-    administration_day?: number | null;
     comment?: string | null;
     active_status?: number | null;
 
@@ -20,11 +20,12 @@ export interface RegimenProtocolDischargeInstructionInput {
     discharge_instruction_id?: string;
     source_resource_id?: string | null;
     medicine_id?: string | null;
+    drug_brand_name?: string | null;
     drug_sequence?: number | null;
-    administration_day?: number | null;
     drug_from?: string | null;
     frequency?: string | null;
     duration?: string | null;
+    duration_days?: string | null;
     patient_dose?: number | null;
     patient_dose_unit?: string | null;
     administration_detail?: string | null;
@@ -54,6 +55,7 @@ export interface RegimenProtocolItemDto {
     administration_detail?: string | null;
     previous_toxicity?: string | null;
     remarks?: string | null;
+    drug_brand_name?: string | null;
     dilutions?: RegimenProtocolDilutionInput[];
 
 }
@@ -78,6 +80,7 @@ export interface UpdateRegimenProtocolItemDto {
   administration_detail?: string | null;
   previous_toxicity?: string | null;
   remarks?: string | null;
+  drug_brand_name?: string | null;
   dilutions?: RegimenProtocolDilutionInput[];
 }
 export interface CreateRegimenProtocolDto {
@@ -86,7 +89,9 @@ export interface CreateRegimenProtocolDto {
     regimen_name: string;
     protocol_version?: string | null;
     cancer_type_id: string;
+    cancer_type_ids?: string[];
     subtype_id?: string | null;
+    subtype_ids?: string[];
     treatment_intent?: string | null;
     standard_cycles?: number | null;
     cycle_interval_days?: number | null;
@@ -96,6 +101,7 @@ export interface CreateRegimenProtocolDto {
     days?: RegimenProtocolDayInput[];
     items: RegimenProtocolItemDto[];
     discharge_instructions?: RegimenProtocolDischargeInstructionInput[];
+    dilutions?: RegimenProtocolDilutionInput[];
 
 }
 
@@ -103,12 +109,17 @@ export interface UpdateRegimenProtocolDto {
 
     regimen_name?: string;
     protocol_version?: string | null;
+    cancer_type_id?: string;
+    cancer_type_ids?: string[];
+    subtype_id?: string | null;
+    subtype_ids?: string[];
     treatment_intent?: string | null;
     standard_cycles?: number | null;
     cycle_interval_days?: number | null;
     guideline_source?: string | null;
     notes?: string | null;
     discharge_instructions?: RegimenProtocolDischargeInstructionInput[];
+    dilutions?: RegimenProtocolDilutionInput[];
     no_of_days?: number | null;
     days?: RegimenProtocolDayInput[];
 
@@ -144,6 +155,7 @@ export interface PersonalizationDilutionInput {
 
     protocol_dilution_id?: string;
     medicine_id?: string | null;
+    drug_brand_name?: string | null;
     form?: string | null;
     dose?: number | null;
     dose_unit?: string | null;

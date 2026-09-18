@@ -2,7 +2,7 @@ export interface CreateAppointmentDTO {
 
     patient_id: string;
 
-    employee_id: string; // doctor
+    employee_id?: string; // doctor (optional for Lab Visit)
 
     branch_id: string;
 
@@ -77,5 +77,17 @@ export interface GetAppointmentsQuery {
     page?: number;
 
     limit?: number;
+
+}
+
+export interface UpdateChemoFitnessDTO {
+
+    fitness: "FIT" | "UNFIT" | "PENDING";
+
+    reason?: string;
+
+    notes?: string;
+
+    evaluatedBy?: string;
 
 }
