@@ -34,6 +34,8 @@ const diagnosis_routes_1 = __importDefault(require("./modules/diagnosis/diagnosi
 const clinical_details_routes_1 = __importDefault(require("./modules/clinical-details/clinical-details.routes"));
 const notification_routes_1 = __importDefault(require("./modules/notification/notification.routes"));
 const referral_routes_1 = __importDefault(require("./modules/referral/referral.routes"));
+const priorityFlags_routes_1 = __importDefault(require("./modules/priority-flags/priorityFlags.routes"));
+const ai_chat_routes_1 = __importDefault(require("./modules/ai/ai-chat.routes"));
 const bcrypt_1 = require("./utils/bcrypt");
 const appointment_status_job_1 = require("./jobs/appointment-status.job");
 // Fix BigInt serialization - Prisma returns BigInt types
@@ -134,6 +136,8 @@ app.use("/api/notifications", notification_routes_1.default);
 app.use("/api/qualification-master", qualification_master_routes_1.default);
 app.use("/api/diagnosis", diagnosis_routes_1.default);
 app.use("/api/referral", referral_routes_1.default);
+app.use("/api/priority-flags", priorityFlags_routes_1.default);
+app.use("/api/ai-chat", ai_chat_routes_1.default);
 app.use("/api/hashpassword", async (req, res) => {
     const { password } = req.body;
     const hashedPassword = await (0, bcrypt_1.hashPassword)(password);
