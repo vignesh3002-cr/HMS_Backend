@@ -30,6 +30,7 @@ class ChemotherapyRepository {
         chemotherapy_discharge_instructions: { where: { active_status: 1 }, orderBy: { drug_sequence: "asc" }, include: { medicine_master: true } },
         cancer_types: { select: { cancer_type_id: true, cancer_type: true } },
         cancer_subtypes: { select: { subtype_id: true, subtype_name: true } },
+        // @ts-ignore
         chemotherapy_protocol_cancers: {
             where: { active_status: 1 },
             include: {
@@ -148,14 +149,15 @@ class ChemotherapyRepository {
         });
     }
     async syncProtocolCancers(tx, protocolId, cancerTypeIds, subtypeIds = []) {
+        const client = tx;
         // Remove existing associations for this protocol
-        await tx.chemotherapy_protocol_cancers.deleteMany({
+        await client.chemotherapy_protocol_cancers.deleteMany({
             where: { protocol_id: protocolId }
         });
         if (!cancerTypeIds || cancerTypeIds.length === 0)
             return;
         for (const typeId of cancerTypeIds) {
-            const matchingSubtypes = await tx.cancer_subtypes.findMany({
+            const matchingSubtypes = await client.cancer_subtypes.findMany({
                 where: {
                     cancer_type_id: typeId,
                     subtype_id: { in: subtypeIds },
@@ -165,7 +167,7 @@ class ChemotherapyRepository {
             });
             if (matchingSubtypes.length > 0) {
                 for (const sub of matchingSubtypes) {
-                    await tx.chemotherapy_protocol_cancers.create({
+                    await client.chemotherapy_protocol_cancers.create({
                         data: {
                             protocol_id: protocolId,
                             cancer_type_id: typeId,
@@ -176,7 +178,7 @@ class ChemotherapyRepository {
                 }
             }
             else {
-                await tx.chemotherapy_protocol_cancers.create({
+                await client.chemotherapy_protocol_cancers.create({
                     data: {
                         protocol_id: protocolId,
                         cancer_type_id: typeId,

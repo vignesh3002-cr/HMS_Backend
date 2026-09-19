@@ -7,21 +7,7 @@ import { APPOINTMENT_STATUS } from "../modules/appointment/appointment.constants
 // server/browser timezone.
 const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
 
-// Written to cancelled_by so staff can tell automatic cancellations apart
-// from manual ones at a glance.
-const AUTO_CANCELLED_BY = "Auto cancelled";
-const AUTO_CANCEL_REASON = "Auto-cancelled: appointment day has passed";
-
 const RUN_INTERVAL_MS = 5 * 60 * 1000;
-
-// Only these statuses are swept. Terminal statuses (COMPLETED / CANCELLED /
-// NO_SHOW) and in-flight clinical states (CHECKED_IN / IN_CONSULTATION) plus
-// workflow flags (RESCHEDULE_REQUIRED / TRANSFER_REVIEW_REQUIRED) are never
-// touched, so no other flow can be affected by this job.
-const SWEEPABLE_STATUSES = [
-    APPOINTMENT_STATUS.SCHEDULED,
-    APPOINTMENT_STATUS.RESCHEDULED,
-];
 
 let isRunning = false;
 
@@ -34,32 +20,23 @@ function getTodayISTDateString(): string {
 }
 
 /**
- * Cancels every SCHEDULED / RESCHEDULED appointment whose appointment_date
- * is strictly before today (IST). appointment_date is a @db.Date column
- * (UTC-midnight anchor), so a plain "less than today" predicate selects all
- * fully-elapsed days while never touching today's or future appointments.
- *
- * Mirrors the exact write shape of the manual cancellation flow
- * (repository.updateAppointmentStatus): status + cancel_reason +
- * cancelled_at timestamp + cancelled_by + notification_status, so downstream
- * consumers see auto-cancellations identical to hand-made ones apart from
- * the "Auto cancelled" actor.
+ * Marks every appointment whose appointment_date is strictly before today
+ * (IST) as NO_SHOW, regardless of current status. appointment_date is a
+ * @db.Date column (UTC-midnight anchor), so a plain "less than today"
+ * predicate selects all fully-elapsed days while never touching today's or
+ * future appointments.
  */
-export async function autoCancelElapsedAppointments(): Promise<number> {
+export async function autoMarkNoShowElapsedAppointments(): Promise<number> {
     const todayIST = getTodayISTDateString();
 
     const result = await prisma.appointment_history.updateMany({
         where: {
-            status: { in: SWEEPABLE_STATUSES },
             appointment_date: {
                 lt: new Date(`${todayIST}T00:00:00.000Z`),
             },
         },
         data: {
-            status: APPOINTMENT_STATUS.CANCELLED,
-            cancel_reason: AUTO_CANCEL_REASON,
-            cancelled_by: AUTO_CANCELLED_BY,
-            cancelled_at: new Date(),
+            status: APPOINTMENT_STATUS.NO_SHOW,
             notification_status: "NOT_REQUIRED",
         },
     });
@@ -79,10 +56,10 @@ export function startAppointmentStatusJob() {
         if (isRunning) return;
         isRunning = true;
         try {
-            const count = await autoCancelElapsedAppointments();
+            const count = await autoMarkNoShowElapsedAppointments();
             if (count > 0) {
                 console.log(
-                    `[appointment-status] Auto-cancelled ${count} elapsed appointment(s)`
+                    `[appointment-status] Auto-marked ${count} elapsed appointment(s) as NO_SHOW`
                 );
             }
         } catch (error) {
