@@ -171,6 +171,19 @@ export class ChemotherapyController {
 
     }
 
+    async listTreatmentIntents(req: Request, res: Response) {
+
+        try {
+
+            const data = await service.listTreatmentIntents();
+            return res.json({ success: true, message: "Treatment intents fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
     async getMedicinesByCancerTypeAndSubtype(req: Request, res: Response) {
 
         try {

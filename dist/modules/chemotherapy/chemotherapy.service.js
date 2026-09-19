@@ -114,6 +114,9 @@ class ChemotherapyService {
     async getProtocolFieldOptions() {
         return this.repository.getProtocolFieldOptions();
     }
+    async listTreatmentIntents() {
+        return this.repository.listTreatmentIntents();
+    }
     async getMedicinesByCancerTypesAndSubtypes(cancerTypeIds, subtypeIds, drugRole) {
         if (!cancerTypeIds || cancerTypeIds.length === 0) {
             return [];
