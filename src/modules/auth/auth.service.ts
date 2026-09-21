@@ -104,6 +104,40 @@ const activeMappings = user.user_branch_mapping?.filter(
 
   }
 
+  // ---- KPI Preferences ----
+
+  private static readonly ALLOWED_KPI_IDS = new Set([
+    "doctors",
+    "patients",
+    "staff",
+    "appointments",
+    "prescriptions",
+    "bills",
+    "total-op",
+    "chemo-delivered",
+    "chemo-cancelled",
+    "lab-visits",
+  ]);
+
+  private validateKpiIds(kpis: string[]): string[] {
+    return kpis.filter((id) => AuthService.ALLOWED_KPI_IDS.has(id));
+  }
+
+  async getKpiPreferences(userId: string): Promise<string[]> {
+    const user = await this.authRepository.findUserById(userId);
+    if (!user?.kpi_preferences) {
+      return [];
+    }
+    return this.validateKpiIds(user.kpi_preferences.split(",").map((s) => s.trim()).filter(Boolean));
+  }
+
+  async saveKpiPreferences(userId: string, kpis: string[]): Promise<string[]> {
+    const validated = this.validateKpiIds(kpis);
+    const value = validated.length > 0 ? validated.join(",") : null;
+    await this.authRepository.updateKpiPreferences(userId, value);
+    return validated;
+  }
+
   async login(username: string, password: string, rememberMe: boolean) {
 
     const user =

@@ -200,4 +200,43 @@ export class AuthController {
 
     }
 
+    async getKpiPreferences(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user?.user_id;
+            const kpis = await authService.getKpiPreferences(userId);
+            return res.status(200).json({
+                success: true,
+                data: { kpis },
+            });
+        } catch (error: any) {
+            return res.status(400).json({
+                success: false,
+                message: error.message,
+            });
+        }
+    }
+
+    async saveKpiPreferences(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user?.user_id;
+            const { kpis } = req.body;
+            if (!Array.isArray(kpis)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "kpis must be an array",
+                });
+            }
+            const saved = await authService.saveKpiPreferences(userId, kpis);
+            return res.status(200).json({
+                success: true,
+                data: { kpis: saved },
+            });
+        } catch (error: any) {
+            return res.status(400).json({
+                success: false,
+                message: error.message,
+            });
+        }
+    }
+
 }
