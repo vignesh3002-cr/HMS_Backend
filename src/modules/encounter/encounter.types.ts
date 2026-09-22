@@ -19,6 +19,20 @@ export interface UpdateEncounterDTO {
     cvs_examination?: string;
     per_abdomen_examination?: string;
     clinical_findings?: string;
+    respiratory_examination?: string;
+    general_examination_icterus?: boolean;
+    general_examination_pallor?: boolean;
+    general_examination_clubbing?: boolean;
+    general_examination_cyanosis?: boolean;
+    general_examination_oedema?: boolean;
+    general_examination_lymphadenopathy?: boolean;
+
+    // Past History treatment details + previous reports free text.
+    past_history_treatment_type?: string;
+    past_history_treatment_date?: string; // YYYY-MM-DD
+    past_history_treatment_note?: string;
+    past_history_treatment_response?: string;
+    previous_reports?: string;
 
     height?: number;
     weight?: number;
