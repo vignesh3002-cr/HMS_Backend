@@ -190,6 +190,10 @@ export interface CreateStagingDetailDto {
     site?: string | null;
     grade?: string | null;
     grade_system?: string | null;
+    suggested_molecular_test?: string | null;
+    suggested_molecular_test_note?: string | null;
+    suggested_molecular_test_date?: string | null;
+    notes?: string | null;
     performance_status?: number | null;
     employee_id?: string | null;
     branch_id?: string | null;
@@ -219,6 +223,10 @@ export interface UpdateStagingDetailDto {
     site?: string | null;
     grade?: string | null;
     grade_system?: string | null;
+    suggested_molecular_test?: string | null;
+    suggested_molecular_test_note?: string | null;
+    suggested_molecular_test_date?: string | null;
+    notes?: string | null;
     performance_status?: number | null;
     employee_id?: string | null;
     branch_id?: string | null;

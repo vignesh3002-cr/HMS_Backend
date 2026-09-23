@@ -58,6 +58,10 @@ export const createStagingDetailValidation = [
     body("grade_system").optional({ nullable: true }).isString(),
     body("pre_diagnosis").optional({ nullable: true }).isString(),
     body("disease_status").optional({ nullable: true }).isString(),
+    body("suggested_molecular_test").optional({ nullable: true }).isString(),
+    body("suggested_molecular_test_note").optional({ nullable: true }).isString(),
+    body("suggested_molecular_test_date").optional({ nullable: true }).isISO8601(),
+    body("notes").optional({ nullable: true }).isString(),
     body("performance_status").optional({ nullable: true }).isInt({ min: 0, max: 4 }).withMessage("performance_status must be an ECOG score between 0 and 4"),
     ...ihcBodyValidation,
     ...molecularBodyValidation
@@ -80,6 +84,10 @@ export const updateStagingDetailValidation = [
     body("grade_system").optional({ nullable: true }).isString(),
     body("pre_diagnosis").optional({ nullable: true }).isString(),
     body("disease_status").optional({ nullable: true }).isString(),
+    body("suggested_molecular_test").optional({ nullable: true }).isString(),
+    body("suggested_molecular_test_note").optional({ nullable: true }).isString(),
+    body("suggested_molecular_test_date").optional({ nullable: true }).isISO8601(),
+    body("notes").optional({ nullable: true }).isString(),
     body("performance_status").optional({ nullable: true }).isInt({ min: 0, max: 4 }).withMessage("performance_status must be an ECOG score between 0 and 4"),
     ...ihcBodyValidation,
     ...molecularBodyValidation

@@ -412,6 +412,10 @@ export class OncologyService {
                 site: dto.site ?? null,
                 grade: dto.grade ?? null,
                 grade_system: dto.grade_system ?? null,
+                suggested_molecular_test: dto.suggested_molecular_test ?? null,
+                suggested_molecular_test_note: dto.suggested_molecular_test_note ?? null,
+                suggested_molecular_test_date: dto.suggested_molecular_test_date ? new Date(dto.suggested_molecular_test_date) : null,
+                notes: dto.notes ?? null,
                 performance_status: dto.performance_status ?? null,
                 // Default to whoever actually saw the patient in the
                 // qualifying encounter, unless the caller explicitly names
@@ -574,6 +578,10 @@ export class OncologyService {
             ...(dto.site !== undefined && dto.site !== null ? { site: dto.site } : {}),
             ...(dto.grade !== undefined && dto.grade !== null ? { grade: dto.grade } : {}),
             ...(dto.grade_system !== undefined && dto.grade_system !== null ? { grade_system: dto.grade_system } : {}),
+            ...(dto.suggested_molecular_test !== undefined ? { suggested_molecular_test: dto.suggested_molecular_test || null } : {}),
+            ...(dto.suggested_molecular_test_note !== undefined ? { suggested_molecular_test_note: dto.suggested_molecular_test_note || null } : {}),
+            ...(dto.suggested_molecular_test_date !== undefined ? { suggested_molecular_test_date: dto.suggested_molecular_test_date ? new Date(dto.suggested_molecular_test_date) : null } : {}),
+            ...(dto.notes !== undefined ? { notes: dto.notes || null } : {}),
             ...(dto.performance_status !== undefined && dto.performance_status !== null ? { performance_status: dto.performance_status } : {}),
             ...(dto.employee_id !== undefined && dto.employee_id !== null ? { employee_id: dto.employee_id } : {}),
             ...(dto.branch_id !== undefined && dto.branch_id !== null ? { branch_id: dto.branch_id } : {})

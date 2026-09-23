@@ -1738,6 +1738,10 @@ model oncology_staging_detail {
   grade_system          String?             @db.VarChar(100)
   pre_diagnosis         String?
   site                  String?             @db.VarChar(100)
+  suggested_molecular_test      String?      @db.VarChar(255)
+  suggested_molecular_test_note String?
+  suggested_molecular_test_date DateTime?    @db.Date
+  notes                         String?
   chemotherapy_plan     chemotherapy_plan[]
   derived_fields        derived_fields?
   ihc_results           ihc_results?
