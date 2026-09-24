@@ -4,6 +4,12 @@ export interface CreateEncounterDTO {
 
 }
 
+export interface CreateIpdEncounterDTO {
+    createdBy: string;
+    admission_id: string;
+
+}
+
 export interface UpdateEncounterDTO {
 
     chief_complaint?: string;

@@ -10,6 +10,7 @@ const encounter_constants_1 = require("./encounter.constants");
 const appointment_constants_1 = require("../appointment/appointment.constants");
 const idGenerator_1 = require("../../utils/idGenerator");
 const roles_1 = require("../../permissions/roles");
+const ipd_types_1 = require("../ipd/ipd.types");
 const repository = new encounter_repository_1.EncounterRepository();
 class EncounterService {
     async createEncounter(data, createdBy) {
@@ -108,6 +109,61 @@ class EncounterService {
             }
             throw error;
         }
+    }
+    async createIpEncounter(data, createdBy) {
+        const admission = await repository.findAdmissionForEncounter(data.admission_id);
+        if (!admission) {
+            throw new Error("Admission not found");
+        }
+        if (admission.status !== ipd_types_1.IPD_STATUS.ADMITTED) {
+            throw new Error("Encounter can only be started for an admitted patient");
+        }
+        const patient = admission.patient_bio_data;
+        if (!patient) {
+            throw new Error("Patient not found");
+        }
+        if (patient.patient_active !== "Active") {
+            throw new Error("Patient is inactive");
+        }
+        const doctor = admission.employees;
+        if (!doctor || !doctor.employee_id) {
+            throw new Error("Doctor not found");
+        }
+        if (doctor.user_table?.role_type !== "DOCTOR") {
+            throw new Error("Assigned employee is not a doctor");
+        }
+        if (doctor.emp_status !== true) {
+            throw new Error("Doctor is inactive");
+        }
+        const branch = admission.branch;
+        if (!branch || !admission.branch_id) {
+            throw new Error("Branch not found");
+        }
+        if (branch.branch_status !== "Active") {
+            throw new Error("Branch is inactive");
+        }
+        const mapping = await repository.findDoctorBranchMapping(doctor.employee_id, admission.branch_id);
+        if (!mapping) {
+            throw new Error("Doctor is not assigned to the admission's branch");
+        }
+        if (admission.encounter_no) {
+            throw new Error("Encounter already exists for this admission");
+        }
+        return prisma_1.default.$transaction(async (tx) => {
+            const encounterNo = await repository.generateEncounterNumber(tx);
+            const encounter = await repository.createEncounter(tx, {
+                createdBy: createdBy,
+                encounter_no: encounterNo,
+                patient_id: admission.patient_id,
+                branch_id: admission.branch_id,
+                department_id: admission.department_id,
+                employee_id: doctor.employee_id,
+                encounter_type: encounter_constants_1.ENCOUNTER_TYPE_IPD,
+                status: encounter_constants_1.ENCOUNTER_STATUS.OPEN
+            });
+            await repository.updateAdmissionEncounterNo(tx, admission.admission_id, encounterNo);
+            return encounter;
+        });
     }
     async getEncounters(query) {
         return repository.getEncounters(query);
@@ -242,6 +298,36 @@ class EncounterService {
             });
             if (existing.appointment_id) {
                 await repository.updateAppointmentStatus(tx, existing.appointment_id, appointment_constants_1.APPOINTMENT_STATUS.COMPLETED);
+            }
+            // IPD discharge hook: if encounter has an associated active admission, close the IPD stay and release the bed
+            const associatedAdmission = await tx.admission.findFirst({
+                where: {
+                    OR: [
+                        { encounter_no: encounterNo },
+                        ...(existing.appointment_id ? [{ appointment_id: existing.appointment_id }] : [])
+                    ],
+                    status: "ADMITTED"
+                }
+            });
+            if (associatedAdmission) {
+                await tx.admission.update({
+                    where: { admission_id: associatedAdmission.admission_id },
+                    data: {
+                        status: "DISCHARGED",
+                        discharge_date: closedAt,
+                        updated_by: closedBy
+                    }
+                });
+                if (associatedAdmission.bed_id) {
+                    await tx.bed_master.update({
+                        where: { bed_id: associatedAdmission.bed_id },
+                        data: {
+                            status: "AVAILABLE",
+                            updated_by: closedBy,
+                            updated_at: closedAt
+                        }
+                    });
+                }
             }
             return encounter;
         });

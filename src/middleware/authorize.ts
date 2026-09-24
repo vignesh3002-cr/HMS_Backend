@@ -30,6 +30,34 @@ export const authorize = (permissionKey: string): RequestHandler => {
   };
 };
 
+export const authorizeAny = (...permissionKeys: string[]): RequestHandler => {
+  return async (req, res, next) => {
+    const authReq = req as AuthRequest;
+
+    if (!authReq.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    const userRole = String(authReq.user.role ?? "").toUpperCase();
+
+    for (const key of permissionKeys) {
+      const hasPermission = await permissionService.hasPermission(userRole, key);
+      if (hasPermission) {
+        return next();
+      }
+    }
+
+    return res.status(403).json({
+      success: false,
+      message: `Forbidden. Required one of permissions: ${permissionKeys.join(", ")}`,
+      required_permissions: permissionKeys,
+    });
+  };
+};
+
 export const ADMIN_ROLES = ["SUPER_ADMIN", "HEAD_ADMIN", "BRANCH_ADMIN"];
 
 // Lets a user always read/update their OWN employee record (matched by the

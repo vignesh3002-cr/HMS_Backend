@@ -9,6 +9,14 @@ export const createEncounterValidation = [
 
 ];
 
+export const createIpdEncounterValidation = [
+
+    body("admission_id")
+        .notEmpty()
+        .withMessage("Admission is required")
+
+];
+
 export const updateEncounterValidation = [
 
     param("encounterNo")

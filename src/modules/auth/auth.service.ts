@@ -117,6 +117,8 @@ const activeMappings = user.user_branch_mapping?.filter(
     "chemo-delivered",
     "chemo-cancelled",
     "lab-visits",
+    "ipd-patients",
+    "beds-occupied",
   ]);
 
   private validateKpiIds(kpis: string[]): string[] {
