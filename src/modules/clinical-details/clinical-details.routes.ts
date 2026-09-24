@@ -21,6 +21,7 @@ import {
     createCustomSymptomValidation,
     createCustomAllergyValidation,
     createCustomComorbidityValidation,
+    getComorbidityMasterValidation,
 } from './clinical-details.validation';
 
 const router = Router();
@@ -88,6 +89,15 @@ router.get(
     authenticate,
     getMasterListValidation,
     controller.getAllergies.bind(controller)
+);
+
+// Comorbidity master (comorbidity_master): the full active list for the
+// Consultation step's Comorbidities picker.
+router.get(
+    '/master/comorbidities',
+    authenticate,
+    getComorbidityMasterValidation,
+    controller.getComorbidityMaster.bind(controller)
 );
 
 // Custom "Others" master creation (Doctor/Clinician access)

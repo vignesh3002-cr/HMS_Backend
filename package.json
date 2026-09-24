@@ -13,6 +13,7 @@
     "db:seed:regimen-protocols": "ts-node prisma/seedRegimenProtocols.ts",
     "db:seed:personalized-protocol-setup": "ts-node prisma/seedPersonalizedProtocolSetup.ts",
     "db:seed:clinical-master": "ts-node prisma/seedClinical_Master_Details.ts",
+    "db:seed:comorbidities": "ts-node prisma/seedComorbidityMaster.ts",
     "db:seed:consultation": "ts-node prisma/seedConsultation.ts"
   },
   "keywords": [],

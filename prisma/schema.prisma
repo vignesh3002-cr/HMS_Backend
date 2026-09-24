@@ -895,6 +895,30 @@ model clinical_test_master {
   modifieddate DateTime? @default(now()) @db.Timestamp(6)
 }
 
+/// Comorbidities (co-existing chronic conditions) offered in the
+/// Consultation step, separate from the diagnosis catalog.
+/// Seeded by prisma/seedComorbidityMaster.ts (codes CMB_*); rows added
+/// from the consultation "+ Add" are is_custom with codes CMBX_*.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model comorbidity_master {
+  id                  BigInt                @id @default(autoincrement())
+  code                String                @unique @db.VarChar(100)
+  comorbidity_name    String                @db.VarChar(255)
+  category            String?               @db.VarChar(100)
+  icd_code            String?               @db.VarChar(20)
+  description         String?               @db.VarChar(500)
+  is_chronic          Boolean               @default(true)
+  is_custom           Boolean               @default(false)
+  is_active           Boolean               @default(true)
+  created_at          DateTime              @default(now()) @db.Timestamp(6)
+  updated_at          DateTime              @default(now()) @db.Timestamp(6)
+  created_by          String?               @db.VarChar(100)
+  updated_by          String?               @db.VarChar(100)
+  patient_comorbidity patient_comorbidity[]
+
+  @@index([category], map: "idx_comorbidity_master_category")
+}
+
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model department_master {
   department_id       String                @id(map: "department_pkey") @db.VarChar(100)
@@ -963,7 +987,6 @@ model diagnosis {
   chemotherapy_plan          chemotherapy_plan[]
   diagnosis_medicine_mapping diagnosis_medicine_mapping[]
   oncology_staging_detail    oncology_staging_detail[]
-  patient_comorbidity        patient_comorbidity[]
   patient_history            patient_history[]
   prescription               prescription[]
 }
@@ -1926,24 +1949,24 @@ model patient_bio_data {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model patient_comorbidity {
-  id                         BigInt           @id @default(autoincrement())
-  patient_id                 String           @db.VarChar(100)
-  diagnosis_id               String           @db.VarChar(100)
-  status                     String           @default("ACTIVE") @db.VarChar(100)
-  onset_date                 DateTime?        @db.Date
-  identified_at              DateTime         @default(now()) @db.Timestamp(6)
-  identified_by              String?          @db.VarChar(100)
-  identified_at_encounter_no String?          @db.VarChar(100)
-  clinical_notes             String?          @db.VarChar(1000)
-  updated_at                 DateTime         @default(now()) @db.Timestamp(6)
-  updated_by                 String?          @db.VarChar(100)
-  diagnosis                  diagnosis        @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction)
-  encounter                  encounter?       @relation(fields: [identified_at_encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction)
-  employees                  employees?       @relation(fields: [identified_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
-  patient_bio_data           patient_bio_data @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction)
+  id                         BigInt             @id @default(autoincrement())
+  patient_id                 String             @db.VarChar(100)
+  comorbidity_id             BigInt
+  status                     String             @default("ACTIVE") @db.VarChar(100)
+  onset_date                 DateTime?          @db.Date
+  identified_at              DateTime           @default(now()) @db.Timestamp(6)
+  identified_by              String?            @db.VarChar(100)
+  identified_at_encounter_no String?            @db.VarChar(100)
+  clinical_notes             String?            @db.VarChar(1000)
+  updated_at                 DateTime           @default(now()) @db.Timestamp(6)
+  updated_by                 String?            @db.VarChar(100)
+  comorbidity_master         comorbidity_master @relation(fields: [comorbidity_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_patient_comorbidity_master")
+  encounter                  encounter?         @relation(fields: [identified_at_encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction)
+  employees                  employees?         @relation(fields: [identified_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
+  patient_bio_data           patient_bio_data   @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([patient_id, diagnosis_id, status], map: "uq_patient_comorbidity_active")
-  @@index([diagnosis_id], map: "idx_patient_comorbidity_diagnosis")
+  @@unique([patient_id, comorbidity_id, status], map: "uq_patient_comorbidity_active")
+  @@index([comorbidity_id], map: "idx_patient_comorbidity_master")
   @@index([patient_id], map: "idx_patient_comorbidity_patient")
   @@index([status], map: "idx_patient_comorbidity_status")
 }
