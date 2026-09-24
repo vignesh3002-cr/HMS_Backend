@@ -8,7 +8,9 @@ import {
     AddPrescriptionItemDto,
     UpdatePrescriptionItemDto,
     GetPrescriptionsQuery,
-    MedicineItemDto
+    MedicineItemDto,
+    SearchMedicinesQuery,
+    CreateMedicineDto
 } from "./prescription.types";
 
 // There is no dedicated "encounter" module in this codebase - the encounter
@@ -510,6 +512,85 @@ export class PrescriptionService {
         }
 
         return repository.getSuggestedMedicines(diagnosisId);
+
+    }
+
+    async searchMedicines(query: SearchMedicinesQuery) {
+
+        const limit = Math.min(Math.max(query.limit ?? 50, 1), 100);
+        const search = (query.search ?? "").trim().toLowerCase();
+        const words = search.split(/\s+/).filter(Boolean);
+
+        if (words.length === 0) {
+            return repository.searchMedicines([], limit);
+        }
+
+        // Pull a wider window, then rank names that start with the search
+        // ahead of mid-word matches so "para" lists Paracetamol first.
+        const matches = await repository.searchMedicines(words, 200);
+
+        const rank = (name: string) => {
+            const lower = name.toLowerCase();
+            if (lower.startsWith(search)) return 0;
+            if (lower.startsWith(words[0])) return 1;
+            return 2;
+        };
+
+        return matches
+            .sort((a, b) => rank(a.medicine_name) - rank(b.medicine_name))
+            .slice(0, limit);
+
+    }
+
+    // Adds a doctor-typed drug to medicine_master so it can be linked on a
+    // prescription (prescription_items.medicine_id is a required FK). An
+    // existing row with the same name is returned instead of duplicating it.
+    async createMedicine(data: CreateMedicineDto, createdBy?: string) {
+
+        const medicineName = data.medicine_name.trim().replace(/\s+/g, " ");
+
+        const existing = await repository.findMedicineByName(medicineName);
+
+        if (existing) {
+            return { medicine: existing, created: false };
+        }
+
+        // medicine_master has no id_sequences entry; it keeps the informal
+        // "MED" + 6-digit convention (see prisma/seedChemoDrugs.ts).
+        for (let attempt = 0; attempt < 3; attempt++) {
+
+            const lastId = await repository.findLastMedicineId();
+            const lastNumber = lastId ? parseInt(lastId.replace(/\D/g, ""), 10) || 0 : 0;
+            const medicineId = "MED" + String(lastNumber + 1).padStart(6, "0");
+
+            try {
+
+                const medicine = await repository.createMedicine({
+                    medicine_id: medicineId,
+                    medicine_name: medicineName,
+                    dosage_form: data.dosage_form?.trim() || null,
+                    unit: data.unit?.trim() || null,
+                    strength: data.strength?.trim() || null,
+                    is_active: true,
+                    source_note: `Added from OPD consultation (Advice)${createdBy ? ` by ${createdBy}` : ""}`
+                });
+
+                return { medicine, created: true };
+
+            } catch (error: any) {
+
+                // Another request took this id first - re-read the max and retry.
+                if (error?.code === "P2002" && attempt < 2) {
+                    continue;
+                }
+
+                throw error;
+
+            }
+
+        }
+
+        throw new Error("Could not allocate a medicine id. Please try again.");
 
     }
 

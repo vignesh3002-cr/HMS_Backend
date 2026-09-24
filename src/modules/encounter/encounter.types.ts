@@ -34,6 +34,9 @@ export interface UpdateEncounterDTO {
     past_history_treatment_response?: string;
     previous_reports?: string;
 
+    // Consultation > Advice > Discussion: the doctor's remarks for the visit.
+    notes?: string;
+
     height?: number;
     weight?: number;
     pulse?: number;

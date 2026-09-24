@@ -124,7 +124,6 @@ model appointment_history {
   user_table                      user_table?                       @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_appointment_user")
   appointment_notification        appointment_notification[]
   appointment_reschedule_queue    appointment_reschedule_queue[]
-  chemotherapy_cycle              chemotherapy_cycle[]
   chemotherapy_plan               chemotherapy_plan[]
   doctor_transfer_appointment_log doctor_transfer_appointment_log[]
   encounter                       encounter?
@@ -438,10 +437,8 @@ model chemotherapy_cycle {
   created_at                  DateTime?                     @default(now()) @db.Timestamp(6)
   updated_by                  String?                       @db.VarChar(100)
   updated_at                  DateTime?                     @default(now()) @db.Timestamp(6)
-  appointment_id              String?                       @db.VarChar
   chemotherapy_administration chemotherapy_administration[]
   chemotherapy_adverse_event  chemotherapy_adverse_event[]
-  appointment_history         appointment_history?          @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction)
   chemotherapy_plan           chemotherapy_plan             @relation(fields: [chemotherapy_plan_id], references: [chemotherapy_plan_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_cycle_plan")
   chemotherapy_followup       chemotherapy_followup[]
   chemotherapy_lab_review     chemotherapy_lab_review[]
@@ -1250,11 +1247,11 @@ model encounter {
   general_examination_oedema          Boolean?                      @default(false)
   general_examination_pallor          Boolean?                      @default(false)
   respiratory_examination             String?
-  past_history_treatment_type          String?
-  past_history_treatment_date          DateTime?                     @db.Date
-  past_history_treatment_note          String?
-  past_history_treatment_response      String?
-  previous_reports                     String?
+  past_history_treatment_date         DateTime?                     @db.Date
+  past_history_treatment_note         String?
+  past_history_treatment_response     String?
+  past_history_treatment_type         String?
+  previous_reports                    String?
   chemotherapy_plan                   chemotherapy_plan[]
   appointment_history                 appointment_history?          @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_appointment")
   branch                              branch                        @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_branch")
@@ -1706,54 +1703,54 @@ model oncology_audit_log {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model oncology_staging_detail {
-  id                    BigInt              @id @default(autoincrement())
-  staging_detail_id     String              @unique(map: "uq_staging_detail_id") @db.VarChar(100)
-  patient_id            String              @db.VarChar(100)
-  patient_history_id    String?             @db.VarChar(100)
-  diagnosis_id          String?             @db.VarChar(100)
-  visit_date            DateTime?           @db.Date
-  diagnosis_date        DateTime?           @db.Date
-  biopsy_date           DateTime?           @db.Date
-  consulting_oncologist String?             @db.VarChar(100)
-  cancer_type_id        String              @db.VarChar(100)
-  cancer_subtype_id     String              @db.VarChar(100)
-  icd10_code            String?             @db.VarChar(100)
-  icd_o3_topo           String?             @db.VarChar(100)
-  icd_o3_morpho         String?             @db.VarChar(100)
-  staging_system        String?             @db.VarChar(100)
-  clinical_stage        String?             @db.VarChar(100)
-  t_stage               String?             @db.VarChar(100)
-  n_stage               String?             @db.VarChar(100)
-  m_stage               String?             @db.VarChar(100)
-  metastasis_sites      Json?
-  laterality            String?             @db.VarChar(100)
-  performance_status    Int?                @db.SmallInt
-  employee_id           String?             @db.VarChar(100)
-  branch_id             String?             @db.VarChar(100)
-  user_id               String?             @db.VarChar(100)
-  created_at            DateTime?           @default(now()) @db.Timestamp(6)
-  updated_at            DateTime?           @default(now()) @db.Timestamp(6)
-  disease_status        String?             @db.VarChar(100)
-  grade                 String?             @db.VarChar(100)
-  grade_system          String?             @db.VarChar(100)
-  pre_diagnosis         String?
-  site                  String?             @db.VarChar(100)
-  suggested_molecular_test      String?      @db.VarChar(255)
+  id                            BigInt              @id @default(autoincrement())
+  staging_detail_id             String              @unique(map: "uq_staging_detail_id") @db.VarChar(100)
+  patient_id                    String              @db.VarChar(100)
+  patient_history_id            String?             @db.VarChar(100)
+  diagnosis_id                  String?             @db.VarChar(100)
+  visit_date                    DateTime?           @db.Date
+  diagnosis_date                DateTime?           @db.Date
+  biopsy_date                   DateTime?           @db.Date
+  consulting_oncologist         String?             @db.VarChar(100)
+  cancer_type_id                String              @db.VarChar(100)
+  cancer_subtype_id             String              @db.VarChar(100)
+  icd10_code                    String?             @db.VarChar(100)
+  icd_o3_topo                   String?             @db.VarChar(100)
+  icd_o3_morpho                 String?             @db.VarChar(100)
+  staging_system                String?             @db.VarChar(100)
+  clinical_stage                String?             @db.VarChar(100)
+  t_stage                       String?             @db.VarChar(100)
+  n_stage                       String?             @db.VarChar(100)
+  m_stage                       String?             @db.VarChar(100)
+  metastasis_sites              Json?
+  laterality                    String?             @db.VarChar(100)
+  performance_status            Int?                @db.SmallInt
+  employee_id                   String?             @db.VarChar(100)
+  branch_id                     String?             @db.VarChar(100)
+  user_id                       String?             @db.VarChar(100)
+  created_at                    DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at                    DateTime?           @default(now()) @db.Timestamp(6)
+  disease_status                String?             @db.VarChar(100)
+  grade                         String?             @db.VarChar(100)
+  grade_system                  String?             @db.VarChar(100)
+  pre_diagnosis                 String?
+  site                          String?             @db.VarChar(100)
+  suggested_molecular_test      String?             @db.VarChar(255)
+  suggested_molecular_test_date DateTime?           @db.Date
   suggested_molecular_test_note String?
-  suggested_molecular_test_date DateTime?    @db.Date
   notes                         String?
-  chemotherapy_plan     chemotherapy_plan[]
-  derived_fields        derived_fields?
-  ihc_results           ihc_results?
-  molecular_results     molecular_results?
-  branch                branch?             @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_branch")
-  cancer_types          cancer_types        @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_cancer_type")
-  diagnosis             diagnosis?          @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_diagnosis")
-  employees             employees?          @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_employee")
-  patient_bio_data      patient_bio_data    @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_patient")
-  patient_history       patient_history?    @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_patient_history")
-  cancer_subtypes       cancer_subtypes     @relation(fields: [cancer_subtype_id], references: [subtype_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_subtype")
-  user_table            user_table?         @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_user")
+  chemotherapy_plan             chemotherapy_plan[]
+  derived_fields                derived_fields?
+  ihc_results                   ihc_results?
+  molecular_results             molecular_results?
+  branch                        branch?             @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_branch")
+  cancer_types                  cancer_types        @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_cancer_type")
+  diagnosis                     diagnosis?          @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_diagnosis")
+  employees                     employees?          @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_employee")
+  patient_bio_data              patient_bio_data    @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_patient")
+  patient_history               patient_history?    @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_patient_history")
+  cancer_subtypes               cancer_subtypes     @relation(fields: [cancer_subtype_id], references: [subtype_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_subtype")
+  user_table                    user_table?         @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_user")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -2297,7 +2294,7 @@ model admission {
   insurance_provider     String?                  @db.VarChar(100)
   insurance_policy_no    String?                  @db.VarChar(100)
   admission_date         DateTime                 @default(now()) @db.Timestamp(6)
-  expected_stay_days     Int?
+  expected_stay_days     Decimal?                 @db.Decimal(4, 2)
   discharge_date         DateTime?                @db.Timestamp(6)
   discharge_type         String?                  @db.VarChar(100)
   discharge_summary      String?

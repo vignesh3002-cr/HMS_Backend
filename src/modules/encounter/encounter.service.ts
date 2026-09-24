@@ -334,6 +334,7 @@ export class EncounterService {
             past_history_treatment_note: data.past_history_treatment_note,
             past_history_treatment_response: data.past_history_treatment_response,
             previous_reports: data.previous_reports,
+            notes: data.notes,
 
             height: data.height,
             weight: data.weight,

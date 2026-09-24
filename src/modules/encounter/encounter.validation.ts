@@ -41,6 +41,7 @@ export const updateEncounterValidation = [
     body("past_history_treatment_note").optional().isString(),
     body("past_history_treatment_response").optional().isString(),
     body("previous_reports").optional().isString(),
+    body("notes").optional().isString(),
 
     body("follow_up_date")
         .optional()

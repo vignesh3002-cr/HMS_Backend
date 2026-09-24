@@ -56,6 +56,18 @@ export interface UpdatePrescriptionItemDto {
     drug_type?: string;
 }
 
+export interface SearchMedicinesQuery {
+    search?: string;
+    limit?: number;
+}
+
+export interface CreateMedicineDto {
+    medicine_name: string;
+    dosage_form?: string;
+    unit?: string;
+    strength?: string;
+}
+
 export interface GetPrescriptionsQuery {
     branchId?: string;
     doctorId?: string;
