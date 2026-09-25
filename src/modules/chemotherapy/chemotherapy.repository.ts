@@ -376,6 +376,44 @@ export class ChemotherapyRepository {
 
     }
 
+    async findMedicineByName(medicineName: string) {
+
+        const name = medicineName.trim();
+        if (!name) return null;
+        const exact = await prisma.medicine_master.findFirst({ where: { medicine_name: name } });
+        if (exact) return exact;
+        return prisma.medicine_master.findFirst({
+            where: { medicine_name: { equals: name, mode: "insensitive" } }
+        });
+
+    }
+
+    async generateMedicineId(): Promise<string> {
+        const last = await prisma.medicine_master.findFirst({
+            orderBy: { medicine_id: "desc" },
+            select: { medicine_id: true }
+        });
+        const match = /^MED(\d+)$/.exec((last?.medicine_id ?? "").trim());
+        const next = match ? Number(match[1]) + 1 : 1;
+        return `MED${String(next).padStart(6, "0")}`;
+    }
+
+    async createMedicineFromTypedName(medicineName: string) {
+        const name = medicineName.trim();
+        const medicineId = await this.generateMedicineId();
+        return prisma.medicine_master.create({
+            data: {
+                medicine_id: medicineId,
+                medicine_name: name,
+                source_note: "Protocol Others",
+                prescription_required: true,
+                is_narcotic: false,
+                is_high_risk: false,
+                is_active: true
+            }
+        });
+    }
+
     async listAllActiveMedicines() {
         return prisma.medicine_master.findMany({
             where: { is_active: true },

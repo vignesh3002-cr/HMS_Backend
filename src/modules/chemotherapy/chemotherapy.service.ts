@@ -80,6 +80,60 @@ export class ChemotherapyService {
     private oncologyRepository = new OncologyRepository();
 
     // ---------------------------------------------------------------
+    // "Others" medication support - the UI may send a typed drug name
+    // as medicine_id. Resolve it to a real catalog row: reuse by id,
+    // reuse by name, else create a medicine_master row (existing
+    // columns only - no schema change).
+    // ---------------------------------------------------------------
+
+    private async resolveMedicineId(rawId?: string | null): Promise<string | null> {
+        const raw = (rawId ?? "").trim();
+        if (!raw) return null;
+        const byId = await this.repository.findMedicineById(raw);
+        if (byId) return byId.medicine_id;
+        const byName = await this.repository.findMedicineByName(raw);
+        if (byName) return byName.medicine_id;
+        const created = await this.repository.createMedicineFromTypedName(raw);
+        return created.medicine_id;
+    }
+
+    private async resolveDtoMedicines(dto: any): Promise<void> {
+        if (!dto || typeof dto !== "object") return;
+        if (dto.medicine_id) {
+            dto.medicine_id = (await this.resolveMedicineId(dto.medicine_id)) ?? dto.medicine_id;
+        }
+        if (Array.isArray(dto.items)) {
+            for (const item of dto.items) {
+                if (!item || typeof item !== "object") continue;
+                if (item.medicine_id) {
+                    item.medicine_id = (await this.resolveMedicineId(item.medicine_id)) ?? item.medicine_id;
+                }
+                if (Array.isArray(item.dilutions)) {
+                    for (const d of item.dilutions) {
+                        if (d && d.medicine_id) {
+                            d.medicine_id = (await this.resolveMedicineId(d.medicine_id)) ?? d.medicine_id;
+                        }
+                    }
+                }
+            }
+        }
+        if (Array.isArray(dto.dilutions)) {
+            for (const d of dto.dilutions) {
+                if (d && d.medicine_id) {
+                    d.medicine_id = (await this.resolveMedicineId(d.medicine_id)) ?? d.medicine_id;
+                }
+            }
+        }
+        if (Array.isArray(dto.discharge_instructions)) {
+            for (const ins of dto.discharge_instructions) {
+                if (ins && ins.medicine_id) {
+                    ins.medicine_id = (await this.resolveMedicineId(ins.medicine_id)) ?? ins.medicine_id;
+                }
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------
     // Plan preview - lets a doctor see the computed suggested_therapy
     // (which may legitimately be null outside Breast/Lung) before they
     // decide whether to confirm it and create the plan.
@@ -422,6 +476,8 @@ export class ChemotherapyService {
 
     async createRegimenProtocol(dto: CreateRegimenProtocolDto, actingUserId: string) {
 
+        await this.resolveDtoMedicines(dto);
+
         const cancerTypeIds = dto.cancer_type_ids && dto.cancer_type_ids.length > 0
             ? dto.cancer_type_ids
             : (dto.cancer_type_id ? [dto.cancer_type_id] : []);
@@ -573,6 +629,8 @@ export class ChemotherapyService {
 
     async updateRegimenProtocol(protocolId: string, dto: UpdateRegimenProtocolDto, actingUserId: string) {
 
+        await this.resolveDtoMedicines(dto);
+
         const existing = await this.repository.findRegimenProtocolById(protocolId);
 
         if (!existing) {
@@ -658,6 +716,8 @@ export class ChemotherapyService {
 
     async addDischargeInstruction(protocolId: string, instruction: RegimenProtocolDischargeInstructionInput, actingUserId: string) {
 
+        await this.resolveDtoMedicines(instruction);
+
         const existing = await this.repository.findRegimenProtocolById(protocolId);
 
         if (!existing) {
@@ -714,6 +774,8 @@ export class ChemotherapyService {
     }
 
     async updateDischargeInstruction(protocolId: string, dischargeInstructionId: string, instruction: RegimenProtocolDischargeInstructionInput, actingUserId: string) {
+
+        await this.resolveDtoMedicines(instruction);
 
         const existingInstruction = await this.repository.findDischargeInstructionById(dischargeInstructionId);
 
@@ -798,6 +860,8 @@ export class ChemotherapyService {
     }
 
     async addRegimenProtocolItem(protocolId: string, item: CreateRegimenProtocolDto["items"][number], actingUserId: string) {
+
+        await this.resolveDtoMedicines(item);
 
         const existing = await this.repository.findRegimenProtocolById(protocolId);
 
@@ -897,6 +961,8 @@ export class ChemotherapyService {
     }
 
     async updateRegimenProtocolItem(protocolId: string, protocolItemId: string, dto: UpdateRegimenProtocolItemDto, actingUserId: string) {
+
+        await this.resolveDtoMedicines(dto);
         const existing = await this.repository.findRegimenProtocolById(protocolId);
 
         if (!existing) {
@@ -1502,6 +1568,8 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
     async personalizeProtocol(sourceProtocolId: string, organizationId: string, actingUserId: string, dto: PersonalizeRegimenProtocolDto) {
 
+        await this.resolveDtoMedicines(dto);
+
         if (!organizationId) {
             throw new Error("Your account is not associated with a hospital/organization");
         }
@@ -1632,6 +1700,8 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
     async updatePersonalizedProtocol(protocolId: string, organizationId: string, actingUserId: string, dto: UpdatePersonalizedProtocolDto) {
 
+        await this.resolveDtoMedicines(dto);
+
         if (!organizationId) {
             throw new Error("Your account is not associated with a hospital/organization");
         }
@@ -1731,6 +1801,8 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
     async addPersonalizedProtocolItem(protocolId: string, organizationId: string, actingUserId: string, dto: AddPersonalizedProtocolItemDto) {
 
+        await this.resolveDtoMedicines(dto);
+
         const protocol = await this.repository.findPersonalizedProtocolById(protocolId, organizationId);
 
         this.assertPersonalizedOwner(protocol, organizationId);
@@ -1811,6 +1883,8 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
     }
 
     async updatePersonalizedProtocolItem(protocolId: string, protocolItemId: string, organizationId: string, actingUserId: string, dto: UpdatePersonalizedProtocolItemDto) {
+
+        await this.resolveDtoMedicines(dto);
 
         const protocol = await this.repository.findPersonalizedProtocolById(protocolId, organizationId);
 
@@ -2038,6 +2112,8 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
     async addPersonalizedProtocolDilution(protocolId: string, protocolItemId: string, organizationId: string, actingUserId: string, dto: AddPersonalizedProtocolDilutionDto) {
 
+        await this.resolveDtoMedicines(dto);
+
         const protocol = await this.repository.findPersonalizedProtocolById(protocolId, organizationId);
 
         this.assertPersonalizedOwner(protocol, organizationId);
@@ -2097,6 +2173,8 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
     }
 
     async updatePersonalizedProtocolDilution(protocolId: string, protocolItemId: string, protocolDilutionId: string, organizationId: string, actingUserId: string, dto: UpdatePersonalizedProtocolDilutionDto) {
+
+        await this.resolveDtoMedicines(dto);
 
         const protocol = await this.repository.findPersonalizedProtocolById(protocolId, organizationId);
 

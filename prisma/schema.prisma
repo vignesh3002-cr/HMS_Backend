@@ -8,25 +8,25 @@ datasource db {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Permission {
-  id             String           @id @db.VarChar(100)
+  id             String           @id(map: "permission_pkey") @db.VarChar(100)
   key            String           @unique @db.VarChar(100)
   name           String           @db.VarChar(100)
   description    String?          @db.VarChar(100)
   category       String           @db.VarChar(100)
   is_active      Boolean          @default(true)
-  created_at     DateTime         @default(now())
-  updated_at     DateTime
+  created_at     DateTime         @default(now()) @db.Timestamp(6)
+  updated_at     DateTime         @db.Timestamp(6)
   RolePermission RolePermission[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model PermissionAuditLog {
-  id             BigInt   @id @default(autoincrement())
+  id             BigInt   @id(map: "permissionauditlog_pkey") @default(autoincrement())
   role_type      String   @db.VarChar(100)
   permission_key String   @db.VarChar(100)
   action         String   @db.VarChar(100)
   changed_by     String   @db.VarChar(100)
-  changed_at     DateTime @default(now())
+  changed_at     DateTime @default(now()) @db.Timestamp(6)
   metadata       Json?
 
   @@index([changed_by, changed_at])
@@ -35,18 +35,79 @@ model PermissionAuditLog {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model RolePermission {
-  id             String         @id @db.VarChar(100)
+  id             String         @id(map: "rolepermission_pkey") @db.VarChar(100)
   role_type      String         @db.VarChar(100)
   permission_id  String         @db.VarChar(100)
   granted_by     String         @db.VarChar(100)
-  granted_at     DateTime       @default(now())
-  revoked_at     DateTime?
+  granted_at     DateTime       @default(now()) @db.Timestamp(6)
+  revoked_at     DateTime?      @db.Timestamp(6)
   revoked_by     String?        @db.VarChar(100)
-  Permission     Permission     @relation(fields: [permission_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  role_id_config role_id_config @relation(fields: [role_type], references: [role_type], onDelete: NoAction, onUpdate: NoAction)
+  Permission     Permission     @relation(fields: [permission_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "rolepermission_permission_id_fkey")
+  role_id_config role_id_config @relation(fields: [role_type], references: [role_type], onDelete: NoAction, onUpdate: NoAction, map: "rolepermission_role_type_fkey")
 
   @@unique([role_type, permission_id])
   @@index([role_type])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model admission {
+  id                     BigInt                   @id @default(autoincrement())
+  admission_id           String                   @unique @db.VarChar(100)
+  ip_number              String                   @unique @db.VarChar(100)
+  patient_id             String                   @db.VarChar(100)
+  appointment_id         String?                  @db.VarChar(100)
+  encounter_no           String?                  @db.VarChar(100)
+  branch_id              String                   @db.VarChar(100)
+  department_id          String?                  @db.VarChar(100)
+  employee_id            String?                  @db.VarChar(100)
+  admission_type         String                   @db.VarChar(100)
+  provisional_diagnosis  String?
+  ward_id                String?                  @db.VarChar(100)
+  bed_id                 String?                  @db.VarChar(100)
+  is_daycare             Boolean                  @default(false)
+  payment_mode           String?                  @db.VarChar(100)
+  insurance_provider     String?                  @db.VarChar(100)
+  insurance_policy_no    String?                  @db.VarChar(100)
+  admission_date         DateTime                 @default(now()) @db.Timestamp(6)
+  expected_stay_days     Decimal?                 @db.Decimal(4, 2)
+  discharge_date         DateTime?                @db.Timestamp(6)
+  discharge_type         String?                  @db.VarChar(100)
+  discharge_summary      String?
+  advance_amount         Decimal?                 @db.Decimal(10, 2)
+  status                 String                   @default("ADMITTED") @db.VarChar(100)
+  created_by             String?                  @db.VarChar(100)
+  created_at             DateTime?                @default(now()) @db.Timestamp(6)
+  updated_by             String?                  @db.VarChar(100)
+  updated_at             DateTime?                @default(now()) @db.Timestamp(6)
+  bed_master             bed_master?              @relation(fields: [bed_id], references: [bed_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_bed")
+  branch                 branch                   @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_branch")
+  department_master      department_master?       @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_department")
+  employees              employees?               @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_employee")
+  patient_bio_data       patient_bio_data         @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_patient")
+  ward_master            ward_master?             @relation(fields: [ward_id], references: [ward_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_ward")
+  admission_transfer_log admission_transfer_log[]
+
+  @@index([appointment_id], map: "idx_admission_appointment")
+  @@index([bed_id, status], map: "idx_admission_bed_status")
+  @@index([branch_id], map: "idx_admission_branch")
+  @@index([patient_id], map: "idx_admission_patient")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model admission_transfer_log {
+  id              BigInt    @id @default(autoincrement())
+  transfer_log_id String    @unique @db.VarChar(100)
+  admission_id    String    @db.VarChar(100)
+  from_ward_id    String?   @db.VarChar(100)
+  from_bed_id     String?   @db.VarChar(100)
+  to_ward_id      String    @db.VarChar(100)
+  to_bed_id       String    @db.VarChar(100)
+  reason          String?
+  transferred_by  String?   @db.VarChar(100)
+  transferred_at  DateTime  @default(now()) @db.Timestamp(6)
+  admission       admission @relation(fields: [admission_id], references: [admission_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_transfer_admission")
+
+  @@index([admission_id], map: "idx_transfer_admission")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -205,6 +266,31 @@ model appointment_reschedule_queue {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model bed_master {
+  id            BigInt      @id @default(autoincrement())
+  bed_id        String      @unique @db.VarChar(100)
+  ward_id       String      @db.VarChar(100)
+  branch_id     String      @db.VarChar(100)
+  bed_number    String      @db.VarChar(100)
+  bed_type      String?     @db.VarChar(100)
+  tariff        Decimal?    @db.Decimal(10, 2)
+  status        String      @default("AVAILABLE") @db.VarChar(100)
+  remarks       String?
+  active_status Int?        @default(1) @db.SmallInt
+  created_by    String?     @db.VarChar(100)
+  created_at    DateTime?   @default(now()) @db.Timestamp(6)
+  updated_by    String?     @db.VarChar(100)
+  updated_at    DateTime?   @default(now()) @db.Timestamp(6)
+  admission     admission[]
+  branch        branch      @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_bed_branch")
+  ward_master   ward_master @relation(fields: [ward_id], references: [ward_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_bed_ward")
+
+  @@unique([ward_id, bed_number], map: "uq_bed_ward_number")
+  @@index([status], map: "idx_bed_status")
+  @@index([ward_id], map: "idx_bed_ward")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model biomarker_tests {
   id                 BigInt  @id @default(autoincrement())
   biomarker_id       String  @unique(map: "uq_biomarker_tests_id") @db.VarChar(100)
@@ -220,7 +306,7 @@ model biomarker_tests {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model branch {
-  branch_id                    String                         @unique(map: "uq_branch_branch_id") @default(dbgenerated("nextval('branch_branch_id_seq'::regclass)")) @db.VarChar(100)
+  branch_id                    String                         @unique(map: "uq_branch_branch_id") @db.VarChar(100)
   branch_type                  String                         @db.VarChar(100)
   district                     String?                        @db.VarChar(100)
   state_name                   String?                        @db.VarChar(100)
@@ -245,8 +331,10 @@ model branch {
   fax_no                       String?                        @db.VarChar(100)
   branch_pincode               Int?
   branch_photo_url             String?                        @db.VarChar
+  admission                    admission[]
   appointment_history          appointment_history[]
   appointment_reschedule_queue appointment_reschedule_queue[]
+  bed_master                   bed_master[]
   hospital                     hospital?                      @relation(fields: [hospital_id], references: [hospital_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_branch_hospital")
   chemotherapy_master          chemotherapy_master[]
   chemotherapy_plan            chemotherapy_plan[]
@@ -271,6 +359,7 @@ model branch {
   user_branch_mapping          user_branch_mapping[]
   user_log                     user_log[]
   user_table                   user_table[]
+  ward_master                  ward_master[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -932,6 +1021,7 @@ model clinical_test_master {
 model department_master {
   department_id       String                @id(map: "department_pkey") @db.VarChar(100)
   department_name     String                @db.VarChar(100)
+  admission           admission[]
   appointment_history appointment_history[]
   chemotherapy_master chemotherapy_master[]
   chemotherapy_plan   chemotherapy_plan[]
@@ -1026,7 +1116,7 @@ model doctor_leave {
   leave_start_date                                          DateTime    @db.Date
   leave_end_date                                            DateTime    @db.Date
   leave_reason                                              String      @db.VarChar(500)
-  status                                                    LeaveStatus @default(PENDING)
+  status                                                    leavestatus @default(PENDING)
   requested_by                                              String      @db.VarChar(100)
   requested_at                                              DateTime    @default(now()) @db.Timestamp(6)
   approved_by                                               String?     @db.VarChar(100)
@@ -1080,21 +1170,21 @@ model doctor_schedule {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model doctor_schedule_change {
-  change_id            BigInt                   @id @default(autoincrement())
-  employee_id          String                   @db.VarChar(100)
-  branch_id            String                   @db.VarChar(100)
-  change_date          DateTime                 @db.Date
-  mode                 DoctorScheduleChangeMode
-  start_time           DateTime?                @db.Time(6)
-  end_time             DateTime?                @db.Time(6)
-  reason               String?                  @db.VarChar(100)
-  is_active            Boolean                  @default(true)
-  created_by           String?                  @db.VarChar(100)
-  created_at           DateTime                 @default(now()) @db.Timestamptz(6)
-  updated_at           DateTime                 @db.Timestamptz(6)
+  change_id            BigInt                      @id @default(autoincrement())
+  employee_id          String                      @db.VarChar(100)
+  branch_id            String                      @db.VarChar(100)
+  change_date          DateTime                    @db.Date
+  mode                 doctor_schedule_change_mode
+  start_time           DateTime?                   @db.Time(6)
+  end_time             DateTime?                   @db.Time(6)
+  reason               String?                     @db.VarChar(100)
+  is_active            Boolean                     @default(true)
+  created_by           String?                     @db.VarChar(100)
+  created_at           DateTime                    @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime                    @db.Timestamptz(6)
   consultation_minutes Int?
-  branch               branch                   @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction)
-  employees            employees                @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
+  branch               branch                      @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction)
+  employees            employees                   @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([branch_id])
   @@index([change_date])
@@ -1209,6 +1299,7 @@ model employees {
   permanent_employee_pincode                                                         BigInt?
   qualification_id                                                                   String?                        @db.VarChar(100)
   deleted_at                                                                         DateTime?                      @db.Timestamp(6)
+  admission                                                                          admission[]
   appointment_history                                                                appointment_history[]
   chemotherapy_administration_chemotherapy_administration_verified_byToemployees     chemotherapy_administration[]  @relation("chemotherapy_administration_verified_byToemployees")
   chemotherapy_administration_chemotherapy_administration_administered_byToemployees chemotherapy_administration[]  @relation("chemotherapy_administration_administered_byToemployees")
@@ -1247,61 +1338,73 @@ model employees {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model encounter {
-  encounter_id                 BigInt                        @id @default(autoincrement())
-  encounter_no                 String                        @unique @db.VarChar(100)
-  branch_id                    String                        @db.VarChar(100)
-  encounter_ts                 DateTime                      @default(now()) @db.Timestamptz(6)
-  encounter_type               String                        @default("OPD") @db.VarChar(100)
-  status                       String                        @default("OPEN") @db.VarChar(100)
-  notes                        String?
-  created_at                   DateTime                      @default(now()) @db.Timestamptz(6)
-  employee_id                  String?                       @db.VarChar(100)
-  patient_id                   String                        @db.VarChar(100)
-  appointment_id               String?                       @unique @db.VarChar(100)
-  advice                       String?
-  checkout_time                DateTime?                     @db.Timestamptz(6)
-  chief_complaint              String?
-  clinical_notes               String?
-  closed_at                    DateTime?                     @db.Timestamptz(6)
-  closed_by                    String?                       @db.VarChar(100)
-  department_id                String?                       @db.VarChar(100)
-  diastolic_bp                 Int?
-  follow_up_date               DateTime?                     @db.Date
-  height                       Decimal?                      @db.Decimal(5, 2)
-  pulse                        Int?
-  respiratory_rate             Int?
-  schedule_id                  BigInt?
-  spo2                         Int?
-  symptoms                     String?
-  systolic_bp                  Int?
-  temperature                  Decimal?                      @db.Decimal(5, 2)
-  weight                       Decimal?                      @db.Decimal(5, 2)
-  user_id                      String?                       @db.VarChar(100)
-  diagnosis_id                 String?                       @db.VarChar(100)
-  diagnosis_text               String?                       @db.VarChar(100)
-  createdBy                    String?                       @db.VarChar
-  blood_sugar                  Decimal?                      @db.Decimal
-  pain_score                   BigInt?
-  BMI                          Decimal?                      @db.Decimal
-  clinical_findings            String?
-  cns_examination              String?
-  cvs_examination              String?
-  history_of_present_illness   String?
-  per_abdomen_examination      String?
-  chemotherapy_plan            chemotherapy_plan[]
-  appointment_history          appointment_history?          @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_appointment")
-  branch                       branch                        @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_branch")
-  department_master            department_master?            @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_department")
-  employees                    employees?                    @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_doctor")
-  patient_bio_data             patient_bio_data              @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_patient")
-  doctor_schedule              doctor_schedule?              @relation(fields: [schedule_id], references: [schedule_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_schedule")
-  user_table                   user_table?                   @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_user")
-  encounter_performance_status encounter_performance_status?
-  encounter_report             encounter_report[]
-  encounter_symptom            encounter_symptom[]
-  patient_allergy              patient_allergy[]
-  patient_comorbidity          patient_comorbidity[]
-  patient_personal_history     patient_personal_history?
+  encounter_id                        BigInt                        @id @default(autoincrement())
+  encounter_no                        String                        @unique @db.VarChar(100)
+  branch_id                           String                        @db.VarChar(100)
+  encounter_ts                        DateTime                      @default(now()) @db.Timestamptz(6)
+  encounter_type                      String                        @default("OPD") @db.VarChar(100)
+  status                              String                        @default("OPEN") @db.VarChar(100)
+  notes                               String?
+  created_at                          DateTime                      @default(now()) @db.Timestamptz(6)
+  employee_id                         String?                       @db.VarChar(100)
+  patient_id                          String                        @db.VarChar(100)
+  appointment_id                      String?                       @unique @db.VarChar(100)
+  advice                              String?
+  checkout_time                       DateTime?                     @db.Timestamptz(6)
+  chief_complaint                     String?
+  clinical_notes                      String?
+  closed_at                           DateTime?                     @db.Timestamptz(6)
+  closed_by                           String?                       @db.VarChar(100)
+  department_id                       String?                       @db.VarChar(100)
+  diastolic_bp                        Int?
+  follow_up_date                      DateTime?                     @db.Date
+  height                              Decimal?                      @db.Decimal(5, 2)
+  pulse                               Int?
+  respiratory_rate                    Int?
+  schedule_id                         BigInt?
+  spo2                                Int?
+  symptoms                            String?
+  systolic_bp                         Int?
+  temperature                         Decimal?                      @db.Decimal(5, 2)
+  weight                              Decimal?                      @db.Decimal(5, 2)
+  user_id                             String?                       @db.VarChar(100)
+  diagnosis_id                        String?                       @db.VarChar(100)
+  diagnosis_text                      String?                       @db.VarChar(100)
+  createdBy                           String?                       @db.VarChar
+  blood_sugar                         Decimal?                      @db.Decimal
+  pain_score                          BigInt?
+  BMI                                 Decimal?                      @db.Decimal
+  clinical_findings                   String?
+  cns_examination                     String?
+  cvs_examination                     String?
+  history_of_present_illness          String?
+  per_abdomen_examination             String?
+  general_examination_clubbing        Boolean?                      @default(false)
+  general_examination_cyanosis        Boolean?                      @default(false)
+  general_examination_icterus         Boolean?                      @default(false)
+  general_examination_lymphadenopathy Boolean?                      @default(false)
+  general_examination_oedema          Boolean?                      @default(false)
+  general_examination_pallor          Boolean?                      @default(false)
+  respiratory_examination             String?
+  past_history_treatment_date         DateTime?                     @db.Date
+  past_history_treatment_note         String?
+  past_history_treatment_response     String?
+  past_history_treatment_type         String?
+  previous_reports                    String?
+  chemotherapy_plan                   chemotherapy_plan[]
+  appointment_history                 appointment_history?          @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_appointment")
+  branch                              branch                        @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_branch")
+  department_master                   department_master?            @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_department")
+  employees                           employees?                    @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_doctor")
+  patient_bio_data                    patient_bio_data              @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_patient")
+  doctor_schedule                     doctor_schedule?              @relation(fields: [schedule_id], references: [schedule_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_schedule")
+  user_table                          user_table?                   @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_user")
+  encounter_performance_status        encounter_performance_status?
+  encounter_report                    encounter_report[]
+  encounter_symptom                   encounter_symptom[]
+  patient_allergy                     patient_allergy[]
+  patient_comorbidity                 patient_comorbidity[]
+  patient_personal_history            patient_personal_history?
 
   @@index([patient_id], map: "idx_encounter_patient")
 }
@@ -1773,50 +1876,54 @@ model oncology_audit_log {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model oncology_staging_detail {
-  id                    BigInt              @id @default(autoincrement())
-  staging_detail_id     String              @unique(map: "uq_staging_detail_id") @db.VarChar(100)
-  patient_id            String              @db.VarChar(100)
-  patient_history_id    String?             @db.VarChar(100)
-  diagnosis_id          String?             @db.VarChar(100)
-  visit_date            DateTime?           @db.Date
-  diagnosis_date        DateTime?           @db.Date
-  biopsy_date           DateTime?           @db.Date
-  consulting_oncologist String?             @db.VarChar(100)
-  cancer_type_id        String              @db.VarChar(100)
-  cancer_subtype_id     String              @db.VarChar(100)
-  icd10_code            String?             @db.VarChar(100)
-  icd_o3_topo           String?             @db.VarChar(100)
-  icd_o3_morpho         String?             @db.VarChar(100)
-  staging_system        String?             @db.VarChar(100)
-  clinical_stage        String?             @db.VarChar(100)
-  t_stage               String?             @db.VarChar(100)
-  n_stage               String?             @db.VarChar(100)
-  m_stage               String?             @db.VarChar(100)
-  metastasis_sites      Json?
-  laterality            String?             @db.VarChar(100)
-  performance_status    Int?                @db.SmallInt
-  employee_id           String?             @db.VarChar(100)
-  branch_id             String?             @db.VarChar(100)
-  user_id               String?             @db.VarChar(100)
-  created_at            DateTime?           @default(now()) @db.Timestamp(6)
-  updated_at            DateTime?           @default(now()) @db.Timestamp(6)
-  disease_status        String?             @db.VarChar(100)
-  grade                 String?             @db.VarChar(100)
-  grade_system          String?             @db.VarChar(100)
-  pre_diagnosis         String?
-  site                  String?             @db.VarChar(100)
-  chemotherapy_plan     chemotherapy_plan[]
-  derived_fields        derived_fields?
-  ihc_results           ihc_results?
-  molecular_results     molecular_results?
-  branch                branch?             @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_branch")
-  cancer_types          cancer_types        @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_cancer_type")
-  diagnosis             diagnosis?          @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_diagnosis")
-  employees             employees?          @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_employee")
-  patient_bio_data      patient_bio_data    @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_patient")
-  patient_history       patient_history?    @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_patient_history")
-  cancer_subtypes       cancer_subtypes     @relation(fields: [cancer_subtype_id], references: [subtype_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_subtype")
-  user_table            user_table?         @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_user")
+  id                            BigInt              @id @default(autoincrement())
+  staging_detail_id             String              @unique(map: "uq_staging_detail_id") @db.VarChar(100)
+  patient_id                    String              @db.VarChar(100)
+  patient_history_id            String?             @db.VarChar(100)
+  diagnosis_id                  String?             @db.VarChar(100)
+  visit_date                    DateTime?           @db.Date
+  diagnosis_date                DateTime?           @db.Date
+  biopsy_date                   DateTime?           @db.Date
+  consulting_oncologist         String?             @db.VarChar(100)
+  cancer_type_id                String              @db.VarChar(100)
+  cancer_subtype_id             String              @db.VarChar(100)
+  icd10_code                    String?             @db.VarChar(100)
+  icd_o3_topo                   String?             @db.VarChar(100)
+  icd_o3_morpho                 String?             @db.VarChar(100)
+  staging_system                String?             @db.VarChar(100)
+  clinical_stage                String?             @db.VarChar(100)
+  t_stage                       String?             @db.VarChar(100)
+  n_stage                       String?             @db.VarChar(100)
+  m_stage                       String?             @db.VarChar(100)
+  metastasis_sites              Json?
+  laterality                    String?             @db.VarChar(100)
+  performance_status            Int?                @db.SmallInt
+  employee_id                   String?             @db.VarChar(100)
+  branch_id                     String?             @db.VarChar(100)
+  user_id                       String?             @db.VarChar(100)
+  created_at                    DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at                    DateTime?           @default(now()) @db.Timestamp(6)
+  disease_status                String?             @db.VarChar(100)
+  grade                         String?             @db.VarChar(100)
+  grade_system                  String?             @db.VarChar(100)
+  pre_diagnosis                 String?
+  site                          String?             @db.VarChar(100)
+  suggested_molecular_test      String?             @db.VarChar(255)
+  suggested_molecular_test_date DateTime?           @db.Date
+  suggested_molecular_test_note String?
+  notes                         String?
+  chemotherapy_plan             chemotherapy_plan[]
+  derived_fields                derived_fields?
+  ihc_results                   ihc_results?
+  molecular_results             molecular_results?
+  branch                        branch?             @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_branch")
+  cancer_types                  cancer_types        @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_cancer_type")
+  diagnosis                     diagnosis?          @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_diagnosis")
+  employees                     employees?          @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_employee")
+  patient_bio_data              patient_bio_data    @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_patient")
+  patient_history               patient_history?    @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_patient_history")
+  cancer_subtypes               cancer_subtypes     @relation(fields: [cancer_subtype_id], references: [subtype_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_subtype")
+  user_table                    user_table?         @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_user")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1877,6 +1984,7 @@ model patient_bio_data {
   referral_contact               String?                        @db.VarChar
   referral_type                  String?                        @db.VarChar
   referral_notes                 String?                        @db.VarChar
+  admission                      admission[]
   appointment_history            appointment_history[]
   appointment_reschedule_queue   appointment_reschedule_queue[]
   chemotherapy_plan              chemotherapy_plan[]
@@ -2095,8 +2203,8 @@ model qualification_master {
   qualification_name String      @db.VarChar(100)
   designation        String      @db.VarChar(100)
   is_active          Boolean     @default(true)
-  created_at         DateTime    @default(now())
-  updated_at         DateTime
+  created_at         DateTime    @default(now()) @db.Timestamp(6)
+  updated_at         DateTime    @db.Timestamp(6)
   employees          employees[]
 }
 
@@ -2117,7 +2225,7 @@ model role_id_config {
   display_name   String?          @db.VarChar(100)
   is_active      Boolean          @default(true)
   sort_order     Int              @default(0)
-  updated_at     DateTime?
+  updated_at     DateTime?        @db.Timestamp(6)
   prefix         String?          @db.VarChar(100)
   RolePermission RolePermission[]
 }
@@ -2227,6 +2335,7 @@ model user_table {
   created_at                                         DateTime?                 @default(now()) @db.Timestamp(6)
   id                                                 BigInt                    @id @default(autoincrement())
   branch_id                                          String?                   @db.VarChar(100)
+  kpi_preferences                                    String?                   @db.VarChar(500)
   appointment_history                                appointment_history[]
   chemotherapy_master                                chemotherapy_master[]
   chemotherapy_plan                                  chemotherapy_plan[]
@@ -2252,13 +2361,46 @@ model user_table {
   branch                                             branch?                   @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_user_branch")
 }
 
-enum DoctorScheduleChangeMode {
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ward_master {
+  id            BigInt       @id @default(autoincrement())
+  ward_id       String       @unique @db.VarChar(100)
+  branch_id     String       @db.VarChar(100)
+  ward_name     String       @db.VarChar(100)
+  ward_type     String       @db.VarChar(100)
+  floor         String?      @db.VarChar(100)
+  total_beds    Int          @default(0)
+  tariff        Decimal?     @db.Decimal(10, 2)
+  active_status Int?         @default(1) @db.SmallInt
+  created_by    String?      @db.VarChar(100)
+  created_at    DateTime?    @default(now()) @db.Timestamp(6)
+  updated_by    String?      @db.VarChar(100)
+  updated_at    DateTime?    @default(now()) @db.Timestamp(6)
+  admission     admission[]
+  bed_master    bed_master[]
+  branch        branch       @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ward_branch")
+
+  @@index([branch_id], map: "idx_ward_branch")
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum doctor_schedule_change_mode {
+  FULL_DAY
+  TIME_CHANGE
   ADD
+  cancel
+  override
   OVERRIDE
   CANCEL
 }
 
-enum LeaveStatus {
+enum leavestatus {
   PENDING
   APPROVED
   REJECTED
