@@ -380,6 +380,27 @@ model cancer_grade_master {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model cancer_score {
+  id               BigInt       @id @default(autoincrement())
+  score_id         String       @unique(map: "uq_cancer_score_id") @db.VarChar(100)
+  cancer_type_id   String       @db.VarChar(100)
+  score_system     String       @db.VarChar(150)
+  score_value      String       @db.VarChar(150)
+  input_type       String?      @db.VarChar(50)
+  score_rule       String?
+  applies_to       String?      @db.VarChar(150)
+  subtype_keywords String?      @db.VarChar(255)
+  display_order    Int?         @default(1)
+  active_status    Int?         @default(1) @db.SmallInt
+  created_at       DateTime?    @default(now()) @db.Timestamp(6)
+  updated_at       DateTime?    @default(now()) @db.Timestamp(6)
+  cancer_types     cancer_types @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_cancer_score_cancer_type")
+
+  @@unique([cancer_type_id, score_system, score_value], map: "uq_cancer_score_value")
+  @@index([cancer_type_id], map: "idx_cancer_score_type")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model cancer_subtypes {
   id                            BigInt                          @id @default(autoincrement())
   subtype_id                    String                          @unique(map: "uq_cancer_subtypes_id") @db.VarChar(100)
@@ -411,6 +432,7 @@ model cancer_types {
   diagnosis_id                  String?                         @db.VarChar
   anatomical_site_master        anatomical_site_master[]
   cancer_grade_master           cancer_grade_master[]
+  cancer_score                  cancer_score[]
   cancer_subtypes               cancer_subtypes[]
   diagnosis                     diagnosis?                      @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction)
   chemotherapy_plan             chemotherapy_plan[]
@@ -1909,6 +1931,8 @@ model oncology_staging_detail {
   visit_date                    DateTime?           @db.Date
   diagnosis_date                DateTime?           @db.Date
   biopsy_date                   DateTime?           @db.Date
+  progression_date              DateTime?           @db.Date
+  relapse_date                  DateTime?           @db.Date
   consulting_oncologist         String?             @db.VarChar(100)
   cancer_type_id                String              @db.VarChar(100)
   cancer_subtype_id             String              @db.VarChar(100)
@@ -1931,6 +1955,8 @@ model oncology_staging_detail {
   disease_status                String?             @db.VarChar(100)
   grade                         String?             @db.VarChar(100)
   grade_system                  String?             @db.VarChar(100)
+  score                         String?
+  score_system                  String?             @db.VarChar(255)
   pre_diagnosis                 String?
   site                          String?             @db.VarChar(100)
   suggested_molecular_test      String?             @db.VarChar(255)

@@ -175,6 +175,8 @@ export interface CreateStagingDetailDto {
     patient_history_id?: string | null;
     visit_date?: string | null;
     diagnosis_date?: string | null;
+    progression_date?: string | null;
+    relapse_date?: string | null;
     biopsy_date?: string | null;
     consulting_oncologist?: string | null;
     cancer_type_id: string;
@@ -190,6 +192,8 @@ export interface CreateStagingDetailDto {
     site?: string | null;
     grade?: string | null;
     grade_system?: string | null;
+    score?: string | null;
+    score_system?: string | null;
     suggested_molecular_test?: string | null;
     suggested_molecular_test_note?: string | null;
     suggested_molecular_test_date?: string | null;
@@ -208,6 +212,8 @@ export interface UpdateStagingDetailDto {
     patient_history_id?: string | null;
     visit_date?: string | null;
     diagnosis_date?: string | null;
+    progression_date?: string | null;
+    relapse_date?: string | null;
     biopsy_date?: string | null;
     consulting_oncologist?: string | null;
     cancer_type_id?: string;
@@ -223,6 +229,8 @@ export interface UpdateStagingDetailDto {
     site?: string | null;
     grade?: string | null;
     grade_system?: string | null;
+    score?: string | null;
+    score_system?: string | null;
     suggested_molecular_test?: string | null;
     suggested_molecular_test_note?: string | null;
     suggested_molecular_test_date?: string | null;

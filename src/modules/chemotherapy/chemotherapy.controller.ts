@@ -73,9 +73,16 @@ export class ChemotherapyController {
 
         try {
 
+            const csv = (value: unknown) =>
+                typeof value === "string"
+                    ? value.split(",").map((item) => item.trim()).filter(Boolean)
+                    : undefined;
+
             const data = await service.listRegimenProtocols({
                 cancer_type_id: req.query.cancer_type_id as string | undefined,
                 subtype_id: req.query.subtype_id as string | undefined,
+                cancer_type_ids: csv(req.query.cancer_type_ids),
+                subtype_ids: csv(req.query.subtype_ids),
                 organization_id: (req as any).user?.hospital_id ?? null
             });
 

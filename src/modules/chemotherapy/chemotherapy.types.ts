@@ -131,6 +131,10 @@ export interface RegimenProtocolFilterQuery {
 
     cancer_type_id?: string;
     subtype_id?: string;
+    // Multi-select Diagnosis: every selected cancer type / histopathology.
+    // Merged with the single-value filters above.
+    cancer_type_ids?: string[];
+    subtype_ids?: string[];
     // Optional org scoping - when provided, the result includes that
     // organization's active personalized protocols alongside the globally
     // available generics. When omitted, only generics are returned.

@@ -46,46 +46,104 @@ export class ChemotherapyRepository {
 
     async listRegimenProtocols(filters: RegimenProtocolFilterQuery) {
 
+        // Generic protocols are globally available. Personalized protocols
+        // are only ever shown to their owning organization (organization_id
+        // filter) - an unauthenticated/global browse never exposes them.
+        const visibility: Prisma.chemotherapy_regimen_protocolWhereInput = filters.organization_id
+            ? {
+                OR: [
+                    { protocol_type: { not: "PERSONALIZED" } },
+                    { organization_id: filters.organization_id }
+                ]
+            }
+            : { protocol_type: { not: "PERSONALIZED" } };
+
+        const cancerMatch = await this.buildProtocolCancerMatch(filters);
+
         return prisma.chemotherapy_regimen_protocol.findMany({
             where: {
                 active_status: 1,
-                // Generic protocols are globally available. Personalized
-                // protocols are only ever shown to their owning organization
-                // (organization_id filter) - an unauthenticated/global browse
-                // never exposes them.
-                ...(filters.organization_id
-                    ? {
-                        OR: [
-                            { protocol_type: { not: "PERSONALIZED" } },
-                            { organization_id: filters.organization_id }
-                        ]
-                    }
-                    : { protocol_type: { not: "PERSONALIZED" } }),
-                ...(filters.cancer_type_id
-                    ? {
-                        OR: [
-                            { cancer_type_id: filters.cancer_type_id },
-                            { chemotherapy_protocol_cancers: { some: { cancer_type_id: filters.cancer_type_id, active_status: 1 } } }
-                        ]
-                    }
-                    : {}),
-                // A null subtype_id on the protocol means "applies to the whole
-                // cancer type" - so filtering by a specific subtype should
-                // surface both subtype-specific AND type-wide protocols.
-                ...(filters.subtype_id
-                    ? {
-                        OR: [
-                            { subtype_id: filters.subtype_id },
-                            { subtype_id: null },
-                            { chemotherapy_protocol_cancers: { some: { subtype_id: filters.subtype_id, active_status: 1 } } },
-                            { chemotherapy_protocol_cancers: { some: { subtype_id: null, active_status: 1 } } }
-                        ]
-                    }
-                    : {})
+                // AND-ed, not spread: each condition carries its own OR, and
+                // spreading them would let the last OR silently replace the
+                // others (which dropped the cancer-type filter entirely).
+                AND: [visibility, ...(cancerMatch ? [cancerMatch] : [])]
             },
             include: this.protocolInclude,
             orderBy: { regimen_code: "asc" }
         });
+
+    }
+
+    // A protocol matches a selected cancer type when either its own
+    // cancer_type_id or one of its chemotherapy_protocol_cancers rows is that
+    // type. When histopathology subtypes are selected for the type, the
+    // protocol must be for one of those subtypes or type-wide (null
+    // subtype_id); with no subtype selected, every protocol of the type
+    // matches. Multiple selected types are OR-ed.
+    private async buildProtocolCancerMatch(
+        filters: RegimenProtocolFilterQuery
+    ): Promise<Prisma.chemotherapy_regimen_protocolWhereInput | null> {
+
+        const typeIds = new Set<string>([
+            ...(filters.cancer_type_ids ?? []),
+            ...(filters.cancer_type_id ? [filters.cancer_type_id] : [])
+        ]);
+        const subtypeIds = [
+            ...new Set([
+                ...(filters.subtype_ids ?? []),
+                ...(filters.subtype_id ? [filters.subtype_id] : [])
+            ])
+        ];
+
+        // Group the selected subtypes under their own cancer type.
+        const subtypesByType = new Map<string, string[]>();
+
+        if (subtypeIds.length > 0) {
+
+            const subtypes = await prisma.cancer_subtypes.findMany({
+                where: { subtype_id: { in: subtypeIds } },
+                select: { subtype_id: true, cancer_type_id: true }
+            });
+
+            for (const subtype of subtypes) {
+                // A subtype on its own implies its cancer type.
+                typeIds.add(subtype.cancer_type_id);
+                const list = subtypesByType.get(subtype.cancer_type_id) ?? [];
+                list.push(subtype.subtype_id);
+                subtypesByType.set(subtype.cancer_type_id, list);
+            }
+
+        }
+
+        if (typeIds.size === 0) {
+            return null;
+        }
+
+        const perType = [...typeIds].map((typeId): Prisma.chemotherapy_regimen_protocolWhereInput => {
+
+            const selected = subtypesByType.get(typeId) ?? [];
+
+            if (selected.length === 0) {
+                return {
+                    OR: [
+                        { cancer_type_id: typeId },
+                        { chemotherapy_protocol_cancers: { some: { cancer_type_id: typeId, active_status: 1 } } }
+                    ]
+                };
+            }
+
+            const subtypeMatch = { OR: [{ subtype_id: { in: selected } }, { subtype_id: null }] };
+
+            return {
+                OR: [
+                    { cancer_type_id: typeId, ...subtypeMatch },
+                    { chemotherapy_protocol_cancers: { some: { cancer_type_id: typeId, active_status: 1, ...subtypeMatch } } }
+                ]
+            };
+
+        });
+
+        return perType.length === 1 ? perType[0] : { OR: perType };
 
     }
 

@@ -10,7 +10,10 @@ export const previewPlanValidation = [
 export const listRegimenProtocolsValidation = [
 
     query("cancer_type_id").optional().notEmpty(),
-    query("subtype_id").optional().notEmpty()
+    query("subtype_id").optional().notEmpty(),
+    // Comma-separated lists, e.g. cancer_type_ids=CT021,CT020
+    query("cancer_type_ids").optional().isString(),
+    query("subtype_ids").optional().isString()
 
 ];
 

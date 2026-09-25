@@ -243,6 +243,18 @@ export class OncologyService {
 
     }
 
+    async listCancerScores(cancerTypeId: string) {
+
+        const cancerType = await this.repository.findCancerTypeById(cancerTypeId);
+
+        if (!cancerType) {
+            throw new Error("Cancer type not found");
+        }
+
+        return this.repository.findCancerScoresByType(cancerTypeId);
+
+    }
+
     // prisma/seedOncology.ts lives outside src/'s tsconfig rootDir (it's a
     // shared CLI + service entry point, not part of the compiled app), so
     // it's loaded via require() here instead of a static TS import - ts-node
@@ -393,6 +405,8 @@ export class OncologyService {
                 diagnosis_id: dto.diagnosis_id ?? null,
                 visit_date: dto.visit_date ? new Date(dto.visit_date) : null,
                 diagnosis_date: dto.diagnosis_date ? new Date(dto.diagnosis_date) : null,
+                progression_date: dto.progression_date ? new Date(dto.progression_date) : null,
+                relapse_date: dto.relapse_date ? new Date(dto.relapse_date) : null,
                 biopsy_date: dto.biopsy_date ? new Date(dto.biopsy_date) : null,
                 consulting_oncologist: dto.consulting_oncologist ?? null,
                 cancer_type_id: dto.cancer_type_id,
@@ -412,6 +426,8 @@ export class OncologyService {
                 site: dto.site ?? null,
                 grade: dto.grade ?? null,
                 grade_system: dto.grade_system ?? null,
+                score: dto.score ?? null,
+                score_system: dto.score_system ?? null,
                 suggested_molecular_test: dto.suggested_molecular_test ?? null,
                 suggested_molecular_test_note: dto.suggested_molecular_test_note ?? null,
                 suggested_molecular_test_date: dto.suggested_molecular_test_date ? new Date(dto.suggested_molecular_test_date) : null,
@@ -557,6 +573,8 @@ export class OncologyService {
             ...(dto.diagnosis_id !== undefined && dto.diagnosis_id !== null ? { diagnosis_id: dto.diagnosis_id } : {}),
             ...(dto.visit_date !== undefined ? { visit_date: dto.visit_date ? new Date(dto.visit_date) : null } : {}),
             ...(dto.diagnosis_date !== undefined ? { diagnosis_date: dto.diagnosis_date ? new Date(dto.diagnosis_date) : null } : {}),
+            ...(dto.progression_date !== undefined ? { progression_date: dto.progression_date ? new Date(dto.progression_date) : null } : {}),
+            ...(dto.relapse_date !== undefined ? { relapse_date: dto.relapse_date ? new Date(dto.relapse_date) : null } : {}),
             ...(dto.biopsy_date !== undefined ? { biopsy_date: dto.biopsy_date ? new Date(dto.biopsy_date) : null } : {}),
             ...(dto.consulting_oncologist !== undefined && dto.consulting_oncologist !== null ? { consulting_oncologist: dto.consulting_oncologist } : {}),
             ...(subtypeChanging ? {
@@ -578,6 +596,8 @@ export class OncologyService {
             ...(dto.site !== undefined && dto.site !== null ? { site: dto.site } : {}),
             ...(dto.grade !== undefined && dto.grade !== null ? { grade: dto.grade } : {}),
             ...(dto.grade_system !== undefined && dto.grade_system !== null ? { grade_system: dto.grade_system } : {}),
+            ...(dto.score !== undefined ? { score: dto.score || null } : {}),
+            ...(dto.score_system !== undefined ? { score_system: dto.score_system || null } : {}),
             ...(dto.suggested_molecular_test !== undefined ? { suggested_molecular_test: dto.suggested_molecular_test || null } : {}),
             ...(dto.suggested_molecular_test_note !== undefined ? { suggested_molecular_test_note: dto.suggested_molecular_test_note || null } : {}),
             ...(dto.suggested_molecular_test_date !== undefined ? { suggested_molecular_test_date: dto.suggested_molecular_test_date ? new Date(dto.suggested_molecular_test_date) : null } : {}),

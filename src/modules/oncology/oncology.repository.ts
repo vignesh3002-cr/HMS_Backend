@@ -139,6 +139,15 @@ export class OncologyRepository {
 
     }
 
+    async findCancerScoresByType(cancerTypeId: string) {
+
+        return prisma.cancer_score.findMany({
+            where: { cancer_type_id: cancerTypeId, active_status: 1 },
+            orderBy: [{ score_system: "asc" as const }, { display_order: "asc" as const }]
+        });
+
+    }
+
     // -----------------------------------------------------------------
     // Supporting entity lookups (existence checks only - these tables
     // belong to other modules, so no write access here)

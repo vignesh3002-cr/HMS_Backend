@@ -50,6 +50,14 @@ router.get(
 );
 
 router.get(
+    "/reference/cancer-types/:cancerTypeId/scores",
+    authenticate,
+    authorize("oncology.reference.read"),
+    getCancerSubtypesValidation,
+    controller.getCancerScores.bind(controller)
+);
+
+router.get(
     "/reference/staging",
     authenticate,
     authorize("oncology.reference.read"),

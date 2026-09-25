@@ -15,7 +15,8 @@
     "db:seed:ipd-setup": "ts-node prisma/seedIpdSetup.ts",
     "db:seed:clinical-master": "ts-node prisma/seedClinical_Master_Details.ts",
     "db:seed:comorbidities": "ts-node prisma/seedComorbidityMaster.ts",
-    "db:seed:consultation": "ts-node prisma/seedConsultation.ts"
+    "db:seed:consultation": "ts-node prisma/seedConsultation.ts",
+    "db:seed:cancer-scores": "ts-node prisma/seedCancerScores.ts"
   },
   "keywords": [],
   "author": "",

@@ -161,6 +161,19 @@ export class OncologyController {
 
     }
 
+    async getCancerScores(req: Request, res: Response) {
+
+        try {
+
+            const data = await service.listCancerScores(req.params.cancerTypeId as string);
+            return res.json({ success: true, message: "Cancer scores fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
     async reseedReference(req: Request, res: Response) {
 
         try {
