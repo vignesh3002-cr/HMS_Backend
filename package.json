@@ -12,6 +12,7 @@
     "db:seed:chemo-drugs": "ts-node prisma/seedChemoDrugs.ts",
     "db:seed:regimen-protocols": "ts-node prisma/seedRegimenProtocols.ts",
     "db:seed:personalized-protocol-setup": "ts-node prisma/seedPersonalizedProtocolSetup.ts",
+    "db:seed:ipd-setup": "ts-node prisma/seedIpdSetup.ts",
     "db:seed:clinical-master": "ts-node prisma/seedClinical_Master_Details.ts",
     "db:seed:comorbidities": "ts-node prisma/seedComorbidityMaster.ts",
     "db:seed:consultation": "ts-node prisma/seedConsultation.ts"
@@ -22,7 +23,7 @@
   "type": "commonjs",
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
-    "@prisma/client": "^7.9.0",
+    "@prisma/client": "^7.10.0",
     "approve": "^0.0.12",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
@@ -32,8 +33,7 @@
     "express-validator": "^7.3.2",
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^9.0.3",
-    "openai": "^7.8.0",
-    "prisma": "^7.10.0",
+    "openai": "^7.17.0",
     "scripts": "^0.1.0"
   },
   "devDependencies": {
@@ -44,6 +44,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.0.1",
     "@types/nodemailer": "^8.0.1",
+    "prisma": "^7.10.0",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
   },

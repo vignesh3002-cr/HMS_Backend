@@ -195,6 +195,10 @@ export class ChemotherapyService {
         return this.repository.getProtocolFieldOptions();
     }
 
+    async listTreatmentIntents() {
+        return this.repository.listTreatmentIntents();
+    }
+
     async getMedicinesByCancerTypesAndSubtypes(cancerTypeIds: string[], subtypeIds: string[] | undefined, drugRole: string) {
         if (!cancerTypeIds || cancerTypeIds.length === 0) {
             return [];

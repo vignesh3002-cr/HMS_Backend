@@ -6,3 +6,4 @@ export const ENCOUNTER_STATUS = {
 export const ENCOUNTER_STATUS_VALUES: string[] = Object.values(ENCOUNTER_STATUS);
 
 export const ENCOUNTER_TYPE_DEFAULT = "OPD";
+export const ENCOUNTER_TYPE_IPD = "IPD";

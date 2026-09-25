@@ -29,6 +29,10 @@ const ENTITY_TARGET: Record<string, { table: string; column: string; padTo?: num
     PERSONAL_HISTORY: { table: "patient_personal_history", column: "personal_history_id", padTo: 7 },
     ANATOMICAL_SITE: { table: "anatomical_site_master", column: "site_id", padTo: 4 },
     CANCER_GRADE: { table: "cancer_grade_master", column: "grade_id", padTo: 4 },
+    ADMISSION: { table: "admission", column: "ip_number" },
+    WARD: { table: "ward_master", column: "ward_id" },
+    BED: { table: "bed_master", column: "bed_id" },
+    ADMISSION_TRANSFER: { table: "admission_transfer_log", column: "transfer_log_id" },
 };
 
 // Generates `count` consecutive ids for one entity while holding the

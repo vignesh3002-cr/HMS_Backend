@@ -43,6 +43,43 @@ export class EncounterController {
 
     }
 
+    async createIpdEncounter(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const createdBy = (req as any).user?.role || "SYSTEM";
+
+            const encounter = await service.createIpEncounter(req.body, createdBy);
+
+            return res.status(201).json({
+                success: true,
+                message: "Inpatient encounter created successfully",
+                data: encounter
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
     async getEncounters(req: Request, res: Response) {
 
         try {

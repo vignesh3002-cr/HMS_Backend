@@ -15,6 +15,7 @@ const department_routes_1 = __importDefault(require("./modules/department/depart
 const patient_routes_1 = __importDefault(require("./modules/patient/patient.routes"));
 const appointment_routes_1 = __importDefault(require("./modules/appointment/appointment.routes"));
 const encounter_routes_1 = __importDefault(require("./modules/encounter/encounter.routes"));
+const ipd_routes_1 = __importDefault(require("./modules/ipd/ipd.routes"));
 const permission_routes_1 = __importDefault(require("./modules/permission/permission.routes"));
 const role_routes_1 = __importDefault(require("./modules/role/role.routes"));
 const prescription_routes_1 = __importDefault(require("./modules/prescription/prescription.routes"));
@@ -34,6 +35,8 @@ const diagnosis_routes_1 = __importDefault(require("./modules/diagnosis/diagnosi
 const clinical_details_routes_1 = __importDefault(require("./modules/clinical-details/clinical-details.routes"));
 const notification_routes_1 = __importDefault(require("./modules/notification/notification.routes"));
 const referral_routes_1 = __importDefault(require("./modules/referral/referral.routes"));
+const priorityFlags_routes_1 = __importDefault(require("./modules/priority-flags/priorityFlags.routes"));
+const ai_chat_routes_1 = __importDefault(require("./modules/ai/ai-chat.routes"));
 const patientDocument_routes_1 = __importDefault(require("./modules/patient-document/patientDocument.routes"));
 const bcrypt_1 = require("./utils/bcrypt");
 const appointment_status_job_1 = require("./jobs/appointment-status.job");
@@ -120,6 +123,7 @@ app.use("/api/prescriptions", prescription_routes_1.default);
 app.use("/api/chemotherapy", chemotherapy_routes_1.default);
 app.use("/api/lab-order-item", lab_order_item_routes_1.default);
 app.use("/api/encounters", encounter_routes_1.default);
+app.use("/api/ipd", ipd_routes_1.default);
 app.use("/api/clinical-details", clinical_details_routes_1.default);
 app.use("/api/permissions", permission_routes_1.default);
 app.use("/api/roles", role_routes_1.default);
@@ -136,6 +140,8 @@ app.use("/api/notifications", notification_routes_1.default);
 app.use("/api/qualification-master", qualification_master_routes_1.default);
 app.use("/api/diagnosis", diagnosis_routes_1.default);
 app.use("/api/referral", referral_routes_1.default);
+app.use("/api/priority-flags", priorityFlags_routes_1.default);
+app.use("/api/ai-chat", ai_chat_routes_1.default);
 app.use("/api/patient-documents", patientDocument_routes_1.default);
 app.use("/api/hashpassword", async (req, res) => {
     const { password } = req.body;

@@ -86,6 +86,47 @@ export class EncounterRepository {
 
     }
 
+    async findAdmissionForEncounter(admissionId: string) {
+
+        return prisma.admission.findFirst({
+
+            where: {
+                OR: [
+                    { admission_id: admissionId },
+                    { ip_number: admissionId }
+                ]
+            },
+
+            include: {
+                patient_bio_data: true,
+                employees: {
+                    include: {
+                        user_table: { select: { role_type: true } }
+                    }
+                },
+                branch: true,
+                department_master: true,
+                ward_master: true,
+                bed_master: true
+            }
+
+        });
+
+    }
+
+    async updateAdmissionEncounterNo(
+        tx: Prisma.TransactionClient,
+        admissionId: string,
+        encounterNo: string
+    ) {
+
+        return tx.admission.update({
+            where: { admission_id: admissionId },
+            data: { encounter_no: encounterNo }
+        });
+
+    }
+
     async findDiagnosis(diagnosisId: string) {
 
         return prisma.diagnosis.findUnique({

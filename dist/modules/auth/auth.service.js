@@ -76,6 +76,37 @@ class AuthService {
             },
         };
     }
+    // ---- KPI Preferences ----
+    static ALLOWED_KPI_IDS = new Set([
+        "doctors",
+        "patients",
+        "staff",
+        "appointments",
+        "prescriptions",
+        "bills",
+        "total-op",
+        "chemo-delivered",
+        "chemo-cancelled",
+        "lab-visits",
+        "ipd-patients",
+        "beds-occupied",
+    ]);
+    validateKpiIds(kpis) {
+        return kpis.filter((id) => AuthService.ALLOWED_KPI_IDS.has(id));
+    }
+    async getKpiPreferences(userId) {
+        const user = await this.authRepository.findUserById(userId);
+        if (!user?.kpi_preferences) {
+            return [];
+        }
+        return this.validateKpiIds(user.kpi_preferences.split(",").map((s) => s.trim()).filter(Boolean));
+    }
+    async saveKpiPreferences(userId, kpis) {
+        const validated = this.validateKpiIds(kpis);
+        const value = validated.length > 0 ? validated.join(",") : null;
+        await this.authRepository.updateKpiPreferences(userId, value);
+        return validated;
+    }
     async login(username, password, rememberMe) {
         const user = await this.authRepository.findUserByUsername(username);
         if (!user) {

@@ -243,6 +243,13 @@ router.get(
     controller.getProtocolFieldOptions.bind(controller)
 );
 
+router.get(
+    "/treatment-intents",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    controller.listTreatmentIntents.bind(controller)
+);
+
 router.post(
     "/regimen-protocols",
     authenticate,
