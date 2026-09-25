@@ -6,6 +6,13 @@ export interface StagingInput {
     n_stage?: string | null;
     m_stage?: string | null;
     metastasis_sites?: string[] | null;
+    laterality?: string | null;
+    site?: string | null;
+    histomorphology?: string | null;
+    grade?: string | null;
+    grade_system?: string | null;
+    pre_diagnosis?: string | null;
+    disease_status?: string | null;
 
 }
 
@@ -168,6 +175,8 @@ export interface CreateStagingDetailDto {
     patient_history_id?: string | null;
     visit_date?: string | null;
     diagnosis_date?: string | null;
+    progression_date?: string | null;
+    relapse_date?: string | null;
     biopsy_date?: string | null;
     consulting_oncologist?: string | null;
     cancer_type_id: string;
@@ -178,6 +187,17 @@ export interface CreateStagingDetailDto {
     m_stage?: string | null;
     metastasis_sites?: string[] | null;
     laterality?: string | null;
+    pre_diagnosis?: string | null;
+    disease_status?: string | null;
+    site?: string | null;
+    grade?: string | null;
+    grade_system?: string | null;
+    score?: string | null;
+    score_system?: string | null;
+    suggested_molecular_test?: string | null;
+    suggested_molecular_test_note?: string | null;
+    suggested_molecular_test_date?: string | null;
+    notes?: string | null;
     performance_status?: number | null;
     employee_id?: string | null;
     branch_id?: string | null;
@@ -192,6 +212,8 @@ export interface UpdateStagingDetailDto {
     patient_history_id?: string | null;
     visit_date?: string | null;
     diagnosis_date?: string | null;
+    progression_date?: string | null;
+    relapse_date?: string | null;
     biopsy_date?: string | null;
     consulting_oncologist?: string | null;
     cancer_type_id?: string;
@@ -202,6 +224,17 @@ export interface UpdateStagingDetailDto {
     m_stage?: string | null;
     metastasis_sites?: string[] | null;
     laterality?: string | null;
+    pre_diagnosis?: string | null;
+    disease_status?: string | null;
+    site?: string | null;
+    grade?: string | null;
+    grade_system?: string | null;
+    score?: string | null;
+    score_system?: string | null;
+    suggested_molecular_test?: string | null;
+    suggested_molecular_test_note?: string | null;
+    suggested_molecular_test_date?: string | null;
+    notes?: string | null;
     performance_status?: number | null;
     employee_id?: string | null;
     branch_id?: string | null;

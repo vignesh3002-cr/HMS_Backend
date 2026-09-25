@@ -302,6 +302,77 @@ export class PrescriptionController {
 
     }
 
+    async searchMedicines(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+
+            const medicines = await service.searchMedicines({
+                search: req.query.search as string | undefined,
+                limit: req.query.limit ? Number(req.query.limit) : undefined
+            });
+
+            return res.json({
+                success: true,
+                message: "Medicines fetched successfully",
+                data: medicines
+            });
+
+        } catch (error: any) {
+
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async createMedicine(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+
+            const { medicine, created } = await service.createMedicine(req.body, req.user?.username);
+
+            return res.status(created ? 201 : 200).json({
+                success: true,
+                message: created
+                    ? "Medicine added to master successfully"
+                    : "Medicine already exists in master",
+                data: medicine
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
     async getPrescriptionsByPatientHistoryId(req: Request, res: Response) {
 
         try {

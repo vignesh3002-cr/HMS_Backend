@@ -33,5 +33,11 @@ class AuthRepository {
             },
         });
     }
+    async updateKpiPreferences(userId, kpiPreferences) {
+        return prisma_1.default.user_table.update({
+            where: { user_id: userId },
+            data: { kpi_preferences: kpiPreferences },
+        });
+    }
 }
 exports.AuthRepository = AuthRepository;

@@ -358,16 +358,46 @@ export class ClinicalDetailsController {
             }
 
             const createdBy = getEmployeeIdentifier(req) ?? getUserIdentifier(req);
-            const comorbidity = await service.createCustomComorbidity(req.body, createdBy);
+            const { comorbidity, created } = await service.createCustomComorbidity(req.body, createdBy);
 
-            return res.status(201).json({
+            return res.status(created ? 201 : 200).json({
                 success: true,
-                message: 'Comorbidity created successfully',
+                message: created
+                    ? 'Comorbidity created successfully'
+                    : 'Comorbidity already exists',
                 data: comorbidity,
             });
         } catch (error: any) {
-            const status = error.message.includes('already') ? 409 : 400;
-            return res.status(status).json({
+            return res.status(400).json({
+                success: false,
+                message: error.message,
+            });
+        }
+    }
+
+    async getComorbidityMaster(req: Request, res: Response) {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array(),
+                });
+            }
+
+            const comorbidities = await service.getComorbidityMaster({
+                search: req.query.search as string | undefined,
+                category: req.query.category as string | undefined,
+            });
+
+            return res.json({
+                success: true,
+                message: 'Comorbidities fetched successfully',
+                data: comorbidities,
+            });
+        } catch (error: any) {
+            return res.status(500).json({
                 success: false,
                 message: error.message,
             });

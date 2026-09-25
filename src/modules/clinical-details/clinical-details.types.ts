@@ -98,7 +98,8 @@ export interface UpdatePatientAllergyDTO {
 
 export interface PatientComorbidityDTO {
     patientId: string;
-    diagnosisId: string;
+    /* comorbidity_master.id */
+    comorbidityId: number | string;
     status?: string;
     onsetDate?: string;
     identifiedBy?: string;
@@ -122,11 +123,15 @@ export interface CreateCustomAllergyDTO {
 }
 
 export interface CreateCustomComorbidityDTO {
-    diagnosisName: string;
-    diagnosisCatogoryId?: string;
-    diagnosisCategory?: string;
+    comorbidityName: string;
+    category?: string;
     icdCode?: string;
     createdBy?: string;
+}
+
+export interface ComorbidityMasterQuery {
+    search?: string;
+    category?: string;
 }
 
 export interface ClinicalDetailsQuery {
@@ -180,8 +185,10 @@ export interface GetClinicalDetailsResponse {
     }>;
     comorbidities: Array<{
         id: bigint;
-        diagnosisId: string;
-        diagnosisName: string;
+        comorbidityId: bigint;
+        comorbidityCode: string;
+        comorbidityName: string;
+        category: string | null;
         icdCode: string | null;
         status: string;
         onsetDate: Date | null;

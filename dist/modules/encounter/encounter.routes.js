@@ -8,6 +8,7 @@ const branchScope_1 = require("../../middleware/branchScope");
 const encounter_validation_1 = require("./encounter.validation");
 const router = (0, express_1.Router)();
 const controller = new encounter_controller_1.EncounterController();
+router.post("/ipd", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.create"), encounter_validation_1.createIpdEncounterValidation, controller.createIpdEncounter.bind(controller));
 router.post("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.create"), encounter_validation_1.createEncounterValidation, controller.createEncounter.bind(controller));
 router.get("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), branchScope_1.branchScope, encounter_validation_1.getEncountersValidation, controller.getEncounters.bind(controller));
 router.get("/stats/patients-today", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), branchScope_1.branchScope, controller.getCheckedInPatientsToday.bind(controller));

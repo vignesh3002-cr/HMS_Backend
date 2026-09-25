@@ -1,10 +1,11 @@
 import prisma from "../../config/prisma";
 import { EncounterRepository } from "./encounter.repository";
-import { CreateEncounterDTO, UpdateEncounterDTO, GetEncountersQuery } from "./encounter.types";
-import { ENCOUNTER_STATUS, ENCOUNTER_TYPE_DEFAULT } from "./encounter.constants";
+import { CreateEncounterDTO, CreateIpdEncounterDTO, UpdateEncounterDTO, GetEncountersQuery } from "./encounter.types";
+import { ENCOUNTER_STATUS, ENCOUNTER_TYPE_DEFAULT, ENCOUNTER_TYPE_IPD } from "./encounter.constants";
 import { APPOINTMENT_STATUS, TERMINAL_APPOINTMENT_STATUSES } from "../appointment/appointment.constants";
 import { generateId } from "../../utils/idGenerator";
 import { TOP_LEVEL_ADMIN_ROLES } from "../../permissions/roles";
+import { IPD_STATUS } from "../ipd/ipd.types";
 
 const repository = new EncounterRepository();
 
@@ -153,6 +154,95 @@ export class EncounterService {
             throw error;
 
         }
+
+    }
+
+    async createIpEncounter(data: CreateIpdEncounterDTO, createdBy: string) {
+
+        const admission = await repository.findAdmissionForEncounter(
+            data.admission_id
+        );
+
+        if (!admission) {
+            throw new Error("Admission not found");
+        }
+
+        if (admission.status !== IPD_STATUS.ADMITTED) {
+            throw new Error("Encounter can only be started for an admitted patient");
+        }
+
+        const patient = admission.patient_bio_data;
+
+        if (!patient) {
+            throw new Error("Patient not found");
+        }
+
+        if (patient.patient_active !== "Active") {
+            throw new Error("Patient is inactive");
+        }
+
+        const doctor = admission.employees;
+
+        if (!doctor || !doctor.employee_id) {
+            throw new Error("Doctor not found");
+        }
+
+        if (doctor.user_table?.role_type !== "DOCTOR") {
+            throw new Error("Assigned employee is not a doctor");
+        }
+
+        if (doctor.emp_status !== true) {
+            throw new Error("Doctor is inactive");
+        }
+
+        const branch = admission.branch;
+
+        if (!branch || !admission.branch_id) {
+            throw new Error("Branch not found");
+        }
+
+        if (branch.branch_status !== "Active") {
+            throw new Error("Branch is inactive");
+        }
+
+        const mapping = await repository.findDoctorBranchMapping(
+            doctor.employee_id,
+            admission.branch_id
+        );
+
+        if (!mapping) {
+            throw new Error("Doctor is not assigned to the admission's branch");
+        }
+
+        if (admission.encounter_no) {
+            throw new Error("Encounter already exists for this admission");
+        }
+
+        return prisma.$transaction(async (tx) => {
+
+            const encounterNo = await repository.generateEncounterNumber(tx);
+
+            const encounter = await repository.createEncounter(tx, {
+                createdBy: createdBy,
+                encounter_no: encounterNo,
+                patient_id: admission.patient_id,
+                branch_id: admission.branch_id,
+                department_id: admission.department_id,
+                employee_id: doctor.employee_id!,
+                encounter_type: ENCOUNTER_TYPE_IPD,
+                status: ENCOUNTER_STATUS.OPEN
+
+            });
+
+            await repository.updateAdmissionEncounterNo(
+                tx,
+                admission.admission_id,
+                encounterNo
+            );
+
+            return encounter;
+
+        });
 
     }
 
@@ -313,6 +403,29 @@ export class EncounterService {
                 ? new Date(data.follow_up_date)
                 : undefined,
 
+            history_of_present_illness: data.history_of_present_illness,
+            cns_examination: data.cns_examination,
+            cvs_examination: data.cvs_examination,
+            per_abdomen_examination: data.per_abdomen_examination,
+            clinical_findings: data.clinical_findings,
+            respiratory_examination: data.respiratory_examination,
+            general_examination_icterus: data.general_examination_icterus,
+            general_examination_pallor: data.general_examination_pallor,
+            general_examination_clubbing: data.general_examination_clubbing,
+            general_examination_cyanosis: data.general_examination_cyanosis,
+            general_examination_oedema: data.general_examination_oedema,
+            general_examination_lymphadenopathy:
+                data.general_examination_lymphadenopathy,
+
+            past_history_treatment_type: data.past_history_treatment_type,
+            past_history_treatment_date: data.past_history_treatment_date
+                ? new Date(data.past_history_treatment_date)
+                : undefined,
+            past_history_treatment_note: data.past_history_treatment_note,
+            past_history_treatment_response: data.past_history_treatment_response,
+            previous_reports: data.previous_reports,
+            notes: data.notes,
+
             height: data.height,
             weight: data.weight,
             pulse: data.pulse,
@@ -361,6 +474,39 @@ export class EncounterService {
                     APPOINTMENT_STATUS.COMPLETED
                 );
 
+            }
+
+            // IPD discharge hook: if encounter has an associated active admission, close the IPD stay and release the bed
+            const associatedAdmission = await tx.admission.findFirst({
+                where: {
+                    OR: [
+                        { encounter_no: encounterNo },
+                        ...(existing.appointment_id ? [{ appointment_id: existing.appointment_id }] : [])
+                    ],
+                    status: "ADMITTED"
+                }
+            });
+
+            if (associatedAdmission) {
+                await tx.admission.update({
+                    where: { admission_id: associatedAdmission.admission_id },
+                    data: {
+                        status: "DISCHARGED",
+                        discharge_date: closedAt,
+                        updated_by: closedBy
+                    }
+                });
+
+                if (associatedAdmission.bed_id) {
+                    await tx.bed_master.update({
+                        where: { bed_id: associatedAdmission.bed_id },
+                        data: {
+                            status: "AVAILABLE",
+                            updated_by: closedBy,
+                            updated_at: closedAt
+                        }
+                    });
+                }
             }
 
             return encounter;

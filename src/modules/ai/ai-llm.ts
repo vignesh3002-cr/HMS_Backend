@@ -10,13 +10,22 @@ import type { AIUserContext } from "./ai-types";
 
 // ──── Config ────
 
-const LLM_PROVIDER = process.env.LLM_PROVIDER || "openrouter"; // "openrouter" | "opencode"
+const LLM_PROVIDER = process.env.LLM_PROVIDER || "openrouter"; // "openrouter" | "opencode" | "nvidia" | "google"
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_BASE_URL = process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1";
 const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
 const OPENCODE_BASE_URL = process.env.AI_BASE_URL || "http://127.0.0.1:4096";
 const OPENCODE_API_KEY = process.env.AI_API_KEY || "opencode-local";
 const OPENCODE_MODEL = process.env.AI_MODEL || "big-pickle";
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY || "";
+const NVIDIA_BASE_URL = process.env.NVIDIA_BASE_URL || "https://integrate.api.nvidia.com/v1";
+const NVIDIA_MODEL = process.env.NVIDIA_MODEL || "nvidia/nemotron-3-ultra-550b-a55b";
+// Gemini's OpenAI-compatible endpoint -- lets this provider reuse the same
+// chat-completions request/response shape as OpenRouter/Nvidia below instead
+// of needing a separate Gemini-native request builder.
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";
+const GOOGLE_BASE_URL = process.env.GOOGLE_BASE_URL || "https://generativelanguage.googleapis.com/v1beta/openai";
+const GOOGLE_MODEL = process.env.GOOGLE_MODEL || "gemini-3.6-flash";
 
 const MAX_TOOL_ROUNDS = 10;
 
@@ -25,6 +34,8 @@ const MAX_TOOL_ROUNDS = 10;
 export function isLLMConfigured(): boolean {
     if (LLM_PROVIDER === "openrouter") return Boolean(OPENROUTER_API_KEY);
     if (LLM_PROVIDER === "opencode") return Boolean(OPENCODE_BASE_URL);
+    if (LLM_PROVIDER === "nvidia") return Boolean(NVIDIA_API_KEY);
+    if (LLM_PROVIDER === "google") return Boolean(GOOGLE_API_KEY);
     return false;
 }
 
@@ -121,6 +132,8 @@ interface LLMResponse {
 
 async function callLLM(messages: any[], tools: any[]): Promise<LLMResponse> {
     if (LLM_PROVIDER === "opencode") return callOpenCode(messages, tools);
+    if (LLM_PROVIDER === "nvidia") return callNvidia(messages, tools);
+    if (LLM_PROVIDER === "google") return callGoogle(messages, tools);
     return callOpenRouter(messages, tools);
 }
 
@@ -147,6 +160,98 @@ async function callOpenRouter(messages: any[], tools: any[]): Promise<LLMRespons
     if (!response.ok) {
         const errText = await response.text().catch(() => "");
         throw new Error(`OpenRouter API error ${response.status}: ${errText}`);
+    }
+
+    const data = await response.json();
+    const choice = data.choices?.[0];
+    if (!choice) return { text: "No response from LLM.", toolCalls: null };
+
+    const msg = choice.message;
+    const text = msg.content || null;
+
+    if (!msg.tool_calls || msg.tool_calls.length === 0) {
+        return { text, toolCalls: null };
+    }
+
+    const toolCalls = msg.tool_calls.map((tc: any) => {
+        let parsedArgs: any = {};
+        try { parsedArgs = JSON.parse(tc.function.arguments); } catch { /* invalid JSON */ }
+        return { id: tc.id, name: tc.function.name, arguments: tc.function.arguments, parsedArgs };
+    });
+
+    return { text, toolCalls };
+}
+
+// ──── Nvidia NIM (OpenAI-compatible) ────
+
+async function callNvidia(messages: any[], tools: any[]): Promise<LLMResponse> {
+    const body = {
+        model: NVIDIA_MODEL,
+        messages,
+        tools: tools.length > 0 ? tools : undefined,
+        tool_choice: tools.length > 0 ? "auto" : undefined,
+        max_tokens: 4096,
+        temperature: 1,
+        top_p: 0.95,
+    };
+
+    const response = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${NVIDIA_API_KEY}`,
+        },
+        body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+        const errText = await response.text().catch(() => "");
+        throw new Error(`Nvidia API error ${response.status}: ${errText}`);
+    }
+
+    const data = await response.json();
+    const choice = data.choices?.[0];
+    if (!choice) return { text: "No response from LLM.", toolCalls: null };
+
+    const msg = choice.message;
+    const text = msg.content || null;
+
+    if (!msg.tool_calls || msg.tool_calls.length === 0) {
+        return { text, toolCalls: null };
+    }
+
+    const toolCalls = msg.tool_calls.map((tc: any) => {
+        let parsedArgs: any = {};
+        try { parsedArgs = JSON.parse(tc.function.arguments); } catch { /* invalid JSON */ }
+        return { id: tc.id, name: tc.function.name, arguments: tc.function.arguments, parsedArgs };
+    });
+
+    return { text, toolCalls };
+}
+
+// ──── Google Gemini (OpenAI-compatible endpoint) ────
+
+async function callGoogle(messages: any[], tools: any[]): Promise<LLMResponse> {
+    const body = {
+        model: GOOGLE_MODEL,
+        messages,
+        tools: tools.length > 0 ? tools : undefined,
+        tool_choice: tools.length > 0 ? "auto" : undefined,
+        max_tokens: 4096,
+    };
+
+    const response = await fetch(`${GOOGLE_BASE_URL}/chat/completions`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${GOOGLE_API_KEY}`,
+        },
+        body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+        const errText = await response.text().catch(() => "");
+        throw new Error(`Google Gemini API error ${response.status}: ${errText}`);
     }
 
     const data = await response.json();

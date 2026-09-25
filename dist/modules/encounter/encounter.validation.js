@@ -1,12 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getLatestEncountersValidation = exports.getEncountersValidation = exports.closeEncounterValidation = exports.updateEncounterValidation = exports.createEncounterValidation = void 0;
+exports.getLatestEncountersValidation = exports.getEncountersValidation = exports.closeEncounterValidation = exports.updateEncounterValidation = exports.createIpdEncounterValidation = exports.createEncounterValidation = void 0;
 const express_validator_1 = require("express-validator");
 const encounter_constants_1 = require("./encounter.constants");
 exports.createEncounterValidation = [
     (0, express_validator_1.body)("appointment_id")
         .notEmpty()
         .withMessage("Appointment is required")
+];
+exports.createIpdEncounterValidation = [
+    (0, express_validator_1.body)("admission_id")
+        .notEmpty()
+        .withMessage("Admission is required")
 ];
 exports.updateEncounterValidation = [
     (0, express_validator_1.param)("encounterNo")

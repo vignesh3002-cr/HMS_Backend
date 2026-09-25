@@ -219,6 +219,42 @@ export class OncologyService {
 
     }
 
+    async listAnatomicalSites(cancerTypeId: string) {
+
+        const cancerType = await this.repository.findCancerTypeById(cancerTypeId);
+
+        if (!cancerType) {
+            throw new Error("Cancer type not found");
+        }
+
+        return this.repository.findAnatomicalSitesByType(cancerTypeId);
+
+    }
+
+    async listCancerGrades(cancerTypeId: string) {
+
+        const cancerType = await this.repository.findCancerTypeById(cancerTypeId);
+
+        if (!cancerType) {
+            throw new Error("Cancer type not found");
+        }
+
+        return this.repository.findCancerGradesByType(cancerTypeId);
+
+    }
+
+    async listCancerScores(cancerTypeId: string) {
+
+        const cancerType = await this.repository.findCancerTypeById(cancerTypeId);
+
+        if (!cancerType) {
+            throw new Error("Cancer type not found");
+        }
+
+        return this.repository.findCancerScoresByType(cancerTypeId);
+
+    }
+
     // prisma/seedOncology.ts lives outside src/'s tsconfig rootDir (it's a
     // shared CLI + service entry point, not part of the compiled app), so
     // it's loaded via require() here instead of a static TS import - ts-node
@@ -329,7 +365,13 @@ export class OncologyService {
             t_stage: dto.t_stage ?? null,
             n_stage: dto.n_stage ?? null,
             m_stage: dto.m_stage ?? null,
-            metastasis_sites: dto.metastasis_sites ?? null
+            metastasis_sites: dto.metastasis_sites ?? null,
+            laterality: dto.laterality ?? null,
+            site: dto.site ?? null,
+            grade: dto.grade ?? null,
+            grade_system: dto.grade_system ?? null,
+            pre_diagnosis: dto.pre_diagnosis ?? null,
+            disease_status: dto.disease_status ?? null
         };
 
         const ihc: IhcInput = { ...(dto.ihc ?? {}) };
@@ -363,6 +405,8 @@ export class OncologyService {
                 diagnosis_id: dto.diagnosis_id ?? null,
                 visit_date: dto.visit_date ? new Date(dto.visit_date) : null,
                 diagnosis_date: dto.diagnosis_date ? new Date(dto.diagnosis_date) : null,
+                progression_date: dto.progression_date ? new Date(dto.progression_date) : null,
+                relapse_date: dto.relapse_date ? new Date(dto.relapse_date) : null,
                 biopsy_date: dto.biopsy_date ? new Date(dto.biopsy_date) : null,
                 consulting_oncologist: dto.consulting_oncologist ?? null,
                 cancer_type_id: dto.cancer_type_id,
@@ -377,6 +421,17 @@ export class OncologyService {
                 m_stage: dto.m_stage ?? null,
                 metastasis_sites: jsonOrUndefined(dto.metastasis_sites) ?? Prisma.JsonNull,
                 laterality: dto.laterality ?? null,
+                pre_diagnosis: dto.pre_diagnosis ?? null,
+                disease_status: dto.disease_status ?? null,
+                site: dto.site ?? null,
+                grade: dto.grade ?? null,
+                grade_system: dto.grade_system ?? null,
+                score: dto.score ?? null,
+                score_system: dto.score_system ?? null,
+                suggested_molecular_test: dto.suggested_molecular_test ?? null,
+                suggested_molecular_test_note: dto.suggested_molecular_test_note ?? null,
+                suggested_molecular_test_date: dto.suggested_molecular_test_date ? new Date(dto.suggested_molecular_test_date) : null,
+                notes: dto.notes ?? null,
                 performance_status: dto.performance_status ?? null,
                 // Default to whoever actually saw the patient in the
                 // qualifying encounter, unless the caller explicitly names
@@ -483,7 +538,13 @@ export class OncologyService {
             m_stage: dto.m_stage !== undefined ? dto.m_stage : existing.m_stage,
             metastasis_sites: dto.metastasis_sites !== undefined
                 ? dto.metastasis_sites
-                : (existing.metastasis_sites as unknown as string[] | null)
+                : (existing.metastasis_sites as unknown as string[] | null),
+            laterality: dto.laterality !== undefined ? dto.laterality : existing.laterality,
+            site: dto.site !== undefined ? dto.site : existing.site,
+            grade: dto.grade !== undefined ? dto.grade : existing.grade,
+            grade_system: dto.grade_system !== undefined ? dto.grade_system : existing.grade_system,
+            pre_diagnosis: dto.pre_diagnosis !== undefined ? dto.pre_diagnosis : existing.pre_diagnosis,
+            disease_status: dto.disease_status !== undefined ? dto.disease_status : existing.disease_status
         };
 
         const ihc: IhcInput = { ...mapIhcRowToInput(existing.ihc_results), ...(dto.ihc ?? {}) };
@@ -512,6 +573,8 @@ export class OncologyService {
             ...(dto.diagnosis_id !== undefined && dto.diagnosis_id !== null ? { diagnosis_id: dto.diagnosis_id } : {}),
             ...(dto.visit_date !== undefined ? { visit_date: dto.visit_date ? new Date(dto.visit_date) : null } : {}),
             ...(dto.diagnosis_date !== undefined ? { diagnosis_date: dto.diagnosis_date ? new Date(dto.diagnosis_date) : null } : {}),
+            ...(dto.progression_date !== undefined ? { progression_date: dto.progression_date ? new Date(dto.progression_date) : null } : {}),
+            ...(dto.relapse_date !== undefined ? { relapse_date: dto.relapse_date ? new Date(dto.relapse_date) : null } : {}),
             ...(dto.biopsy_date !== undefined ? { biopsy_date: dto.biopsy_date ? new Date(dto.biopsy_date) : null } : {}),
             ...(dto.consulting_oncologist !== undefined && dto.consulting_oncologist !== null ? { consulting_oncologist: dto.consulting_oncologist } : {}),
             ...(subtypeChanging ? {
@@ -528,6 +591,17 @@ export class OncologyService {
             ...(dto.m_stage !== undefined && dto.m_stage !== null ? { m_stage: dto.m_stage } : {}),
             ...(dto.metastasis_sites !== undefined ? { metastasis_sites: jsonOrUndefined(dto.metastasis_sites) } : {}),
             ...(dto.laterality !== undefined && dto.laterality !== null ? { laterality: dto.laterality } : {}),
+            ...(dto.pre_diagnosis !== undefined && dto.pre_diagnosis !== null ? { pre_diagnosis: dto.pre_diagnosis } : {}),
+            ...(dto.disease_status !== undefined && dto.disease_status !== null ? { disease_status: dto.disease_status } : {}),
+            ...(dto.site !== undefined && dto.site !== null ? { site: dto.site } : {}),
+            ...(dto.grade !== undefined && dto.grade !== null ? { grade: dto.grade } : {}),
+            ...(dto.grade_system !== undefined && dto.grade_system !== null ? { grade_system: dto.grade_system } : {}),
+            ...(dto.score !== undefined ? { score: dto.score || null } : {}),
+            ...(dto.score_system !== undefined ? { score_system: dto.score_system || null } : {}),
+            ...(dto.suggested_molecular_test !== undefined ? { suggested_molecular_test: dto.suggested_molecular_test || null } : {}),
+            ...(dto.suggested_molecular_test_note !== undefined ? { suggested_molecular_test_note: dto.suggested_molecular_test_note || null } : {}),
+            ...(dto.suggested_molecular_test_date !== undefined ? { suggested_molecular_test_date: dto.suggested_molecular_test_date ? new Date(dto.suggested_molecular_test_date) : null } : {}),
+            ...(dto.notes !== undefined ? { notes: dto.notes || null } : {}),
             ...(dto.performance_status !== undefined && dto.performance_status !== null ? { performance_status: dto.performance_status } : {}),
             ...(dto.employee_id !== undefined && dto.employee_id !== null ? { employee_id: dto.employee_id } : {}),
             ...(dto.branch_id !== undefined && dto.branch_id !== null ? { branch_id: dto.branch_id } : {})

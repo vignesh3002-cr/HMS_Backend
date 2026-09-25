@@ -20,7 +20,7 @@ class AIChatController {
                 hospital_id: authUser.hospital_id,
                 username: authUser.username || "unknown"
             };
-            const { message, conversationId } = req.body;
+            const { message, conversationId, navRoutes } = req.body;
             if (!message || typeof message !== "string" || message.trim().length === 0) {
                 return res.status(400).json({
                     success: false,
@@ -33,7 +33,7 @@ class AIChatController {
                     message: "Message is too long. Maximum 2000 characters."
                 });
             }
-            const result = await (0, ai_chat_service_1.processAIChat)({ message: message.trim(), conversationId }, user);
+            const result = await (0, ai_chat_service_1.processAIChat)({ message: message.trim(), conversationId, navRoutes }, user);
             return res.json(result);
         }
         catch (error) {

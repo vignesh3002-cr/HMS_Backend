@@ -249,6 +249,10 @@ export class ChemotherapyService {
         return this.repository.getProtocolFieldOptions();
     }
 
+    async listTreatmentIntents() {
+        return this.repository.listTreatmentIntents();
+    }
+
     async getMedicinesByCancerTypesAndSubtypes(cancerTypeIds: string[], subtypeIds: string[] | undefined, drugRole: string) {
         if (!cancerTypeIds || cancerTypeIds.length === 0) {
             return [];
@@ -574,6 +578,7 @@ export class ChemotherapyService {
                     dosage: item.dosage ?? null,
                     dosage_unit: item.dosage_unit ?? null,
                     dose_calculation_method: item.dose_calculation_method ?? null,
+                    dosing_basis: item.dosing_basis ?? null,
                     administration_route: item.administration_route ?? null,
                     infusion_type: item.infusion_type ?? null,
                     infusion_duration_minutes: item.infusion_duration_minutes ?? null,
@@ -893,6 +898,7 @@ export class ChemotherapyService {
                 dosage: item.dosage ?? null,
                 dosage_unit: item.dosage_unit ?? null,
                 dose_calculation_method: item.dose_calculation_method ?? null,
+                dosing_basis: item.dosing_basis ?? null,
                 administration_route: item.administration_route ?? null,
                 infusion_type: item.infusion_type ?? null,
                 infusion_duration_minutes: item.infusion_duration_minutes ?? null,
@@ -989,6 +995,7 @@ export class ChemotherapyService {
                 dosage: dto.dosage ?? item.dosage,
                 dosage_unit: dto.dosage_unit ?? item.dosage_unit,
                 dose_calculation_method: dto.dose_calculation_method ?? item.dose_calculation_method,
+                dosing_basis: dto.dosing_basis ?? item.dosing_basis,
                 administration_route: dto.administration_route ?? item.administration_route,
                 infusion_type: dto.infusion_type ?? item.infusion_type,
                 infusion_duration_minutes: dto.infusion_duration_minutes ?? item.infusion_duration_minutes,
@@ -1611,6 +1618,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             dosage: item.dosage != null ? Number(item.dosage) : null,
             dosage_unit: item.dosage_unit,
             dose_calculation_method: item.dose_calculation_method,
+            dosing_basis: item.dosing_basis,
             administration_route: item.administration_route,
             infusion_type: item.infusion_type,
             infusion_duration_minutes: item.infusion_duration_minutes,
@@ -1727,6 +1735,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             dosage: item.dosage != null ? Number(item.dosage) : null,
             dosage_unit: item.dosage_unit,
             dose_calculation_method: item.dose_calculation_method,
+            dosing_basis: item.dosing_basis,
             administration_route: item.administration_route,
             infusion_type: item.infusion_type,
             infusion_duration_minutes: item.infusion_duration_minutes,
@@ -2349,6 +2358,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             dosage: item.dosage != null ? Number(item.dosage) : null,
             dosage_unit: item.dosage_unit,
             dose_calculation_method: item.dose_calculation_method,
+            dosing_basis: item.dosing_basis,
             administration_route: item.administration_route,
             infusion_type: item.infusion_type,
             infusion_duration_minutes: item.infusion_duration_minutes,
@@ -2681,6 +2691,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 consent_date: dto.consent_date ? new Date(dto.consent_date) : null,
                 insurance_type: dto.insurance_type ?? null,
                 remarks: dto.remarks ?? null,
+                discussion: dto.discussion ?? null,
                 created_by: actingUserId
             });
 
@@ -2819,7 +2830,8 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             ...(dto.consent_taken !== undefined ? { consent_taken: dto.consent_taken } : {}),
             ...(dto.consent_date !== undefined ? { consent_date: dto.consent_date ? new Date(dto.consent_date) : null } : {}),
             ...(dto.insurance_type !== undefined ? { insurance_type: dto.insurance_type } : {}),
-            ...(dto.remarks !== undefined ? { remarks: dto.remarks } : {})
+            ...(dto.remarks !== undefined ? { remarks: dto.remarks } : {}),
+            ...(dto.discussion !== undefined ? { discussion: dto.discussion } : {})
         };
 
         await prisma.$transaction(async (tx) => {

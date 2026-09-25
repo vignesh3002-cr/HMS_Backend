@@ -74,6 +74,34 @@ class EncounterRepository {
             }
         });
     }
+    async findAdmissionForEncounter(admissionId) {
+        return prisma_1.default.admission.findFirst({
+            where: {
+                OR: [
+                    { admission_id: admissionId },
+                    { ip_number: admissionId }
+                ]
+            },
+            include: {
+                patient_bio_data: true,
+                employees: {
+                    include: {
+                        user_table: { select: { role_type: true } }
+                    }
+                },
+                branch: true,
+                department_master: true,
+                ward_master: true,
+                bed_master: true
+            }
+        });
+    }
+    async updateAdmissionEncounterNo(tx, admissionId, encounterNo) {
+        return tx.admission.update({
+            where: { admission_id: admissionId },
+            data: { encounter_no: encounterNo }
+        });
+    }
     async findDiagnosis(diagnosisId) {
         return prisma_1.default.diagnosis.findUnique({
             where: { diagnosis_id: diagnosisId }

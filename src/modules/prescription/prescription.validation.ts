@@ -116,6 +116,26 @@ export const getSuggestedMedicinesValidation = [
     param("diagnosisId").notEmpty()
 ];
 
+export const searchMedicinesValidation = [
+    query("search").optional().isString().isLength({ max: 255 }),
+    query("limit").optional().isInt({ min: 1, max: 100 })
+];
+
+export const createMedicineValidation = [
+    body("medicine_name")
+        .isString()
+        .withMessage("Drug name is required")
+        .bail()
+        .trim()
+        .notEmpty()
+        .withMessage("Drug name is required")
+        .isLength({ max: 255 })
+        .withMessage("Drug name must be at most 255 characters"),
+    body("dosage_form").optional().isString().trim().isLength({ max: 100 }),
+    body("unit").optional().isString().trim().isLength({ max: 100 }),
+    body("strength").optional().isString().trim().isLength({ max: 100 })
+];
+
 export const getPrescriptionsByPatientHistoryIdValidation = [
     param("patientHistoryId").notEmpty()
 ];

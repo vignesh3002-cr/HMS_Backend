@@ -16,6 +16,7 @@ import {
     CreateCustomSymptomDTO,
     CreateCustomAllergyDTO,
     CreateCustomComorbidityDTO,
+    ComorbidityMasterQuery,
     GetClinicalDetailsResponse,
     ClinicalDetailsQuery,
 } from './clinical-details.types';
@@ -224,41 +225,41 @@ export class ClinicalDetailsService {
         });
     }
 
+    async getComorbidityMaster(query: ComorbidityMasterQuery) {
+        return repository.getComorbidityMaster(query);
+    }
+
+    // "+ Add" from the consultation: adds a doctor-typed comorbidity to
+    // comorbidity_master. An existing row with the same name (any case) is
+    // returned instead, so the picker simply selects it.
     async createCustomComorbidity(data: CreateCustomComorbidityDTO, createdBy?: string) {
-        const diagnosisName = data.diagnosisName.trim();
-        if (!diagnosisName) {
-            throw new Error('Diagnosis name is required');
+        const comorbidityName = data.comorbidityName.trim().replace(/\s+/g, ' ');
+        if (!comorbidityName) {
+            throw new Error('Comorbidity name is required');
         }
 
-        const existing = await repository.findDiagnosisByName(diagnosisName);
+        const existing = await repository.findComorbidityByName(comorbidityName);
         if (existing) {
-            throw new Error('Comorbidity already exists');
+            return { comorbidity: existing, created: false };
         }
 
-        let diagnosisId = `DIS${Date.now()}${randomToken(4)}`;
-        while (await prisma.diagnosis.findUnique({ where: { diagnosis_id: diagnosisId } })) {
-            diagnosisId = `DIS${Date.now()}${randomToken(4)}`;
+        let code = `CMBX_${randomToken(6)}`;
+        while (await repository.findComorbidityByCode(code)) {
+            code = `CMBX_${randomToken(6)}`;
         }
 
-        const diagnosis = await repository.createDiagnosis({
-            diagnosis_id: diagnosisId,
-            diagnosis_name: diagnosisName,
-            icd_code: data.icdCode || null,
-            diagnosis_catogory_id: data.diagnosisCatogoryId || null,
-            diagnosis_category: data.diagnosisCategory || null,
-            active_status: 1,
-            created_by: createdBy,
-            created_at: new Date(),
+        const comorbidity = await repository.createComorbidity({
+            code,
+            comorbidity_name: comorbidityName,
+            category: data.category?.trim() || null,
+            icd_code: data.icdCode?.trim() || null,
+            is_custom: true,
+            is_active: true,
+            created_by: createdBy ?? null,
+            updated_by: createdBy ?? null,
         });
 
-        return {
-            diagnosis_id: diagnosis.diagnosis_id,
-            diagnosis_name: diagnosis.diagnosis_name,
-            icd_code: diagnosis.icd_code,
-            diagnosis_description: diagnosis.diagnosis_description,
-            diagnosis_catogory_id: diagnosis.diagnosis_catogory_id,
-            diagnosis_category: diagnosis.diagnosis_category,
-        };
+        return { comorbidity, created: true };
     }
 
     async setEncounterPerformanceStatus(data: EncounterPerformanceStatusDTO, assessedBy: string | null) {
@@ -471,17 +472,16 @@ export class ClinicalDetailsService {
             throw new Error('Patient not found');
         }
 
-        const diagnosis = await prisma.diagnosis.findUnique({
-            where: { diagnosis_id: data.diagnosisId },
-        });
-        if (!diagnosis) {
-            throw new Error('Diagnosis not found');
+        const comorbidityId = BigInt(data.comorbidityId);
+        const comorbidity = await repository.findComorbidityById(comorbidityId);
+        if (!comorbidity) {
+            throw new Error('Comorbidity not found');
         }
-        if (diagnosis.active_status !== 1) {
-            throw new Error('Diagnosis is inactive');
+        if (!comorbidity.is_active) {
+            throw new Error('Comorbidity is inactive');
         }
 
-        const existing = await repository.findPatientComorbidity(patientId, data.diagnosisId, 'ACTIVE');
+        const existing = await repository.findPatientComorbidity(patientId, comorbidityId, 'ACTIVE');
         if (existing) {
             throw new Error('Patient already has this comorbidity active');
         }
@@ -489,7 +489,7 @@ export class ClinicalDetailsService {
         return prisma.$transaction(async (tx) => {
             return repository.createPatientComorbidity(tx, {
                 patient_id: patientId,
-                diagnosis_id: data.diagnosisId,
+                comorbidity_id: comorbidityId,
                 status: data.status ?? COMORBIDITY_STATUS.ACTIVE,
                 onset_date: data.onsetDate ? new Date(data.onsetDate) : null,
                 identified_by: identifiedBy,
