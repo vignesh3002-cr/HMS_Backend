@@ -78,6 +78,60 @@ export class ConsultationController {
         }
     }
 
+    async getGeneralExaminationFindings(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.listGeneralExaminationFindings({
+                search: req.query.search as string | undefined,
+                isActive: req.query.isActive === undefined ? undefined : req.query.isActive === "true"
+            });
+            return res.json({ success: true, message: "General examination findings fetched successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
+    async createCustomGeneralExaminationFinding(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.createCustomGeneralExaminationFinding(req.body, actingUserId(req));
+            return res.status(201).json({ success: true, message: "General examination finding added successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
+    async getTreatmentTypes(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.listTreatmentTypes({
+                search: req.query.search as string | undefined,
+                isActive: req.query.isActive === undefined ? undefined : req.query.isActive === "true"
+            });
+            return res.json({ success: true, message: "Treatment types fetched successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
+    async createCustomTreatmentType(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.createCustomTreatmentType(req.body, actingUserId(req));
+            return res.status(201).json({ success: true, message: "Treatment type added successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
     async getDietTypes(req: Request, res: Response) {
         try {
             return res.json({ success: true, message: "Diet types fetched successfully", data: service.listDietTypes() });

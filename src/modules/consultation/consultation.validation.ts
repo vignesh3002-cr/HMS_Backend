@@ -43,7 +43,14 @@ export const upsertPersonalHistoryValidation = [
 export const addReportValidation = [
 
     param("encounterNo").notEmpty().withMessage("encounterNo is required"),
-    body("lab_test_id").notEmpty().withMessage("lab_test_id is required"),
+    body("lab_test_id").optional({ nullable: true }).isString(),
+    body("test_name").optional({ nullable: true }).isString().isLength({ max: 200 }),
+    body().custom((value) => {
+        if (!value?.lab_test_id && !String(value?.test_name ?? "").trim()) {
+            throw new Error("Select a lab test or type the test name");
+        }
+        return true;
+    }),
     body("report_completed_date").optional({ nullable: true }).isISO8601(),
     body("result").optional({ nullable: true }).isString(),
     body("impression").optional({ nullable: true }).isString()
@@ -53,7 +60,8 @@ export const addReportValidation = [
 export const updateReportValidation = [
 
     param("encounterReportId").notEmpty().withMessage("encounterReportId is required"),
-    body("lab_test_id").optional().notEmpty(),
+    body("lab_test_id").optional({ nullable: true }).isString(),
+    body("test_name").optional({ nullable: true }).isString().isLength({ max: 200 }),
     body("report_completed_date").optional({ nullable: true }).isISO8601(),
     body("result").optional({ nullable: true }).isString(),
     body("impression").optional({ nullable: true }).isString()

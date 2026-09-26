@@ -40,6 +40,9 @@ export const updateEncounterValidation = [
     body("general_examination_cyanosis").optional().isBoolean(),
     body("general_examination_oedema").optional().isBoolean(),
     body("general_examination_lymphadenopathy").optional().isBoolean(),
+    body("general_examination_others").optional({ nullable: true }).isArray(),
+    body("general_examination_others.*.code").isString(),
+    body("general_examination_others.*.name").isString(),
 
     body("past_history_treatment_type").optional().isString(),
     body("past_history_treatment_date")

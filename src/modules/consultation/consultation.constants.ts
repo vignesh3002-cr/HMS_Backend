@@ -13,3 +13,15 @@ export const DIET_TYPES = [
 ];
 
 export const REPORT_FIELD_MAX = 2000;
+
+// General Examination findings stored as their own boolean columns on
+// encounter; general_examination_master only holds the extra findings
+// doctors add, so these names can't be added there again.
+export const GENERAL_EXAMINATION_CORE_FINDINGS = [
+    "Icterus",
+    "Pallor",
+    "Clubbing",
+    "Cyanosis",
+    "Oedema",
+    "Lymphadenopathy"
+];

@@ -1438,6 +1438,7 @@ model encounter {
   general_examination_lymphadenopathy Boolean?                      @default(false)
   general_examination_oedema          Boolean?                      @default(false)
   general_examination_pallor          Boolean?                      @default(false)
+  general_examination_others          Json?
   respiratory_examination             String?
   past_history_treatment_date         DateTime?                     @db.Date
   past_history_treatment_note         String?
@@ -1484,7 +1485,8 @@ model encounter_report {
   id                    BigInt          @id @default(autoincrement())
   encounter_report_id   String          @unique(map: "uq_encounter_report_id") @db.VarChar(100)
   encounter_no          String          @db.VarChar(100)
-  lab_test_id           String          @db.VarChar(100)
+  lab_test_id           String?         @db.VarChar(100)
+  test_name             String?         @db.VarChar(200)
   report_completed_date DateTime?       @db.Date
   result                String?
   impression            String?
@@ -1492,7 +1494,7 @@ model encounter_report {
   updated_at            DateTime?       @default(now()) @db.Timestamp(6)
   created_by            String?         @db.VarChar(100)
   encounter             encounter       @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_report_encounter")
-  lab_test_master       lab_test_master @relation(fields: [lab_test_id], references: [lab_test_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_report_lab_test")
+  lab_test_master       lab_test_master? @relation(fields: [lab_test_id], references: [lab_test_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_report_lab_test")
 
   @@index([encounter_no], map: "idx_encounter_report_encounter")
   @@index([lab_test_id], map: "idx_encounter_report_lab_test")
@@ -1578,6 +1580,38 @@ model ihc_results {
   updated_at              DateTime?               @default(now()) @db.Timestamp(6)
   mlh1_methylation        String?                 @db.VarChar(100)
   oncology_staging_detail oncology_staging_detail @relation(fields: [staging_detail_id], references: [staging_detail_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ihc_staging_detail")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model general_examination_master {
+  id            BigInt   @id @default(autoincrement())
+  code          String   @unique(map: "uq_general_examination_code") @db.VarChar(100)
+  name          String   @db.VarChar(100)
+  description   String?  @db.VarChar(200)
+  display_order Int      @default(0)
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now()) @db.Timestamp(6)
+  updated_at    DateTime @default(now()) @db.Timestamp(6)
+  created_by    String?  @db.VarChar(100)
+  updated_by    String?  @db.VarChar(100)
+
+  @@index([is_active], map: "idx_general_examination_active")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model treatment_type_master {
+  id            BigInt   @id @default(autoincrement())
+  code          String   @unique(map: "uq_treatment_type_code") @db.VarChar(100)
+  name          String   @db.VarChar(100)
+  description   String?  @db.VarChar(200)
+  display_order Int      @default(0)
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now()) @db.Timestamp(6)
+  updated_at    DateTime @default(now()) @db.Timestamp(6)
+  created_by    String?  @db.VarChar(100)
+  updated_by    String?  @db.VarChar(100)
+
+  @@index([is_active], map: "idx_treatment_type_active")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

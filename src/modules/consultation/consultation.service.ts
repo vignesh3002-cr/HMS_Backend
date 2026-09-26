@@ -3,7 +3,7 @@ import prisma from "../../config/prisma";
 import { generateId } from "../../utils/idGenerator";
 import { ConsultationRepository } from "./consultation.repository";
 import { CreateCustomMasterDTO, EncounterReportDTO, MasterListQuery, PersonalHistoryPayload } from "./consultation.types";
-import { DIET_TYPES } from "./consultation.constants";
+import { DIET_TYPES, GENERAL_EXAMINATION_CORE_FINDINGS } from "./consultation.constants";
 
 const repository = new ConsultationRepository();
 
@@ -15,6 +15,17 @@ function slugCode(prefix: string, name: string): string {
         .replace(/^-+|-+$/g, "")
         .slice(0, 40);
     return `${prefix}-${slug || Date.now().toString(36).toUpperCase()}`;
+}
+
+// Different names can slug to the same code ("Hep B" / "Hep-B"); suffix
+// -2, -3, ... so a new option never collides with the unique code.
+async function uniqueCode(prefix: string, name: string, exists: (code: string) => Promise<unknown>): Promise<string> {
+    const base = slugCode(prefix, name);
+    let code = base;
+    for (let n = 2; await exists(code); n++) {
+        code = `${base}-${n}`;
+    }
+    return code;
 }
 
 export class ConsultationService {
@@ -38,7 +49,7 @@ export class ConsultationService {
         }
 
         return repository.createImmunization({
-            code: slugCode("IMM", name),
+            code: await uniqueCode("IMM", name, (code) => repository.findImmunizationByCode(code)),
             name,
             description: data.description ?? null,
             is_active: true,
@@ -63,15 +74,68 @@ export class ConsultationService {
             return existing;
         }
 
-        const sanitized = name
-            .toUpperCase()
-            .replace(/[^A-Z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "")
-            .slice(0, 30);
-
         return repository.createDrugConsumption({
-            code: `DRG-${sanitized || Date.now().toString(36).toUpperCase()}`,
+            code: await uniqueCode("DRG", name, (code) => repository.findDrugConsumptionByCode(code)),
             name,
+            description: data.description ?? null,
+            is_active: true,
+            created_by: createdBy ?? null
+        });
+
+    }
+
+    async listGeneralExaminationFindings(query: MasterListQuery) {
+        return repository.getGeneralExaminationFindings(query);
+    }
+
+    async createCustomGeneralExaminationFinding(data: CreateCustomMasterDTO, createdBy?: string | null) {
+
+        const name = (data.name ?? "").trim();
+        if (!name) {
+            throw new Error("Finding name is required");
+        }
+
+        const core = GENERAL_EXAMINATION_CORE_FINDINGS.find((finding) => finding.toLowerCase() === name.toLowerCase());
+        if (core) {
+            throw new Error(`${core} is already a General Examination finding`);
+        }
+
+        const existing = await repository.findGeneralExaminationFindingByName(name);
+        if (existing) {
+            return existing;
+        }
+
+        return repository.createGeneralExaminationFinding({
+            code: await uniqueCode("GEX", name, (code) => repository.findGeneralExaminationFindingByCode(code)),
+            name,
+            display_order: await repository.nextGeneralExaminationFindingDisplayOrder(),
+            description: data.description ?? null,
+            is_active: true,
+            created_by: createdBy ?? null
+        });
+
+    }
+
+    async listTreatmentTypes(query: MasterListQuery) {
+        return repository.getTreatmentTypes(query);
+    }
+
+    async createCustomTreatmentType(data: CreateCustomMasterDTO, createdBy?: string | null) {
+
+        const name = (data.name ?? "").trim();
+        if (!name) {
+            throw new Error("Treatment type name is required");
+        }
+
+        const existing = await repository.findTreatmentTypeByName(name);
+        if (existing) {
+            return existing;
+        }
+
+        return repository.createTreatmentType({
+            code: await uniqueCode("TRT", name, (code) => repository.findTreatmentTypeByCode(code)),
+            name,
+            display_order: await repository.nextTreatmentTypeDisplayOrder(),
             description: data.description ?? null,
             is_active: true,
             created_by: createdBy ?? null
@@ -155,9 +219,17 @@ export class ConsultationService {
             throw new Error("Encounter not found");
         }
 
-        const labTest = await repository.findLabTestById(dto.lab_test_id);
-        if (!labTest) {
-            throw new Error("Lab test not found");
+        // A test that isn't in lab_test_master is typed by hand and kept on
+        // this report only (test_name); the master is never changed here.
+        const testName = dto.test_name?.trim() || null;
+
+        if (dto.lab_test_id) {
+            const labTest = await repository.findLabTestById(dto.lab_test_id);
+            if (!labTest) {
+                throw new Error("Lab test not found");
+            }
+        } else if (!testName) {
+            throw new Error("Select a lab test or type the test name");
         }
 
         const newId = await prisma.$transaction((tx) => generateId(tx, "ENCOUNTER_REPORT"));
@@ -165,7 +237,8 @@ export class ConsultationService {
         return repository.createReport({
             encounter_report_id: newId,
             encounter_no: encounterNo,
-            lab_test_id: dto.lab_test_id,
+            lab_test_id: dto.lab_test_id || null,
+            test_name: dto.lab_test_id ? null : testName,
             report_completed_date: dto.report_completed_date ? new Date(dto.report_completed_date) : null,
             result: dto.result ?? null,
             impression: dto.impression ?? null,
@@ -188,8 +261,12 @@ export class ConsultationService {
             }
         }
 
+        const testName = dto.test_name?.trim() || null;
+
         return repository.updateReport(encounterReportId, {
-            ...(dto.lab_test_id !== undefined ? { lab_test_id: dto.lab_test_id } : {}),
+            // A report is for either a master test or a typed one, never both.
+            ...(dto.lab_test_id ? { lab_test_id: dto.lab_test_id, test_name: null } : {}),
+            ...(!dto.lab_test_id && testName ? { lab_test_id: null, test_name: testName } : {}),
             ...(dto.report_completed_date !== undefined ? { report_completed_date: dto.report_completed_date ? new Date(dto.report_completed_date) : null } : {}),
             ...(dto.result !== undefined ? { result: dto.result } : {}),
             ...(dto.impression !== undefined ? { impression: dto.impression } : {}),

@@ -50,6 +50,38 @@ router.post(
 );
 
 router.get(
+    "/masters/general-examination-findings",
+    authenticate,
+    authorize("encounter.read"),
+    listMasterValidation,
+    controller.getGeneralExaminationFindings.bind(controller)
+);
+
+router.post(
+    "/masters/general-examination-findings/custom",
+    authenticate,
+    authorize("encounter.update"),
+    createCustomMasterValidation,
+    controller.createCustomGeneralExaminationFinding.bind(controller)
+);
+
+router.get(
+    "/masters/treatment-types",
+    authenticate,
+    authorize("encounter.read"),
+    listMasterValidation,
+    controller.getTreatmentTypes.bind(controller)
+);
+
+router.post(
+    "/masters/treatment-types/custom",
+    authenticate,
+    authorize("encounter.update"),
+    createCustomMasterValidation,
+    controller.createCustomTreatmentType.bind(controller)
+);
+
+router.get(
     "/masters/diet-types",
     authenticate,
     authorize("encounter.read"),

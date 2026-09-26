@@ -71,6 +71,88 @@ export class ConsultationRepository {
 
     }
 
+    async getGeneralExaminationFindings(query: { search?: string; isActive?: boolean }) {
+
+        const where: Prisma.general_examination_masterWhereInput = {};
+        if (query.isActive !== undefined) where.is_active = query.isActive;
+        if (query.search) {
+            where.OR = [
+                { name: { contains: query.search, mode: "insensitive" } },
+                { code: { contains: query.search, mode: "insensitive" } }
+            ];
+        }
+
+        return prisma.general_examination_master.findMany({ where, orderBy: [{ display_order: "asc" }, { name: "asc" }] });
+
+    }
+
+    async findGeneralExaminationFindingByCode(code: string) {
+
+        return prisma.general_examination_master.findUnique({ where: { code } });
+
+    }
+
+    async findGeneralExaminationFindingByName(name: string) {
+
+        return prisma.general_examination_master.findFirst({ where: { name: { equals: name, mode: "insensitive" } } });
+
+    }
+
+    async createGeneralExaminationFinding(data: Prisma.general_examination_masterUncheckedCreateInput) {
+
+        return prisma.general_examination_master.create({ data });
+
+    }
+
+    // New options go after the existing ones in the list.
+    async nextGeneralExaminationFindingDisplayOrder() {
+
+        const result = await prisma.general_examination_master.aggregate({ _max: { display_order: true } });
+        return (result._max.display_order ?? 0) + 1;
+
+    }
+
+    async getTreatmentTypes(query: { search?: string; isActive?: boolean }) {
+
+        const where: Prisma.treatment_type_masterWhereInput = {};
+        if (query.isActive !== undefined) where.is_active = query.isActive;
+        if (query.search) {
+            where.OR = [
+                { name: { contains: query.search, mode: "insensitive" } },
+                { code: { contains: query.search, mode: "insensitive" } }
+            ];
+        }
+
+        return prisma.treatment_type_master.findMany({ where, orderBy: [{ display_order: "asc" }, { name: "asc" }] });
+
+    }
+
+    async findTreatmentTypeByCode(code: string) {
+
+        return prisma.treatment_type_master.findUnique({ where: { code } });
+
+    }
+
+    async findTreatmentTypeByName(name: string) {
+
+        return prisma.treatment_type_master.findFirst({ where: { name: { equals: name, mode: "insensitive" } } });
+
+    }
+
+    async createTreatmentType(data: Prisma.treatment_type_masterUncheckedCreateInput) {
+
+        return prisma.treatment_type_master.create({ data });
+
+    }
+
+    // New options go after the existing ones in the list.
+    async nextTreatmentTypeDisplayOrder() {
+
+        const result = await prisma.treatment_type_master.aggregate({ _max: { display_order: true } });
+        return (result._max.display_order ?? 0) + 1;
+
+    }
+
     // ---------------- Personal history ----------------
 
     async findPersonalHistoryByEncounter(encounterNo: string) {
