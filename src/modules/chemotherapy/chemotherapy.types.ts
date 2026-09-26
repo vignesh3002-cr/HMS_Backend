@@ -285,6 +285,7 @@ export interface PlanItemInputDto {
     dosage_unit?: string | null;
     dose_calculation_method?: string | null;
     calculated_dose?: number | null;
+    calculated_dose_unit?: string | null;
     administration_route?: string | null;
     formulation?: string | null;
     infusion_type?: string | null;
@@ -352,6 +353,13 @@ export interface CreatePlanDto {
     insurance_type?: string | null;
     remarks?: string | null;
     discussion?: string | null;
+    // Snapshot of the inputs the patient doses (calculated_dose) were
+    // calculated from on the Chemotherapy Order step.
+    dosing_height_cm?: number | null;
+    dosing_weight_kg?: number | null;
+    dosing_bsa?: number | null;
+    dosing_serum_creatinine?: number | null;
+    dosing_crcl?: number | null;
     // The "never auto-treat" gate - must be explicitly true regardless of
     // whether a suggested_therapy was actually computed (it's null for every
     // cancer type outside Breast/Lung, which chemo.derivation.ts doesn't
@@ -364,6 +372,12 @@ export interface CreatePlanDto {
 
 export interface UpdatePlanDto {
 
+    // Re-link to another regimen protocol (PLANNED plans only); its
+    // regimen name/code/cycles are copied unless also given explicitly.
+    source_protocol_id?: string | null;
+    // Re-link / refresh the diagnosis; cancer_type(_id), cancer_subtype,
+    // subtype_id and cancer_stage are taken from this staging detail.
+    staging_detail_id?: string | null;
     regimen_name?: string;
     regimen_code?: string | null;
     protocol_name?: string | null;
@@ -380,6 +394,13 @@ export interface UpdatePlanDto {
     insurance_type?: string | null;
     remarks?: string | null;
     discussion?: string | null;
+    // Snapshot of the inputs the patient doses (calculated_dose) were
+    // calculated from on the Chemotherapy Order step.
+    dosing_height_cm?: number | null;
+    dosing_weight_kg?: number | null;
+    dosing_bsa?: number | null;
+    dosing_serum_creatinine?: number | null;
+    dosing_crcl?: number | null;
 
 }
 

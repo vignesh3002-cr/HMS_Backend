@@ -13,6 +13,7 @@ import {
     RuleViolation,
     ClinicalParameters,
     DerivedOncologyFields,
+    AdditionalCancerDto,
     CreateStagingDetailDto,
     UpdateStagingDetailDto,
     IhcUpsertDto,
@@ -297,6 +298,58 @@ export class OncologyService {
 
     }
 
+    // Secondary cancer types of a multi-type diagnosis. Each must exist,
+    // differ from the primary type and appear once; its optional subtype
+    // must belong to it.
+    private async resolveAdditionalCancers(primaryCancerTypeId: string, list: AdditionalCancerDto[]) {
+
+        const seen = new Set<string>();
+        const rows: { cancer_type_id: string; cancer_subtype_id: string | null }[] = [];
+
+        for (const entry of list) {
+
+            const cancerType = await this.repository.findCancerTypeById(entry.cancer_type_id);
+
+            if (!cancerType) {
+                throw new Error(`Cancer type not found: ${entry.cancer_type_id}`);
+            }
+
+            if (entry.cancer_type_id === primaryCancerTypeId) {
+                throw new Error(`${cancerType.cancer_type} is already the primary cancer type`);
+            }
+
+            if (seen.has(entry.cancer_type_id)) {
+                throw new Error(`${cancerType.cancer_type} is selected more than once`);
+            }
+
+            seen.add(entry.cancer_type_id);
+
+            let subtypeId: string | null = null;
+
+            if (entry.cancer_subtype_id) {
+
+                const subtype = await this.repository.findCancerSubtypeById(entry.cancer_subtype_id);
+
+                if (!subtype) {
+                    throw new Error("Cancer subtype not found");
+                }
+
+                if (subtype.cancer_type_id !== entry.cancer_type_id) {
+                    throw new Error(`Selected subtype does not belong to ${cancerType.cancer_type}`);
+                }
+
+                subtypeId = subtype.subtype_id;
+
+            }
+
+            rows.push({ cancer_type_id: entry.cancer_type_id, cancer_subtype_id: subtypeId });
+
+        }
+
+        return rows;
+
+    }
+
     // A staging detail may only be recorded for a patient who has actually
     // been seen: their most recent encounter must be OPEN, or closed but
     // still within ENCOUNTER_RECENCY_WINDOW_DAYS (covers biopsy/pathology
@@ -338,6 +391,8 @@ export class OncologyService {
         const encounter = await this.resolveQualifyingEncounter(dto.patient_id);
 
         const { cancerType, subtype } = await this.resolveCancerTypeAndSubtype(dto.cancer_type_id, dto.cancer_subtype_id);
+
+        const additionalCancers = await this.resolveAdditionalCancers(dto.cancer_type_id, dto.additional_cancers ?? []);
 
         const diagnosis = dto.diagnosis_id
             ? await this.repository.findDiagnosisById(dto.diagnosis_id)
@@ -441,6 +496,10 @@ export class OncologyService {
                 user_id: actingUserId
             });
 
+            if (additionalCancers.length > 0) {
+                await this.repository.replaceAdditionalCancers(tx, newId, additionalCancers);
+            }
+
             if (dto.ihc) {
                 await this.repository.upsertIhcResults(tx, newId, dto.ihc);
             }
@@ -461,6 +520,7 @@ export class OncologyService {
                 change_summary: summarizeCreate({
                     cancer_type_id: dto.cancer_type_id,
                     cancer_subtype_id: dto.cancer_subtype_id,
+                    additional_cancers: additionalCancers,
                     clinical_stage: dto.clinical_stage ?? null,
                     diagnosis_id: dto.diagnosis_id ?? null
                 })
@@ -529,6 +589,11 @@ export class OncologyService {
             }
 
         }
+
+        const finalCancerTypeId = dto.cancer_type_id ?? existing.cancer_type_id;
+        const additionalCancers = dto.additional_cancers !== undefined && dto.additional_cancers !== null
+            ? await this.resolveAdditionalCancers(finalCancerTypeId, dto.additional_cancers)
+            : null;
 
         const staging: StagingInput = {
             cancer_type: cancerType.cancer_type,
@@ -611,6 +676,13 @@ export class OncologyService {
 
             await this.repository.updateStagingDetail(tx, stagingDetailId, stagingChanges);
 
+            if (additionalCancers) {
+                await this.repository.replaceAdditionalCancers(tx, stagingDetailId, additionalCancers);
+            } else if (finalCancerTypeId !== existing.cancer_type_id) {
+                // The new primary type can't also stay listed as an additional one.
+                await this.repository.removeAdditionalCancerType(tx, stagingDetailId, finalCancerTypeId);
+            }
+
             if (dto.ihc) {
                 await this.repository.upsertIhcResults(tx, stagingDetailId, dto.ihc);
             }
@@ -621,7 +693,12 @@ export class OncologyService {
 
             await this.repository.upsertDerivedFields(tx, stagingDetailId, derivedPersistPayload(derived));
 
-            const auditChanges = { ...stagingChanges, ...(dto.ihc ?? {}), ...(dto.molecular ?? {}) };
+            const auditChanges = {
+                ...stagingChanges,
+                ...(additionalCancers ? { additional_cancers: additionalCancers } : {}),
+                ...(dto.ihc ?? {}),
+                ...(dto.molecular ?? {})
+            };
 
             if (Object.keys(auditChanges).length > 0) {
 
@@ -632,7 +709,15 @@ export class OncologyService {
                     performed_by: actingUserId,
                     patient_id: existing.patient_id,
                     branch_id: (dto.branch_id ?? existing.branch_id) ?? null,
-                    change_summary: diffFields({ ...existing, ...mapIhcRowToInput(existing.ihc_results), ...mapMolecularRowToInput(existing.molecular_results) }, auditChanges)
+                    change_summary: diffFields({
+                        ...existing,
+                        additional_cancers: existing.oncology_staging_additional_cancers.map((cancer) => ({
+                            cancer_type_id: cancer.cancer_type_id,
+                            cancer_subtype_id: cancer.cancer_subtype_id
+                        })),
+                        ...mapIhcRowToInput(existing.ihc_results),
+                        ...mapMolecularRowToInput(existing.molecular_results)
+                    }, auditChanges)
                 });
 
             }

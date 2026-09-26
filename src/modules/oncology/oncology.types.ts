@@ -165,6 +165,14 @@ export interface MolecularUpsertDto {
 
 }
 
+export interface AdditionalCancerDto {
+
+    cancer_type_id: string;
+    // Histopathology ticked under this cancer type, if any.
+    cancer_subtype_id?: string | null;
+
+}
+
 export interface CreateStagingDetailDto {
 
     patient_id: string;
@@ -181,6 +189,9 @@ export interface CreateStagingDetailDto {
     consulting_oncologist?: string | null;
     cancer_type_id: string;
     cancer_subtype_id: string;
+    // Every other cancer type selected in the Diagnosis step (the primary
+    // one is cancer_type_id / cancer_subtype_id above).
+    additional_cancers?: AdditionalCancerDto[] | null;
     clinical_stage?: string | null;
     t_stage?: string | null;
     n_stage?: string | null;
@@ -218,6 +229,8 @@ export interface UpdateStagingDetailDto {
     consulting_oncologist?: string | null;
     cancer_type_id?: string;
     cancer_subtype_id?: string;
+    // Replaces the stored list when present; omitted leaves it unchanged.
+    additional_cancers?: AdditionalCancerDto[] | null;
     clinical_stage?: string | null;
     t_stage?: string | null;
     n_stage?: string | null;

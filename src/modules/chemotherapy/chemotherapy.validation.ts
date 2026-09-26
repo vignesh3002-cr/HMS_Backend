@@ -382,6 +382,14 @@ export const createPlanValidation = [
     body("plan_items.*.medicine_id").notEmpty().withMessage("Each plan item requires a medicine_id"),
     body("plan_items.*.drug_sequence").isInt({ min: 1 }).withMessage("Each plan item requires a drug_sequence >= 1"),
     body("plan_items.*.drug_role").optional().isIn(Object.values(DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(DRUG_ROLE).join(", ")}`),
+    body("plan_items.*.calculated_dose").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("plan_items.*.calculated_dose_unit").optional({ nullable: true }).isString(),
+    body("plan_items.*.dose_calculation_method").optional({ nullable: true }).isString(),
+    body("dosing_height_cm").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing_weight_kg").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing_bsa").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing_serum_creatinine").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing_crcl").optional({ nullable: true }).isFloat({ min: 0 }),
     body("remarks").optional({ nullable: true }).isString(),
     body("discussion").optional({ nullable: true }).isString()
 
@@ -390,9 +398,16 @@ export const createPlanValidation = [
 export const updatePlanValidation = [
 
     param("planId").notEmpty(),
+    body("source_protocol_id").optional({ nullable: true }).isString(),
+    body("staging_detail_id").optional({ nullable: true }).isString(),
     body("planned_cycles").optional().isInt({ min: 1 }),
     body("expected_end_date").optional({ nullable: true }).isISO8601(),
     body("consent_date").optional({ nullable: true }).isISO8601(),
+    body("dosing_height_cm").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing_weight_kg").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing_bsa").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing_serum_creatinine").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing_crcl").optional({ nullable: true }).isFloat({ min: 0 }),
     body("remarks").optional({ nullable: true }).isString(),
     body("discussion").optional({ nullable: true }).isString()
 
@@ -419,7 +434,10 @@ export const addPlanItemValidation = [
     param("planId").notEmpty(),
     body("medicine_id").notEmpty().withMessage("medicine_id is required"),
     body("drug_sequence").isInt({ min: 1 }).withMessage("drug_sequence must be at least 1"),
-    body("drug_role").optional().isIn(Object.values(DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(DRUG_ROLE).join(", ")}`)
+    body("drug_role").optional().isIn(Object.values(DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(DRUG_ROLE).join(", ")}`),
+    body("calculated_dose").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("calculated_dose_unit").optional({ nullable: true }).isString(),
+    body("dose_calculation_method").optional({ nullable: true }).isString()
 
 ];
 
@@ -427,7 +445,10 @@ export const updatePlanItemValidation = [
 
     param("planId").notEmpty(),
     param("planItemId").notEmpty(),
-    body("drug_sequence").optional().isInt({ min: 1 })
+    body("drug_sequence").optional().isInt({ min: 1 }),
+    body("calculated_dose").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("calculated_dose_unit").optional({ nullable: true }).isString(),
+    body("dose_calculation_method").optional({ nullable: true }).isString()
 
 ];
 

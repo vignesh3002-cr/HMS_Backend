@@ -64,6 +64,79 @@ function isCycleStatus(value: string): value is CycleStatus {
     return Object.values(CYCLE_STATUS).includes(value as CycleStatus);
 }
 
+// A cancer on the patient's diagnosis: the primary one on the staging
+// detail, then each oncology_staging_additional_cancers row (multi-type
+// diagnosis).
+type DiagnosedCancer = {
+    cancer_type_id: string;
+    cancer_subtype_id: string | null;
+    cancer_type: string;
+    cancer_subtype: string | null;
+};
+
+type StagingCancers = {
+    cancer_type_id: string;
+    cancer_subtype_id: string;
+    cancer_types: { cancer_type: string };
+    cancer_subtypes: { subtype_name: string };
+    oncology_staging_additional_cancers?: {
+        cancer_type_id: string;
+        cancer_subtype_id: string | null;
+        cancer_types: { cancer_type: string };
+        cancer_subtypes: { subtype_name: string } | null;
+    }[];
+};
+
+function diagnosedCancers(staging: StagingCancers): DiagnosedCancer[] {
+
+    return [
+        {
+            cancer_type_id: staging.cancer_type_id,
+            cancer_subtype_id: staging.cancer_subtype_id,
+            cancer_type: staging.cancer_types.cancer_type,
+            cancer_subtype: staging.cancer_subtypes.subtype_name
+        },
+        ...(staging.oncology_staging_additional_cancers ?? []).map((extra) => ({
+            cancer_type_id: extra.cancer_type_id,
+            cancer_subtype_id: extra.cancer_subtype_id,
+            cancer_type: extra.cancer_types.cancer_type,
+            cancer_subtype: extra.cancer_subtypes?.subtype_name ?? null
+        }))
+    ];
+
+}
+
+type ProtocolCancerLinks = {
+    cancer_type_id: string | null;
+    subtype_id: string | null;
+    chemotherapy_protocol_cancers?: { cancer_type_id: string; subtype_id: string | null }[];
+};
+
+function protocolLinks(protocol: ProtocolCancerLinks) {
+
+    return [
+        { cancer_type_id: protocol.cancer_type_id, subtype_id: protocol.subtype_id },
+        ...(protocol.chemotherapy_protocol_cancers ?? [])
+    ];
+
+}
+
+// The diagnosed cancer a protocol treats (primary cancer first): the
+// protocol's own cancer type or one of its chemotherapy_protocol_cancers
+// links, for that cancer's subtype, type-wide (null subtype), or any subtype
+// when no histopathology was picked for that cancer. Same rule the Protocol
+// dropdown lists by (ChemotherapyRepository.listRegimenProtocols).
+function findProtocolCancer(protocol: ProtocolCancerLinks, cancers: DiagnosedCancer[]): DiagnosedCancer | null {
+
+    const links = protocolLinks(protocol);
+
+    return cancers.find((cancer) => links.some((link) =>
+        link.cancer_type_id === cancer.cancer_type_id &&
+        (!link.subtype_id || !cancer.cancer_subtype_id || link.subtype_id === cancer.cancer_subtype_id)
+    )) ?? null;
+
+}
+
 function appendNote(existing: string | null | undefined, note: string | null | undefined): string | null {
 
     if (!note) {
@@ -95,9 +168,10 @@ export class ChemotherapyService {
         // applied automatically. Generic protocols are always listed;
         // the caller's organization's active personalized protocols are
         // included when the org context is available.
+        const cancers = diagnosedCancers(staging);
         const matchingProtocols = await this.repository.listRegimenProtocols({
-            cancer_type_id: staging.cancer_type_id,
-            subtype_id: staging.cancer_subtype_id,
+            cancer_type_ids: cancers.map((cancer) => cancer.cancer_type_id),
+            subtype_ids: cancers.flatMap((cancer) => (cancer.cancer_subtype_id ? [cancer.cancer_subtype_id] : [])),
             ...(organizationId ? { organization_id: organizationId } : {})
         });
 
@@ -106,6 +180,7 @@ export class ChemotherapyService {
             patient_id: staging.patient_id,
             cancer_type: staging.cancer_types.cancer_type,
             cancer_subtype: staging.cancer_subtypes.subtype_name,
+            additional_cancers: cancers.slice(1),
             clinical_stage: staging.clinical_stage,
             suggested_therapy: staging.derived_fields?.suggested_therapy ?? null,
             breast_mol_subtype: staging.derived_fields?.breast_mol_subtype ?? null,
@@ -2383,6 +2458,55 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
     }
 
+    // A protocol is usable when it treats one of the diagnosed cancers
+    // (findProtocolCancer) - the primary one or any additional cancer of a
+    // multi-type diagnosis. Returns that cancer so the plan records it.
+    private assertProtocolUsable(
+        protocol: NonNullable<Awaited<ReturnType<ChemotherapyRepository["findRegimenProtocolById"]>>>,
+        cancers: DiagnosedCancer[] | null,
+        organizationId?: string | null
+    ): DiagnosedCancer | null {
+
+        let matched: DiagnosedCancer | null = null;
+
+        if (cancers) {
+
+            matched = findProtocolCancer(protocol, cancers);
+
+            if (!matched) {
+
+                const links = protocolLinks(protocol);
+                const typeMatches = cancers.some((cancer) =>
+                    links.some((link) => link.cancer_type_id === cancer.cancer_type_id)
+                );
+
+                throw new Error(typeMatches
+                    ? "Selected protocol does not match this patient's diagnosed cancer subtype"
+                    : "Selected protocol does not match this patient's diagnosed cancer type");
+
+            }
+
+        }
+
+        if (protocol.protocol_type === "PERSONALIZED") {
+
+            // Personalized protocols are organization-scoped: only their
+            // owning organization may use them, and only when published
+            // (active). Generics stay globally selectable.
+            if (protocol.active_status !== PROTOCOL_ACTIVE_STATUS.ACTIVE) {
+                throw new Error("Selected personalized protocol is not active");
+            }
+
+            if (!organizationId || protocol.organization_id !== organizationId) {
+                throw new Error("Selected personalized protocol does not belong to your organization");
+            }
+
+        }
+
+        return matched;
+
+    }
+
     private async repository_findStagingDetailOrThrow(stagingDetailId: string) {
 
         const staging = await this.oncologyRepository.findStagingDetailById(stagingDetailId);
@@ -2447,6 +2571,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
         // This is a one-time copy: nothing here reads back from or writes to
         // chemotherapy_regimen_protocol after this point.
         let protocol: Awaited<ReturnType<ChemotherapyRepository["findRegimenProtocolById"]>> = null;
+        let protocolCancer: DiagnosedCancer | null = null;
 
         if (dto.protocol_id) {
 
@@ -2456,30 +2581,13 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 throw new Error("Regimen protocol not found");
             }
 
-            if (protocol.cancer_type_id !== staging.cancer_type_id) {
-                throw new Error("Selected protocol does not match this patient's diagnosed cancer type");
-            }
-
-            if (protocol.subtype_id && protocol.subtype_id !== staging.cancer_subtype_id) {
-                throw new Error("Selected protocol does not match this patient's diagnosed cancer subtype");
-            }
-
-            if (protocol.protocol_type === "PERSONALIZED") {
-
-                // Personalized protocols are organization-scoped: only their
-                // owning organization may use them, and only when published
-                // (active). Generics stay globally selectable.
-                if (protocol.active_status !== PROTOCOL_ACTIVE_STATUS.ACTIVE) {
-                    throw new Error("Selected personalized protocol is not active");
-                }
-
-                if (!organizationId || protocol.organization_id !== organizationId) {
-                    throw new Error("Selected personalized protocol does not belong to your organization");
-                }
-
-            }
+            protocolCancer = this.assertProtocolUsable(protocol, diagnosedCancers(staging), organizationId);
 
         }
+
+        // The plan is for the diagnosed cancer its protocol treats - which may
+        // be a secondary cancer of a multi-type diagnosis - else the primary.
+        const planCancer = protocolCancer ?? diagnosedCancers(staging)[0];
 
         const resolvedRegimenName = dto.regimen_name ?? protocol?.regimen_name;
         const resolvedRegimenCode = dto.regimen_code ?? protocol?.regimen_code ?? null;
@@ -2596,10 +2704,10 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 protocol_version: dto.protocol_version ?? protocol?.protocol_version ?? null,
                 treatment_intent: dto.treatment_intent ?? protocol?.treatment_intent ?? null,
                 cancer_stage: staging.clinical_stage ?? null,
-                cancer_type: staging.cancer_types.cancer_type,
-                cancer_subtype: staging.cancer_subtypes.subtype_name,
-                cancer_type_id: staging.cancer_type_id,
-                subtype_id: staging.cancer_subtype_id,
+                cancer_type: planCancer.cancer_type,
+                cancer_subtype: planCancer.cancer_subtype,
+                cancer_type_id: planCancer.cancer_type_id,
+                subtype_id: planCancer.cancer_subtype_id,
                 staging_detail_id: staging.staging_detail_id,
                 ecog_status: dto.ecog_status ?? null,
                 karnofsky_score: dto.karnofsky_score ?? null,
@@ -2614,6 +2722,11 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 insurance_type: dto.insurance_type ?? null,
                 remarks: dto.remarks ?? null,
                 discussion: dto.discussion ?? null,
+                dosing_height_cm: dto.dosing_height_cm ?? null,
+                dosing_weight_kg: dto.dosing_weight_kg ?? null,
+                dosing_bsa: dto.dosing_bsa ?? null,
+                dosing_serum_creatinine: dto.dosing_serum_creatinine ?? null,
+                dosing_crcl: dto.dosing_crcl ?? null,
                 created_by: actingUserId
             });
 
@@ -2632,6 +2745,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                     protocol_dose_unit: item.dosage_unit ?? null,
                     dose_calculation_method: item.dose_calculation_method ?? null,
                     calculated_dose: item.calculated_dose ?? null,
+                    calculated_dose_unit: item.calculated_dose_unit ?? null,
                     administration_route: item.administration_route ?? null,
                     formulation: item.formulation ?? null,
                     infusion_type: item.infusion_type ?? null,
@@ -2725,7 +2839,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
     }
 
-    async updatePlan(planId: string, dto: UpdatePlanDto, actingUserId: string) {
+    async updatePlan(planId: string, dto: UpdatePlanDto, actingUserId: string, organizationId?: string | null) {
 
         const plan = await this.repository.findPlanForUpdate(prisma, planId);
 
@@ -2737,7 +2851,96 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             throw new Error(`Cannot update a plan that is already ${plan.treatment_status}`);
         }
 
+        // Diagnosis re-link: must be this patient's staging detail.
+        let staging: Awaited<ReturnType<ChemotherapyService["repository_findStagingDetailOrThrow"]>> | null = null;
+
+        if (dto.staging_detail_id) {
+
+            staging = await this.repository_findStagingDetailOrThrow(dto.staging_detail_id);
+
+            if (staging.patient_id !== plan.patient_id) {
+                throw new Error("The staging detail does not belong to this plan's patient");
+            }
+
+        }
+
+        const protocolChanging = Boolean(dto.source_protocol_id) && dto.source_protocol_id !== plan.source_protocol_id;
+
+        // The diagnosis the plan follows: the one being linked, else the
+        // current one when a protocol switch has to be checked against it.
+        const diagnosis = staging ?? (protocolChanging && plan.staging_detail_id
+            ? await this.repository_findStagingDetailOrThrow(plan.staging_detail_id)
+            : null);
+        const cancers = diagnosis ? diagnosedCancers(diagnosis) : null;
+
+        // Protocol switch. Copies the new protocol's defaults exactly like
+        // createPlan's one-time copy; explicit fields in the body still win.
+        // Only while PLANNED - plan items can't be replaced after that, so
+        // the header would no longer match the drugs.
+        let protocolChanges = {};
+        let protocolCancer: DiagnosedCancer | null = null;
+
+        if (protocolChanging) {
+
+            if (plan.treatment_status !== PLAN_STATUS.PLANNED) {
+                throw new Error("The protocol can only be changed while the plan is still PLANNED");
+            }
+
+            const protocol = await this.repository.findRegimenProtocolById(dto.source_protocol_id as string);
+
+            if (!protocol) {
+                throw new Error("Regimen protocol not found");
+            }
+
+            protocolCancer = this.assertProtocolUsable(protocol, cancers, organizationId);
+
+            protocolChanges = {
+                source_protocol_id: protocol.protocol_id,
+                regimen_name: protocol.regimen_name,
+                regimen_code: protocol.regimen_code ?? null,
+                protocol_name: protocol.regimen_name,
+                protocol_version: protocol.protocol_version ?? null,
+                treatment_intent: protocol.treatment_intent ?? null,
+                ...(protocol.standard_cycles ? { planned_cycles: protocol.standard_cycles } : {}),
+                ...(protocol.cycle_interval_days ? { cycle_interval_days: protocol.cycle_interval_days } : {})
+            };
+
+        } else if (cancers && plan.source_protocol_id) {
+
+            // Diagnosis refresh under the current protocol: stay on the
+            // diagnosed cancer it treats. If it no longer treats any, that is
+            // not an error here - the doctor picks a new protocol next.
+            const currentProtocol = await this.repository.findRegimenProtocolById(plan.source_protocol_id);
+            protocolCancer = currentProtocol ? findProtocolCancer(currentProtocol, cancers) : null;
+
+        }
+
+        // The plan's cancer context is the diagnosed cancer its protocol
+        // treats (a secondary cancer of a multi-type diagnosis included),
+        // else the primary one. It is refreshed even when the staging id is
+        // unchanged - the Diagnosis step edits the same staging detail in
+        // place. The stage follows the linked staging detail.
+        let cancerChanges = {};
+
+        if (cancers) {
+
+            const planCancer = protocolCancer ?? cancers[0];
+
+            cancerChanges = {
+                cancer_type_id: planCancer.cancer_type_id,
+                subtype_id: planCancer.cancer_subtype_id,
+                cancer_type: planCancer.cancer_type,
+                cancer_subtype: planCancer.cancer_subtype,
+                ...(staging
+                    ? { staging_detail_id: staging.staging_detail_id, cancer_stage: staging.clinical_stage ?? null }
+                    : {})
+            };
+
+        }
+
         const planChanges = {
+            ...protocolChanges,
+            ...cancerChanges,
             ...(dto.regimen_name !== undefined ? { regimen_name: dto.regimen_name } : {}),
             ...(dto.regimen_code !== undefined ? { regimen_code: dto.regimen_code } : {}),
             ...(dto.protocol_name !== undefined ? { protocol_name: dto.protocol_name } : {}),
@@ -2753,7 +2956,12 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             ...(dto.consent_date !== undefined ? { consent_date: dto.consent_date ? new Date(dto.consent_date) : null } : {}),
             ...(dto.insurance_type !== undefined ? { insurance_type: dto.insurance_type } : {}),
             ...(dto.remarks !== undefined ? { remarks: dto.remarks } : {}),
-            ...(dto.discussion !== undefined ? { discussion: dto.discussion } : {})
+            ...(dto.discussion !== undefined ? { discussion: dto.discussion } : {}),
+            ...(dto.dosing_height_cm !== undefined ? { dosing_height_cm: dto.dosing_height_cm } : {}),
+            ...(dto.dosing_weight_kg !== undefined ? { dosing_weight_kg: dto.dosing_weight_kg } : {}),
+            ...(dto.dosing_bsa !== undefined ? { dosing_bsa: dto.dosing_bsa } : {}),
+            ...(dto.dosing_serum_creatinine !== undefined ? { dosing_serum_creatinine: dto.dosing_serum_creatinine } : {}),
+            ...(dto.dosing_crcl !== undefined ? { dosing_crcl: dto.dosing_crcl } : {})
         };
 
         await prisma.$transaction(async (tx) => {
@@ -2863,6 +3071,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 protocol_dose_unit: dto.dosage_unit ?? null,
                 dose_calculation_method: dto.dose_calculation_method ?? null,
                 calculated_dose: dto.calculated_dose ?? null,
+                calculated_dose_unit: dto.calculated_dose_unit ?? null,
                 administration_route: dto.administration_route ?? null,
                 formulation: dto.formulation ?? null,
                 infusion_type: dto.infusion_type ?? null,
@@ -2922,6 +3131,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             ...(dto.dosage_unit !== undefined ? { protocol_dose_unit: dto.dosage_unit } : {}),
             ...(dto.dose_calculation_method !== undefined ? { dose_calculation_method: dto.dose_calculation_method } : {}),
             ...(dto.calculated_dose !== undefined ? { calculated_dose: dto.calculated_dose } : {}),
+            ...(dto.calculated_dose_unit !== undefined ? { calculated_dose_unit: dto.calculated_dose_unit } : {}),
             ...(dto.administration_route !== undefined ? { administration_route: dto.administration_route } : {}),
             ...(dto.infusion_duration_minutes !== undefined ? { infusion_duration_minutes: dto.infusion_duration_minutes } : {}),
             ...(dto.frequency !== undefined ? { frequency: dto.frequency } : {}),

@@ -209,9 +209,44 @@ export class OncologyRepository {
 
     }
 
+    async replaceAdditionalCancers(
+        tx: Prisma.TransactionClient,
+        stagingDetailId: string,
+        cancers: { cancer_type_id: string; cancer_subtype_id: string | null }[]
+    ) {
+
+        await tx.oncology_staging_additional_cancers.deleteMany({
+            where: { staging_detail_id: stagingDetailId }
+        });
+
+        if (cancers.length > 0) {
+            await tx.oncology_staging_additional_cancers.createMany({
+                data: cancers.map((cancer, index) => ({
+                    staging_detail_id: stagingDetailId,
+                    cancer_type_id: cancer.cancer_type_id,
+                    cancer_subtype_id: cancer.cancer_subtype_id,
+                    display_order: index + 1
+                }))
+            });
+        }
+
+    }
+
+    async removeAdditionalCancerType(tx: Prisma.TransactionClient, stagingDetailId: string, cancerTypeId: string) {
+
+        return tx.oncology_staging_additional_cancers.deleteMany({
+            where: { staging_detail_id: stagingDetailId, cancer_type_id: cancerTypeId }
+        });
+
+    }
+
     private stagingDetailInclude = {
         cancer_types: true,
         cancer_subtypes: true,
+        oncology_staging_additional_cancers: {
+            orderBy: { display_order: "asc" as const },
+            include: { cancer_types: true, cancer_subtypes: true }
+        },
         ihc_results: true,
         molecular_results: true,
         derived_fields: true,

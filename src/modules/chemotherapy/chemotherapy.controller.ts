@@ -753,7 +753,12 @@ export class ChemotherapyController {
 
             if (!checkValidation(req, res)) return;
 
-            const data = await service.updatePlan(req.params.planId as string, req.body, actingUserId(req));
+            const data = await service.updatePlan(
+                req.params.planId as string,
+                req.body,
+                actingUserId(req),
+                (req as any).user?.hospital_id ?? null
+            );
             return res.json({ success: true, message: "Chemotherapy plan updated successfully", data });
 
         } catch (error: any) {
