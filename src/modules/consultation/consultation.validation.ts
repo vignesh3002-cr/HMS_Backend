@@ -68,6 +68,32 @@ export const updateReportValidation = [
 
 ];
 
+export const addMolecularTestValidation = [
+
+    param("encounterNo").notEmpty().withMessage("encounterNo is required"),
+    body("test_name").isString().trim().notEmpty().withMessage("test_name is required").isLength({ max: 200 }),
+    body("test_date").optional({ nullable: true }).isISO8601(),
+    body("result").optional({ nullable: true }).isString(),
+    body("impression").optional({ nullable: true }).isString()
+
+];
+
+export const updateMolecularTestValidation = [
+
+    param("encounterMolecularTestId").notEmpty().withMessage("encounterMolecularTestId is required"),
+    body("test_name").optional().isString().trim().notEmpty().withMessage("test_name cannot be blank").isLength({ max: 200 }),
+    body("test_date").optional({ nullable: true }).isISO8601(),
+    body("result").optional({ nullable: true }).isString(),
+    body("impression").optional({ nullable: true }).isString()
+
+];
+
+export const molecularTestIdValidation = [
+
+    param("encounterMolecularTestId").notEmpty().withMessage("encounterMolecularTestId is required")
+
+];
+
 export const reportIdValidation = [
 
     param("encounterReportId").notEmpty().withMessage("encounterReportId is required")

@@ -9,7 +9,10 @@ import {
     upsertPersonalHistoryValidation,
     addReportValidation,
     updateReportValidation,
-    reportIdValidation
+    reportIdValidation,
+    addMolecularTestValidation,
+    updateMolecularTestValidation,
+    molecularTestIdValidation
 } from "./consultation.validation";
 
 const router = Router();
@@ -82,6 +85,13 @@ router.post(
 );
 
 router.get(
+    "/masters/molecular-tests",
+    authenticate,
+    authorize("encounter.read"),
+    controller.getMolecularTestOptions.bind(controller)
+);
+
+router.get(
     "/masters/diet-types",
     authenticate,
     authorize("encounter.read"),
@@ -138,6 +148,40 @@ router.delete(
     authorize("encounter.update"),
     reportIdValidation,
     controller.removeReport.bind(controller)
+);
+
+// ---------------- Encounter molecular tests ----------------
+
+router.get(
+    "/encounters/:encounterNo/molecular-tests",
+    authenticate,
+    authorize("encounter.read"),
+    getPersonalHistoryValidation,
+    controller.getMolecularTests.bind(controller)
+);
+
+router.post(
+    "/encounters/:encounterNo/molecular-tests",
+    authenticate,
+    authorize("encounter.update"),
+    addMolecularTestValidation,
+    controller.addMolecularTest.bind(controller)
+);
+
+router.put(
+    "/molecular-tests/:encounterMolecularTestId",
+    authenticate,
+    authorize("encounter.update"),
+    updateMolecularTestValidation,
+    controller.updateMolecularTest.bind(controller)
+);
+
+router.delete(
+    "/molecular-tests/:encounterMolecularTestId",
+    authenticate,
+    authorize("encounter.update"),
+    molecularTestIdValidation,
+    controller.removeMolecularTest.bind(controller)
 );
 
 export default router;

@@ -1455,6 +1455,7 @@ model encounter {
   user_table                          user_table?                   @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_user")
   encounter_performance_status        encounter_performance_status?
   encounter_report                    encounter_report[]
+  encounter_molecular_test            encounter_molecular_test[]
   encounter_symptom                   encounter_symptom[]
   patient_allergy                     patient_allergy[]
   patient_comorbidity                 patient_comorbidity[]
@@ -1478,6 +1479,23 @@ model encounter_performance_status {
   performance_status_master performance_status_master @relation(fields: [performance_status_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_perf_status_master")
 
   @@index([encounter_no], map: "idx_encounter_perf_status_encounter")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model encounter_molecular_test {
+  id                          BigInt    @id @default(autoincrement())
+  encounter_molecular_test_id String    @unique(map: "uq_encounter_molecular_test_id") @db.VarChar(100)
+  encounter_no                String    @db.VarChar(100)
+  test_name                   String    @db.VarChar(200)
+  test_date                   DateTime? @db.Date
+  result                      String?
+  impression                  String?
+  created_at                  DateTime? @default(now()) @db.Timestamp(6)
+  updated_at                  DateTime? @default(now()) @db.Timestamp(6)
+  created_by                  String?   @db.VarChar(100)
+  encounter                   encounter @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_molecular_test_encounter")
+
+  @@index([encounter_no], map: "idx_encounter_molecular_test_encounter")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -2017,9 +2035,6 @@ model oncology_staging_detail {
   score_system                  String?             @db.VarChar(255)
   pre_diagnosis                 String?
   site                          String?             @db.VarChar(100)
-  suggested_molecular_test      String?             @db.VarChar(255)
-  suggested_molecular_test_date DateTime?           @db.Date
-  suggested_molecular_test_note String?
   notes                         String?
   chemotherapy_plan             chemotherapy_plan[]
   derived_fields                derived_fields?

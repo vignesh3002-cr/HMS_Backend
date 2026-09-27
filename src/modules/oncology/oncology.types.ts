@@ -205,9 +205,6 @@ export interface CreateStagingDetailDto {
     grade_system?: string | null;
     score?: string | null;
     score_system?: string | null;
-    suggested_molecular_test?: string | null;
-    suggested_molecular_test_note?: string | null;
-    suggested_molecular_test_date?: string | null;
     notes?: string | null;
     performance_status?: number | null;
     employee_id?: string | null;
@@ -244,9 +241,6 @@ export interface UpdateStagingDetailDto {
     grade_system?: string | null;
     score?: string | null;
     score_system?: string | null;
-    suggested_molecular_test?: string | null;
-    suggested_molecular_test_note?: string | null;
-    suggested_molecular_test_date?: string | null;
     notes?: string | null;
     performance_status?: number | null;
     employee_id?: string | null;

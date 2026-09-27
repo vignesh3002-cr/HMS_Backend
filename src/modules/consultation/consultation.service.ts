@@ -2,8 +2,8 @@ import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { generateId } from "../../utils/idGenerator";
 import { ConsultationRepository } from "./consultation.repository";
-import { CreateCustomMasterDTO, EncounterReportDTO, MasterListQuery, PersonalHistoryPayload } from "./consultation.types";
-import { DIET_TYPES, GENERAL_EXAMINATION_CORE_FINDINGS } from "./consultation.constants";
+import { CreateCustomMasterDTO, EncounterMolecularTestDTO, EncounterReportDTO, MasterListQuery, PersonalHistoryPayload } from "./consultation.types";
+import { DIET_TYPES, GENERAL_EXAMINATION_CORE_FINDINGS, MOLECULAR_TESTS } from "./consultation.constants";
 
 const repository = new ConsultationRepository();
 
@@ -147,6 +147,10 @@ export class ConsultationService {
         return DIET_TYPES;
     }
 
+    listMolecularTestOptions() {
+        return MOLECULAR_TESTS;
+    }
+
     // ---------------- Personal history ----------------
 
     async getPersonalHistory(encounterNo: string) {
@@ -272,6 +276,91 @@ export class ConsultationService {
             ...(dto.impression !== undefined ? { impression: dto.impression } : {}),
             updated_at: new Date()
         });
+
+    }
+
+    // ---------------- Encounter molecular tests ----------------
+    // Consultation > Patient Details > Molecular Testing: one row per test
+    // per visit (test + date + result + impression), like Reports (Previous).
+
+    async listMolecularTests(encounterNo: string) {
+
+        const encounter = await repository.findEncounterByNumber(encounterNo);
+        if (!encounter) {
+            throw new Error("Encounter not found");
+        }
+
+        return repository.findMolecularTestsByEncounter(encounterNo);
+
+    }
+
+    async addMolecularTest(encounterNo: string, dto: EncounterMolecularTestDTO, actingUserId: string) {
+
+        const encounter = await repository.findEncounterByNumber(encounterNo);
+        if (!encounter) {
+            throw new Error("Encounter not found");
+        }
+
+        const testName = (dto.test_name ?? "").trim();
+        if (!testName) {
+            throw new Error("Select or type a molecular test");
+        }
+
+        const duplicate = await repository.findMolecularTestByName(encounterNo, testName);
+        if (duplicate) {
+            throw new Error(`${duplicate.test_name} is already recorded for this visit`);
+        }
+
+        const newId = await prisma.$transaction((tx) => generateId(tx, "ENCOUNTER_MOLECULAR_TEST"));
+
+        return repository.createMolecularTest({
+            encounter_molecular_test_id: newId,
+            encounter_no: encounterNo,
+            test_name: testName,
+            test_date: dto.test_date ? new Date(dto.test_date) : null,
+            result: dto.result ?? null,
+            impression: dto.impression ?? null,
+            created_by: actingUserId
+        });
+
+    }
+
+    async updateMolecularTest(encounterMolecularTestId: string, dto: Partial<EncounterMolecularTestDTO>) {
+
+        const existing = await repository.findMolecularTestById(encounterMolecularTestId);
+        if (!existing) {
+            throw new Error("Molecular test not found");
+        }
+
+        const testName = dto.test_name?.trim();
+
+        if (testName && testName.toLowerCase() !== existing.test_name.toLowerCase()) {
+            const duplicate = await repository.findMolecularTestByName(existing.encounter_no, testName);
+            if (duplicate) {
+                throw new Error(`${duplicate.test_name} is already recorded for this visit`);
+            }
+        }
+
+        return repository.updateMolecularTest(encounterMolecularTestId, {
+            ...(testName ? { test_name: testName } : {}),
+            ...(dto.test_date !== undefined ? { test_date: dto.test_date ? new Date(dto.test_date) : null } : {}),
+            ...(dto.result !== undefined ? { result: dto.result } : {}),
+            ...(dto.impression !== undefined ? { impression: dto.impression } : {}),
+            updated_at: new Date()
+        });
+
+    }
+
+    async removeMolecularTest(encounterMolecularTestId: string) {
+
+        const existing = await repository.findMolecularTestById(encounterMolecularTestId);
+        if (!existing) {
+            throw new Error("Molecular test not found");
+        }
+
+        await repository.deleteMolecularTest(encounterMolecularTestId);
+
+        return { encounter_molecular_test_id: encounterMolecularTestId };
 
     }
 

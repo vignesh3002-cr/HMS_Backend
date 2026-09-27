@@ -26,6 +26,7 @@ const ENTITY_TARGET: Record<string, { table: string; column: string; padTo?: num
     REGIMEN_PROTOCOL_DILUTION: { table: "chemotherapy_protocol_dilutions", column: "protocol_dilution_id", padTo: 7 },
     DISCHARGE_INSTRUCTION: { table: "chemotherapy_discharge_instructions", column: "discharge_instruction_id", padTo: 7 },
     ENCOUNTER_REPORT: { table: "encounter_report", column: "encounter_report_id", padTo: 7 },
+    ENCOUNTER_MOLECULAR_TEST: { table: "encounter_molecular_test", column: "encounter_molecular_test_id", padTo: 7 },
     PERSONAL_HISTORY: { table: "patient_personal_history", column: "personal_history_id", padTo: 7 },
     ANATOMICAL_SITE: { table: "anatomical_site_master", column: "site_id", padTo: 4 },
     CANCER_GRADE: { table: "cancer_grade_master", column: "grade_id", padTo: 4 },

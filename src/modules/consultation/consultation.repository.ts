@@ -213,6 +213,52 @@ export class ConsultationRepository {
 
     }
 
+    // ---------------- Encounter molecular tests ----------------
+
+    async findMolecularTestsByEncounter(encounterNo: string) {
+
+        return prisma.encounter_molecular_test.findMany({
+            where: { encounter_no: encounterNo },
+            orderBy: { created_at: "asc" }
+        });
+
+    }
+
+    async findMolecularTestById(encounterMolecularTestId: string) {
+
+        return prisma.encounter_molecular_test.findUnique({ where: { encounter_molecular_test_id: encounterMolecularTestId } });
+
+    }
+
+    async findMolecularTestByName(encounterNo: string, testName: string) {
+
+        return prisma.encounter_molecular_test.findFirst({
+            where: { encounter_no: encounterNo, test_name: { equals: testName, mode: "insensitive" } }
+        });
+
+    }
+
+    async createMolecularTest(data: Prisma.encounter_molecular_testUncheckedCreateInput) {
+
+        return prisma.encounter_molecular_test.create({ data });
+
+    }
+
+    async updateMolecularTest(encounterMolecularTestId: string, data: Prisma.encounter_molecular_testUncheckedUpdateInput) {
+
+        return prisma.encounter_molecular_test.update({
+            where: { encounter_molecular_test_id: encounterMolecularTestId },
+            data
+        });
+
+    }
+
+    async deleteMolecularTest(encounterMolecularTestId: string) {
+
+        return prisma.encounter_molecular_test.delete({ where: { encounter_molecular_test_id: encounterMolecularTestId } });
+
+    }
+
     // ---------------- Existence checks ----------------
 
     async findEncounterByNumber(encounterNo: string) {
