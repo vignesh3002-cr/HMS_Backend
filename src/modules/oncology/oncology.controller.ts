@@ -11,7 +11,7 @@ function actingUserId(req: Request): string {
 // Tables this module writes to - used to strip the constraint name down to
 // just the offending column so the client gets an actionable field name
 // instead of the raw "<table>_<column>_check" identifier.
-const ONCOLOGY_TABLES = ["ihc_results", "molecular_results", "oncology_staging_detail", "derived_fields"];
+const ONCOLOGY_TABLES = ["ihc_results", "molecular_results", "oncology_staging_detail", "oncology_staging_additional_cancers", "derived_fields"];
 
 function fieldFromConstraintName(constraintName: string): string {
 

@@ -170,6 +170,11 @@ export interface AdditionalCancerDto {
     cancer_type_id: string;
     // Histopathology ticked under this cancer type, if any.
     cancer_subtype_id?: string | null;
+    // This cancer's own laterality / T / N / M (one value each).
+    laterality?: string | null;
+    t_stage?: string | null;
+    n_stage?: string | null;
+    m_stage?: string | null;
 
 }
 

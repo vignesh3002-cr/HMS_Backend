@@ -212,7 +212,14 @@ export class OncologyRepository {
     async replaceAdditionalCancers(
         tx: Prisma.TransactionClient,
         stagingDetailId: string,
-        cancers: { cancer_type_id: string; cancer_subtype_id: string | null }[]
+        cancers: {
+            cancer_type_id: string;
+            cancer_subtype_id: string | null;
+            laterality: string | null;
+            t_stage: string | null;
+            n_stage: string | null;
+            m_stage: string | null;
+        }[]
     ) {
 
         await tx.oncology_staging_additional_cancers.deleteMany({
@@ -225,6 +232,10 @@ export class OncologyRepository {
                     staging_detail_id: stagingDetailId,
                     cancer_type_id: cancer.cancer_type_id,
                     cancer_subtype_id: cancer.cancer_subtype_id,
+                    laterality: cancer.laterality,
+                    t_stage: cancer.t_stage,
+                    n_stage: cancer.n_stage,
+                    m_stage: cancer.m_stage,
                     display_order: index + 1
                 }))
             });

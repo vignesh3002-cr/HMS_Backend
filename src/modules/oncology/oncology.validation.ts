@@ -1,4 +1,5 @@
 import { body, param, query } from "express-validator";
+import { LATERALITY_VALUES, M_STAGE_VALUES, N_STAGE_VALUES, T_STAGE_VALUES } from "./oncology.constants";
 
 // Request-shape validation only (types, presence, ranges that would otherwise
 // throw a raw DB error - e.g. an out-of-range percent). The clinical
@@ -57,7 +58,14 @@ export const createStagingDetailValidation = [
     body("additional_cancers").optional({ nullable: true }).isArray(),
     body("additional_cancers.*.cancer_type_id").notEmpty().withMessage("Each additional cancer requires a cancer_type_id"),
     body("additional_cancers.*.cancer_subtype_id").optional({ nullable: true }).isString(),
-    body("laterality").optional({ nullable: true }).isString(),
+    body("laterality").optional({ nullable: true }).isIn(LATERALITY_VALUES).withMessage(`Laterality must be one of: ${LATERALITY_VALUES.join(", ")}`),
+    body("t_stage").optional({ nullable: true }).isIn(T_STAGE_VALUES).withMessage(`T stage must be a single value, one of: ${T_STAGE_VALUES.join(", ")}`),
+    body("n_stage").optional({ nullable: true }).isIn(N_STAGE_VALUES).withMessage(`N stage must be a single value, one of: ${N_STAGE_VALUES.join(", ")}`),
+    body("m_stage").optional({ nullable: true }).isIn(M_STAGE_VALUES).withMessage(`M stage must be a single value, one of: ${M_STAGE_VALUES.join(", ")}`),
+    body("additional_cancers.*.laterality").optional({ nullable: true }).isIn(LATERALITY_VALUES).withMessage(`Laterality must be one of: ${LATERALITY_VALUES.join(", ")}`),
+    body("additional_cancers.*.t_stage").optional({ nullable: true }).isIn(T_STAGE_VALUES).withMessage(`T stage must be a single value, one of: ${T_STAGE_VALUES.join(", ")}`),
+    body("additional_cancers.*.n_stage").optional({ nullable: true }).isIn(N_STAGE_VALUES).withMessage(`N stage must be a single value, one of: ${N_STAGE_VALUES.join(", ")}`),
+    body("additional_cancers.*.m_stage").optional({ nullable: true }).isIn(M_STAGE_VALUES).withMessage(`M stage must be a single value, one of: ${M_STAGE_VALUES.join(", ")}`),
     body("site").optional({ nullable: true }).isString(),
     body("grade").optional({ nullable: true }).isString(),
     body("grade_system").optional({ nullable: true }).isString(),
@@ -87,7 +95,14 @@ export const updateStagingDetailValidation = [
     body("additional_cancers").optional({ nullable: true }).isArray(),
     body("additional_cancers.*.cancer_type_id").notEmpty().withMessage("Each additional cancer requires a cancer_type_id"),
     body("additional_cancers.*.cancer_subtype_id").optional({ nullable: true }).isString(),
-    body("laterality").optional({ nullable: true }).isString(),
+    body("laterality").optional({ nullable: true }).isIn(LATERALITY_VALUES).withMessage(`Laterality must be one of: ${LATERALITY_VALUES.join(", ")}`),
+    body("t_stage").optional({ nullable: true }).isIn(T_STAGE_VALUES).withMessage(`T stage must be a single value, one of: ${T_STAGE_VALUES.join(", ")}`),
+    body("n_stage").optional({ nullable: true }).isIn(N_STAGE_VALUES).withMessage(`N stage must be a single value, one of: ${N_STAGE_VALUES.join(", ")}`),
+    body("m_stage").optional({ nullable: true }).isIn(M_STAGE_VALUES).withMessage(`M stage must be a single value, one of: ${M_STAGE_VALUES.join(", ")}`),
+    body("additional_cancers.*.laterality").optional({ nullable: true }).isIn(LATERALITY_VALUES).withMessage(`Laterality must be one of: ${LATERALITY_VALUES.join(", ")}`),
+    body("additional_cancers.*.t_stage").optional({ nullable: true }).isIn(T_STAGE_VALUES).withMessage(`T stage must be a single value, one of: ${T_STAGE_VALUES.join(", ")}`),
+    body("additional_cancers.*.n_stage").optional({ nullable: true }).isIn(N_STAGE_VALUES).withMessage(`N stage must be a single value, one of: ${N_STAGE_VALUES.join(", ")}`),
+    body("additional_cancers.*.m_stage").optional({ nullable: true }).isIn(M_STAGE_VALUES).withMessage(`M stage must be a single value, one of: ${M_STAGE_VALUES.join(", ")}`),
     body("site").optional({ nullable: true }).isString(),
     body("grade").optional({ nullable: true }).isString(),
     body("grade_system").optional({ nullable: true }).isString(),

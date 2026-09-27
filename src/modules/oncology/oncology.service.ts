@@ -3,7 +3,8 @@ import prisma from "../../config/prisma";
 import { OncologyRepository } from "./oncology.repository";
 import { validateOncologyRecord } from "./chemo.validation";
 import { deriveOncologyFields, deriveHer2Positive } from "./chemo.derivation";
-import { ENCOUNTER_OPEN_STATUS, ENCOUNTER_RECENCY_WINDOW_DAYS } from "./oncology.constants";
+import { ENCOUNTER_OPEN_STATUS, ENCOUNTER_RECENCY_WINDOW_DAYS, LATERALITY_CANCER_TYPES } from "./oncology.constants";
+import { parseTnmValues } from "./tnm.parser";
 import { logAudit, diffFields, summarizeCreate } from "../audit/audit.service";
 import { AUDIT_ACTION } from "../audit/audit.types";
 import {
@@ -180,7 +181,13 @@ export class OncologyService {
 
     async listCancerTypes() {
 
-        return this.repository.findCancerTypes();
+        const types = await this.repository.findCancerTypes();
+
+        // Laterality is only asked for paired-organ cancers (Section 6.2).
+        return types.map((type) => ({
+            ...type,
+            laterality_applicable: LATERALITY_CANCER_TYPES.includes(type.cancer_type)
+        }));
 
     }
 
@@ -204,7 +211,11 @@ export class OncologyService {
             throw new Error("Cancer type not found");
         }
 
-        return this.repository.findStagingReferenceByType(cancerTypeId);
+        const rows = await this.repository.findStagingReferenceByType(cancerTypeId);
+
+        // The individual, storable T / N / M values each criteria phrase
+        // names - the Diagnosis T / N / M dropdowns are built from these.
+        return rows.map((row) => ({ ...row, ...parseTnmValues(row.tnm_criteria) }));
 
     }
 
@@ -298,13 +309,29 @@ export class OncologyService {
 
     }
 
+    // Laterality is only recorded for paired-organ cancers.
+    private assertLateralityApplies(cancerTypeName: string, laterality: string | null | undefined) {
+
+        if (laterality && laterality !== "NA" && !LATERALITY_CANCER_TYPES.includes(cancerTypeName)) {
+            throw new Error(`Laterality does not apply to ${cancerTypeName}`);
+        }
+
+    }
+
     // Secondary cancer types of a multi-type diagnosis. Each must exist,
     // differ from the primary type and appear once; its optional subtype
     // must belong to it.
     private async resolveAdditionalCancers(primaryCancerTypeId: string, list: AdditionalCancerDto[]) {
 
         const seen = new Set<string>();
-        const rows: { cancer_type_id: string; cancer_subtype_id: string | null }[] = [];
+        const rows: {
+            cancer_type_id: string;
+            cancer_subtype_id: string | null;
+            laterality: string | null;
+            t_stage: string | null;
+            n_stage: string | null;
+            m_stage: string | null;
+        }[] = [];
 
         for (const entry of list) {
 
@@ -342,7 +369,16 @@ export class OncologyService {
 
             }
 
-            rows.push({ cancer_type_id: entry.cancer_type_id, cancer_subtype_id: subtypeId });
+            this.assertLateralityApplies(cancerType.cancer_type, entry.laterality);
+
+            rows.push({
+                cancer_type_id: entry.cancer_type_id,
+                cancer_subtype_id: subtypeId,
+                laterality: entry.laterality || null,
+                t_stage: entry.t_stage || null,
+                n_stage: entry.n_stage || null,
+                m_stage: entry.m_stage || null
+            });
 
         }
 
@@ -391,6 +427,8 @@ export class OncologyService {
         const encounter = await this.resolveQualifyingEncounter(dto.patient_id);
 
         const { cancerType, subtype } = await this.resolveCancerTypeAndSubtype(dto.cancer_type_id, dto.cancer_subtype_id);
+
+        this.assertLateralityApplies(cancerType.cancer_type, dto.laterality);
 
         const additionalCancers = await this.resolveAdditionalCancers(dto.cancer_type_id, dto.additional_cancers ?? []);
 
@@ -587,6 +625,8 @@ export class OncologyService {
 
         }
 
+        this.assertLateralityApplies(cancerType.cancer_type, dto.laterality);
+
         const finalCancerTypeId = dto.cancer_type_id ?? existing.cancer_type_id;
         const additionalCancers = dto.additional_cancers !== undefined && dto.additional_cancers !== null
             ? await this.resolveAdditionalCancers(finalCancerTypeId, dto.additional_cancers)
@@ -707,7 +747,11 @@ export class OncologyService {
                         ...existing,
                         additional_cancers: existing.oncology_staging_additional_cancers.map((cancer) => ({
                             cancer_type_id: cancer.cancer_type_id,
-                            cancer_subtype_id: cancer.cancer_subtype_id
+                            cancer_subtype_id: cancer.cancer_subtype_id,
+                            laterality: cancer.laterality,
+                            t_stage: cancer.t_stage,
+                            n_stage: cancer.n_stage,
+                            m_stage: cancer.m_stage
                         })),
                         ...mapIhcRowToInput(existing.ihc_results),
                         ...mapMolecularRowToInput(existing.molecular_results)
