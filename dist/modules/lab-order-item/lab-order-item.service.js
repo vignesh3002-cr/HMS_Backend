@@ -63,5 +63,8 @@ class LabOrderItemService {
         await this.getById(lab_order_item_id);
         return repository.delete(lab_order_item_id);
     }
+    async generateBarcodes(items) {
+        return repository.generateBarcodes(items);
+    }
 }
 exports.LabOrderItemService = LabOrderItemService;

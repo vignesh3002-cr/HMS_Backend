@@ -8,7 +8,10 @@ exports.previewPlanValidation = [
 ];
 exports.listRegimenProtocolsValidation = [
     (0, express_validator_1.query)("cancer_type_id").optional().notEmpty(),
-    (0, express_validator_1.query)("subtype_id").optional().notEmpty()
+    (0, express_validator_1.query)("subtype_id").optional().notEmpty(),
+    // Comma-separated lists, e.g. cancer_type_ids=CT021,CT020
+    (0, express_validator_1.query)("cancer_type_ids").optional().isString(),
+    (0, express_validator_1.query)("subtype_ids").optional().isString()
 ];
 exports.getRegimenProtocolValidation = [
     (0, express_validator_1.param)("protocolId").notEmpty()
@@ -312,13 +315,17 @@ exports.createPlanValidation = [
     (0, express_validator_1.body)("plan_items").optional({ nullable: true }).isArray({ min: 1 }).withMessage("plan_items, if provided, must be a non-empty array"),
     (0, express_validator_1.body)("plan_items.*.medicine_id").notEmpty().withMessage("Each plan item requires a medicine_id"),
     (0, express_validator_1.body)("plan_items.*.drug_sequence").isInt({ min: 1 }).withMessage("Each plan item requires a drug_sequence >= 1"),
-    (0, express_validator_1.body)("plan_items.*.drug_role").optional().isIn(Object.values(chemotherapy_constants_1.DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(chemotherapy_constants_1.DRUG_ROLE).join(", ")}`)
+    (0, express_validator_1.body)("plan_items.*.drug_role").optional().isIn(Object.values(chemotherapy_constants_1.DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(chemotherapy_constants_1.DRUG_ROLE).join(", ")}`),
+    (0, express_validator_1.body)("remarks").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("discussion").optional({ nullable: true }).isString()
 ];
 exports.updatePlanValidation = [
     (0, express_validator_1.param)("planId").notEmpty(),
     (0, express_validator_1.body)("planned_cycles").optional().isInt({ min: 1 }),
     (0, express_validator_1.body)("expected_end_date").optional({ nullable: true }).isISO8601(),
-    (0, express_validator_1.body)("consent_date").optional({ nullable: true }).isISO8601()
+    (0, express_validator_1.body)("consent_date").optional({ nullable: true }).isISO8601(),
+    (0, express_validator_1.body)("remarks").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("discussion").optional({ nullable: true }).isString()
 ];
 exports.planStatusValidation = [
     (0, express_validator_1.param)("planId").notEmpty(),

@@ -21,6 +21,27 @@ exports.updateEncounterValidation = [
     (0, express_validator_1.body)("diagnosis_id").optional().notEmpty(),
     (0, express_validator_1.body)("clinical_notes").optional().isString(),
     (0, express_validator_1.body)("advice").optional().isString(),
+    (0, express_validator_1.body)("history_of_present_illness").optional().isString(),
+    (0, express_validator_1.body)("cns_examination").optional().isString(),
+    (0, express_validator_1.body)("cvs_examination").optional().isString(),
+    (0, express_validator_1.body)("per_abdomen_examination").optional().isString(),
+    (0, express_validator_1.body)("clinical_findings").optional().isString(),
+    (0, express_validator_1.body)("respiratory_examination").optional().isString(),
+    (0, express_validator_1.body)("general_examination_icterus").optional().isBoolean(),
+    (0, express_validator_1.body)("general_examination_pallor").optional().isBoolean(),
+    (0, express_validator_1.body)("general_examination_clubbing").optional().isBoolean(),
+    (0, express_validator_1.body)("general_examination_cyanosis").optional().isBoolean(),
+    (0, express_validator_1.body)("general_examination_oedema").optional().isBoolean(),
+    (0, express_validator_1.body)("general_examination_lymphadenopathy").optional().isBoolean(),
+    (0, express_validator_1.body)("past_history_treatment_type").optional().isString(),
+    (0, express_validator_1.body)("past_history_treatment_date")
+        .optional()
+        .isISO8601()
+        .withMessage("Past history treatment date must be a valid date (YYYY-MM-DD)"),
+    (0, express_validator_1.body)("past_history_treatment_note").optional().isString(),
+    (0, express_validator_1.body)("past_history_treatment_response").optional().isString(),
+    (0, express_validator_1.body)("previous_reports").optional().isString(),
+    (0, express_validator_1.body)("notes").optional().isString(),
     (0, express_validator_1.body)("follow_up_date")
         .optional()
         .isISO8601()

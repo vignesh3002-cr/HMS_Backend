@@ -11,7 +11,10 @@ export class AuthRepository {
   async findUserByUsername(username: string) {
     return prisma.user_table.findFirst({
       where: {
-        username: username,
+        username: {
+          equals: username,
+          mode: "insensitive",
+        },
       },
       include: {
         branch: true,

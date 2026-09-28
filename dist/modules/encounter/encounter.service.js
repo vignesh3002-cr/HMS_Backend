@@ -267,6 +267,26 @@ class EncounterService {
             follow_up_date: data.follow_up_date
                 ? new Date(data.follow_up_date)
                 : undefined,
+            history_of_present_illness: data.history_of_present_illness,
+            cns_examination: data.cns_examination,
+            cvs_examination: data.cvs_examination,
+            per_abdomen_examination: data.per_abdomen_examination,
+            clinical_findings: data.clinical_findings,
+            respiratory_examination: data.respiratory_examination,
+            general_examination_icterus: data.general_examination_icterus,
+            general_examination_pallor: data.general_examination_pallor,
+            general_examination_clubbing: data.general_examination_clubbing,
+            general_examination_cyanosis: data.general_examination_cyanosis,
+            general_examination_oedema: data.general_examination_oedema,
+            general_examination_lymphadenopathy: data.general_examination_lymphadenopathy,
+            past_history_treatment_type: data.past_history_treatment_type,
+            past_history_treatment_date: data.past_history_treatment_date
+                ? new Date(data.past_history_treatment_date)
+                : undefined,
+            past_history_treatment_note: data.past_history_treatment_note,
+            past_history_treatment_response: data.past_history_treatment_response,
+            previous_reports: data.previous_reports,
+            notes: data.notes,
             height: data.height,
             weight: data.weight,
             pulse: data.pulse,

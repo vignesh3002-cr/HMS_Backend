@@ -49,4 +49,8 @@ exports.updateLabOrderItemValidation = [
         .optional()
         .isString()
         .withMessage("Remarks must be a string"),
+    (0, express_validator_1.body)("item_status")
+        .optional()
+        .isString()
+        .withMessage("Item status must be a string"),
 ];

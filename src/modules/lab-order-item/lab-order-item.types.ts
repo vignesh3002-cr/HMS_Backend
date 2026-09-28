@@ -9,4 +9,6 @@ export interface CreateLabOrderItemDto {
 }
 
 export interface UpdateLabOrderItemDto
-    extends Partial<CreateLabOrderItemDto> {}
+    extends Partial<CreateLabOrderItemDto> {
+    item_status?: string;
+}

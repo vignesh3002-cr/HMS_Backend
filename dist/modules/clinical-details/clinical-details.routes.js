@@ -16,6 +16,9 @@ router.get('/master/symptoms', auth_middleware_1.authenticate, clinical_details_
 router.post('/master/allergies', auth_middleware_1.authenticate, clinical_details_validation_1.createAllergyValidation, controller.createAllergy.bind(controller));
 router.put('/master/allergies/:id', auth_middleware_1.authenticate, clinical_details_validation_1.updateAllergyValidation, controller.updateAllergy.bind(controller));
 router.get('/master/allergies', auth_middleware_1.authenticate, clinical_details_validation_1.getMasterListValidation, controller.getAllergies.bind(controller));
+// Comorbidity master (comorbidity_master): the full active list for the
+// Consultation step's Comorbidities picker.
+router.get('/master/comorbidities', auth_middleware_1.authenticate, clinical_details_validation_1.getComorbidityMasterValidation, controller.getComorbidityMaster.bind(controller));
 // Custom "Others" master creation (Doctor/Clinician access)
 router.post('/master/symptoms/custom', auth_middleware_1.authenticate, clinical_details_validation_1.createCustomSymptomValidation, controller.createCustomSymptom.bind(controller));
 router.post('/master/allergies/custom', auth_middleware_1.authenticate, clinical_details_validation_1.createCustomAllergyValidation, controller.createCustomAllergy.bind(controller));

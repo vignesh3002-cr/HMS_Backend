@@ -221,6 +221,59 @@ class PrescriptionController {
             });
         }
     }
+    async searchMedicines(req, res) {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+            const medicines = await service.searchMedicines({
+                search: req.query.search,
+                limit: req.query.limit ? Number(req.query.limit) : undefined
+            });
+            return res.json({
+                success: true,
+                message: "Medicines fetched successfully",
+                data: medicines
+            });
+        }
+        catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+    async createMedicine(req, res) {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+            const { medicine, created } = await service.createMedicine(req.body, req.user?.username);
+            return res.status(created ? 201 : 200).json({
+                success: true,
+                message: created
+                    ? "Medicine added to master successfully"
+                    : "Medicine already exists in master",
+                data: medicine
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
     async getPrescriptionsByPatientHistoryId(req, res) {
         try {
             const patientHistoryId = String(req.params.patientHistoryId);

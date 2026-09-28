@@ -21,6 +21,12 @@ router.get(
     controller.getAll.bind(controller)
 );
 
+router.post(
+    "/generate-barcode",
+    authenticate,
+    controller.generateBarcodes.bind(controller)
+);
+
 router.get(
     "/:id",
     authenticate,

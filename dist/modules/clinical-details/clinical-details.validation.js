@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createCustomComorbidityValidation = exports.createCustomAllergyValidation = exports.createCustomSymptomValidation = exports.getMasterListValidation = exports.getClinicalDetailsValidation = exports.updatePatientComorbidityValidation = exports.createPatientComorbidityValidation = exports.updatePatientAllergyValidation = exports.createPatientAllergyValidation = exports.updateEncounterSymptomValidation = exports.createEncounterSymptomValidation = exports.createEncounterPerformanceStatusValidation = exports.updateAllergyValidation = exports.createAllergyValidation = exports.updateSymptomValidation = exports.createSymptomValidation = exports.updatePerformanceStatusValidation = exports.createPerformanceStatusValidation = void 0;
+exports.createCustomComorbidityValidation = exports.getComorbidityMasterValidation = exports.createCustomAllergyValidation = exports.createCustomSymptomValidation = exports.getMasterListValidation = exports.getClinicalDetailsValidation = exports.updatePatientComorbidityValidation = exports.createPatientComorbidityValidation = exports.updatePatientAllergyValidation = exports.createPatientAllergyValidation = exports.updateEncounterSymptomValidation = exports.createEncounterSymptomValidation = exports.createEncounterPerformanceStatusValidation = exports.updateAllergyValidation = exports.createAllergyValidation = exports.updateSymptomValidation = exports.createSymptomValidation = exports.updatePerformanceStatusValidation = exports.createPerformanceStatusValidation = void 0;
 const express_validator_1 = require("express-validator");
 exports.createPerformanceStatusValidation = [
     (0, express_validator_1.body)('code')
@@ -344,11 +344,11 @@ exports.createPatientComorbidityValidation = [
         .withMessage('Patient ID is required')
         .isLength({ max: 20 })
         .withMessage('Invalid patient ID'),
-    (0, express_validator_1.body)('diagnosisId')
+    (0, express_validator_1.body)('comorbidityId')
         .notEmpty()
-        .withMessage('Diagnosis ID is required')
-        .isLength({ max: 20 })
-        .withMessage('Invalid diagnosis ID'),
+        .withMessage('Comorbidity is required')
+        .isInt({ min: 1 })
+        .withMessage('Invalid comorbidity ID'),
     (0, express_validator_1.body)('status')
         .optional()
         .isIn(['ACTIVE', 'INACTIVE', 'HISTORY', 'RESOLVED'])
@@ -439,23 +439,31 @@ exports.createCustomAllergyValidation = [
         .isLength({ max: 150 })
         .withMessage('Substance name must not exceed 150 characters'),
 ];
+exports.getComorbidityMasterValidation = [
+    (0, express_validator_1.query)('search')
+        .optional()
+        .isLength({ max: 100 })
+        .withMessage('Search term must not exceed 100 characters'),
+    (0, express_validator_1.query)('category')
+        .optional()
+        .isLength({ max: 100 })
+        .withMessage('Category must not exceed 100 characters'),
+];
 exports.createCustomComorbidityValidation = [
-    (0, express_validator_1.body)('diagnosisName')
+    (0, express_validator_1.body)('comorbidityName')
         .trim()
         .notEmpty()
-        .withMessage('Diagnosis name is required')
-        .isLength({ max: 100 })
-        .withMessage('Diagnosis name must not exceed 100 characters'),
-    (0, express_validator_1.body)('diagnosisCatogoryId')
+        .withMessage('Comorbidity name is required')
+        .isLength({ max: 255 })
+        .withMessage('Comorbidity name must not exceed 255 characters'),
+    (0, express_validator_1.body)('category')
         .optional()
+        .trim()
         .isLength({ max: 100 })
-        .withMessage('Invalid diagnosis category'),
-    (0, express_validator_1.body)('diagnosisCategory')
-        .optional()
-        .isLength({ max: 100 })
-        .withMessage('Invalid diagnosis category name'),
+        .withMessage('Category must not exceed 100 characters'),
     (0, express_validator_1.body)('icdCode')
         .optional()
-        .isLength({ max: 100 })
-        .withMessage('ICD code must not exceed 100 characters'),
+        .trim()
+        .isLength({ max: 20 })
+        .withMessage('ICD code must not exceed 20 characters'),
 ];

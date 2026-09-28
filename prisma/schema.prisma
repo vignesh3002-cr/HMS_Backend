@@ -81,10 +81,10 @@ model admission {
   updated_at             DateTime?                @default(now()) @db.Timestamp(6)
   bed_master             bed_master?              @relation(fields: [bed_id], references: [bed_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_bed")
   branch                 branch                   @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_branch")
+  department_master      department_master?       @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_department")
+  employees              employees?               @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_employee")
   patient_bio_data       patient_bio_data         @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_patient")
   ward_master            ward_master?             @relation(fields: [ward_id], references: [ward_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_ward")
-  employees              employees?               @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_employee")
-  department_master      department_master?       @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_department")
   admission_transfer_log admission_transfer_log[]
 
   @@index([appointment_id], map: "idx_admission_appointment")
@@ -377,6 +377,7 @@ model cancer_grade_master {
   cancer_types   cancer_types @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_cancer_grade_cancer_type")
 
   @@index([cancer_type_id], map: "idx_cancer_grade_type")
+
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -433,6 +434,7 @@ model cancer_types {
   diagnosis_id                  String?                         @db.VarChar
   anatomical_site_master        anatomical_site_master[]
   cancer_grade_master           cancer_grade_master[]
+
   cancer_score                  cancer_score[]
   cancer_subtypes               cancer_subtypes[]
   diagnosis                     diagnosis?                      @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction)
@@ -1142,8 +1144,8 @@ model comorbidity_master {
 model department_master {
   department_id       String                @id(map: "department_pkey") @db.VarChar(100)
   department_name     String                @db.VarChar(100)
-  appointment_history appointment_history[]
   admission           admission[]
+  appointment_history appointment_history[]
   chemotherapy_master chemotherapy_master[]
   chemotherapy_plan   chemotherapy_plan[]
   employees           employees[]
@@ -1419,8 +1421,8 @@ model employees {
   permanent_employee_pincode                                                         BigInt?
   qualification_id                                                                   String?                        @db.VarChar(100)
   deleted_at                                                                         DateTime?                      @db.Timestamp(6)
-  appointment_history                                                                appointment_history[]
   admission                                                                          admission[]
+  appointment_history                                                                appointment_history[]
   chemotherapy_administration_chemotherapy_administration_verified_byToemployees     chemotherapy_administration[]  @relation("chemotherapy_administration_verified_byToemployees")
   chemotherapy_administration_chemotherapy_administration_administered_byToemployees chemotherapy_administration[]  @relation("chemotherapy_administration_administered_byToemployees")
   chemotherapy_adverse_event_chemotherapy_adverse_event_physician_idToemployees      chemotherapy_adverse_event[]   @relation("chemotherapy_adverse_event_physician_idToemployees")
@@ -1909,6 +1911,7 @@ model lab_test_master {
   user_id              String?            @db.VarChar(100)
   created_at           DateTime?          @default(now()) @db.Timestamp(6)
   updated_at           DateTime?          @default(now()) @db.Timestamp(6)
+
   outsource_lab        String?            @db.VarChar(100)
   is_outsourced        Boolean?           @default(false)
   encounter_report     encounter_report[]
@@ -2080,6 +2083,7 @@ model oncology_staging_detail {
   visit_date                    DateTime?           @db.Date
   diagnosis_date                DateTime?           @db.Date
   biopsy_date                   DateTime?           @db.Date
+
   progression_date              DateTime?           @db.Date
   relapse_date                  DateTime?           @db.Date
   consulting_oncologist         String?             @db.VarChar(100)
@@ -2104,6 +2108,7 @@ model oncology_staging_detail {
   disease_status                String?             @db.VarChar(100)
   grade                         String?             @db.VarChar(100)
   grade_system                  String?             @db.VarChar(100)
+
   score                         String?
   score_system                  String?             @db.VarChar(255)
   pre_diagnosis                 String?
