@@ -1,6 +1,16 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../config/prisma';
 
+const comorbidityMasterSelect = {
+    id: true,
+    code: true,
+    comorbidity_name: true,
+    category: true,
+    icd_code: true,
+    is_custom: true,
+    is_active: true,
+} as const;
+
 export class ClinicalDetailsRepository {
     async findPerformanceStatusById(id: number) {
         return prisma.performance_status_master.findUnique({
@@ -186,14 +196,44 @@ export class ClinicalDetailsRepository {
         });
     }
 
-    async findDiagnosisByName(diagnosisName: string) {
-        return prisma.diagnosis.findFirst({
-            where: { diagnosis_name: { equals: diagnosisName, mode: 'insensitive' } },
+    // Active comorbidity_master rows for the Comorbidities picker, grouped
+    // by category. Every search word must match the name, category or ICD.
+    async getComorbidityMaster(query: { search?: string; category?: string }) {
+        const words = (query.search ?? '').trim().split(/\s+/).filter(Boolean);
+        return prisma.comorbidity_master.findMany({
+            where: {
+                is_active: true,
+                ...(query.category ? { category: query.category } : {}),
+                AND: words.map((word) => ({
+                    OR: [
+                        { comorbidity_name: { contains: word, mode: 'insensitive' as const } },
+                        { category: { contains: word, mode: 'insensitive' as const } },
+                        { icd_code: { contains: word, mode: 'insensitive' as const } },
+                    ],
+                })),
+            },
+            select: comorbidityMasterSelect,
+            orderBy: [{ category: 'asc' }, { comorbidity_name: 'asc' }],
         });
     }
 
-    async createDiagnosis(data: Prisma.diagnosisUncheckedCreateInput) {
-        return prisma.diagnosis.create({ data });
+    async findComorbidityByName(comorbidityName: string) {
+        return prisma.comorbidity_master.findFirst({
+            where: { comorbidity_name: { equals: comorbidityName, mode: 'insensitive' } },
+            select: comorbidityMasterSelect,
+        });
+    }
+
+    async findComorbidityByCode(code: string) {
+        return prisma.comorbidity_master.findUnique({ where: { code } });
+    }
+
+    async findComorbidityById(id: bigint) {
+        return prisma.comorbidity_master.findUnique({ where: { id } });
+    }
+
+    async createComorbidity(data: Prisma.comorbidity_masterUncheckedCreateInput) {
+        return prisma.comorbidity_master.create({ data, select: comorbidityMasterSelect });
     }
 
     async findEncounterByNo(encounterNo: string) {
@@ -365,7 +405,7 @@ export class ClinicalDetailsRepository {
         return prisma.patient_comorbidity.findMany({
             where: { patient_id: patientId },
             include: {
-                diagnosis: true,
+                comorbidity_master: { select: comorbidityMasterSelect },
                 employees: { select: { employee_id: true, first_name: true, last_name: true } },
                 encounter: { select: { encounter_no: true, encounter_ts: true } },
             },
@@ -373,11 +413,11 @@ export class ClinicalDetailsRepository {
         });
     }
 
-    async findPatientComorbidity(patientId: string, diagnosisId: string, status?: string) {
+    async findPatientComorbidity(patientId: string, comorbidityId: bigint, status?: string) {
         return prisma.patient_comorbidity.findFirst({
             where: {
                 patient_id: patientId,
-                diagnosis_id: diagnosisId,
+                comorbidity_id: comorbidityId,
                 ...(status ? { status } : {}),
             },
         });
@@ -387,7 +427,7 @@ export class ClinicalDetailsRepository {
         return prisma.patient_comorbidity.findUnique({
             where: { id: recordId },
             include: {
-                diagnosis: true,
+                comorbidity_master: { select: comorbidityMasterSelect },
                 patient_bio_data: { select: { patient_id: true } },
             },
         });
@@ -409,7 +449,7 @@ export class ClinicalDetailsRepository {
             where: { id: recordId },
             data: { ...data, updated_at: new Date() },
             include: {
-                diagnosis: true,
+                comorbidity_master: { select: comorbidityMasterSelect },
                 employees: { select: { employee_id: true, first_name: true, last_name: true } },
             },
         });
@@ -486,9 +526,11 @@ export class ClinicalDetailsRepository {
             })),
             comorbidities: comorbidities.map((c) => ({
                 id: c.id,
-                diagnosisId: c.diagnosis_id,
-                diagnosisName: c.diagnosis.diagnosis_name,
-                icdCode: c.diagnosis.icd_code,
+                comorbidityId: c.comorbidity_id,
+                comorbidityCode: c.comorbidity_master.code,
+                comorbidityName: c.comorbidity_master.comorbidity_name,
+                category: c.comorbidity_master.category,
+                icdCode: c.comorbidity_master.icd_code,
                 status: c.status,
                 onsetDate: c.onset_date,
                 identifiedAt: c.identified_at,

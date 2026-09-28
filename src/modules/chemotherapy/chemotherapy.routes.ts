@@ -10,6 +10,11 @@ import {
     listPlansValidation,
     addPlanItemValidation,
     updatePlanItemValidation,
+    planHydrationValidation,
+    replacePlanItemsValidation,
+    planOrderParamValidation,
+    savePlanOrderValidation,
+    completePlanOrdersValidation,
     createCycleValidation,
     cycleStatusValidation,
     updateCycleValidation,
@@ -381,6 +386,14 @@ router.post(
 );
 
 router.put(
+    "/plans/:planId/items",
+    authenticate,
+    authorize("chemo.plan.update"),
+    replacePlanItemsValidation,
+    controller.replacePlanItems.bind(controller)
+);
+
+router.put(
     "/plans/:planId/items/:planItemId",
     authenticate,
     authorize("chemo.plan.update"),
@@ -393,6 +406,59 @@ router.delete(
     authenticate,
     authorize("chemo.plan.update"),
     controller.removePlanItem.bind(controller)
+);
+
+// ---------------- Plan hydration ----------------
+
+router.get(
+    "/plans/:planId/hydration",
+    authenticate,
+    authorize("chemo.plan.read"),
+    planIdParamValidation,
+    controller.getPlanHydration.bind(controller)
+);
+
+router.put(
+    "/plans/:planId/hydration",
+    authenticate,
+    authorize("chemo.plan.update"),
+    planHydrationValidation,
+    controller.replacePlanHydration.bind(controller)
+);
+
+// ---------------- Cycle day orders ----------------
+// "complete" is registered before the ":cycleNumber/:cycleDay" routes.
+
+router.post(
+    "/plans/:planId/orders/complete",
+    authenticate,
+    authorize("chemo.plan.update"),
+    completePlanOrdersValidation,
+    controller.completePlanOrders.bind(controller)
+);
+
+router.get(
+    "/plans/:planId/orders",
+    authenticate,
+    authorize("chemo.plan.read"),
+    planIdParamValidation,
+    controller.listPlanOrders.bind(controller)
+);
+
+router.get(
+    "/plans/:planId/orders/:cycleNumber/:cycleDay",
+    authenticate,
+    authorize("chemo.plan.read"),
+    planOrderParamValidation,
+    controller.getPlanOrder.bind(controller)
+);
+
+router.put(
+    "/plans/:planId/orders/:cycleNumber/:cycleDay",
+    authenticate,
+    authorize("chemo.plan.update"),
+    savePlanOrderValidation,
+    controller.savePlanOrder.bind(controller)
 );
 
 // ---------------- Cycles ----------------

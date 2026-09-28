@@ -28,6 +28,32 @@ export const updateEncounterValidation = [
     body("clinical_notes").optional().isString(),
     body("advice").optional().isString(),
 
+    body("history_of_present_illness").optional().isString(),
+    body("cns_examination").optional().isString(),
+    body("cvs_examination").optional().isString(),
+    body("per_abdomen_examination").optional().isString(),
+    body("clinical_findings").optional().isString(),
+    body("respiratory_examination").optional().isString(),
+    body("general_examination_icterus").optional().isBoolean(),
+    body("general_examination_pallor").optional().isBoolean(),
+    body("general_examination_clubbing").optional().isBoolean(),
+    body("general_examination_cyanosis").optional().isBoolean(),
+    body("general_examination_oedema").optional().isBoolean(),
+    body("general_examination_lymphadenopathy").optional().isBoolean(),
+    body("general_examination_others").optional({ nullable: true }).isArray(),
+    body("general_examination_others.*.code").isString(),
+    body("general_examination_others.*.name").isString(),
+
+    body("past_history_treatment_type").optional().isString(),
+    body("past_history_treatment_date")
+        .optional()
+        .isISO8601()
+        .withMessage("Past history treatment date must be a valid date (YYYY-MM-DD)"),
+    body("past_history_treatment_note").optional().isString(),
+    body("past_history_treatment_response").optional().isString(),
+    body("previous_reports").optional().isString(),
+    body("notes").optional().isString(),
+
     body("follow_up_date")
         .optional()
         .isISO8601()

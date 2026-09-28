@@ -21,8 +21,15 @@ export function diffFields(before: Record<string, any>, changes: Record<string, 
 
         // Decimal/Date/BigInt don't compare equal with !== even when
         // logically identical - stringify both sides before comparing so
-        // the log only records fields that actually changed.
-        if (JSON.stringify(oldValue) === JSON.stringify(newValue)) {
+        // the log only records fields that actually changed. A Decimal
+        // column stringifies as "178" while the incoming number is 178, so
+        // numbers are compared in the Decimal's string form.
+        const comparable = (value: any) =>
+            Prisma.Decimal.isDecimal(value) || typeof value === "number"
+                ? new Prisma.Decimal(value).toString()
+                : value;
+
+        if (JSON.stringify(comparable(oldValue)) === JSON.stringify(comparable(newValue))) {
             continue;
         }
 

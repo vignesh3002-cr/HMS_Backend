@@ -3,7 +3,8 @@ import prisma from "../../config/prisma";
 import { OncologyRepository } from "./oncology.repository";
 import { validateOncologyRecord } from "./chemo.validation";
 import { deriveOncologyFields, deriveHer2Positive } from "./chemo.derivation";
-import { ENCOUNTER_OPEN_STATUS, ENCOUNTER_RECENCY_WINDOW_DAYS } from "./oncology.constants";
+import { ENCOUNTER_OPEN_STATUS, ENCOUNTER_RECENCY_WINDOW_DAYS, LATERALITY_CANCER_TYPES } from "./oncology.constants";
+import { parseTnmValues } from "./tnm.parser";
 import { logAudit, diffFields, summarizeCreate } from "../audit/audit.service";
 import { AUDIT_ACTION } from "../audit/audit.types";
 import {
@@ -13,6 +14,7 @@ import {
     RuleViolation,
     ClinicalParameters,
     DerivedOncologyFields,
+    AdditionalCancerDto,
     CreateStagingDetailDto,
     UpdateStagingDetailDto,
     IhcUpsertDto,
@@ -179,7 +181,13 @@ export class OncologyService {
 
     async listCancerTypes() {
 
-        return this.repository.findCancerTypes();
+        const types = await this.repository.findCancerTypes();
+
+        // Laterality is only asked for paired-organ cancers (Section 6.2).
+        return types.map((type) => ({
+            ...type,
+            laterality_applicable: LATERALITY_CANCER_TYPES.includes(type.cancer_type)
+        }));
 
     }
 
@@ -203,7 +211,11 @@ export class OncologyService {
             throw new Error("Cancer type not found");
         }
 
-        return this.repository.findStagingReferenceByType(cancerTypeId);
+        const rows = await this.repository.findStagingReferenceByType(cancerTypeId);
+
+        // The individual, storable T / N / M values each criteria phrase
+        // names - the Diagnosis T / N / M dropdowns are built from these.
+        return rows.map((row) => ({ ...row, ...parseTnmValues(row.tnm_criteria) }));
 
     }
 
@@ -216,6 +228,42 @@ export class OncologyService {
     async listMolecularSubtypes() {
 
         return this.repository.findMolecularSubtypes();
+
+    }
+
+    async listAnatomicalSites(cancerTypeId: string) {
+
+        const cancerType = await this.repository.findCancerTypeById(cancerTypeId);
+
+        if (!cancerType) {
+            throw new Error("Cancer type not found");
+        }
+
+        return this.repository.findAnatomicalSitesByType(cancerTypeId);
+
+    }
+
+    async listCancerGrades(cancerTypeId: string) {
+
+        const cancerType = await this.repository.findCancerTypeById(cancerTypeId);
+
+        if (!cancerType) {
+            throw new Error("Cancer type not found");
+        }
+
+        return this.repository.findCancerGradesByType(cancerTypeId);
+
+    }
+
+    async listCancerScores(cancerTypeId: string) {
+
+        const cancerType = await this.repository.findCancerTypeById(cancerTypeId);
+
+        if (!cancerType) {
+            throw new Error("Cancer type not found");
+        }
+
+        return this.repository.findCancerScoresByType(cancerTypeId);
 
     }
 
@@ -261,6 +309,83 @@ export class OncologyService {
 
     }
 
+    // Laterality is only recorded for paired-organ cancers.
+    private assertLateralityApplies(cancerTypeName: string, laterality: string | null | undefined) {
+
+        if (laterality && laterality !== "NA" && !LATERALITY_CANCER_TYPES.includes(cancerTypeName)) {
+            throw new Error(`Laterality does not apply to ${cancerTypeName}`);
+        }
+
+    }
+
+    // Secondary cancer types of a multi-type diagnosis. Each must exist,
+    // differ from the primary type and appear once; its optional subtype
+    // must belong to it.
+    private async resolveAdditionalCancers(primaryCancerTypeId: string, list: AdditionalCancerDto[]) {
+
+        const seen = new Set<string>();
+        const rows: {
+            cancer_type_id: string;
+            cancer_subtype_id: string | null;
+            laterality: string | null;
+            t_stage: string | null;
+            n_stage: string | null;
+            m_stage: string | null;
+        }[] = [];
+
+        for (const entry of list) {
+
+            const cancerType = await this.repository.findCancerTypeById(entry.cancer_type_id);
+
+            if (!cancerType) {
+                throw new Error(`Cancer type not found: ${entry.cancer_type_id}`);
+            }
+
+            if (entry.cancer_type_id === primaryCancerTypeId) {
+                throw new Error(`${cancerType.cancer_type} is already the primary cancer type`);
+            }
+
+            if (seen.has(entry.cancer_type_id)) {
+                throw new Error(`${cancerType.cancer_type} is selected more than once`);
+            }
+
+            seen.add(entry.cancer_type_id);
+
+            let subtypeId: string | null = null;
+
+            if (entry.cancer_subtype_id) {
+
+                const subtype = await this.repository.findCancerSubtypeById(entry.cancer_subtype_id);
+
+                if (!subtype) {
+                    throw new Error("Cancer subtype not found");
+                }
+
+                if (subtype.cancer_type_id !== entry.cancer_type_id) {
+                    throw new Error(`Selected subtype does not belong to ${cancerType.cancer_type}`);
+                }
+
+                subtypeId = subtype.subtype_id;
+
+            }
+
+            this.assertLateralityApplies(cancerType.cancer_type, entry.laterality);
+
+            rows.push({
+                cancer_type_id: entry.cancer_type_id,
+                cancer_subtype_id: subtypeId,
+                laterality: entry.laterality || null,
+                t_stage: entry.t_stage || null,
+                n_stage: entry.n_stage || null,
+                m_stage: entry.m_stage || null
+            });
+
+        }
+
+        return rows;
+
+    }
+
     // A staging detail may only be recorded for a patient who has actually
     // been seen: their most recent encounter must be OPEN, or closed but
     // still within ENCOUNTER_RECENCY_WINDOW_DAYS (covers biopsy/pathology
@@ -301,7 +426,36 @@ export class OncologyService {
 
         const encounter = await this.resolveQualifyingEncounter(dto.patient_id);
 
+        // The visit this diagnosis is recorded in: the one named (it must be
+        // this patient's), else the qualifying encounter. One staging detail
+        // per visit - re-saving in the same visit updates that row.
+        let encounterNo = encounter.encounter_no;
+
+        if (dto.encounter_no && dto.encounter_no !== encounter.encounter_no) {
+
+            const named = await this.repository.findEncounterByNumber(dto.encounter_no);
+
+            if (!named || named.patient_id !== dto.patient_id) {
+                throw new Error("The encounter does not belong to this patient");
+            }
+
+            encounterNo = named.encounter_no;
+
+        }
+
+        const existingForVisit = await this.repository.findStagingDetailByEncounter(encounterNo);
+
+        if (existingForVisit) {
+            throw new Error(
+                `This visit (${encounterNo}) already has a staging detail (${existingForVisit.staging_detail_id}) - update it instead`
+            );
+        }
+
         const { cancerType, subtype } = await this.resolveCancerTypeAndSubtype(dto.cancer_type_id, dto.cancer_subtype_id);
+
+        this.assertLateralityApplies(cancerType.cancer_type, dto.laterality);
+
+        const additionalCancers = await this.resolveAdditionalCancers(dto.cancer_type_id, dto.additional_cancers ?? []);
 
         const diagnosis = dto.diagnosis_id
             ? await this.repository.findDiagnosisById(dto.diagnosis_id)
@@ -329,7 +483,13 @@ export class OncologyService {
             t_stage: dto.t_stage ?? null,
             n_stage: dto.n_stage ?? null,
             m_stage: dto.m_stage ?? null,
-            metastasis_sites: dto.metastasis_sites ?? null
+            metastasis_sites: dto.metastasis_sites ?? null,
+            laterality: dto.laterality ?? null,
+            site: dto.site ?? null,
+            grade: dto.grade ?? null,
+            grade_system: dto.grade_system ?? null,
+            pre_diagnosis: dto.pre_diagnosis ?? null,
+            disease_status: dto.disease_status ?? null
         };
 
         const ihc: IhcInput = { ...(dto.ihc ?? {}) };
@@ -361,8 +521,11 @@ export class OncologyService {
                 patient_id: dto.patient_id,
                 patient_history_id: dto.patient_history_id ?? null,
                 diagnosis_id: dto.diagnosis_id ?? null,
+                encounter_no: encounterNo,
                 visit_date: dto.visit_date ? new Date(dto.visit_date) : null,
                 diagnosis_date: dto.diagnosis_date ? new Date(dto.diagnosis_date) : null,
+                progression_date: dto.progression_date ? new Date(dto.progression_date) : null,
+                relapse_date: dto.relapse_date ? new Date(dto.relapse_date) : null,
                 biopsy_date: dto.biopsy_date ? new Date(dto.biopsy_date) : null,
                 consulting_oncologist: dto.consulting_oncologist ?? null,
                 cancer_type_id: dto.cancer_type_id,
@@ -377,6 +540,14 @@ export class OncologyService {
                 m_stage: dto.m_stage ?? null,
                 metastasis_sites: jsonOrUndefined(dto.metastasis_sites) ?? Prisma.JsonNull,
                 laterality: dto.laterality ?? null,
+                pre_diagnosis: dto.pre_diagnosis ?? null,
+                disease_status: dto.disease_status ?? null,
+                site: dto.site ?? null,
+                grade: dto.grade ?? null,
+                grade_system: dto.grade_system ?? null,
+                score: dto.score ?? null,
+                score_system: dto.score_system ?? null,
+                notes: dto.notes ?? null,
                 performance_status: dto.performance_status ?? null,
                 // Default to whoever actually saw the patient in the
                 // qualifying encounter, unless the caller explicitly names
@@ -385,6 +556,10 @@ export class OncologyService {
                 branch_id: dto.branch_id ?? encounter.branch_id ?? null,
                 user_id: actingUserId
             });
+
+            if (additionalCancers.length > 0) {
+                await this.repository.replaceAdditionalCancers(tx, newId, additionalCancers);
+            }
 
             if (dto.ihc) {
                 await this.repository.upsertIhcResults(tx, newId, dto.ihc);
@@ -406,6 +581,7 @@ export class OncologyService {
                 change_summary: summarizeCreate({
                     cancer_type_id: dto.cancer_type_id,
                     cancer_subtype_id: dto.cancer_subtype_id,
+                    additional_cancers: additionalCancers,
                     clinical_stage: dto.clinical_stage ?? null,
                     diagnosis_id: dto.diagnosis_id ?? null
                 })
@@ -475,6 +651,13 @@ export class OncologyService {
 
         }
 
+        this.assertLateralityApplies(cancerType.cancer_type, dto.laterality);
+
+        const finalCancerTypeId = dto.cancer_type_id ?? existing.cancer_type_id;
+        const additionalCancers = dto.additional_cancers !== undefined && dto.additional_cancers !== null
+            ? await this.resolveAdditionalCancers(finalCancerTypeId, dto.additional_cancers)
+            : null;
+
         const staging: StagingInput = {
             cancer_type: cancerType.cancer_type,
             clinical_stage: dto.clinical_stage !== undefined ? dto.clinical_stage : existing.clinical_stage,
@@ -483,7 +666,13 @@ export class OncologyService {
             m_stage: dto.m_stage !== undefined ? dto.m_stage : existing.m_stage,
             metastasis_sites: dto.metastasis_sites !== undefined
                 ? dto.metastasis_sites
-                : (existing.metastasis_sites as unknown as string[] | null)
+                : (existing.metastasis_sites as unknown as string[] | null),
+            laterality: dto.laterality !== undefined ? dto.laterality : existing.laterality,
+            site: dto.site !== undefined ? dto.site : existing.site,
+            grade: dto.grade !== undefined ? dto.grade : existing.grade,
+            grade_system: dto.grade_system !== undefined ? dto.grade_system : existing.grade_system,
+            pre_diagnosis: dto.pre_diagnosis !== undefined ? dto.pre_diagnosis : existing.pre_diagnosis,
+            disease_status: dto.disease_status !== undefined ? dto.disease_status : existing.disease_status
         };
 
         const ihc: IhcInput = { ...mapIhcRowToInput(existing.ihc_results), ...(dto.ihc ?? {}) };
@@ -512,6 +701,8 @@ export class OncologyService {
             ...(dto.diagnosis_id !== undefined && dto.diagnosis_id !== null ? { diagnosis_id: dto.diagnosis_id } : {}),
             ...(dto.visit_date !== undefined ? { visit_date: dto.visit_date ? new Date(dto.visit_date) : null } : {}),
             ...(dto.diagnosis_date !== undefined ? { diagnosis_date: dto.diagnosis_date ? new Date(dto.diagnosis_date) : null } : {}),
+            ...(dto.progression_date !== undefined ? { progression_date: dto.progression_date ? new Date(dto.progression_date) : null } : {}),
+            ...(dto.relapse_date !== undefined ? { relapse_date: dto.relapse_date ? new Date(dto.relapse_date) : null } : {}),
             ...(dto.biopsy_date !== undefined ? { biopsy_date: dto.biopsy_date ? new Date(dto.biopsy_date) : null } : {}),
             ...(dto.consulting_oncologist !== undefined && dto.consulting_oncologist !== null ? { consulting_oncologist: dto.consulting_oncologist } : {}),
             ...(subtypeChanging ? {
@@ -528,6 +719,14 @@ export class OncologyService {
             ...(dto.m_stage !== undefined && dto.m_stage !== null ? { m_stage: dto.m_stage } : {}),
             ...(dto.metastasis_sites !== undefined ? { metastasis_sites: jsonOrUndefined(dto.metastasis_sites) } : {}),
             ...(dto.laterality !== undefined && dto.laterality !== null ? { laterality: dto.laterality } : {}),
+            ...(dto.pre_diagnosis !== undefined && dto.pre_diagnosis !== null ? { pre_diagnosis: dto.pre_diagnosis } : {}),
+            ...(dto.disease_status !== undefined && dto.disease_status !== null ? { disease_status: dto.disease_status } : {}),
+            ...(dto.site !== undefined && dto.site !== null ? { site: dto.site } : {}),
+            ...(dto.grade !== undefined && dto.grade !== null ? { grade: dto.grade } : {}),
+            ...(dto.grade_system !== undefined && dto.grade_system !== null ? { grade_system: dto.grade_system } : {}),
+            ...(dto.score !== undefined ? { score: dto.score || null } : {}),
+            ...(dto.score_system !== undefined ? { score_system: dto.score_system || null } : {}),
+            ...(dto.notes !== undefined ? { notes: dto.notes || null } : {}),
             ...(dto.performance_status !== undefined && dto.performance_status !== null ? { performance_status: dto.performance_status } : {}),
             ...(dto.employee_id !== undefined && dto.employee_id !== null ? { employee_id: dto.employee_id } : {}),
             ...(dto.branch_id !== undefined && dto.branch_id !== null ? { branch_id: dto.branch_id } : {})
@@ -536,6 +735,13 @@ export class OncologyService {
         await prisma.$transaction(async (tx) => {
 
             await this.repository.updateStagingDetail(tx, stagingDetailId, stagingChanges);
+
+            if (additionalCancers) {
+                await this.repository.replaceAdditionalCancers(tx, stagingDetailId, additionalCancers);
+            } else if (finalCancerTypeId !== existing.cancer_type_id) {
+                // The new primary type can't also stay listed as an additional one.
+                await this.repository.removeAdditionalCancerType(tx, stagingDetailId, finalCancerTypeId);
+            }
 
             if (dto.ihc) {
                 await this.repository.upsertIhcResults(tx, stagingDetailId, dto.ihc);
@@ -547,7 +753,12 @@ export class OncologyService {
 
             await this.repository.upsertDerivedFields(tx, stagingDetailId, derivedPersistPayload(derived));
 
-            const auditChanges = { ...stagingChanges, ...(dto.ihc ?? {}), ...(dto.molecular ?? {}) };
+            const auditChanges = {
+                ...stagingChanges,
+                ...(additionalCancers ? { additional_cancers: additionalCancers } : {}),
+                ...(dto.ihc ?? {}),
+                ...(dto.molecular ?? {})
+            };
 
             if (Object.keys(auditChanges).length > 0) {
 
@@ -558,7 +769,19 @@ export class OncologyService {
                     performed_by: actingUserId,
                     patient_id: existing.patient_id,
                     branch_id: (dto.branch_id ?? existing.branch_id) ?? null,
-                    change_summary: diffFields({ ...existing, ...mapIhcRowToInput(existing.ihc_results), ...mapMolecularRowToInput(existing.molecular_results) }, auditChanges)
+                    change_summary: diffFields({
+                        ...existing,
+                        additional_cancers: existing.oncology_staging_additional_cancers.map((cancer) => ({
+                            cancer_type_id: cancer.cancer_type_id,
+                            cancer_subtype_id: cancer.cancer_subtype_id,
+                            laterality: cancer.laterality,
+                            t_stage: cancer.t_stage,
+                            n_stage: cancer.n_stage,
+                            m_stage: cancer.m_stage
+                        })),
+                        ...mapIhcRowToInput(existing.ihc_results),
+                        ...mapMolecularRowToInput(existing.molecular_results)
+                    }, auditChanges)
                 });
 
             }

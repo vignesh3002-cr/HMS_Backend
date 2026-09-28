@@ -1,5 +1,8 @@
+// A medicine from medicine_master, or - for a drug name the doctor typed
+// on the chemotherapy order - no medicine_id and a free-text drug_name.
 export interface MedicineItemDto {
-    medicine_id: string;
+    medicine_id?: string | null;
+    drug_name?: string | null;
     dosage?: string;
     unit?: string;
     route?: string;
@@ -39,7 +42,8 @@ export interface UpdatePrescriptionDto {
 export interface AddPrescriptionItemDto extends MedicineItemDto {}
 
 export interface UpdatePrescriptionItemDto {
-    medicine_id?: string;
+    medicine_id?: string | null;
+    drug_name?: string | null;
     dosage?: string;
     unit?: string;
     route?: string;
@@ -54,6 +58,18 @@ export interface UpdatePrescriptionItemDto {
     instruction?: string;
     drug_role?: string;
     drug_type?: string;
+}
+
+export interface SearchMedicinesQuery {
+    search?: string;
+    limit?: number;
+}
+
+export interface CreateMedicineDto {
+    medicine_name: string;
+    dosage_form?: string;
+    unit?: string;
+    strength?: string;
 }
 
 export interface GetPrescriptionsQuery {

@@ -10,7 +10,10 @@ export const previewPlanValidation = [
 export const listRegimenProtocolsValidation = [
 
     query("cancer_type_id").optional().notEmpty(),
-    query("subtype_id").optional().notEmpty()
+    query("subtype_id").optional().notEmpty(),
+    // Comma-separated lists, e.g. cancer_type_ids=CT021,CT020
+    query("cancer_type_ids").optional().isString(),
+    query("subtype_ids").optional().isString()
 
 ];
 
@@ -376,18 +379,37 @@ export const createPlanValidation = [
         .custom((value) => value === true)
         .withMessage("confirm_suggested_therapy must be true"),
     body("plan_items").optional({ nullable: true }).isArray({ min: 1 }).withMessage("plan_items, if provided, must be a non-empty array"),
-    body("plan_items.*.medicine_id").notEmpty().withMessage("Each plan item requires a medicine_id"),
+    ...drugIdentityRules("plan_items.*."),
     body("plan_items.*.drug_sequence").isInt({ min: 1 }).withMessage("Each plan item requires a drug_sequence >= 1"),
-    body("plan_items.*.drug_role").optional().isIn(Object.values(DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(DRUG_ROLE).join(", ")}`)
+    body("plan_items.*.drug_role").optional().isIn(Object.values(DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(DRUG_ROLE).join(", ")}`),
+    body("plan_items.*.calculated_dose").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("plan_items.*.calculated_dose_unit").optional({ nullable: true }).isString(),
+    body("plan_items.*.dose_calculation_method").optional({ nullable: true }).isString(),
+    body("dosing_height_cm").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing_weight_kg").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing_bsa").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing_serum_creatinine").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing_crcl").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("remarks").optional({ nullable: true }).isString(),
+    body("discussion").optional({ nullable: true }).isString()
 
 ];
 
 export const updatePlanValidation = [
 
     param("planId").notEmpty(),
+    body("source_protocol_id").optional({ nullable: true }).isString(),
+    body("staging_detail_id").optional({ nullable: true }).isString(),
     body("planned_cycles").optional().isInt({ min: 1 }),
     body("expected_end_date").optional({ nullable: true }).isISO8601(),
-    body("consent_date").optional({ nullable: true }).isISO8601()
+    body("consent_date").optional({ nullable: true }).isISO8601(),
+    body("dosing_height_cm").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing_weight_kg").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing_bsa").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing_serum_creatinine").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing_crcl").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("remarks").optional({ nullable: true }).isString(),
+    body("discussion").optional({ nullable: true }).isString()
 
 ];
 
@@ -407,12 +429,130 @@ export const listPlansValidation = [
 
 ];
 
+// Columns every Chemotherapy Order row can edit.
+// A drug is a medicine from the list (medicine_id) or a name typed for
+// this patient (drug_name, never added to medicine_master).
+function drugIdentityRules(prefix: string) {
+
+    const itemPath = prefix.endsWith(".") ? prefix.slice(0, -1) : prefix;
+
+    return [
+        body(`${prefix}medicine_id`).optional({ nullable: true }).isString(),
+        body(`${prefix}drug_name`).optional({ nullable: true }).isString().isLength({ max: 200 }).withMessage("Drug name must be at most 200 characters"),
+        (itemPath ? body(itemPath) : body())
+            .custom((item) => Boolean(item?.medicine_id) || Boolean(String(item?.drug_name ?? "").trim()))
+            .withMessage("Each drug needs a medicine from the list or a typed drug name")
+    ];
+
+}
+
+// The editable columns of a list of plan item rows (prefix "items.*.").
+function planItemListRules(prefix: string) {
+
+    return [
+        ...drugIdentityRules(prefix),
+        body(`${prefix}drug_sequence`).isInt({ min: 1 }).withMessage("Each plan item requires a drug_sequence >= 1"),
+        body(`${prefix}drug_role`).optional().isIn(Object.values(DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(DRUG_ROLE).join(", ")}`),
+        body(`${prefix}dosage`).optional({ nullable: true }).isFloat({ min: 0 }).withMessage("Dose must be a number"),
+        body(`${prefix}calculated_dose`).optional({ nullable: true }).isFloat({ min: 0 }),
+        body(`${prefix}infusion_duration_minutes`).optional({ nullable: true }).isInt({ min: 0 }).withMessage("Infusion duration must be whole minutes"),
+        body(`${prefix}administration_day`).optional({ nullable: true }).isInt({ min: 1 }),
+        body(`${prefix}formulation`).optional({ nullable: true }).isString().isLength({ max: 100 }),
+        body(`${prefix}administration_route`).optional({ nullable: true }).isString().isLength({ max: 100 }),
+        body(`${prefix}infusion_type`).optional({ nullable: true }).isString().isLength({ max: 100 }),
+        body(`${prefix}frequency`).optional({ nullable: true }).isString().isLength({ max: 100 }),
+        body(`${prefix}timing_relative_to_primary`).optional({ nullable: true }).isString().isLength({ max: 100 })
+    ];
+
+}
+
+function hydrationRowRules(prefix: string) {
+
+    return [
+        body(`${prefix}hydration_stage`).isIn(["PRE", "POST"]).withMessage("Hydration stage must be PRE or POST"),
+        body(`${prefix}agent_name`).optional({ nullable: true }).isString().isLength({ max: 200 }),
+        body(`${prefix}diluent`).optional({ nullable: true }).isString().isLength({ max: 200 }),
+        body(`${prefix}dilution_volume`).optional({ nullable: true }).isFloat({ min: 0 }).withMessage("Hydration volume must be a number"),
+        body(`${prefix}dilution_volume_unit`).optional({ nullable: true }).isString().isLength({ max: 50 }),
+        body(`${prefix}guidance`).optional({ nullable: true }).isString(),
+        body(`${prefix}source_dilution_id`).optional({ nullable: true }).isString()
+    ];
+
+}
+
+const planItemRowRules = [
+    body("infusion_duration_minutes").optional({ nullable: true }).isInt({ min: 0 }).withMessage("Infusion duration must be whole minutes"),
+    body("administration_day").optional({ nullable: true }).isInt({ min: 1 }),
+    body("formulation").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("administration_route").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("infusion_type").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("frequency").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("timing_relative_to_primary").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("administration_detail").optional({ nullable: true }).isString(),
+    body("remarks").optional({ nullable: true }).isString()
+];
+
+export const replacePlanItemsValidation = [
+
+    param("planId").notEmpty(),
+    body("items").isArray().withMessage("items must be an array"),
+    ...planItemListRules("items.*.")
+
+];
+
+// PUT /plans/:planId/orders/:cycleNumber/:cycleDay - one cycle day's full
+// order. hydration is optional: left out, that day's hydration is kept.
+export const planOrderParamValidation = [
+
+    param("planId").notEmpty(),
+    param("cycleNumber").isInt({ min: 1 }).withMessage("Cycle must be at least 1"),
+    param("cycleDay").isInt({ min: 1 }).withMessage("Day must be at least 1")
+
+];
+
+export const savePlanOrderValidation = [
+
+    ...planOrderParamValidation,
+    body("items").isArray().withMessage("items must be an array"),
+    ...planItemListRules("items.*."),
+    body("hydration").optional({ nullable: true }).isArray().withMessage("hydration must be an array"),
+    ...hydrationRowRules("hydration.*."),
+    body("dosing").optional({ nullable: true }).isObject(),
+    body("dosing.height_cm").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing.weight_kg").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing.bsa").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing.serum_creatinine").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("dosing.crcl").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("encounter_no").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("copied_from_order_id").optional({ nullable: true }).isString().isLength({ max: 100 })
+
+];
+
+export const completePlanOrdersValidation = [
+
+    param("planId").notEmpty(),
+    body("encounter_no").isString().notEmpty().withMessage("encounter_no is required")
+
+];
+
+export const planHydrationValidation = [
+
+    param("planId").notEmpty(),
+    body("rows").isArray().withMessage("rows must be an array"),
+    ...hydrationRowRules("rows.*.")
+
+];
+
 export const addPlanItemValidation = [
 
     param("planId").notEmpty(),
-    body("medicine_id").notEmpty().withMessage("medicine_id is required"),
+    ...drugIdentityRules(""),
     body("drug_sequence").isInt({ min: 1 }).withMessage("drug_sequence must be at least 1"),
-    body("drug_role").optional().isIn(Object.values(DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(DRUG_ROLE).join(", ")}`)
+    body("drug_role").optional().isIn(Object.values(DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(DRUG_ROLE).join(", ")}`),
+    body("calculated_dose").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("calculated_dose_unit").optional({ nullable: true }).isString(),
+    body("dose_calculation_method").optional({ nullable: true }).isString(),
+    ...planItemRowRules
 
 ];
 
@@ -420,7 +560,13 @@ export const updatePlanItemValidation = [
 
     param("planId").notEmpty(),
     param("planItemId").notEmpty(),
-    body("drug_sequence").optional().isInt({ min: 1 })
+    body("medicine_id").optional({ nullable: true }).isString().notEmpty().withMessage("medicine_id cannot be blank"),
+    body("drug_name").optional({ nullable: true }).isString().isLength({ max: 200 }).withMessage("Drug name must be at most 200 characters"),
+    body("drug_sequence").optional().isInt({ min: 1 }),
+    ...planItemRowRules,
+    body("calculated_dose").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("calculated_dose_unit").optional({ nullable: true }).isString(),
+    body("dose_calculation_method").optional({ nullable: true }).isString()
 
 ];
 

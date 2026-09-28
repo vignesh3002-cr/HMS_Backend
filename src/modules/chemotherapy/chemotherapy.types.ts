@@ -43,6 +43,7 @@ export interface RegimenProtocolItemDto {
     dosage?: number | null;
     dosage_unit?: string | null;
     dose_calculation_method?: string | null;
+    dosing_basis?: string | null;
     administration_route?: string | null;
     infusion_type?: string | null;
     infusion_duration_minutes?: number | null;
@@ -68,6 +69,7 @@ export interface UpdateRegimenProtocolItemDto {
   dosage?: number | null;
   dosage_unit?: string | null;
   dose_calculation_method?: string | null;
+  dosing_basis?: string | null;
   administration_route?: string | null;
   infusion_type?: string | null;
   infusion_duration_minutes?: number | null;
@@ -129,6 +131,10 @@ export interface RegimenProtocolFilterQuery {
 
     cancer_type_id?: string;
     subtype_id?: string;
+    // Multi-select Diagnosis: every selected cancer type / histopathology.
+    // Merged with the single-value filters above.
+    cancer_type_ids?: string[];
+    subtype_ids?: string[];
     // Optional org scoping - when provided, the result includes that
     // organization's active personalized protocols alongside the globally
     // available generics. When omitted, only generics are returned.
@@ -180,6 +186,7 @@ export interface PersonalizationItemInput {
     dosage?: number | null;
     dosage_unit?: string | null;
     dose_calculation_method?: string | null;
+    dosing_basis?: string | null;
     administration_route?: string | null;
     infusion_type?: string | null;
     infusion_duration_minutes?: number | null;
@@ -270,7 +277,10 @@ export interface VersionPersonalizedProtocolDto {
 
 export interface PlanItemInputDto {
 
-    medicine_id: string;
+    // A drug from medicine_master, or - when the doctor types their own
+    // name - no medicine_id and a drug_name kept only on this plan.
+    medicine_id?: string | null;
+    drug_name?: string | null;
     drug_role?: "PRIMARY" | "PREMEDICATION" | "POSTMEDICATION" | "SUPPORTIVE";
     drug_sequence: number;
     drug_type?: string | null;
@@ -278,6 +288,7 @@ export interface PlanItemInputDto {
     dosage_unit?: string | null;
     dose_calculation_method?: string | null;
     calculated_dose?: number | null;
+    calculated_dose_unit?: string | null;
     administration_route?: string | null;
     formulation?: string | null;
     infusion_type?: string | null;
@@ -288,6 +299,8 @@ export interface PlanItemInputDto {
     administration_day?: number | null;
     cycle_day?: number | null;
     frequency?: string | null;
+    timing_relative_to_primary?: string | null;
+    administration_detail?: string | null;
     maximum_dose?: number | null;
     minimum_dose?: number | null;
     dose_required?: boolean | null;
@@ -344,6 +357,14 @@ export interface CreatePlanDto {
     consent_date?: string | null;
     insurance_type?: string | null;
     remarks?: string | null;
+    discussion?: string | null;
+    // Snapshot of the inputs the patient doses (calculated_dose) were
+    // calculated from on the Chemotherapy Order step.
+    dosing_height_cm?: number | null;
+    dosing_weight_kg?: number | null;
+    dosing_bsa?: number | null;
+    dosing_serum_creatinine?: number | null;
+    dosing_crcl?: number | null;
     // The "never auto-treat" gate - must be explicitly true regardless of
     // whether a suggested_therapy was actually computed (it's null for every
     // cancer type outside Breast/Lung, which chemo.derivation.ts doesn't
@@ -356,6 +377,12 @@ export interface CreatePlanDto {
 
 export interface UpdatePlanDto {
 
+    // Re-link to another regimen protocol (PLANNED plans only); its
+    // regimen name/code/cycles are copied unless also given explicitly.
+    source_protocol_id?: string | null;
+    // Re-link / refresh the diagnosis; cancer_type(_id), cancer_subtype,
+    // subtype_id and cancer_stage are taken from this staging detail.
+    staging_detail_id?: string | null;
     regimen_name?: string;
     regimen_code?: string | null;
     protocol_name?: string | null;
@@ -371,6 +398,14 @@ export interface UpdatePlanDto {
     consent_date?: string | null;
     insurance_type?: string | null;
     remarks?: string | null;
+    discussion?: string | null;
+    // Snapshot of the inputs the patient doses (calculated_dose) were
+    // calculated from on the Chemotherapy Order step.
+    dosing_height_cm?: number | null;
+    dosing_weight_kg?: number | null;
+    dosing_bsa?: number | null;
+    dosing_serum_creatinine?: number | null;
+    dosing_crcl?: number | null;
 
 }
 
@@ -397,6 +432,38 @@ export interface PlanFilterQuery {
 }
 
 export interface AddPlanItemDto extends PlanItemInputDto { }
+
+// A plan's own hydration rows (Chemotherapy Order > Hydration), replaced as
+// a whole; they start as a copy of the protocol's hydration template.
+export interface PlanHydrationRowDto {
+
+    source_dilution_id?: string | null;
+    hydration_stage: "PRE" | "POST";
+    agent_name?: string | null;
+    diluent?: string | null;
+    dilution_volume?: number | null;
+    dilution_volume_unit?: string | null;
+    guidance?: string | null;
+
+}
+
+// PUT /plans/:planId/orders/:cycle/:day - one cycle day's full order.
+// hydration left out = that day's hydration is left untouched.
+export interface SavePlanOrderDto {
+
+    items: PlanItemInputDto[];
+    hydration?: PlanHydrationRowDto[] | null;
+    dosing?: {
+        height_cm?: number | null;
+        weight_kg?: number | null;
+        bsa?: number | null;
+        serum_creatinine?: number | null;
+        crcl?: number | null;
+    } | null;
+    encounter_no?: string | null;
+    copied_from_order_id?: string | null;
+
+}
 
 export interface CreateCycleDto {
 

@@ -6,6 +6,13 @@ export interface StagingInput {
     n_stage?: string | null;
     m_stage?: string | null;
     metastasis_sites?: string[] | null;
+    laterality?: string | null;
+    site?: string | null;
+    histomorphology?: string | null;
+    grade?: string | null;
+    grade_system?: string | null;
+    pre_diagnosis?: string | null;
+    disease_status?: string | null;
 
 }
 
@@ -158,6 +165,19 @@ export interface MolecularUpsertDto {
 
 }
 
+export interface AdditionalCancerDto {
+
+    cancer_type_id: string;
+    // Histopathology ticked under this cancer type, if any.
+    cancer_subtype_id?: string | null;
+    // This cancer's own laterality / T / N / M (one value each).
+    laterality?: string | null;
+    t_stage?: string | null;
+    n_stage?: string | null;
+    m_stage?: string | null;
+
+}
+
 export interface CreateStagingDetailDto {
 
     patient_id: string;
@@ -166,18 +186,34 @@ export interface CreateStagingDetailDto {
     // patient must have an open/recent encounter for this to be recorded at all.
     diagnosis_id: string;
     patient_history_id?: string | null;
+    // The visit (encounter) this staging detail is recorded in - one row
+    // per visit. Defaults to the patient's qualifying (latest) encounter.
+    encounter_no?: string | null;
     visit_date?: string | null;
     diagnosis_date?: string | null;
+    progression_date?: string | null;
+    relapse_date?: string | null;
     biopsy_date?: string | null;
     consulting_oncologist?: string | null;
     cancer_type_id: string;
     cancer_subtype_id: string;
+    // Every other cancer type selected in the Diagnosis step (the primary
+    // one is cancer_type_id / cancer_subtype_id above).
+    additional_cancers?: AdditionalCancerDto[] | null;
     clinical_stage?: string | null;
     t_stage?: string | null;
     n_stage?: string | null;
     m_stage?: string | null;
     metastasis_sites?: string[] | null;
     laterality?: string | null;
+    pre_diagnosis?: string | null;
+    disease_status?: string | null;
+    site?: string | null;
+    grade?: string | null;
+    grade_system?: string | null;
+    score?: string | null;
+    score_system?: string | null;
+    notes?: string | null;
     performance_status?: number | null;
     employee_id?: string | null;
     branch_id?: string | null;
@@ -192,16 +228,28 @@ export interface UpdateStagingDetailDto {
     patient_history_id?: string | null;
     visit_date?: string | null;
     diagnosis_date?: string | null;
+    progression_date?: string | null;
+    relapse_date?: string | null;
     biopsy_date?: string | null;
     consulting_oncologist?: string | null;
     cancer_type_id?: string;
     cancer_subtype_id?: string;
+    // Replaces the stored list when present; omitted leaves it unchanged.
+    additional_cancers?: AdditionalCancerDto[] | null;
     clinical_stage?: string | null;
     t_stage?: string | null;
     n_stage?: string | null;
     m_stage?: string | null;
     metastasis_sites?: string[] | null;
     laterality?: string | null;
+    pre_diagnosis?: string | null;
+    disease_status?: string | null;
+    site?: string | null;
+    grade?: string | null;
+    grade_system?: string | null;
+    score?: string | null;
+    score_system?: string | null;
+    notes?: string | null;
     performance_status?: number | null;
     employee_id?: string | null;
     branch_id?: string | null;
@@ -214,6 +262,7 @@ export interface StagingDetailFilterQuery {
 
     patient_id?: string;
     diagnosis_id?: string;
+    encounter_no?: string;
     employee_id?: string;
     branch_id?: string;
     cancer_type_id?: string;

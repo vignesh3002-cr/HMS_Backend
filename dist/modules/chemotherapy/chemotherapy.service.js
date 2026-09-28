@@ -28,6 +28,62 @@ class ChemotherapyService {
     repository = new chemotherapy_repository_1.ChemotherapyRepository();
     oncologyRepository = new oncology_repository_1.OncologyRepository();
     // ---------------------------------------------------------------
+    // "Others" medication support - the UI may send a typed drug name
+    // as medicine_id. Resolve it to a real catalog row: reuse by id,
+    // reuse by name, else create a medicine_master row (existing
+    // columns only - no schema change).
+    // ---------------------------------------------------------------
+    async resolveMedicineId(rawId) {
+        const raw = (rawId ?? "").trim();
+        if (!raw)
+            return null;
+        const byId = await this.repository.findMedicineById(raw);
+        if (byId)
+            return byId.medicine_id;
+        const byName = await this.repository.findMedicineByName(raw);
+        if (byName)
+            return byName.medicine_id;
+        const created = await this.repository.createMedicineFromTypedName(raw);
+        return created.medicine_id;
+    }
+    async resolveDtoMedicines(dto) {
+        if (!dto || typeof dto !== "object")
+            return;
+        if (dto.medicine_id) {
+            dto.medicine_id = (await this.resolveMedicineId(dto.medicine_id)) ?? dto.medicine_id;
+        }
+        if (Array.isArray(dto.items)) {
+            for (const item of dto.items) {
+                if (!item || typeof item !== "object")
+                    continue;
+                if (item.medicine_id) {
+                    item.medicine_id = (await this.resolveMedicineId(item.medicine_id)) ?? item.medicine_id;
+                }
+                if (Array.isArray(item.dilutions)) {
+                    for (const d of item.dilutions) {
+                        if (d && d.medicine_id) {
+                            d.medicine_id = (await this.resolveMedicineId(d.medicine_id)) ?? d.medicine_id;
+                        }
+                    }
+                }
+            }
+        }
+        if (Array.isArray(dto.dilutions)) {
+            for (const d of dto.dilutions) {
+                if (d && d.medicine_id) {
+                    d.medicine_id = (await this.resolveMedicineId(d.medicine_id)) ?? d.medicine_id;
+                }
+            }
+        }
+        if (Array.isArray(dto.discharge_instructions)) {
+            for (const ins of dto.discharge_instructions) {
+                if (ins && ins.medicine_id) {
+                    ins.medicine_id = (await this.resolveMedicineId(ins.medicine_id)) ?? ins.medicine_id;
+                }
+            }
+        }
+    }
+    // ---------------------------------------------------------------
     // Plan preview - lets a doctor see the computed suggested_therapy
     // (which may legitimately be null outside Breast/Lung) before they
     // decide whether to confirm it and create the plan.
@@ -272,6 +328,7 @@ class ChemotherapyService {
         }
     }
     async createRegimenProtocol(dto, actingUserId) {
+        await this.resolveDtoMedicines(dto);
         const cancerTypeIds = dto.cancer_type_ids && dto.cancer_type_ids.length > 0
             ? dto.cancer_type_ids
             : (dto.cancer_type_id ? [dto.cancer_type_id] : []);
@@ -345,6 +402,7 @@ class ChemotherapyService {
                     dosage: item.dosage ?? null,
                     dosage_unit: item.dosage_unit ?? null,
                     dose_calculation_method: item.dose_calculation_method ?? null,
+                    dosing_basis: item.dosing_basis ?? null,
                     administration_route: item.administration_route ?? null,
                     infusion_type: item.infusion_type ?? null,
                     infusion_duration_minutes: item.infusion_duration_minutes ?? null,
@@ -382,6 +440,7 @@ class ChemotherapyService {
         return this.getRegimenProtocol(protocolId);
     }
     async updateRegimenProtocol(protocolId, dto, actingUserId) {
+        await this.resolveDtoMedicines(dto);
         const existing = await this.repository.findRegimenProtocolById(protocolId);
         if (!existing) {
             throw new Error("Regimen protocol not found");
@@ -441,6 +500,7 @@ class ChemotherapyService {
         return this.getRegimenProtocol(protocolId);
     }
     async addDischargeInstruction(protocolId, instruction, actingUserId) {
+        await this.resolveDtoMedicines(instruction);
         const existing = await this.repository.findRegimenProtocolById(protocolId);
         if (!existing) {
             throw new Error("Regimen protocol not found");
@@ -483,6 +543,7 @@ class ChemotherapyService {
         return this.getRegimenProtocol(protocolId);
     }
     async updateDischargeInstruction(protocolId, dischargeInstructionId, instruction, actingUserId) {
+        await this.resolveDtoMedicines(instruction);
         const existingInstruction = await this.repository.findDischargeInstructionById(dischargeInstructionId);
         if (!existingInstruction) {
             throw new Error("Discharge instruction not found");
@@ -543,6 +604,7 @@ class ChemotherapyService {
         return this.getRegimenProtocol(protocolId);
     }
     async addRegimenProtocolItem(protocolId, item, actingUserId) {
+        await this.resolveDtoMedicines(item);
         const existing = await this.repository.findRegimenProtocolById(protocolId);
         if (!existing) {
             throw new Error("Regimen protocol not found");
@@ -566,6 +628,7 @@ class ChemotherapyService {
                 dosage: item.dosage ?? null,
                 dosage_unit: item.dosage_unit ?? null,
                 dose_calculation_method: item.dose_calculation_method ?? null,
+                dosing_basis: item.dosing_basis ?? null,
                 administration_route: item.administration_route ?? null,
                 infusion_type: item.infusion_type ?? null,
                 infusion_duration_minutes: item.infusion_duration_minutes ?? null,
@@ -616,6 +679,7 @@ class ChemotherapyService {
         return this.getRegimenProtocol(protocolId);
     }
     async updateRegimenProtocolItem(protocolId, protocolItemId, dto, actingUserId) {
+        await this.resolveDtoMedicines(dto);
         const existing = await this.repository.findRegimenProtocolById(protocolId);
         if (!existing) {
             throw new Error("Regimen protocol not found");
@@ -636,6 +700,7 @@ class ChemotherapyService {
                 dosage: dto.dosage ?? item.dosage,
                 dosage_unit: dto.dosage_unit ?? item.dosage_unit,
                 dose_calculation_method: dto.dose_calculation_method ?? item.dose_calculation_method,
+                dosing_basis: dto.dosing_basis ?? item.dosing_basis,
                 administration_route: dto.administration_route ?? item.administration_route,
                 infusion_type: dto.infusion_type ?? item.infusion_type,
                 infusion_duration_minutes: dto.infusion_duration_minutes ?? item.infusion_duration_minutes,
@@ -1039,6 +1104,7 @@ class ChemotherapyService {
         return this.buildPersonalizedEditorPayload(protocol, organizationId);
     }
     async personalizeProtocol(sourceProtocolId, organizationId, actingUserId, dto) {
+        await this.resolveDtoMedicines(dto);
         if (!organizationId) {
             throw new Error("Your account is not associated with a hospital/organization");
         }
@@ -1072,6 +1138,7 @@ class ChemotherapyService {
             dosage: item.dosage != null ? Number(item.dosage) : null,
             dosage_unit: item.dosage_unit,
             dose_calculation_method: item.dose_calculation_method,
+            dosing_basis: item.dosing_basis,
             administration_route: item.administration_route,
             infusion_type: item.infusion_type,
             infusion_duration_minutes: item.infusion_duration_minutes,
@@ -1148,6 +1215,7 @@ class ChemotherapyService {
         return this.getPersonalizedProtocol(newProtocolId, organizationId);
     }
     async updatePersonalizedProtocol(protocolId, organizationId, actingUserId, dto) {
+        await this.resolveDtoMedicines(dto);
         if (!organizationId) {
             throw new Error("Your account is not associated with a hospital/organization");
         }
@@ -1168,6 +1236,7 @@ class ChemotherapyService {
             dosage: item.dosage != null ? Number(item.dosage) : null,
             dosage_unit: item.dosage_unit,
             dose_calculation_method: item.dose_calculation_method,
+            dosing_basis: item.dosing_basis,
             administration_route: item.administration_route,
             infusion_type: item.infusion_type,
             infusion_duration_minutes: item.infusion_duration_minutes,
@@ -1230,6 +1299,7 @@ class ChemotherapyService {
         return this.getPersonalizedProtocol(protocolId, organizationId);
     }
     async addPersonalizedProtocolItem(protocolId, organizationId, actingUserId, dto) {
+        await this.resolveDtoMedicines(dto);
         const protocol = await this.repository.findPersonalizedProtocolById(protocolId, organizationId);
         this.assertPersonalizedOwner(protocol, organizationId);
         await this.assertNotClinicallyUsed(protocolId);
@@ -1293,6 +1363,7 @@ class ChemotherapyService {
         return this.getPersonalizedProtocol(protocolId, organizationId);
     }
     async updatePersonalizedProtocolItem(protocolId, protocolItemId, organizationId, actingUserId, dto) {
+        await this.resolveDtoMedicines(dto);
         const protocol = await this.repository.findPersonalizedProtocolById(protocolId, organizationId);
         this.assertPersonalizedOwner(protocol, organizationId);
         await this.assertNotClinicallyUsed(protocolId);
@@ -1452,6 +1523,7 @@ class ChemotherapyService {
         return this.getPersonalizedProtocol(protocolId, organizationId);
     }
     async addPersonalizedProtocolDilution(protocolId, protocolItemId, organizationId, actingUserId, dto) {
+        await this.resolveDtoMedicines(dto);
         const protocol = await this.repository.findPersonalizedProtocolById(protocolId, organizationId);
         this.assertPersonalizedOwner(protocol, organizationId);
         await this.assertNotClinicallyUsed(protocolId);
@@ -1495,6 +1567,7 @@ class ChemotherapyService {
         return this.getPersonalizedProtocol(protocolId, organizationId);
     }
     async updatePersonalizedProtocolDilution(protocolId, protocolItemId, protocolDilutionId, organizationId, actingUserId, dto) {
+        await this.resolveDtoMedicines(dto);
         const protocol = await this.repository.findPersonalizedProtocolById(protocolId, organizationId);
         this.assertPersonalizedOwner(protocol, organizationId);
         await this.assertNotClinicallyUsed(protocolId);
@@ -1616,6 +1689,7 @@ class ChemotherapyService {
             dosage: item.dosage != null ? Number(item.dosage) : null,
             dosage_unit: item.dosage_unit,
             dose_calculation_method: item.dose_calculation_method,
+            dosing_basis: item.dosing_basis,
             administration_route: item.administration_route,
             infusion_type: item.infusion_type,
             infusion_duration_minutes: item.infusion_duration_minutes,
@@ -1880,6 +1954,7 @@ class ChemotherapyService {
                 consent_date: dto.consent_date ? new Date(dto.consent_date) : null,
                 insurance_type: dto.insurance_type ?? null,
                 remarks: dto.remarks ?? null,
+                discussion: dto.discussion ?? null,
                 created_by: actingUserId
             });
             for (const item of resolvedPlanItems) {
@@ -1986,7 +2061,8 @@ class ChemotherapyService {
             ...(dto.consent_taken !== undefined ? { consent_taken: dto.consent_taken } : {}),
             ...(dto.consent_date !== undefined ? { consent_date: dto.consent_date ? new Date(dto.consent_date) : null } : {}),
             ...(dto.insurance_type !== undefined ? { insurance_type: dto.insurance_type } : {}),
-            ...(dto.remarks !== undefined ? { remarks: dto.remarks } : {})
+            ...(dto.remarks !== undefined ? { remarks: dto.remarks } : {}),
+            ...(dto.discussion !== undefined ? { discussion: dto.discussion } : {})
         };
         await prisma_1.default.$transaction(async (tx) => {
             await this.repository.updatePlan(tx, planId, planChanges);

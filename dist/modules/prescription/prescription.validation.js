@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPrescriptionsByPatientIdValidation = exports.getPrescriptionsByPatientHistoryIdValidation = exports.getSuggestedMedicinesValidation = exports.deletePrescriptionItemValidation = exports.updatePrescriptionItemValidation = exports.addPrescriptionItemValidation = exports.getPrescriptionItemsValidation = exports.deletePrescriptionValidation = exports.updatePrescriptionValidation = exports.getPrescriptionByIdValidation = exports.getPrescriptionsValidation = exports.createPrescriptionValidation = void 0;
+exports.getPrescriptionsByPatientIdValidation = exports.getPrescriptionsByPatientHistoryIdValidation = exports.createMedicineValidation = exports.searchMedicinesValidation = exports.getSuggestedMedicinesValidation = exports.deletePrescriptionItemValidation = exports.updatePrescriptionItemValidation = exports.addPrescriptionItemValidation = exports.getPrescriptionItemsValidation = exports.deletePrescriptionValidation = exports.updatePrescriptionValidation = exports.getPrescriptionByIdValidation = exports.getPrescriptionsValidation = exports.createPrescriptionValidation = void 0;
 const express_validator_1 = require("express-validator");
 const prescription_constants_1 = require("./prescription.constants");
 const medicineItemValidation = (prefix) => {
@@ -95,6 +95,24 @@ exports.deletePrescriptionItemValidation = [
 ];
 exports.getSuggestedMedicinesValidation = [
     (0, express_validator_1.param)("diagnosisId").notEmpty()
+];
+exports.searchMedicinesValidation = [
+    (0, express_validator_1.query)("search").optional().isString().isLength({ max: 255 }),
+    (0, express_validator_1.query)("limit").optional().isInt({ min: 1, max: 100 })
+];
+exports.createMedicineValidation = [
+    (0, express_validator_1.body)("medicine_name")
+        .isString()
+        .withMessage("Drug name is required")
+        .bail()
+        .trim()
+        .notEmpty()
+        .withMessage("Drug name is required")
+        .isLength({ max: 255 })
+        .withMessage("Drug name must be at most 255 characters"),
+    (0, express_validator_1.body)("dosage_form").optional().isString().trim().isLength({ max: 100 }),
+    (0, express_validator_1.body)("unit").optional().isString().trim().isLength({ max: 100 }),
+    (0, express_validator_1.body)("strength").optional().isString().trim().isLength({ max: 100 })
 ];
 exports.getPrescriptionsByPatientHistoryIdValidation = [
     (0, express_validator_1.param)("patientHistoryId").notEmpty()

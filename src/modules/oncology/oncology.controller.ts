@@ -11,7 +11,7 @@ function actingUserId(req: Request): string {
 // Tables this module writes to - used to strip the constraint name down to
 // just the offending column so the client gets an actionable field name
 // instead of the raw "<table>_<column>_check" identifier.
-const ONCOLOGY_TABLES = ["ihc_results", "molecular_results", "oncology_staging_detail", "derived_fields"];
+const ONCOLOGY_TABLES = ["ihc_results", "molecular_results", "oncology_staging_detail", "oncology_staging_additional_cancers", "derived_fields"];
 
 function fieldFromConstraintName(constraintName: string): string {
 
@@ -135,6 +135,45 @@ export class OncologyController {
 
     }
 
+    async getAnatomicalSites(req: Request, res: Response) {
+
+        try {
+
+            const data = await service.listAnatomicalSites(req.params.cancerTypeId as string);
+            return res.json({ success: true, message: "Anatomical sites fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async getCancerGrades(req: Request, res: Response) {
+
+        try {
+
+            const data = await service.listCancerGrades(req.params.cancerTypeId as string);
+            return res.json({ success: true, message: "Cancer grades fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async getCancerScores(req: Request, res: Response) {
+
+        try {
+
+            const data = await service.listCancerScores(req.params.cancerTypeId as string);
+            return res.json({ success: true, message: "Cancer scores fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
     async reseedReference(req: Request, res: Response) {
 
         try {
@@ -224,6 +263,7 @@ export class OncologyController {
             const result = await service.listStagingDetails({
                 patient_id: req.query.patient_id as string | undefined,
                 diagnosis_id: req.query.diagnosis_id as string | undefined,
+                encounter_no: req.query.encounter_no as string | undefined,
                 employee_id: req.query.employee_id as string | undefined,
                 branch_id: req.query.branchId as string | undefined,
                 cancer_type_id: req.query.cancer_type_id as string | undefined,
