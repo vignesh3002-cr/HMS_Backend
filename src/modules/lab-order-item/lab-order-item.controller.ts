@@ -137,4 +137,28 @@ export class LabOrderItemController {
 
     }
 
+    async generateBarcodes(req: Request, res: Response) {
+        try {
+            const { items } = req.body;
+            if (!items || !Array.isArray(items) || items.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "An array of items with lab_order_item_id and barcode is required"
+                });
+            }
+
+            const results = await service.generateBarcodes(items);
+            return res.json({
+                success: true,
+                message: "Barcodes generated successfully",
+                data: results
+            });
+        } catch (error: any) {
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+
 }

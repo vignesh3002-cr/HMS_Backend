@@ -26,6 +26,7 @@ import labTestCategoryRoutes from "./modules/lab-test-category/lab-test-category
 import labTestMasterRoutes from "./modules/lab-test-master/lab-test-master.routes";
 import labOrderRoutes from "./modules/lab-order/lab-order-routes";
 import labOrderItemRoutes from "./modules/lab-order-item/lab-order-item.routes";
+import labReportRoutes from "./modules/lab-report/lab-report.routes";
 import qualificationMasterRoutes from "./modules/qualification-master/qualification-master.routes";
 import diagnosisRoutes from "./modules/diagnosis/diagnosis.routes";
 import clinicalDetailsRoutes from "./modules/clinical-details/clinical-details.routes";
@@ -133,6 +134,7 @@ app.use("/api/lab-order", labOrderRoutes);
 app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/lab-order-item", labOrderItemRoutes);
+app.use("/api/lab-report", labReportRoutes);
 app.use("/api/encounters", encounterRoutes);
 app.use("/api/clinical-details", clinicalDetailsRoutes);
 app.use("/api/permissions", permissionRoutes);

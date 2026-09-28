@@ -1,4 +1,5 @@
-import { DoctorScheduleChangeMode, Prisma } from "@prisma/client";
+import { doctor_schedule_change_mode, Prisma } from "@prisma/client";
+type DoctorScheduleChangeMode = doctor_schedule_change_mode;
 import prisma from "../../config/prisma";
 import { DoctorTransferRepository } from "../doctor-transfer/doctorTransfer.repository";
 

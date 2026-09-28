@@ -19,7 +19,8 @@ class LabOrderItemRepository {
                         patient_history: true
                     }
                 },
-                lab_test_master: true
+                lab_test_master: true,
+                sample_collection: true
             }
         });
     }
@@ -34,9 +35,58 @@ class LabOrderItemRepository {
                         patient_history: true
                     }
                 },
-                lab_test_master: true
+                lab_test_master: true,
+                sample_collection: true
             }
         });
+    }
+    async generateBarcodes(items) {
+        const results = [];
+        for (const item of items) {
+            const existing = await prisma_1.default.sample_collection.findFirst({
+                where: { lab_order_item_id: item.lab_order_item_id }
+            });
+            let sc;
+            if (existing) {
+                sc = await prisma_1.default.sample_collection.update({
+                    where: { sample_collection_id: existing.sample_collection_id },
+                    data: {
+                        barcode: item.barcode,
+                        container_type: item.sample_type,
+                        collection_status: "Collected",
+                        remarks: `Barcode: ${item.barcode}`
+                    }
+                });
+            }
+            else {
+                sc = await prisma_1.default.sample_collection.create({
+                    data: {
+                        sample_collection_id: `SC${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+                        lab_order_item_id: item.lab_order_item_id,
+                        barcode: item.barcode,
+                        container_type: item.sample_type,
+                        collection_status: "Collected",
+                        remarks: `Barcode: ${item.barcode}`
+                    }
+                });
+            }
+            const updatedItem = await prisma_1.default.lab_order_item.update({
+                where: { lab_order_item_id: item.lab_order_item_id },
+                data: {
+                    item_status: "Barcode Generated",
+                    remarks: `Barcode: ${item.barcode}`
+                }
+            });
+            // Also update parent lab_order if needed
+            if (updatedItem.lab_order_id) {
+                await prisma_1.default.lab_order.update({
+                    where: { lab_order_id: updatedItem.lab_order_id },
+                    data: { order_status: "Processing" }
+                }).catch(() => { });
+            }
+            results.push({ sample_collection: sc, lab_order_item: updatedItem });
+        }
+        return results;
     }
     async update(lab_order_item_id, data) {
         return prisma_1.default.lab_order_item.update({

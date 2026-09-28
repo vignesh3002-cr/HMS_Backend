@@ -62,4 +62,9 @@ export const updateLabOrderItemValidation = [
     .isString()
     .withMessage("Remarks must be a string"),
 
+  body("item_status")
+    .optional()
+    .isString()
+    .withMessage("Item status must be a string"),
+
 ];
