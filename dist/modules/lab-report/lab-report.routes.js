@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const lab_report_controller_1 = require("./lab-report.controller");
+const router = (0, express_1.Router)();
+const controller = new lab_report_controller_1.LabReportController();
+router.get("/", (req, res) => controller.getAll(req, res));
+router.post("/", (req, res) => controller.create(req, res));
+router.get("/order/:orderId", (req, res) => controller.getByOrderId(req, res));
+router.get("/:id", (req, res) => controller.getById(req, res));
+router.put("/:id/transfer", (req, res) => controller.transfer(req, res));
+router.put("/:id", (req, res) => controller.update(req, res));
+router.delete("/:id", (req, res) => controller.delete(req, res));
+exports.default = router;

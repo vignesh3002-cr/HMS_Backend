@@ -10,6 +10,10 @@ router.post("/", auth_middleware_1.authenticate, prescription_validation_1.creat
 router.get("/", auth_middleware_1.authenticate, prescription_validation_1.getPrescriptionsValidation, controller.getPrescriptions.bind(controller));
 router.get("/patient-history/:patientHistoryId", auth_middleware_1.authenticate, prescription_validation_1.getPrescriptionsByPatientHistoryIdValidation, controller.getPrescriptionsByPatientHistoryId.bind(controller));
 router.get("/patient/:patientId", auth_middleware_1.authenticate, prescription_validation_1.getPrescriptionsByPatientIdValidation, controller.getPrescriptionsByPatientId.bind(controller));
+// Medicine master picker for OPD prescriptions (Consultation > Advice).
+// Registered before "/:prescriptionId" so "medicines" is not read as an id.
+router.get("/medicines", auth_middleware_1.authenticate, prescription_validation_1.searchMedicinesValidation, controller.searchMedicines.bind(controller));
+router.post("/medicines", auth_middleware_1.authenticate, prescription_validation_1.createMedicineValidation, controller.createMedicine.bind(controller));
 router.get("/suggestions/:diagnosisId", auth_middleware_1.authenticate, prescription_validation_1.getSuggestedMedicinesValidation, controller.getSuggestedMedicines.bind(controller));
 router.get("/:prescriptionId/items", auth_middleware_1.authenticate, prescription_validation_1.getPrescriptionItemsValidation, controller.getPrescriptionItems.bind(controller));
 router.post("/:prescriptionId/items", auth_middleware_1.authenticate, prescription_validation_1.addPrescriptionItemValidation, controller.addPrescriptionItem.bind(controller));

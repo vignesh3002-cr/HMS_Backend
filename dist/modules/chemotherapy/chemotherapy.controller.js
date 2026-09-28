@@ -48,9 +48,14 @@ class ChemotherapyController {
     // ---------------- Regimen protocols ----------------
     async listRegimenProtocols(req, res) {
         try {
+            const csv = (value) => typeof value === "string"
+                ? value.split(",").map((item) => item.trim()).filter(Boolean)
+                : undefined;
             const data = await service.listRegimenProtocols({
                 cancer_type_id: req.query.cancer_type_id,
                 subtype_id: req.query.subtype_id,
+                cancer_type_ids: csv(req.query.cancer_type_ids),
+                subtype_ids: csv(req.query.subtype_ids),
                 organization_id: req.user?.hospital_id ?? null
             });
             return res.json({ success: true, message: "Regimen protocols fetched successfully", data });

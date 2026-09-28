@@ -69,6 +69,16 @@ const prescriptionDetailInclude = {
         include: prescriptionItemInclude
     }
 };
+const medicinePickerSelect = {
+    medicine_id: true,
+    medicine_name: true,
+    generic_name: true,
+    brand_name: true,
+    strength: true,
+    dosage_form: true,
+    unit: true,
+    route: true
+};
 function startOfDay(date) {
     return new Date(`${date}T00:00:00.000Z`);
 }
@@ -105,6 +115,54 @@ class PrescriptionRepository {
         }
         return prisma_1.default.medicine_master.findMany({
             where: { medicine_id: { in: medicineIds } }
+        });
+    }
+    // Medicine picker for OPD prescriptions. Every search word must match the
+    // medicine, generic or brand name. Rows catalogued as "Instruction" are
+    // protocol notes rather than drugs, so they are left out.
+    async searchMedicines(words, take) {
+        return prisma_1.default.medicine_master.findMany({
+            where: {
+                is_active: true,
+                AND: [
+                    {
+                        OR: [
+                            { medicine_category: null },
+                            { medicine_category: { not: "Instruction" } }
+                        ]
+                    },
+                    ...words.map((word) => ({
+                        OR: [
+                            { medicine_name: { contains: word, mode: "insensitive" } },
+                            { generic_name: { contains: word, mode: "insensitive" } },
+                            { brand_name: { contains: word, mode: "insensitive" } }
+                        ]
+                    }))
+                ]
+            },
+            select: medicinePickerSelect,
+            orderBy: { medicine_name: "asc" },
+            take
+        });
+    }
+    async findMedicineByName(medicineName) {
+        return prisma_1.default.medicine_master.findFirst({
+            where: { medicine_name: { equals: medicineName, mode: "insensitive" } },
+            select: medicinePickerSelect
+        });
+    }
+    async findLastMedicineId() {
+        const last = await prisma_1.default.medicine_master.findFirst({
+            where: { medicine_id: { startsWith: "MED" } },
+            orderBy: { medicine_id: "desc" },
+            select: { medicine_id: true }
+        });
+        return last?.medicine_id ?? null;
+    }
+    async createMedicine(data) {
+        return prisma_1.default.medicine_master.create({
+            data,
+            select: medicinePickerSelect
         });
     }
     // Resolve drug_role/drug_type for a set of medicine ids from the patient's

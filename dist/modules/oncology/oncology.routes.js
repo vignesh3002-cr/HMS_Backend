@@ -10,6 +10,9 @@ const controller = new oncology_controller_1.OncologyController();
 // ---------------- Reference lookups ----------------
 router.get("/reference/cancer-types", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), controller.getCancerTypes.bind(controller));
 router.get("/reference/cancer-types/:cancerTypeId/subtypes", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), oncology_validation_1.getCancerSubtypesValidation, controller.getCancerSubtypes.bind(controller));
+router.get("/reference/cancer-types/:cancerTypeId/sites", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), oncology_validation_1.getCancerSubtypesValidation, controller.getAnatomicalSites.bind(controller));
+router.get("/reference/cancer-types/:cancerTypeId/grades", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), oncology_validation_1.getCancerSubtypesValidation, controller.getCancerGrades.bind(controller));
+router.get("/reference/cancer-types/:cancerTypeId/scores", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), oncology_validation_1.getCancerSubtypesValidation, controller.getCancerScores.bind(controller));
 router.get("/reference/staging", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), oncology_validation_1.getStagingReferenceValidation, controller.getStagingReference.bind(controller));
 router.get("/reference/biomarker-tests", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), controller.getBiomarkerTests.bind(controller));
 router.get("/reference/molecular-subtypes", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), controller.getMolecularSubtypes.bind(controller));
