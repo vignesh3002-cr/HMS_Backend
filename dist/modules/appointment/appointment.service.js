@@ -10,6 +10,7 @@ const appointment_constants_1 = require("./appointment.constants");
 const appointment_utils_1 = require("./appointment.utils");
 const idGenerator_1 = require("../../utils/idGenerator");
 const doctorLeave_constants_1 = require("../doctorLeave/doctorLeave.constants");
+const ipd_service_1 = require("../ipd/ipd.service");
 const repository = new appointment_repository_1.AppointmentRepository();
 /**
  * Fixed slot length used for doctor capacity summaries.
@@ -474,7 +475,7 @@ class AppointmentService {
             throw new Error("This doctor already has an appointment at the selected date and time");
         }
         const doctorName = `${employee.first_name} ${employee.last_name}`.trim();
-        return this.transformAppointmentFields(await prisma_1.default.$transaction(async (tx) => {
+        const bookedAppointment = this.transformAppointmentFields(await prisma_1.default.$transaction(async (tx) => {
             await repository.lockDoctorSchedule(tx, schedule.schedule_id);
             const stillDuplicate = await tx.appointment_history.findFirst({
                 where: {
@@ -534,6 +535,28 @@ class AppointmentService {
             });
             return appointment;
         }));
+        const isIpd = String(data.reason_for_visit ?? "").trim().toUpperCase() === "IPD" ||
+            String(data.patient_visit_type ?? "").trim().toUpperCase() === "IPD" ||
+            String(data.patient_type ?? "").trim().toUpperCase() === "IPD";
+        if (isIpd && bookedAppointment?.appointment_id) {
+            try {
+                const ipdService = new ipd_service_1.IpdService();
+                await ipdService.createAdmission({
+                    patient_id: data.patient_id,
+                    appointment_id: bookedAppointment.appointment_id,
+                    branch_id: data.branch_id,
+                    department_id: data.department_id,
+                    employee_id: data.employee_id,
+                    admission_type: data.patient_type?.toUpperCase() === "DAYCARE" ? "Daycare" : "REGULAR",
+                    is_daycare: data.patient_type?.toUpperCase() === "DAYCARE",
+                    provisional_diagnosis: data.reason_for_visit || "IPD Admission",
+                }, createdBy);
+            }
+            catch (ipdErr) {
+                console.error(`[Appointment IPD Fast-Path] Failed to auto-create admission for appointment ${bookedAppointment.appointment_id}:`, ipdErr);
+            }
+        }
+        return bookedAppointment;
     }
     /**
      * Transform Prisma capital-P fields to snake_case for frontend API.

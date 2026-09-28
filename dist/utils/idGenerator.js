@@ -27,6 +27,10 @@ const ENTITY_TARGET = {
     REGIMEN_PROTOCOL_DAY: { table: "chemotherapy_regimen_protocol_days", column: "protocol_day_id", padTo: 7 },
     REGIMEN_PROTOCOL_DILUTION: { table: "chemotherapy_protocol_dilutions", column: "protocol_dilution_id", padTo: 7 },
     DISCHARGE_INSTRUCTION: { table: "chemotherapy_discharge_instructions", column: "discharge_instruction_id", padTo: 7 },
+    ADMISSION: { table: "admission", column: "ip_number" },
+    WARD: { table: "ward_master", column: "ward_id" },
+    BED: { table: "bed_master", column: "bed_id" },
+    ADMISSION_TRANSFER: { table: "admission_transfer_log", column: "transfer_log_id" },
 };
 // Generates `count` consecutive ids for one entity while holding the
 // sequence row lock exactly once. Batch callers (e.g. prescription items)

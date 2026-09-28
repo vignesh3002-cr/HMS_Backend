@@ -12,6 +12,7 @@ import departmentRoutes from "./modules/department/department.routes";
 import patientRoutes from "./modules/patient/patient.routes";
 import appointmentRoutes from "./modules/appointment/appointment.routes";
 import encounterRoutes from "./modules/encounter/encounter.routes";
+import ipdRoutes from "./modules/ipd/ipd.routes";
 import permissionRoutes from "./modules/permission/permission.routes";
 import roleRoutes from "./modules/role/role.routes";
 import prescriptionRoutes from "./modules/prescription/prescription.routes";
@@ -30,8 +31,11 @@ import labReportRoutes from "./modules/lab-report/lab-report.routes";
 import qualificationMasterRoutes from "./modules/qualification-master/qualification-master.routes";
 import diagnosisRoutes from "./modules/diagnosis/diagnosis.routes";
 import clinicalDetailsRoutes from "./modules/clinical-details/clinical-details.routes";
+import consultationRoutes from "./modules/consultation/consultation.routes";
 import notificationRoutes from "./modules/notification/notification.routes";
 import referralRoutes from "./modules/referral/referral.routes";
+import priorityFlagsRoutes from "./modules/priority-flags/priorityFlags.routes";
+import aiChatRoutes from "./modules/ai/ai-chat.routes";
 import patientDocumentRoutes from "./modules/patient-document/patientDocument.routes";
 
 import { hashPassword } from "./utils/bcrypt";
@@ -136,7 +140,9 @@ app.use("/api/chemotherapy", chemotherapyRoutes);
 app.use("/api/lab-order-item", labOrderItemRoutes);
 app.use("/api/lab-report", labReportRoutes);
 app.use("/api/encounters", encounterRoutes);
+app.use("/api/ipd", ipdRoutes);
 app.use("/api/clinical-details", clinicalDetailsRoutes);
+app.use("/api/consultation", consultationRoutes);
 app.use("/api/permissions", permissionRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/oncology", oncologyRoutes);
@@ -157,6 +163,8 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/qualification-master", qualificationMasterRoutes);
 app.use("/api/diagnosis", diagnosisRoutes);
 app.use("/api/referral", referralRoutes);
+app.use("/api/priority-flags", priorityFlagsRoutes);
+app.use("/api/ai-chat", aiChatRoutes);
 app.use("/api/patient-documents", patientDocumentRoutes);
 
 app.use("/api/hashpassword", async (req, res) => {

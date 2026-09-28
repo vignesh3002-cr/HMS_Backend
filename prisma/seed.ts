@@ -100,6 +100,15 @@ const PERMISSIONS = [
   // Audit trail
   { key: "audit.read", name: "View Audit Log", description: "View the oncology/chemotherapy write audit trail", category: "audit" },
 
+  // IPD admission / ward & bed management
+  { key: "admission.create", name: "Create Admission", description: "Admit an inpatient and allocate a bed", category: "admission" },
+  { key: "admission.read", name: "View Admissions", description: "View inpatient admissions and bed occupancy", category: "admission" },
+  { key: "admission.update", name: "Edit Admission", description: "Update admission details and cancel admissions", category: "admission" },
+  { key: "admission.discharge", name: "Discharge Patient", description: "Discharge an admitted inpatient", category: "admission" },
+  { key: "admission.transfer", name: "Transfer Bed", description: "Transfer an admitted patient to another bed", category: "admission" },
+  { key: "ward.manage", name: "Manage Wards", description: "Create/edit wards in ward master", category: "admission" },
+  { key: "bed.manage", name: "Manage Beds", description: "Create/edit beds and bed status in bed master", category: "admission" },
+
 ];
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -147,6 +156,14 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "chemo.protocol.manage",
     "audit.read",
 
+    "admission.create",
+    "admission.read",
+    "admission.update",
+    "admission.discharge",
+    "admission.transfer",
+    "ward.manage",
+    "bed.manage",
+
   ],
 
   // STAFF_ADMIN (ADMIN) - branch-scoped view/edit
@@ -176,6 +193,12 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "chemo.protocol.manage",
     "audit.read",
 
+    "admission.read",
+    "admission.update",
+    "admission.transfer",
+    "ward.manage",
+    "bed.manage",
+
   ],
 
   // RECEPTIONIST - patient/appointment only
@@ -187,6 +210,8 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "appointment.read",
     "appointment.update",
     "encounter.read",
+    "admission.create",
+    "admission.read",
   ],
 
   // DOCTOR - own patients/appointments
@@ -220,6 +245,9 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "chemo.lab_review.record",
     "chemo.protocol.read",
 
+    "admission.read",
+    "admission.transfer",
+
   ],
 
   // NURSE - patient care
@@ -243,6 +271,10 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "chemo.administration.record",
     "chemo.vitals.record",
     "chemo.adverse_event.record",
+
+    "admission.read",
+    "admission.update",
+    "admission.discharge",
 
   ],
 

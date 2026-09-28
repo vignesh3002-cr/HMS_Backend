@@ -24,6 +24,7 @@ import {
 } from "./appointment.utils";
 import { generateId } from "../../utils/idGenerator";
 import { LEAVE_STATUS } from "../doctorLeave/doctorLeave.constants";
+import { IpdService } from "../ipd/ipd.service";
 
 const repository = new AppointmentRepository();
 
@@ -911,7 +912,7 @@ export class AppointmentService {
         const doctorName =
             `${employee.first_name} ${employee.last_name}`.trim();
 
-return this.transformAppointmentFields(
+        const bookedAppointment = this.transformAppointmentFields(
             await prisma.$transaction(
                 async (tx) => {
 
@@ -1049,6 +1050,37 @@ return this.transformAppointmentFields(
                 }
             )
         );
+
+        const isIpd =
+            String(data.reason_for_visit ?? "").trim().toUpperCase() === "IPD" ||
+            String(data.patient_visit_type ?? "").trim().toUpperCase() === "IPD" ||
+            String(data.patient_type ?? "").trim().toUpperCase() === "IPD";
+
+        if (isIpd && bookedAppointment?.appointment_id) {
+            try {
+                const ipdService = new IpdService();
+                await ipdService.createAdmission(
+                    {
+                        patient_id: data.patient_id,
+                        appointment_id: bookedAppointment.appointment_id,
+                        branch_id: data.branch_id,
+                        department_id: data.department_id,
+                        employee_id: data.employee_id,
+                        admission_type: data.patient_type?.toUpperCase() === "DAYCARE" ? "Daycare" : "REGULAR",
+                        is_daycare: data.patient_type?.toUpperCase() === "DAYCARE",
+                        provisional_diagnosis: data.reason_for_visit || "IPD Admission",
+                    },
+                    createdBy
+                );
+            } catch (ipdErr) {
+                console.error(
+                    `[Appointment IPD Fast-Path] Failed to auto-create admission for appointment ${bookedAppointment.appointment_id}:`,
+                    ipdErr
+                );
+            }
+        }
+
+        return bookedAppointment;
     }
 
     /**

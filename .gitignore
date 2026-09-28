@@ -5,3 +5,4 @@ node_modules
 Nvidia.ts
 nvidia.api.ts
 nvidia.routes.ts
+prisma.config.ts

@@ -121,6 +121,33 @@ export class OncologyRepository {
 
     }
 
+    async findAnatomicalSitesByType(cancerTypeId: string) {
+
+        return prisma.anatomical_site_master.findMany({
+            where: { cancer_type_id: cancerTypeId, active_status: 1 },
+            orderBy: [{ display_order: "asc" as const }, { site_name: "asc" as const }]
+        });
+
+    }
+
+    async findCancerGradesByType(cancerTypeId: string) {
+
+        return prisma.cancer_grade_master.findMany({
+            where: { cancer_type_id: cancerTypeId, active_status: 1 },
+            orderBy: [{ display_order: "asc" as const }, { grade_value: "asc" as const }]
+        });
+
+    }
+
+    async findCancerScoresByType(cancerTypeId: string) {
+
+        return prisma.cancer_score.findMany({
+            where: { cancer_type_id: cancerTypeId, active_status: 1 },
+            orderBy: [{ score_system: "asc" as const }, { display_order: "asc" as const }]
+        });
+
+    }
+
     // -----------------------------------------------------------------
     // Supporting entity lookups (existence checks only - these tables
     // belong to other modules, so no write access here)

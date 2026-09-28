@@ -144,5 +144,44 @@ class AuthController {
             });
         }
     }
+    async getKpiPreferences(req, res) {
+        try {
+            const userId = req.user?.user_id;
+            const kpis = await authService.getKpiPreferences(userId);
+            return res.status(200).json({
+                success: true,
+                data: { kpis },
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message,
+            });
+        }
+    }
+    async saveKpiPreferences(req, res) {
+        try {
+            const userId = req.user?.user_id;
+            const { kpis } = req.body;
+            if (!Array.isArray(kpis)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "kpis must be an array",
+                });
+            }
+            const saved = await authService.saveKpiPreferences(userId, kpis);
+            return res.status(200).json({
+                success: true,
+                data: { kpis: saved },
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message,
+            });
+        }
+    }
 }
 exports.AuthController = AuthController;

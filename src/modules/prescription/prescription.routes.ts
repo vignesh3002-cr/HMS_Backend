@@ -14,7 +14,9 @@ import {
     updatePrescriptionValidation,
     deletePrescriptionValidation,
     getPrescriptionsByPatientHistoryIdValidation,
-    getPrescriptionsByPatientIdValidation
+    getPrescriptionsByPatientIdValidation,
+    searchMedicinesValidation,
+    createMedicineValidation
 } from "./prescription.validation";
 
 const router = Router();
@@ -46,6 +48,22 @@ router.get(
     authenticate,
     getPrescriptionsByPatientIdValidation,
     controller.getPrescriptionsByPatientId.bind(controller)
+);
+
+// Medicine master picker for OPD prescriptions (Consultation > Advice).
+// Registered before "/:prescriptionId" so "medicines" is not read as an id.
+router.get(
+    "/medicines",
+    authenticate,
+    searchMedicinesValidation,
+    controller.searchMedicines.bind(controller)
+);
+
+router.post(
+    "/medicines",
+    authenticate,
+    createMedicineValidation,
+    controller.createMedicine.bind(controller)
 );
 
 router.get(

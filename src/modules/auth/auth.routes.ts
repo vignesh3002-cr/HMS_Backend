@@ -68,5 +68,15 @@ router.get(
     });
   }
 );
+router.get(
+  "/me/kpi-preferences",
+  authenticate,
+  authController.getKpiPreferences.bind(authController)
+);
+router.put(
+  "/me/kpi-preferences",
+  authenticate,
+  authController.saveKpiPreferences.bind(authController)
+);
 
 export default router;

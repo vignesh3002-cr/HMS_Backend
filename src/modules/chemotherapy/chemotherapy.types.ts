@@ -43,6 +43,7 @@ export interface RegimenProtocolItemDto {
     dosage?: number | null;
     dosage_unit?: string | null;
     dose_calculation_method?: string | null;
+    dosing_basis?: string | null;
     administration_route?: string | null;
     infusion_type?: string | null;
     infusion_duration_minutes?: number | null;
@@ -68,6 +69,7 @@ export interface UpdateRegimenProtocolItemDto {
   dosage?: number | null;
   dosage_unit?: string | null;
   dose_calculation_method?: string | null;
+  dosing_basis?: string | null;
   administration_route?: string | null;
   infusion_type?: string | null;
   infusion_duration_minutes?: number | null;
@@ -129,6 +131,10 @@ export interface RegimenProtocolFilterQuery {
 
     cancer_type_id?: string;
     subtype_id?: string;
+    // Multi-select Diagnosis: every selected cancer type / histopathology.
+    // Merged with the single-value filters above.
+    cancer_type_ids?: string[];
+    subtype_ids?: string[];
     // Optional org scoping - when provided, the result includes that
     // organization's active personalized protocols alongside the globally
     // available generics. When omitted, only generics are returned.
@@ -180,6 +186,7 @@ export interface PersonalizationItemInput {
     dosage?: number | null;
     dosage_unit?: string | null;
     dose_calculation_method?: string | null;
+    dosing_basis?: string | null;
     administration_route?: string | null;
     infusion_type?: string | null;
     infusion_duration_minutes?: number | null;
@@ -344,6 +351,7 @@ export interface CreatePlanDto {
     consent_date?: string | null;
     insurance_type?: string | null;
     remarks?: string | null;
+    discussion?: string | null;
     // The "never auto-treat" gate - must be explicitly true regardless of
     // whether a suggested_therapy was actually computed (it's null for every
     // cancer type outside Breast/Lung, which chemo.derivation.ts doesn't
@@ -371,6 +379,7 @@ export interface UpdatePlanDto {
     consent_date?: string | null;
     insurance_type?: string | null;
     remarks?: string | null;
+    discussion?: string | null;
 
 }
 

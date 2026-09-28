@@ -4,6 +4,12 @@ export interface CreateEncounterDTO {
 
 }
 
+export interface CreateIpdEncounterDTO {
+    createdBy: string;
+    admission_id: string;
+
+}
+
 export interface UpdateEncounterDTO {
 
     chief_complaint?: string;
@@ -12,6 +18,30 @@ export interface UpdateEncounterDTO {
     clinical_notes?: string;
     advice?: string;
     follow_up_date?: string; // YYYY-MM-DD
+
+    // Consultation Summary clinical findings (added per EMR master spec).
+    history_of_present_illness?: string;
+    cns_examination?: string;
+    cvs_examination?: string;
+    per_abdomen_examination?: string;
+    clinical_findings?: string;
+    respiratory_examination?: string;
+    general_examination_icterus?: boolean;
+    general_examination_pallor?: boolean;
+    general_examination_clubbing?: boolean;
+    general_examination_cyanosis?: boolean;
+    general_examination_oedema?: boolean;
+    general_examination_lymphadenopathy?: boolean;
+
+    // Past History treatment details + previous reports free text.
+    past_history_treatment_type?: string;
+    past_history_treatment_date?: string; // YYYY-MM-DD
+    past_history_treatment_note?: string;
+    past_history_treatment_response?: string;
+    previous_reports?: string;
+
+    // Consultation > Advice > Discussion: the doctor's remarks for the visit.
+    notes?: string;
 
     height?: number;
     weight?: number;

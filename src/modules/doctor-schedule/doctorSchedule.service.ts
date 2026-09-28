@@ -519,7 +519,7 @@ export class DoctorScheduleService {
 
                 mode:
 
-                    mode as DoctorScheduleChangeMode,
+                    mode as doctor_schedule_change_mode,
 
                 start_time:
 
@@ -863,7 +863,7 @@ export class DoctorScheduleService {
 
         const updateData: {
             change_date?: Date;
-            mode?: DoctorScheduleChangeMode;
+            mode?: doctor_schedule_change_mode;
             start_time?: Date | null;
             end_time?: Date | null;
             reason?: string | null;
@@ -884,7 +884,7 @@ export class DoctorScheduleService {
         ) {
 
             updateData.mode =
-                payload.mode as DoctorScheduleChangeMode;
+                payload.mode as doctor_schedule_change_mode;
         }
 
         if (
@@ -2069,7 +2069,7 @@ export class DoctorScheduleService {
             employee_id: string;
             branch_id: string;
             change_date: Date;
-            mode: DoctorScheduleChangeMode;
+            mode: doctor_schedule_change_mode;
             start_time: Date | null;
             end_time: Date | null;
             reason?: string | null;
@@ -2098,7 +2098,7 @@ export class DoctorScheduleService {
         tx: Prisma.TransactionClient,
         change_id: bigint,
         data: {
-            mode?: DoctorScheduleChangeMode;
+            mode?: doctor_schedule_change_mode;
             start_time?: Date | null;
             end_time?: Date | null;
             reason?: string | null;

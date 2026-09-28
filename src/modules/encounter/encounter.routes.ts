@@ -5,6 +5,7 @@ import { authorize } from "../../middleware/authorize";
 import { branchScope } from "../../middleware/branchScope";
 import {
     createEncounterValidation,
+    createIpdEncounterValidation,
     updateEncounterValidation,
     closeEncounterValidation,
     getEncountersValidation,
@@ -14,6 +15,14 @@ import {
 const router = Router();
 
 const controller = new EncounterController();
+
+router.post(
+    "/ipd",
+    authenticate,
+    authorize("encounter.create"),
+    createIpdEncounterValidation,
+    controller.createIpdEncounter.bind(controller)
+);
 
 router.post(
     "/",

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authorizeScheduleChange = exports.authorizeRoles = exports.authorizeSelfPhoto = exports.authorizeNoSelf = exports.authorizeSelfOrPermission = exports.ADMIN_ROLES = exports.authorize = void 0;
+exports.authorizeScheduleChange = exports.authorizeRoles = exports.authorizeSelfPhoto = exports.authorizeNoSelf = exports.authorizeSelfOrPermission = exports.ADMIN_ROLES = exports.authorizeAny = exports.authorize = void 0;
 const permission_service_1 = require("../modules/permission/permission.service");
 const prisma_1 = __importDefault(require("../config/prisma"));
 const authorize = (permissionKey) => {
@@ -28,6 +28,30 @@ const authorize = (permissionKey) => {
     };
 };
 exports.authorize = authorize;
+const authorizeAny = (...permissionKeys) => {
+    return async (req, res, next) => {
+        const authReq = req;
+        if (!authReq.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+            });
+        }
+        const userRole = String(authReq.user.role ?? "").toUpperCase();
+        for (const key of permissionKeys) {
+            const hasPermission = await permission_service_1.permissionService.hasPermission(userRole, key);
+            if (hasPermission) {
+                return next();
+            }
+        }
+        return res.status(403).json({
+            success: false,
+            message: `Forbidden. Required one of permissions: ${permissionKeys.join(", ")}`,
+            required_permissions: permissionKeys,
+        });
+    };
+};
+exports.authorizeAny = authorizeAny;
 exports.ADMIN_ROLES = ["SUPER_ADMIN", "HEAD_ADMIN", "BRANCH_ADMIN"];
 // Lets a user always read/update their OWN employee record (matched by the
 // :employeeId route param) regardless of the employee.read/employee.update

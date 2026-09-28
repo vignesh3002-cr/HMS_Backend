@@ -353,11 +353,11 @@ export const createPatientComorbidityValidation = [
         .withMessage('Patient ID is required')
         .isLength({ max: 20 })
         .withMessage('Invalid patient ID'),
-    body('diagnosisId')
+    body('comorbidityId')
         .notEmpty()
-        .withMessage('Diagnosis ID is required')
-        .isLength({ max: 20 })
-        .withMessage('Invalid diagnosis ID'),
+        .withMessage('Comorbidity is required')
+        .isInt({ min: 1 })
+        .withMessage('Invalid comorbidity ID'),
     body('status')
         .optional()
         .isIn(['ACTIVE', 'INACTIVE', 'HISTORY', 'RESOLVED'])
@@ -454,23 +454,32 @@ export const createCustomAllergyValidation = [
         .withMessage('Substance name must not exceed 150 characters'),
 ];
 
+export const getComorbidityMasterValidation = [
+    query('search')
+        .optional()
+        .isLength({ max: 100 })
+        .withMessage('Search term must not exceed 100 characters'),
+    query('category')
+        .optional()
+        .isLength({ max: 100 })
+        .withMessage('Category must not exceed 100 characters'),
+];
+
 export const createCustomComorbidityValidation = [
-    body('diagnosisName')
+    body('comorbidityName')
         .trim()
         .notEmpty()
-        .withMessage('Diagnosis name is required')
-        .isLength({ max: 100 })
-        .withMessage('Diagnosis name must not exceed 100 characters'),
-    body('diagnosisCatogoryId')
+        .withMessage('Comorbidity name is required')
+        .isLength({ max: 255 })
+        .withMessage('Comorbidity name must not exceed 255 characters'),
+    body('category')
         .optional()
+        .trim()
         .isLength({ max: 100 })
-        .withMessage('Invalid diagnosis category'),
-    body('diagnosisCategory')
-        .optional()
-        .isLength({ max: 100 })
-        .withMessage('Invalid diagnosis category name'),
+        .withMessage('Category must not exceed 100 characters'),
     body('icdCode')
         .optional()
-        .isLength({ max: 100 })
-        .withMessage('ICD code must not exceed 100 characters'),
+        .trim()
+        .isLength({ max: 20 })
+        .withMessage('ICD code must not exceed 20 characters'),
 ];
