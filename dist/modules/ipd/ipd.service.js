@@ -470,6 +470,41 @@ class IpdService {
             });
         });
     }
+    async updateWard(wardId, data, user) {
+        const ward = await this.ipdRepository.findWardById(wardId);
+        if (!ward) {
+            throw new Error("Ward not found");
+        }
+        if (data.ward_name && data.ward_name.trim().toLowerCase() !== ward.ward_name.toLowerCase()) {
+            const duplicate = await this.ipdRepository.findWardByBranchAndName(ward.branch_id, data.ward_name.trim());
+            if (duplicate && duplicate.ward_id !== wardId) {
+                throw new Error(`Ward '${data.ward_name}' already exists in this branch`);
+            }
+        }
+        // Deactivating a ward must never orphan patients or beds still
+        // pointing at it -- both must be cleared out first.
+        if (data.active_status === 0) {
+            const admittedCount = await prisma_1.default.admission.count({
+                where: { ward_id: wardId, status: ipd_types_1.IPD_STATUS.ADMITTED },
+            });
+            if (admittedCount > 0) {
+                throw new Error("Cannot deactivate a ward with currently admitted patients");
+            }
+            const activeBedCount = await this.ipdRepository.countBedsInWard(wardId);
+            if (activeBedCount > 0) {
+                throw new Error("Cannot deactivate a ward that still has active beds -- reassign or deactivate its beds first");
+            }
+        }
+        return this.ipdRepository.updateWard(wardId, {
+            ward_name: data.ward_name?.trim(),
+            ward_type: data.ward_type,
+            floor: data.floor,
+            tariff: data.tariff,
+            active_status: data.active_status,
+            updated_by: user?.user_id || "SYSTEM",
+            updated_at: new Date(),
+        });
+    }
     async createBed(data, user) {
         const ward = await this.ipdRepository.findWardById(data.ward_id);
         if (!ward) {
@@ -502,6 +537,89 @@ class IpdService {
                 },
             });
             return bed;
+        });
+    }
+    async updateBed(bedId, data, user) {
+        const bed = await this.ipdRepository.findBedById(bedId);
+        if (!bed) {
+            throw new Error("Bed not found");
+        }
+        if (bed.status === ipd_types_1.BED_STATUS.OCCUPIED) {
+            throw new Error("Bed is currently occupied by an admitted patient and cannot be edited");
+        }
+        const oldWardId = bed.ward_id;
+        let newWardId = oldWardId;
+        let newBranchId = bed.branch_id;
+        if (data.ward_id && data.ward_id !== oldWardId) {
+            const targetWard = await this.ipdRepository.findWardById(data.ward_id);
+            if (!targetWard) {
+                throw new Error("Target ward not found");
+            }
+            newWardId = data.ward_id;
+            newBranchId = targetWard.branch_id;
+        }
+        if (data.bed_number) {
+            const duplicate = await this.ipdRepository.findBedByWardAndNumber(newWardId, data.bed_number.trim());
+            if (duplicate && duplicate.bed_id !== bedId) {
+                throw new Error(`Bed '${data.bed_number}' already exists in this ward`);
+            }
+        }
+        const wasActive = bed.active_status === 1;
+        const willBeActive = data.active_status === undefined ? wasActive : data.active_status === 1;
+        const wardChanged = newWardId !== oldWardId;
+        return prisma_1.default.$transaction(async (tx) => {
+            const updated = await this.ipdRepository.updateBed(bedId, {
+                bed_number: data.bed_number?.trim(),
+                bed_type: data.bed_type,
+                tariff: data.tariff,
+                ward_id: newWardId,
+                branch_id: newBranchId,
+                active_status: data.active_status,
+                updated_by: user?.user_id || "SYSTEM",
+                updated_at: new Date(),
+            }, tx);
+            // total_beds on ward_master is a live count of active beds (it is
+            // incremented on createBed), so any move/activation change here
+            // must keep both wards' counters in sync or they silently drift.
+            if (wardChanged) {
+                if (wasActive) {
+                    await tx.ward_master.update({
+                        where: { ward_id: oldWardId },
+                        data: { total_beds: { decrement: 1 }, updated_at: new Date() },
+                    });
+                }
+                if (willBeActive) {
+                    await tx.ward_master.update({
+                        where: { ward_id: newWardId },
+                        data: { total_beds: { increment: 1 }, updated_at: new Date() },
+                    });
+                }
+            }
+            else if (wasActive !== willBeActive) {
+                await tx.ward_master.update({
+                    where: { ward_id: newWardId },
+                    data: {
+                        total_beds: willBeActive ? { increment: 1 } : { decrement: 1 },
+                        updated_at: new Date(),
+                    },
+                });
+            }
+            return updated;
+        });
+    }
+    async updateBedStatus(bedId, status, user, remarks) {
+        if (status !== ipd_types_1.BED_STATUS.AVAILABLE && status !== ipd_types_1.BED_STATUS.MAINTENANCE) {
+            throw new Error(`Status must be one of: ${ipd_types_1.BED_STATUS.AVAILABLE}, ${ipd_types_1.BED_STATUS.MAINTENANCE}`);
+        }
+        const bed = await this.ipdRepository.findBedById(bedId);
+        if (!bed) {
+            throw new Error("Bed not found");
+        }
+        if (bed.status === ipd_types_1.BED_STATUS.OCCUPIED) {
+            throw new Error("Bed is currently occupied by an admitted patient and cannot be changed manually");
+        }
+        return prisma_1.default.$transaction(async (tx) => {
+            return this.ipdRepository.markBedStatus(tx, bedId, status, user?.user_id || "SYSTEM", remarks);
         });
     }
 }

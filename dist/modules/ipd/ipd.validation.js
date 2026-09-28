@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createBedValidation = exports.createWardValidation = exports.getAdmissionByIpNumberValidation = exports.getAdmissionsValidation = exports.IPD_SORT_FIELDS = exports.transferAdmissionValidation = exports.dischargeAdmissionValidation = exports.updateAdmissionValidation = exports.createAdmissionValidation = void 0;
+exports.updateBedStatusValidation = exports.updateBedValidation = exports.updateWardValidation = exports.createBedValidation = exports.createWardValidation = exports.getAdmissionByIpNumberValidation = exports.getAdmissionsValidation = exports.IPD_SORT_FIELDS = exports.transferAdmissionValidation = exports.dischargeAdmissionValidation = exports.updateAdmissionValidation = exports.createAdmissionValidation = void 0;
 const express_validator_1 = require("express-validator");
 const ipd_constants_1 = require("./ipd.constants");
+const ipd_types_1 = require("./ipd.types");
 exports.createAdmissionValidation = [
     (0, express_validator_1.body)("patient_id")
         .notEmpty()
@@ -120,4 +121,35 @@ exports.createBedValidation = [
     (0, express_validator_1.body)("bed_type").optional().trim().isString(),
     (0, express_validator_1.body)("tariff").optional().isNumeric().withMessage("Tariff must be a valid number"),
     (0, express_validator_1.body)("status").optional().trim().isString(),
+];
+exports.updateWardValidation = [
+    (0, express_validator_1.param)("wardId")
+        .notEmpty()
+        .withMessage("Ward ID is required"),
+    (0, express_validator_1.body)("ward_name").optional().trim().notEmpty().withMessage("Ward name cannot be empty"),
+    (0, express_validator_1.body)("ward_type").optional().trim().isString(),
+    (0, express_validator_1.body)("floor").optional().trim().isString(),
+    (0, express_validator_1.body)("tariff").optional().isNumeric().withMessage("Tariff must be a valid number"),
+    (0, express_validator_1.body)("active_status").optional().isInt({ min: 0, max: 1 }).withMessage("Active status must be 0 or 1"),
+];
+exports.updateBedValidation = [
+    (0, express_validator_1.param)("bedId")
+        .notEmpty()
+        .withMessage("Bed ID is required"),
+    (0, express_validator_1.body)("bed_number").optional().trim().notEmpty().withMessage("Bed number cannot be empty"),
+    (0, express_validator_1.body)("bed_type").optional().trim().isString(),
+    (0, express_validator_1.body)("tariff").optional().isNumeric().withMessage("Tariff must be a valid number"),
+    (0, express_validator_1.body)("ward_id").optional().trim().isString(),
+    (0, express_validator_1.body)("active_status").optional().isInt({ min: 0, max: 1 }).withMessage("Active status must be 0 or 1"),
+];
+exports.updateBedStatusValidation = [
+    (0, express_validator_1.param)("id")
+        .notEmpty()
+        .withMessage("Bed ID is required"),
+    (0, express_validator_1.body)("status")
+        .notEmpty()
+        .withMessage("Status is required")
+        .isIn([ipd_types_1.BED_STATUS.AVAILABLE, ipd_types_1.BED_STATUS.MAINTENANCE])
+        .withMessage(`Status must be one of: ${ipd_types_1.BED_STATUS.AVAILABLE}, ${ipd_types_1.BED_STATUS.MAINTENANCE}`),
+    (0, express_validator_1.body)("remarks").optional().trim().isString(),
 ];

@@ -12,6 +12,9 @@ import {
     getAdmissionByIpNumberValidation,
     createWardValidation,
     createBedValidation,
+    updateWardValidation,
+    updateBedValidation,
+    updateBedStatusValidation,
 } from "./ipd.validation";
 
 const router = Router();
@@ -68,6 +71,15 @@ router.post(
     controller.createWard.bind(controller)
 );
 
+router.patch(
+    "/wards/:wardId",
+    authenticate,
+    authorizeAny("ward.manage", "admission.create"),
+    branchScope,
+    updateWardValidation,
+    controller.updateWard.bind(controller)
+);
+
 router.get(
     "/beds",
     authenticate,
@@ -83,6 +95,24 @@ router.post(
     branchScope,
     createBedValidation,
     controller.createBed.bind(controller)
+);
+
+router.patch(
+    "/beds/:bedId",
+    authenticate,
+    authorizeAny("bed.manage", "admission.create"),
+    branchScope,
+    updateBedValidation,
+    controller.updateBed.bind(controller)
+);
+
+router.patch(
+    "/beds/:id/status",
+    authenticate,
+    authorizeAny("bed.manage", "admission.create"),
+    branchScope,
+    updateBedStatusValidation,
+    controller.updateBedStatus.bind(controller)
 );
 
 router.get(

@@ -150,13 +150,19 @@ class IpdRepository {
     async createBed(tx, data) {
         return tx.bed_master.create({ data });
     }
-    async updateBed(bedId, data) {
-        return prisma_1.default.bed_master.update({ where: { bed_id: bedId }, data });
+    async updateBed(bedId, data, tx) {
+        const client = tx ?? prisma_1.default;
+        return client.bed_master.update({ where: { bed_id: bedId }, data });
     }
-    async markBedStatus(tx, bedId, status, updatedBy) {
+    async markBedStatus(tx, bedId, status, updatedBy, remarks) {
         return tx.bed_master.update({
             where: { bed_id: bedId },
-            data: { status, updated_by: updatedBy, updated_at: new Date() },
+            data: {
+                status,
+                updated_by: updatedBy,
+                updated_at: new Date(),
+                ...(remarks !== undefined ? { remarks } : {}),
+            },
         });
     }
     async deleteBed(bedId) {

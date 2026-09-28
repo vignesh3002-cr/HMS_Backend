@@ -20,6 +20,93 @@ const departmentService = new DepartmentService();
 const notificationService = new NotificationService();
 const priorityFlagsService = new PriorityFlagsService();
 
+/**
+ * Trim a string to a sane length for LLM consumption.
+ *
+ * Clinical free-text (symptoms, diagnosis_text, prescription_details) has no
+ * upper bound in the schema, so a single verbose note can dominate a tool
+ * result. Truncating with an explicit marker keeps the model aware that it is
+ * looking at a fragment rather than the whole field.
+ */
+function trimText(value: unknown, max = 400): string | null {
+    if (value == null) return null;
+    const s = String(value);
+    return s.length > max ? `${s.slice(0, max)}… [truncated]` : s;
+}
+
+/**
+ * Project a raw appointment row down to the fields an LLM can actually reason
+ * about.
+ *
+ * This is the single most important projection in the AI module. Raw rows come
+ * from `appointmentDetailInclude`, which selects `patient_photo_url` — and
+ * photos are stored as base64 data URLs by avatar-upload.tsx (canvas.toDataURL),
+ * so one row can carry a few hundred KB of base64. Unprojected, a 50-row
+ * response was megabytes of base64, which exceeds the model's context window on
+ * its own and 400s the whole request.
+ *
+ * The raw 47-column row also carries the long clinical text fields, which are
+ * rarely what the chatbot is being asked about.
+ */
+function projectAppointment(a: any) {
+    const patient = a.patient_bio_data;
+    const doctor = a.employees;
+    return {
+        appointment_id: a.appointment_id,
+        status: a.status ?? a.appointment_status,
+        appointment_date: a.appointment_date,
+        appointment_time: a.appointment_time,
+        token_number: a.token_number,
+        patient_id: a.patient_id,
+        patient_name: patient
+            ? `${patient.patient_first_name ?? ""} ${patient.patient_middle_name ? patient.patient_middle_name + " " : ""}${patient.patient_last_name ?? ""}`.trim()
+            : null,
+        patient_age: patient?.patient_age,
+        patient_gender: patient?.patient_gender,
+        // Deliberately no photo: base64, useless to the model, enormous.
+        doctor_id: a.employee_id,
+        doctor_name: doctor
+            ? `${doctor.first_name ?? ""} ${doctor.middle_name ? doctor.middle_name + " " : ""}${doctor.last_name ?? ""}`.trim()
+            : a.doctor_name,
+        specialization: doctor?.specialization,
+        department: a.department_master?.department_name ?? a.department,
+        branch: a.branch?.branch_name,
+        branch_area: a.branch?.branch_area,
+        reason_for_visit: trimText(a.reason_for_visit, 200),
+        chief_complaint: trimText(a.chief_complaint),
+        visit_type: a.Patient_visit_type,
+        patient_type: a.Patient_type,
+        chemo_fitness: a.chemo_fitness,
+        consultation_fee: a.consultation_fee,
+        payment_status: a.payment_status,
+        checkin_time: a.checkin_time,
+        checkout_time: a.checkout_time,
+        cancel_reason: a.cancel_reason,
+        cancelled_at: a.cancelled_at,
+        created_at: a.created_at,
+    };
+}
+
+/**
+ * Project a paginated appointment service response, preserving the `total` so
+ * the model can still say "showing 15 of 240" instead of implying it saw
+ * everything.
+ */
+function projectAppointmentList(result: any) {
+    const rows: any[] = result?.appointments ?? result?.data ?? [];
+    const list = Array.isArray(rows) ? rows : [];
+    const out: any = {
+        total: result?.total ?? list.length,
+        returned: list.length,
+        appointments: list.map(projectAppointment),
+    };
+    const total = out.total;
+    if (typeof total === "number" && total > list.length) {
+        out.truncated = `${list.length} of ${total} records returned — the rest were omitted to keep the response small. Re-run with a narrower date or status filter to see more.`;
+    }
+    return out;
+}
+
 export async function executeAITool(
     toolName: string,
     args: any,
@@ -157,8 +244,15 @@ async function searchPatient(args: any, user: AIUserContext) {
 }
 
 async function getPatient(args: any) {
-    const patient = await patientService.getPatientById(args.patient_id);
-    return { success: true, output: patient };
+    const patient: any = await patientService.getPatientById(args.patient_id);
+    if (!patient) {
+        return { success: false, output: null, error: `No patient found with id ${args.patient_id}.` };
+    }
+    // Strip the base64 photo for the same reason as projectAppointment -- see
+    // the note there. Everything else the patient record holds is small and is
+    // legitimately what the chatbot was asked for.
+    const { patient_photo_url: _photo, ...rest } = patient;
+    return { success: true, output: rest };
 }
 
 async function createPatient(args: any, user: AIUserContext) {
@@ -202,12 +296,12 @@ async function searchAppointments(args: any, user: AIUserContext) {
         limit: args.limit || 10,
         page: 1
     });
-    return { success: true, output: appointments };
+    return { success: true, output: projectAppointmentList(appointments) };
 }
 
 async function getAppointment(args: any) {
     const appointment = await appointmentService.getAppointmentByNumber(args.appointment_no);
-    return { success: true, output: appointment };
+    return { success: true, output: projectAppointment(appointment) };
 }
 
 async function getTodayAppointments(args: any, user: AIUserContext) {
@@ -219,10 +313,14 @@ async function getTodayAppointments(args: any, user: AIUserContext) {
         status: args.status,
         date: dateStr,
         branchId: args.branch_id || user.branch_id,
-        limit: 50,
+        // Was 50. A single day's roster is the one query where the chatbot
+        // genuinely wants volume, but 50 projected rows still costs ~4K tokens
+        // and the projection marker tells the model to narrow down if it needs
+        // more rather than silently truncating.
+        limit: 15,
         page: 1
     });
-    return { success: true, output: appointments };
+    return { success: true, output: projectAppointmentList(appointments) };
 }
 
 async function createAppointment(args: any, user: AIUserContext) {
@@ -513,22 +611,104 @@ async function searchMedicine(args: any) {
 // PRESCRIPTION TOOLS
 // ═══════════════════════════════════════════════════════════════
 
+/**
+ * Project a prescription down to its header fields.
+ *
+ * Field names mirror the `prescription` model and its
+ * `prescriptionDetailInclude` (patient_history -> patient_bio_data, employees).
+ * The raw row carries long clinical free text and a denormalised patient
+ * snapshot, which is mostly irrelevant to a question like "what is this patient
+ * on?". Item-level detail is what getPrescription is for.
+ */
+function projectPrescription(p: any) {
+    if (!p) return p;
+    const bio = p.patient_history?.patient_bio_data;
+    const doctor = p.employees;
+    return {
+        prescription_id: p.prescription_id,
+        prescription_date: p.prescription_date,
+        status: p.prescription_status,
+        visit_type: p.visit_type,
+        patient_history_id: p.patient_history_id,
+        patient_id: bio?.patient_id,
+        patient_name: bio
+            ? `${bio.patient_first_name ?? ""} ${bio.patient_middle_name ? bio.patient_middle_name + " " : ""}${bio.patient_last_name ?? ""}`.trim()
+            : null,
+        patient_mobile: bio?.patient_primary_mobile,
+        doctor_id: p.employee_id,
+        doctor_name: doctor
+            ? `${doctor.first_name ?? ""} ${doctor.middle_name ? doctor.middle_name + " " : ""}${doctor.last_name ?? ""}`.trim()
+            : null,
+        specialization: doctor?.specialization,
+        branch: p.branch?.branch_name,
+        chief_complaint: trimText(p.chief_complaint),
+        clinical_notes: trimText(p.clinical_notes),
+        advice: trimText(p.advice),
+        followup_date: p.followup_date,
+        created_at: p.created_at,
+    };
+}
+
+/**
+ * Project a prescription item. Medicine naming lives on `medicine_master`
+ * (via prescriptionItemInclude), the dosing fields on the item itself.
+ */
+function projectPrescriptionItem(i: any) {
+    const med = i.medicine_master;
+    return {
+        prescription_item_id: i.prescription_item_id,
+        medicine_id: i.medicine_id,
+        medicine_name: med?.medicine_name,
+        generic_name: med?.generic_name,
+        strength: med?.strength,
+        dosage_form: med?.dosage_form,
+        dosage: i.dosage,
+        frequency: i.frequency,
+        duration: i.duration,
+        unit: i.unit,
+        quantity: i.quantity,
+        route: i.route,
+        before_after_food: i.before_after_food,
+        // Morning/afternoon/night are nullable booleans, not a schedule string --
+        // render them as an explicit list so the model doesn't read `null` as "not
+        // prescribed" when the column is simply unset.
+        timing: [i.morning ? "morning" : null, i.afternoon ? "afternoon" : null, i.night ? "night" : null]
+            .filter(Boolean)
+            .join(", ") || null,
+        days: i.days,
+        drug_role: i.drug_role,
+        drug_type: i.drug_type,
+        instruction: trimText(i.instruction, 200),
+    };
+}
+
 async function getPatientPrescriptions(args: any) {
-    const prescriptions = await prescriptionService.getPrescriptionsByPatientId(
+    const result: any = await prescriptionService.getPrescriptionsByPatientId(
         args.patient_id,
         { limit: args.limit || 10, page: 1 }
     );
-    return { success: true, output: prescriptions };
+    const rows: any[] = result?.prescriptions ?? [];
+    const list = Array.isArray(rows) ? rows : [];
+    const out: any = {
+        total: result?.total ?? list.length,
+        returned: list.length,
+        prescriptions: list.map(projectPrescription),
+    };
+    const total = out.total;
+    if (typeof total === "number" && total > list.length) {
+        out.truncated = `${list.length} of ${total} prescriptions returned. Ask for a specific date range to see more.`;
+    }
+    return { success: true, output: out };
 }
 
 async function getPrescription(args: any) {
-    const prescription = await prescriptionService.getPrescriptionById(args.prescription_id);
-    const items = await prescriptionService.getPrescriptionItems(args.prescription_id);
+    const prescription: any = await prescriptionService.getPrescriptionById(args.prescription_id);
+    const items: any = await prescriptionService.getPrescriptionItems(args.prescription_id);
     return {
         success: true,
         output: {
-            ...prescription,
-            items
+            ...projectPrescription(prescription),
+            items: Array.isArray(items) ? items.map(projectPrescriptionItem) : [],
         }
     };
 }

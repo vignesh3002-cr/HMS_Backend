@@ -80,6 +80,7 @@ class AuthService {
     static ALLOWED_KPI_IDS = new Set([
         "doctors",
         "patients",
+        "critical-patients",
         "staff",
         "appointments",
         "prescriptions",
