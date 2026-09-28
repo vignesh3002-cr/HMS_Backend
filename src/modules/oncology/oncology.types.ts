@@ -186,6 +186,9 @@ export interface CreateStagingDetailDto {
     // patient must have an open/recent encounter for this to be recorded at all.
     diagnosis_id: string;
     patient_history_id?: string | null;
+    // The visit (encounter) this staging detail is recorded in - one row
+    // per visit. Defaults to the patient's qualifying (latest) encounter.
+    encounter_no?: string | null;
     visit_date?: string | null;
     diagnosis_date?: string | null;
     progression_date?: string | null;
@@ -259,6 +262,7 @@ export interface StagingDetailFilterQuery {
 
     patient_id?: string;
     diagnosis_id?: string;
+    encounter_no?: string;
     employee_id?: string;
     branch_id?: string;
     cancer_type_id?: string;

@@ -171,6 +171,22 @@ export class OncologyRepository {
 
     }
 
+    async findEncounterByNumber(encounterNo: string) {
+
+        return prisma.encounter.findUnique({ where: { encounter_no: encounterNo } });
+
+    }
+
+    // The staging detail recorded in a visit (one per encounter).
+    async findStagingDetailByEncounter(encounterNo: string) {
+
+        return prisma.oncology_staging_detail.findFirst({
+            where: { encounter_no: encounterNo },
+            select: { staging_detail_id: true }
+        });
+
+    }
+
     async findMostRecentEncounterForPatient(patientId: string) {
 
         return prisma.encounter.findFirst({
@@ -293,12 +309,13 @@ export class OncologyRepository {
         const where: Prisma.oncology_staging_detailWhereInput = {
             ...(filters.patient_id ? { patient_id: filters.patient_id } : {}),
             ...(filters.diagnosis_id ? { diagnosis_id: filters.diagnosis_id } : {}),
+            ...(filters.encounter_no ? { encounter_no: filters.encounter_no } : {}),
             ...(filters.employee_id ? { employee_id: filters.employee_id } : {}),
             ...(filters.branch_id ? { branch_id: filters.branch_id } : {}),
             ...(filters.cancer_type_id ? { cancer_type_id: filters.cancer_type_id } : {}),
             ...(filters.date_from || filters.date_to
                 ? {
-                    created_at: {
+                    visit_date: {
                         ...(filters.date_from ? { gte: new Date(filters.date_from) } : {}),
                         ...(filters.date_to ? { lte: new Date(filters.date_to) } : {})
                     }
@@ -307,10 +324,16 @@ export class OncologyRepository {
         };
 
         const [rows, total] = await Promise.all([
+            // Newest visit first - a row saved on one day may record an
+            // earlier (or, when re-saved, later) visit, so the visit date
+            // orders the history, not the save date.
             prisma.oncology_staging_detail.findMany({
                 where,
                 include: this.stagingDetailInclude,
-                orderBy: { created_at: "desc" },
+                orderBy: [
+                    { visit_date: { sort: "desc", nulls: "last" } },
+                    { created_at: "desc" }
+                ],
                 skip: (page - 1) * limit,
                 take: limit
             }),

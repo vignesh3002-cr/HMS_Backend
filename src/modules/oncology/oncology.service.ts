@@ -426,6 +426,31 @@ export class OncologyService {
 
         const encounter = await this.resolveQualifyingEncounter(dto.patient_id);
 
+        // The visit this diagnosis is recorded in: the one named (it must be
+        // this patient's), else the qualifying encounter. One staging detail
+        // per visit - re-saving in the same visit updates that row.
+        let encounterNo = encounter.encounter_no;
+
+        if (dto.encounter_no && dto.encounter_no !== encounter.encounter_no) {
+
+            const named = await this.repository.findEncounterByNumber(dto.encounter_no);
+
+            if (!named || named.patient_id !== dto.patient_id) {
+                throw new Error("The encounter does not belong to this patient");
+            }
+
+            encounterNo = named.encounter_no;
+
+        }
+
+        const existingForVisit = await this.repository.findStagingDetailByEncounter(encounterNo);
+
+        if (existingForVisit) {
+            throw new Error(
+                `This visit (${encounterNo}) already has a staging detail (${existingForVisit.staging_detail_id}) - update it instead`
+            );
+        }
+
         const { cancerType, subtype } = await this.resolveCancerTypeAndSubtype(dto.cancer_type_id, dto.cancer_subtype_id);
 
         this.assertLateralityApplies(cancerType.cancer_type, dto.laterality);
@@ -496,6 +521,7 @@ export class OncologyService {
                 patient_id: dto.patient_id,
                 patient_history_id: dto.patient_history_id ?? null,
                 diagnosis_id: dto.diagnosis_id ?? null,
+                encounter_no: encounterNo,
                 visit_date: dto.visit_date ? new Date(dto.visit_date) : null,
                 diagnosis_date: dto.diagnosis_date ? new Date(dto.diagnosis_date) : null,
                 progression_date: dto.progression_date ? new Date(dto.progression_date) : null,

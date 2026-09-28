@@ -1513,6 +1513,7 @@ model encounter {
   past_history_treatment_type         String?
   previous_reports                    String?
   chemotherapy_plan                   chemotherapy_plan[]
+  oncology_staging_detail             oncology_staging_detail[]
   appointment_history                 appointment_history?          @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_appointment")
   branch                              branch                        @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_branch")
   department_master                   department_master?            @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_department")
@@ -2075,6 +2076,7 @@ model oncology_staging_detail {
   patient_id                    String              @db.VarChar(100)
   patient_history_id            String?             @db.VarChar(100)
   diagnosis_id                  String?             @db.VarChar(100)
+  encounter_no                  String?             @db.VarChar(100)
   visit_date                    DateTime?           @db.Date
   diagnosis_date                DateTime?           @db.Date
   biopsy_date                   DateTime?           @db.Date
@@ -2115,11 +2117,14 @@ model oncology_staging_detail {
   branch                        branch?             @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_branch")
   cancer_types                  cancer_types        @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_cancer_type")
   diagnosis                     diagnosis?          @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_diagnosis")
+  encounter                     encounter?          @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_encounter")
   employees                     employees?          @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_employee")
   patient_bio_data              patient_bio_data    @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_patient")
   patient_history               patient_history?    @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_patient_history")
   cancer_subtypes               cancer_subtypes     @relation(fields: [cancer_subtype_id], references: [subtype_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_subtype")
   user_table                    user_table?         @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_user")
+
+  @@index([encounter_no], map: "idx_staging_detail_encounter")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

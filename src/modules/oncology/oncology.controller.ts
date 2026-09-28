@@ -263,6 +263,7 @@ export class OncologyController {
             const result = await service.listStagingDetails({
                 patient_id: req.query.patient_id as string | undefined,
                 diagnosis_id: req.query.diagnosis_id as string | undefined,
+                encounter_no: req.query.encounter_no as string | undefined,
                 employee_id: req.query.employee_id as string | undefined,
                 branch_id: req.query.branchId as string | undefined,
                 cancer_type_id: req.query.cancer_type_id as string | undefined,
