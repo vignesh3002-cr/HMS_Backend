@@ -277,7 +277,10 @@ export interface VersionPersonalizedProtocolDto {
 
 export interface PlanItemInputDto {
 
-    medicine_id: string;
+    // A drug from medicine_master, or - when the doctor types their own
+    // name - no medicine_id and a drug_name kept only on this plan.
+    medicine_id?: string | null;
+    drug_name?: string | null;
     drug_role?: "PRIMARY" | "PREMEDICATION" | "POSTMEDICATION" | "SUPPORTIVE";
     drug_sequence: number;
     drug_type?: string | null;
@@ -296,6 +299,8 @@ export interface PlanItemInputDto {
     administration_day?: number | null;
     cycle_day?: number | null;
     frequency?: string | null;
+    timing_relative_to_primary?: string | null;
+    administration_detail?: string | null;
     maximum_dose?: number | null;
     minimum_dose?: number | null;
     dose_required?: boolean | null;
@@ -427,6 +432,38 @@ export interface PlanFilterQuery {
 }
 
 export interface AddPlanItemDto extends PlanItemInputDto { }
+
+// A plan's own hydration rows (Chemotherapy Order > Hydration), replaced as
+// a whole; they start as a copy of the protocol's hydration template.
+export interface PlanHydrationRowDto {
+
+    source_dilution_id?: string | null;
+    hydration_stage: "PRE" | "POST";
+    agent_name?: string | null;
+    diluent?: string | null;
+    dilution_volume?: number | null;
+    dilution_volume_unit?: string | null;
+    guidance?: string | null;
+
+}
+
+// PUT /plans/:planId/orders/:cycle/:day - one cycle day's full order.
+// hydration left out = that day's hydration is left untouched.
+export interface SavePlanOrderDto {
+
+    items: PlanItemInputDto[];
+    hydration?: PlanHydrationRowDto[] | null;
+    dosing?: {
+        height_cm?: number | null;
+        weight_kg?: number | null;
+        bsa?: number | null;
+        serum_creatinine?: number | null;
+        crcl?: number | null;
+    } | null;
+    encounter_no?: string | null;
+    copied_from_order_id?: string | null;
+
+}
 
 export interface CreateCycleDto {
 

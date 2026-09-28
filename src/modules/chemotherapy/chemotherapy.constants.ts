@@ -33,6 +33,16 @@ export const PLAN_TERMINAL_STATUSES: PlanStatus[] = [
     PLAN_STATUS.COMPLETED, PLAN_STATUS.DISCONTINUED, PLAN_STATUS.CANCELLED
 ];
 
+// A plan is one course: a patient has at most one open plan at a time
+// (enforced by the uq_open_chemo_plan_per_patient partial index too).
+export const OPEN_PLAN_STATUSES: PlanStatus[] = [PLAN_STATUS.PLANNED, PLAN_STATUS.ACTIVE];
+
+// A cycle day's saved order: ORDERED until its consultation is submitted.
+export const PLAN_ORDER_STATUS = {
+    ORDERED: "ORDERED",
+    COMPLETED: "COMPLETED"
+} as const;
+
 export const CYCLE_STATUS = {
     PLANNED: "PLANNED",
     APPROVED: "APPROVED",
@@ -81,6 +91,8 @@ export const DRUG_ROLE = {
 export const ID_ENTITY = {
     PLAN: "CHEMOTHERAPY_PLAN",
     PLAN_ITEM: "CHEMOTHERAPY_PLAN_ITEM",
+    PLAN_HYDRATION: "CHEMOTHERAPY_PLAN_HYDRATION",
+    PLAN_ORDER: "CHEMOTHERAPY_PLAN_ORDER",
     CYCLE: "CHEMOTHERAPY_CYCLE",
     ADMINISTRATION: "CHEMOTHERAPY_ADMINISTRATION",
     ADVERSE_EVENT: "CHEMOTHERAPY_ADVERSE_EVENT",

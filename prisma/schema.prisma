@@ -589,6 +589,7 @@ model chemotherapy_cycle {
   chemotherapy_followup       chemotherapy_followup[]
   chemotherapy_lab_review     chemotherapy_lab_review[]
   chemotherapy_vitals         chemotherapy_vitals[]
+  chemotherapy_plan_order     chemotherapy_plan_order[]
 
   @@unique([chemotherapy_plan_id, cycle_number], map: "uq_plan_cycle")
 }
@@ -799,6 +800,65 @@ model chemotherapy_plan {
   cancer_subtypes               cancer_subtypes?               @relation(fields: [subtype_id], references: [subtype_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_subtype")
   user_table                    user_table?                    @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_user")
   chemotherapy_plan_items       chemotherapy_plan_items[]
+  chemotherapy_plan_hydration   chemotherapy_plan_hydration[]
+  chemotherapy_plan_order       chemotherapy_plan_order[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model chemotherapy_plan_order {
+  id                      BigInt                        @id @default(autoincrement())
+  plan_order_id           String                        @unique(map: "uq_plan_order_id") @db.VarChar(100)
+  chemotherapy_plan_id    String                        @db.VarChar(100)
+  chemotherapy_cycle_id   String                        @db.VarChar(100)
+  cycle_number            Int
+  cycle_day               Int
+  order_status            String                        @default("ORDERED") @db.VarChar(20)
+  hydration_saved         Boolean                       @default(false)
+  copied_from_order_id    String?                       @db.VarChar(100)
+  encounter_no            String?                       @db.VarChar(100)
+  dosing_height_cm        Decimal?                      @db.Decimal(6, 2)
+  dosing_weight_kg        Decimal?                      @db.Decimal(6, 2)
+  dosing_bsa              Decimal?                      @db.Decimal(5, 2)
+  dosing_serum_creatinine Decimal?                      @db.Decimal(6, 2)
+  dosing_crcl             Decimal?                      @db.Decimal(7, 2)
+  completed_at            DateTime?                     @db.Timestamp(6)
+  created_by              String?                       @db.VarChar(100)
+  created_at              DateTime?                     @default(now()) @db.Timestamp(6)
+  updated_at              DateTime?                     @default(now()) @db.Timestamp(6)
+  chemotherapy_plan       chemotherapy_plan             @relation(fields: [chemotherapy_plan_id], references: [chemotherapy_plan_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_plan_order_plan")
+  chemotherapy_cycle      chemotherapy_cycle            @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_plan_order_cycle")
+  copied_from             chemotherapy_plan_order?      @relation("plan_order_copies", fields: [copied_from_order_id], references: [plan_order_id], onDelete: SetNull, onUpdate: NoAction, map: "fk_plan_order_copied_from")
+  copies                  chemotherapy_plan_order[]     @relation("plan_order_copies")
+  chemotherapy_plan_items chemotherapy_plan_items[]
+  chemotherapy_plan_hydration chemotherapy_plan_hydration[]
+
+  @@unique([chemotherapy_plan_id, cycle_number, cycle_day], map: "uq_plan_order_cycle_day")
+  @@index([chemotherapy_plan_id], map: "idx_plan_order_plan")
+  @@index([encounter_no], map: "idx_plan_order_encounter")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model chemotherapy_plan_hydration {
+  id                   BigInt            @id @default(autoincrement())
+  plan_hydration_id    String            @unique(map: "uq_plan_hydration_id") @db.VarChar(100)
+  chemotherapy_plan_id String            @db.VarChar(100)
+  source_dilution_id   String?           @db.VarChar(100)
+  hydration_stage      String            @db.VarChar(20)
+  agent_name           String?           @db.VarChar(200)
+  diluent              String?           @db.VarChar(200)
+  dilution_volume      Decimal?          @db.Decimal(10, 2)
+  dilution_volume_unit String?           @db.VarChar(50)
+  guidance             String?
+  display_order        Int               @default(0)
+  created_at           DateTime?         @default(now()) @db.Timestamp(6)
+  created_by           String?           @db.VarChar(100)
+  plan_order_id        String?           @db.VarChar(100)
+  chemotherapy_plan    chemotherapy_plan @relation(fields: [chemotherapy_plan_id], references: [chemotherapy_plan_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_plan_hydration_plan")
+  chemotherapy_plan_order chemotherapy_plan_order? @relation(fields: [plan_order_id], references: [plan_order_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_plan_hydration_order")
+
+  @@index([chemotherapy_plan_id], map: "idx_plan_hydration_plan")
+  @@index([plan_order_id], map: "idx_plan_hydration_order")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -806,7 +866,9 @@ model chemotherapy_plan_items {
   id                          BigInt                        @id @default(autoincrement())
   chemotherapy_plan_item_id   String                        @unique(map: "uq_chemotherapy_plan_item") @db.VarChar(100)
   chemotherapy_plan_id        String                        @db.VarChar(100)
-  medicine_id                 String                        @db.VarChar(100)
+  medicine_id                 String?                       @db.VarChar(100)
+  plan_order_id               String?                       @db.VarChar(100)
+  drug_name                   String?                       @db.VarChar(200)
   drug_sequence               Int
   drug_type                   String?                       @db.VarChar(100)
   protocol_dose               Decimal?                      @db.Decimal(10, 2)
@@ -824,6 +886,8 @@ model chemotherapy_plan_items {
   administration_day          Int?
   cycle_day                   Int?
   frequency                   String?                       @db.VarChar(100)
+  timing_relative_to_primary  String?                       @db.VarChar(100)
+  administration_detail       String?
   maximum_dose                Decimal?                      @db.Decimal(10, 2)
   minimum_dose                Decimal?                      @db.Decimal(10, 2)
   dose_required               Boolean?                      @default(true)
@@ -835,8 +899,11 @@ model chemotherapy_plan_items {
   updated_at                  DateTime?                     @default(now()) @db.Timestamp(6)
   drug_role                   String                        @default("PRIMARY") @db.VarChar(100)
   chemotherapy_administration chemotherapy_administration[]
-  medicine_master             medicine_master               @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_items_medicine")
+  medicine_master             medicine_master?              @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_items_medicine")
+  chemotherapy_plan_order     chemotherapy_plan_order?      @relation(fields: [plan_order_id], references: [plan_order_id], onDelete: SetNull, onUpdate: NoAction, map: "fk_plan_items_order")
   chemotherapy_plan           chemotherapy_plan             @relation(fields: [chemotherapy_plan_id], references: [chemotherapy_plan_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_plan_items_plan")
+
+  @@index([plan_order_id], map: "idx_plan_items_order")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -2306,7 +2373,8 @@ model prescription_items {
   id                   BigInt          @id @default(autoincrement())
   prescription_item_id String          @unique @db.VarChar(100)
   prescription_id      String          @db.VarChar(100)
-  medicine_id          String          @db.VarChar(100)
+  medicine_id          String?         @db.VarChar(100)
+  drug_name            String?         @db.VarChar(200)
   dosage               String?         @db.VarChar(100)
   frequency            String?         @db.VarChar(100)
   days                 Int?
@@ -2321,7 +2389,7 @@ model prescription_items {
   instruction          String?
   drug_role            String?         @db.VarChar(100)
   drug_type            String?         @db.VarChar(100)
-  medicine_master      medicine_master @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_prescription_items_medicine")
+  medicine_master      medicine_master? @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_prescription_items_medicine")
   prescription         prescription    @relation(fields: [prescription_id], references: [prescription_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_prescription_items_prescription")
 }
 

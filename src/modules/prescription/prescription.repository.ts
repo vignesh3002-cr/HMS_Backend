@@ -241,13 +241,15 @@ export class PrescriptionRepository {
         });
 
         return new Map(
-            planItems.map((item) => [
-                item.medicine_id,
-                {
-                    drug_role: item.drug_role,
-                    drug_type: item.drug_type
-                }
-            ])
+            planItems
+                .filter((item): item is typeof item & { medicine_id: string } => Boolean(item.medicine_id))
+                .map((item) => [
+                    item.medicine_id,
+                    {
+                        drug_role: item.drug_role,
+                        drug_type: item.drug_type
+                    }
+                ])
         );
 
     }
