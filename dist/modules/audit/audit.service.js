@@ -5,6 +5,7 @@ exports.summarizeCreate = summarizeCreate;
 exports.summarizeStatusChange = summarizeStatusChange;
 exports.logAudit = logAudit;
 exports.listAuditLogs = listAuditLogs;
+const client_1 = require("@prisma/client");
 const audit_repository_1 = require("./audit.repository");
 const repository = new audit_repository_1.AuditRepository();
 // Every write site already builds a sparse "only the fields being changed"
@@ -20,8 +21,13 @@ function diffFields(before, changes) {
         const newValue = changes[key];
         // Decimal/Date/BigInt don't compare equal with !== even when
         // logically identical - stringify both sides before comparing so
-        // the log only records fields that actually changed.
-        if (JSON.stringify(oldValue) === JSON.stringify(newValue)) {
+        // the log only records fields that actually changed. A Decimal
+        // column stringifies as "178" while the incoming number is 178, so
+        // numbers are compared in the Decimal's string form.
+        const comparable = (value) => client_1.Prisma.Decimal.isDecimal(value) || typeof value === "number"
+            ? new client_1.Prisma.Decimal(value).toString()
+            : value;
+        if (JSON.stringify(comparable(oldValue)) === JSON.stringify(comparable(newValue))) {
             continue;
         }
         diff[key] = { old: oldValue ?? null, new: newValue ?? null };

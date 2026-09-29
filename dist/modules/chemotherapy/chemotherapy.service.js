@@ -18,11 +18,142 @@ function isPlanStatus(value) {
 function isCycleStatus(value) {
     return Object.values(chemotherapy_constants_1.CYCLE_STATUS).includes(value);
 }
+function diagnosedCancers(staging) {
+    return [
+        {
+            cancer_type_id: staging.cancer_type_id,
+            cancer_subtype_id: staging.cancer_subtype_id,
+            cancer_type: staging.cancer_types.cancer_type,
+            cancer_subtype: staging.cancer_subtypes.subtype_name
+        },
+        ...(staging.oncology_staging_additional_cancers ?? []).map((extra) => ({
+            cancer_type_id: extra.cancer_type_id,
+            cancer_subtype_id: extra.cancer_subtype_id,
+            cancer_type: extra.cancer_types.cancer_type,
+            cancer_subtype: extra.cancer_subtypes?.subtype_name ?? null
+        }))
+    ];
+}
+function protocolLinks(protocol) {
+    return [
+        { cancer_type_id: protocol.cancer_type_id, subtype_id: protocol.subtype_id },
+        ...(protocol.chemotherapy_protocol_cancers ?? [])
+    ];
+}
+// The diagnosed cancer a protocol treats (primary cancer first): the
+// protocol's own cancer type or one of its chemotherapy_protocol_cancers
+// links, for that cancer's subtype, type-wide (null subtype), or any subtype
+// when no histopathology was picked for that cancer. Same rule the Protocol
+// dropdown lists by (ChemotherapyRepository.listRegimenProtocols).
+function findProtocolCancer(protocol, cancers) {
+    const links = protocolLinks(protocol);
+    return cancers.find((cancer) => links.some((link) => link.cancer_type_id === cancer.cancer_type_id &&
+        (!link.subtype_id || !cancer.cancer_subtype_id || link.subtype_id === cancer.cancer_subtype_id))) ?? null;
+}
 function appendNote(existing, note) {
     if (!note) {
         return existing ?? null;
     }
     return existing ? `${existing}\n${note}` : note;
+}
+// One plan item row. A drug is a medicine_master entry or, with no
+// medicine_id, the name the doctor typed. A cycle day order's rows are
+// that day's drugs, so their administration_day is the order's day.
+function planItemCreateData(planId, itemId, item, actingUserId, order) {
+    return {
+        chemotherapy_plan_item_id: itemId,
+        chemotherapy_plan_id: planId,
+        plan_order_id: order?.plan_order_id ?? null,
+        medicine_id: item.medicine_id || null,
+        drug_name: item.medicine_id ? null : item.drug_name?.trim() || null,
+        drug_role: item.drug_role ?? "PRIMARY",
+        drug_sequence: item.drug_sequence,
+        drug_type: item.drug_type ?? null,
+        protocol_dose: item.dosage ?? null,
+        protocol_dose_unit: item.dosage_unit ?? null,
+        dose_calculation_method: item.dose_calculation_method ?? null,
+        calculated_dose: item.calculated_dose ?? null,
+        calculated_dose_unit: item.calculated_dose_unit ?? null,
+        administration_route: item.administration_route ?? null,
+        formulation: item.formulation ?? null,
+        infusion_type: item.infusion_type ?? null,
+        infusion_duration_minutes: item.infusion_duration_minutes ?? null,
+        infusion_rate: item.infusion_rate ?? null,
+        dilution_solution: item.dilution_solution ?? null,
+        dilution_volume: item.dilution_volume ?? null,
+        administration_day: order ? order.cycle_day : item.administration_day ?? null,
+        cycle_day: item.cycle_day ?? null,
+        frequency: item.frequency ?? null,
+        timing_relative_to_primary: item.timing_relative_to_primary ?? null,
+        administration_detail: item.administration_detail ?? null,
+        maximum_dose: item.maximum_dose ?? null,
+        minimum_dose: item.minimum_dose ?? null,
+        dose_required: item.dose_required ?? true,
+        remarks: item.remarks ?? null,
+        created_by: actingUserId
+    };
+}
+function planHydrationCreateData(planId, hydrationId, index, row, actingUserId) {
+    return {
+        plan_hydration_id: hydrationId,
+        chemotherapy_plan_id: planId,
+        source_dilution_id: row.source_dilution_id ?? null,
+        hydration_stage: row.hydration_stage,
+        agent_name: row.agent_name ?? null,
+        diluent: row.diluent ?? null,
+        dilution_volume: row.dilution_volume ?? null,
+        dilution_volume_unit: row.dilution_volume_unit ?? null,
+        guidance: row.guidance ?? null,
+        display_order: index + 1,
+        created_by: actingUserId
+    };
+}
+// A protocol's items as plan items - the plan's one-time baseline copy.
+function protocolPlanItems(protocol) {
+    return protocol.chemotherapy_regimen_protocol_items.map((item) => ({
+        medicine_id: item.medicine_id,
+        drug_role: item.drug_role,
+        drug_sequence: item.drug_sequence,
+        drug_type: item.drug_type,
+        dosage: item.dosage != null ? Number(item.dosage) : null,
+        dosage_unit: item.dosage_unit,
+        administration_route: item.administration_route,
+        infusion_type: item.infusion_type,
+        infusion_duration_minutes: item.infusion_duration_minutes,
+        administration_day: item.administration_day,
+        cycle_day: item.cycle_day,
+        frequency: item.frequency,
+        timing_relative_to_primary: item.timing_relative_to_primary,
+        administration_detail: item.administration_detail,
+        dose_calculation_method: item.dose_calculation_method,
+        remarks: item.remarks
+    }));
+}
+// The plan's current cycle day order: on an open plan the first still
+// ORDERED day (by cycle, day) whose cycle isn't closed, else - and always
+// on a closed plan - the latest COMPLETED one. Orders come sorted by cycle,
+// day.
+function pickCurrentOrder(orders, planOpen) {
+    const pending = planOpen
+        ? orders.find((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.ORDERED &&
+            !chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(order.chemotherapy_cycle?.cycle_status))
+        : undefined;
+    return pending
+        ?? [...orders].reverse().find((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED)
+        ?? null;
+}
+// The next legal cycle status on the way to target (COMPLETED goes via
+// APPROVED and IN_PROGRESS; DELAYED resumes via APPROVED).
+function nextCycleStepTowards(current, target) {
+    const path = [chemotherapy_constants_1.CYCLE_STATUS.APPROVED, chemotherapy_constants_1.CYCLE_STATUS.IN_PROGRESS, chemotherapy_constants_1.CYCLE_STATUS.COMPLETED];
+    const allowed = chemotherapy_constants_1.CYCLE_STATUS_TRANSITIONS[current] ?? [];
+    const stopAt = path.indexOf(target);
+    return path.find((status, index) => index <= stopAt && allowed.includes(status)) ?? null;
+}
+function openPlanMessage(plan) {
+    const where = plan.branch?.branch_name ? ` at ${plan.branch.branch_name}` : "";
+    return `This patient already has an open chemotherapy plan (${plan.chemotherapy_plan_id}${plan.regimen_name ? `, ${plan.regimen_name}` : ""}, ${plan.treatment_status}${where}). ` +
+        "A new plan can be started once its last cycle day is completed, or after it is discontinued or cancelled.";
 }
 class ChemotherapyService {
     repository = new chemotherapy_repository_1.ChemotherapyRepository();
@@ -96,9 +227,10 @@ class ChemotherapyService {
         // applied automatically. Generic protocols are always listed;
         // the caller's organization's active personalized protocols are
         // included when the org context is available.
+        const cancers = diagnosedCancers(staging);
         const matchingProtocols = await this.repository.listRegimenProtocols({
-            cancer_type_id: staging.cancer_type_id,
-            subtype_id: staging.cancer_subtype_id,
+            cancer_type_ids: cancers.map((cancer) => cancer.cancer_type_id),
+            subtype_ids: cancers.flatMap((cancer) => (cancer.cancer_subtype_id ? [cancer.cancer_subtype_id] : [])),
             ...(organizationId ? { organization_id: organizationId } : {})
         });
         return {
@@ -106,6 +238,7 @@ class ChemotherapyService {
             patient_id: staging.patient_id,
             cancer_type: staging.cancer_types.cancer_type,
             cancer_subtype: staging.cancer_subtypes.subtype_name,
+            additional_cancers: cancers.slice(1),
             clinical_stage: staging.clinical_stage,
             suggested_therapy: staging.derived_fields?.suggested_therapy ?? null,
             breast_mol_subtype: staging.derived_fields?.breast_mol_subtype ?? null,
@@ -1777,6 +1910,34 @@ class ChemotherapyService {
         }, { timeout: 30000 });
         return this.getPersonalizedProtocol(newProtocolId, organizationId);
     }
+    // A protocol is usable when it treats one of the diagnosed cancers
+    // (findProtocolCancer) - the primary one or any additional cancer of a
+    // multi-type diagnosis. Returns that cancer so the plan records it.
+    assertProtocolUsable(protocol, cancers, organizationId) {
+        let matched = null;
+        if (cancers) {
+            matched = findProtocolCancer(protocol, cancers);
+            if (!matched) {
+                const links = protocolLinks(protocol);
+                const typeMatches = cancers.some((cancer) => links.some((link) => link.cancer_type_id === cancer.cancer_type_id));
+                throw new Error(typeMatches
+                    ? "Selected protocol does not match this patient's diagnosed cancer subtype"
+                    : "Selected protocol does not match this patient's diagnosed cancer type");
+            }
+        }
+        if (protocol.protocol_type === "PERSONALIZED") {
+            // Personalized protocols are organization-scoped: only their
+            // owning organization may use them, and only when published
+            // (active). Generics stay globally selectable.
+            if (protocol.active_status !== chemotherapy_constants_1.PROTOCOL_ACTIVE_STATUS.ACTIVE) {
+                throw new Error("Selected personalized protocol is not active");
+            }
+            if (!organizationId || protocol.organization_id !== organizationId) {
+                throw new Error("Selected personalized protocol does not belong to your organization");
+            }
+        }
+        return matched;
+    }
     async repository_findStagingDetailOrThrow(stagingDetailId) {
         const staging = await this.oncologyRepository.findStagingDetailById(stagingDetailId);
         if (!staging) {
@@ -1794,6 +1955,12 @@ class ChemotherapyService {
         const patient = await this.repository.findPatientById(dto.patient_id);
         if (!patient) {
             throw new Error("Patient not found");
+        }
+        // A plan is one course. Checked across every branch - the message
+        // names the open plan and its branch so it can be closed there.
+        const openPlan = await this.repository.findOpenPlanForPatient(dto.patient_id);
+        if (openPlan) {
+            throw new Error(openPlanMessage(openPlan));
         }
         const staging = await this.repository_findStagingDetailOrThrow(dto.staging_detail_id);
         if (staging.patient_id !== dto.patient_id) {
@@ -1823,50 +1990,24 @@ class ChemotherapyService {
         // This is a one-time copy: nothing here reads back from or writes to
         // chemotherapy_regimen_protocol after this point.
         let protocol = null;
+        let protocolCancer = null;
         if (dto.protocol_id) {
             protocol = await this.repository.findRegimenProtocolById(dto.protocol_id);
             if (!protocol) {
                 throw new Error("Regimen protocol not found");
             }
-            if (protocol.cancer_type_id !== staging.cancer_type_id) {
-                throw new Error("Selected protocol does not match this patient's diagnosed cancer type");
-            }
-            if (protocol.subtype_id && protocol.subtype_id !== staging.cancer_subtype_id) {
-                throw new Error("Selected protocol does not match this patient's diagnosed cancer subtype");
-            }
-            if (protocol.protocol_type === "PERSONALIZED") {
-                // Personalized protocols are organization-scoped: only their
-                // owning organization may use them, and only when published
-                // (active). Generics stay globally selectable.
-                if (protocol.active_status !== chemotherapy_constants_1.PROTOCOL_ACTIVE_STATUS.ACTIVE) {
-                    throw new Error("Selected personalized protocol is not active");
-                }
-                if (!organizationId || protocol.organization_id !== organizationId) {
-                    throw new Error("Selected personalized protocol does not belong to your organization");
-                }
-            }
+            protocolCancer = this.assertProtocolUsable(protocol, diagnosedCancers(staging), organizationId);
         }
+        // The plan is for the diagnosed cancer its protocol treats - which may
+        // be a secondary cancer of a multi-type diagnosis - else the primary.
+        const planCancer = protocolCancer ?? diagnosedCancers(staging)[0];
         const resolvedRegimenName = dto.regimen_name ?? protocol?.regimen_name;
         const resolvedRegimenCode = dto.regimen_code ?? protocol?.regimen_code ?? null;
         const resolvedPlannedCycles = dto.planned_cycles ?? protocol?.standard_cycles ?? null;
         const resolvedCycleIntervalDays = dto.cycle_interval_days ?? protocol?.cycle_interval_days ?? null;
         const resolvedPlanItems = (dto.plan_items && dto.plan_items.length > 0)
             ? dto.plan_items
-            : (protocol?.chemotherapy_regimen_protocol_items ?? []).map((item) => ({
-                medicine_id: item.medicine_id,
-                drug_role: item.drug_role,
-                drug_sequence: item.drug_sequence,
-                drug_type: item.drug_type,
-                dosage: item.dosage != null ? Number(item.dosage) : null,
-                dosage_unit: item.dosage_unit,
-                administration_route: item.administration_route,
-                infusion_type: item.infusion_type,
-                infusion_duration_minutes: item.infusion_duration_minutes,
-                administration_day: item.administration_day,
-                cycle_day: item.cycle_day,
-                frequency: item.frequency,
-                remarks: item.remarks
-            }));
+            : protocol ? protocolPlanItems(protocol) : [];
         if (!resolvedRegimenName) {
             throw new Error("regimen_name is required (or select a protocol_id to default it)");
         }
@@ -1876,12 +2017,7 @@ class ChemotherapyService {
         if (resolvedPlanItems.length === 0) {
             throw new Error("At least one plan item (drug) is required (or select a protocol_id)");
         }
-        for (const item of resolvedPlanItems) {
-            const medicine = await this.repository.findMedicineById(item.medicine_id);
-            if (!medicine) {
-                throw new Error(`Medicine not found: ${item.medicine_id}`);
-            }
-        }
+        await this.assertPlanItemDrugs(resolvedPlanItems);
         // Resolve patient_history_id: use what was passed (validated to
         // belong to this patient), else the patient's most recent record,
         // else auto-provision a minimal one - the column is NOT NULL but
@@ -1937,10 +2073,10 @@ class ChemotherapyService {
                 protocol_version: dto.protocol_version ?? protocol?.protocol_version ?? null,
                 treatment_intent: dto.treatment_intent ?? protocol?.treatment_intent ?? null,
                 cancer_stage: staging.clinical_stage ?? null,
-                cancer_type: staging.cancer_types.cancer_type,
-                cancer_subtype: staging.cancer_subtypes.subtype_name,
-                cancer_type_id: staging.cancer_type_id,
-                subtype_id: staging.cancer_subtype_id,
+                cancer_type: planCancer.cancer_type,
+                cancer_subtype: planCancer.cancer_subtype,
+                cancer_type_id: planCancer.cancer_type_id,
+                subtype_id: planCancer.cancer_subtype_id,
                 staging_detail_id: staging.staging_detail_id,
                 ecog_status: dto.ecog_status ?? null,
                 karnofsky_score: dto.karnofsky_score ?? null,
@@ -1955,37 +2091,18 @@ class ChemotherapyService {
                 insurance_type: dto.insurance_type ?? null,
                 remarks: dto.remarks ?? null,
                 discussion: dto.discussion ?? null,
+                dosing_height_cm: dto.dosing_height_cm ?? null,
+                dosing_weight_kg: dto.dosing_weight_kg ?? null,
+                dosing_bsa: dto.dosing_bsa ?? null,
+                dosing_serum_creatinine: dto.dosing_serum_creatinine ?? null,
+                dosing_crcl: dto.dosing_crcl ?? null,
                 created_by: actingUserId
             });
-            for (const item of resolvedPlanItems) {
-                const itemId = await this.repository.generatePlanItemId(tx);
-                await this.repository.createPlanItem(tx, {
-                    chemotherapy_plan_item_id: itemId,
-                    chemotherapy_plan_id: newPlanId,
-                    medicine_id: item.medicine_id,
-                    drug_role: item.drug_role ?? "PRIMARY",
-                    drug_sequence: item.drug_sequence,
-                    drug_type: item.drug_type ?? null,
-                    protocol_dose: item.dosage ?? null,
-                    protocol_dose_unit: item.dosage_unit ?? null,
-                    dose_calculation_method: item.dose_calculation_method ?? null,
-                    calculated_dose: item.calculated_dose ?? null,
-                    administration_route: item.administration_route ?? null,
-                    formulation: item.formulation ?? null,
-                    infusion_type: item.infusion_type ?? null,
-                    infusion_duration_minutes: item.infusion_duration_minutes ?? null,
-                    infusion_rate: item.infusion_rate ?? null,
-                    dilution_solution: item.dilution_solution ?? null,
-                    dilution_volume: item.dilution_volume ?? null,
-                    administration_day: item.administration_day ?? null,
-                    cycle_day: item.cycle_day ?? null,
-                    frequency: item.frequency ?? null,
-                    maximum_dose: item.maximum_dose ?? null,
-                    minimum_dose: item.minimum_dose ?? null,
-                    dose_required: item.dose_required ?? true,
-                    remarks: item.remarks ?? null,
-                    created_by: actingUserId
-                });
+            // The plan's baseline items: its copy of the protocol. Each cycle
+            // day's order is saved separately (savePlanOrder).
+            const itemIds = await (0, idGenerator_1.generateIdBatch)(tx, chemotherapy_constants_1.ID_ENTITY.PLAN_ITEM, resolvedPlanItems.length);
+            for (const [index, item] of resolvedPlanItems.entries()) {
+                await this.repository.createPlanItem(tx, planItemCreateData(newPlanId, itemIds[index], item, actingUserId));
             }
             await (0, audit_service_1.logAudit)(tx, {
                 entity_type: "chemotherapy_plan",
@@ -2011,10 +2128,45 @@ class ChemotherapyService {
         if (!plan) {
             throw new Error("Chemotherapy plan not found");
         }
-        return plan;
+        const [withOrders] = await this.withPlanOrders([plan]);
+        return withOrders;
     }
     async listPlans(filters) {
-        return this.repository.listPlans(filters);
+        const result = await this.repository.listPlans(filters);
+        return { ...result, rows: await this.withPlanOrders(result.rows) };
+    }
+    /*
+     * Adds each plan's saved cycle day orders (headers, in cycle / day
+     * order) and its current_order - the first ORDERED day, else the
+     * latest COMPLETED one - with that day's items and hydration. Readers
+     * (prescription, pharmacy slip, patient details) show current_order's
+     * rows, falling back to the baseline chemotherapy_plan_items.
+     */
+    async withPlanOrders(plans) {
+        if (plans.length === 0) {
+            return [];
+        }
+        const headers = await this.repository.listPlanOrders(plans.map((plan) => plan.chemotherapy_plan_id));
+        const ordersByPlan = new Map();
+        for (const header of headers) {
+            const list = ordersByPlan.get(header.chemotherapy_plan_id) ?? [];
+            list.push(header);
+            ordersByPlan.set(header.chemotherapy_plan_id, list);
+        }
+        const currentIdFor = (plan) => pickCurrentOrder(ordersByPlan.get(plan.chemotherapy_plan_id) ?? [], !chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(plan.treatment_status))?.plan_order_id;
+        const currentIds = plans
+            .map(currentIdFor)
+            .filter((id) => Boolean(id));
+        const currentOrders = currentIds.length > 0 ? await this.repository.findPlanOrdersWithRows(currentIds) : [];
+        return plans.map((plan) => {
+            const orders = ordersByPlan.get(plan.chemotherapy_plan_id) ?? [];
+            const currentId = currentIdFor(plan);
+            return {
+                ...plan,
+                plan_orders: orders,
+                current_order: currentOrders.find((order) => order.plan_order_id === currentId) ?? null
+            };
+        });
     }
     /*
      * Latest saved plan for a patient, scoped like the encounters
@@ -2028,17 +2180,22 @@ class ChemotherapyService {
      */
     async getLatestPlanForPatient(patientId, userId, role) {
         const isTopLevelAdmin = roles_1.TOP_LEVEL_ADMIN_ROLES.some((r) => r.toLowerCase() === String(role ?? "").toLowerCase());
-        if (isTopLevelAdmin) {
-            return this.repository.findLatestPlanForPatient(patientId, null);
+        let branchIds = null;
+        if (!isTopLevelAdmin) {
+            const mappings = await this.repository.findActiveBranchMappingsForUser(userId);
+            branchIds = mappings.map((m) => String(m.branch_id));
+            if (branchIds.length === 0) {
+                return null;
+            }
         }
-        const mappings = await this.repository.findActiveBranchMappingsForUser(userId);
-        const branchIds = mappings.map((m) => String(m.branch_id));
-        if (branchIds.length === 0) {
+        const plan = await this.repository.findLatestPlanForPatient(patientId, branchIds);
+        if (!plan) {
             return null;
         }
-        return this.repository.findLatestPlanForPatient(patientId, branchIds);
+        const [withOrders] = await this.withPlanOrders([plan]);
+        return withOrders;
     }
-    async updatePlan(planId, dto, actingUserId) {
+    async updatePlan(planId, dto, actingUserId, organizationId) {
         const plan = await this.repository.findPlanForUpdate(prisma_1.default, planId);
         if (!plan) {
             throw new Error("Chemotherapy plan not found");
@@ -2046,7 +2203,77 @@ class ChemotherapyService {
         if (chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(plan.treatment_status)) {
             throw new Error(`Cannot update a plan that is already ${plan.treatment_status}`);
         }
+        // Diagnosis re-link: must be this patient's staging detail.
+        let staging = null;
+        if (dto.staging_detail_id) {
+            staging = await this.repository_findStagingDetailOrThrow(dto.staging_detail_id);
+            if (staging.patient_id !== plan.patient_id) {
+                throw new Error("The staging detail does not belong to this plan's patient");
+            }
+        }
+        const protocolChanging = Boolean(dto.source_protocol_id) && dto.source_protocol_id !== plan.source_protocol_id;
+        // The diagnosis the plan follows: the one being linked, else the
+        // current one when a protocol switch has to be checked against it.
+        const diagnosis = staging ?? (protocolChanging && plan.staging_detail_id
+            ? await this.repository_findStagingDetailOrThrow(plan.staging_detail_id)
+            : null);
+        const cancers = diagnosis ? diagnosedCancers(diagnosis) : null;
+        // Protocol switch. Copies the new protocol's defaults exactly like
+        // createPlan's one-time copy; explicit fields in the body still win.
+        // Only while PLANNED - plan items can't be replaced after that, so
+        // the header would no longer match the drugs.
+        let protocolChanges = {};
+        let protocolCancer = null;
+        let newProtocol = null;
+        if (protocolChanging) {
+            if (plan.treatment_status !== chemotherapy_constants_1.PLAN_STATUS.PLANNED) {
+                throw new Error("The protocol can only be changed while the plan is still PLANNED");
+            }
+            const protocol = await this.repository.findRegimenProtocolById(dto.source_protocol_id);
+            newProtocol = protocol;
+            if (!protocol) {
+                throw new Error("Regimen protocol not found");
+            }
+            protocolCancer = this.assertProtocolUsable(protocol, cancers, organizationId);
+            protocolChanges = {
+                source_protocol_id: protocol.protocol_id,
+                regimen_name: protocol.regimen_name,
+                regimen_code: protocol.regimen_code ?? null,
+                protocol_name: protocol.regimen_name,
+                protocol_version: protocol.protocol_version ?? null,
+                treatment_intent: protocol.treatment_intent ?? null,
+                ...(protocol.standard_cycles ? { planned_cycles: protocol.standard_cycles } : {}),
+                ...(protocol.cycle_interval_days ? { cycle_interval_days: protocol.cycle_interval_days } : {})
+            };
+        }
+        else if (cancers && plan.source_protocol_id) {
+            // Diagnosis refresh under the current protocol: stay on the
+            // diagnosed cancer it treats. If it no longer treats any, that is
+            // not an error here - the doctor picks a new protocol next.
+            const currentProtocol = await this.repository.findRegimenProtocolById(plan.source_protocol_id);
+            protocolCancer = currentProtocol ? findProtocolCancer(currentProtocol, cancers) : null;
+        }
+        // The plan's cancer context is the diagnosed cancer its protocol
+        // treats (a secondary cancer of a multi-type diagnosis included),
+        // else the primary one. It is refreshed even when the staging id is
+        // unchanged - the Diagnosis step edits the same staging detail in
+        // place. The stage follows the linked staging detail.
+        let cancerChanges = {};
+        if (cancers) {
+            const planCancer = protocolCancer ?? cancers[0];
+            cancerChanges = {
+                cancer_type_id: planCancer.cancer_type_id,
+                subtype_id: planCancer.cancer_subtype_id,
+                cancer_type: planCancer.cancer_type,
+                cancer_subtype: planCancer.cancer_subtype,
+                ...(staging
+                    ? { staging_detail_id: staging.staging_detail_id, cancer_stage: staging.clinical_stage ?? null }
+                    : {})
+            };
+        }
         const planChanges = {
+            ...protocolChanges,
+            ...cancerChanges,
             ...(dto.regimen_name !== undefined ? { regimen_name: dto.regimen_name } : {}),
             ...(dto.regimen_code !== undefined ? { regimen_code: dto.regimen_code } : {}),
             ...(dto.protocol_name !== undefined ? { protocol_name: dto.protocol_name } : {}),
@@ -2062,10 +2289,28 @@ class ChemotherapyService {
             ...(dto.consent_date !== undefined ? { consent_date: dto.consent_date ? new Date(dto.consent_date) : null } : {}),
             ...(dto.insurance_type !== undefined ? { insurance_type: dto.insurance_type } : {}),
             ...(dto.remarks !== undefined ? { remarks: dto.remarks } : {}),
-            ...(dto.discussion !== undefined ? { discussion: dto.discussion } : {})
+            ...(dto.discussion !== undefined ? { discussion: dto.discussion } : {}),
+            ...(dto.dosing_height_cm !== undefined ? { dosing_height_cm: dto.dosing_height_cm } : {}),
+            ...(dto.dosing_weight_kg !== undefined ? { dosing_weight_kg: dto.dosing_weight_kg } : {}),
+            ...(dto.dosing_bsa !== undefined ? { dosing_bsa: dto.dosing_bsa } : {}),
+            ...(dto.dosing_serum_creatinine !== undefined ? { dosing_serum_creatinine: dto.dosing_serum_creatinine } : {}),
+            ...(dto.dosing_crcl !== undefined ? { dosing_crcl: dto.dosing_crcl } : {})
         };
         await prisma_1.default.$transaction(async (tx) => {
             await this.repository.updatePlan(tx, planId, planChanges);
+            if (protocolChanging && newProtocol) {
+                // The saved cycle day orders and hydration were for the old
+                // protocol (a PLANNED plan has none completed), and the
+                // baseline becomes a copy of the new protocol.
+                await this.repository.deleteOpenPlanOrders(tx, planId);
+                await this.repository.deletePlanHydration(tx, planId);
+                await this.repository.deactivateActivePlanItems(tx, planId);
+                const baselineItems = protocolPlanItems(newProtocol);
+                const itemIds = await (0, idGenerator_1.generateIdBatch)(tx, chemotherapy_constants_1.ID_ENTITY.PLAN_ITEM, baselineItems.length);
+                for (const [index, item] of baselineItems.entries()) {
+                    await this.repository.createPlanItem(tx, planItemCreateData(planId, itemIds[index], item, actingUserId));
+                }
+            }
             if (Object.keys(planChanges).length > 0) {
                 await (0, audit_service_1.logAudit)(tx, {
                     entity_type: "chemotherapy_plan",
@@ -2124,39 +2369,10 @@ class ChemotherapyService {
         if (chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(plan.treatment_status)) {
             throw new Error(`Cannot add a drug to a plan that is already ${plan.treatment_status}`);
         }
-        const medicine = await this.repository.findMedicineById(dto.medicine_id);
-        if (!medicine) {
-            throw new Error("Medicine not found");
-        }
+        await this.assertPlanItemDrugs([dto]);
         await prisma_1.default.$transaction(async (tx) => {
             const itemId = await this.repository.generatePlanItemId(tx);
-            await this.repository.createPlanItem(tx, {
-                chemotherapy_plan_item_id: itemId,
-                chemotherapy_plan_id: planId,
-                medicine_id: dto.medicine_id,
-                drug_role: dto.drug_role ?? "PRIMARY",
-                drug_sequence: dto.drug_sequence,
-                drug_type: dto.drug_type ?? null,
-                protocol_dose: dto.dosage ?? null,
-                protocol_dose_unit: dto.dosage_unit ?? null,
-                dose_calculation_method: dto.dose_calculation_method ?? null,
-                calculated_dose: dto.calculated_dose ?? null,
-                administration_route: dto.administration_route ?? null,
-                formulation: dto.formulation ?? null,
-                infusion_type: dto.infusion_type ?? null,
-                infusion_duration_minutes: dto.infusion_duration_minutes ?? null,
-                infusion_rate: dto.infusion_rate ?? null,
-                dilution_solution: dto.dilution_solution ?? null,
-                dilution_volume: dto.dilution_volume ?? null,
-                administration_day: dto.administration_day ?? null,
-                cycle_day: dto.cycle_day ?? null,
-                frequency: dto.frequency ?? null,
-                maximum_dose: dto.maximum_dose ?? null,
-                minimum_dose: dto.minimum_dose ?? null,
-                dose_required: dto.dose_required ?? true,
-                remarks: dto.remarks ?? null,
-                created_by: actingUserId
-            });
+            await this.repository.createPlanItem(tx, planItemCreateData(planId, itemId, dto, actingUserId));
             await (0, audit_service_1.logAudit)(tx, {
                 entity_type: "chemotherapy_plan_items",
                 entity_id: itemId,
@@ -2164,7 +2380,12 @@ class ChemotherapyService {
                 performed_by: actingUserId,
                 patient_id: plan.patient_id,
                 branch_id: plan.branch_id,
-                change_summary: (0, audit_service_1.summarizeCreate)({ chemotherapy_plan_id: planId, medicine_id: dto.medicine_id, drug_role: dto.drug_role ?? "PRIMARY" })
+                change_summary: (0, audit_service_1.summarizeCreate)({
+                    chemotherapy_plan_id: planId,
+                    medicine_id: dto.medicine_id ?? null,
+                    drug_name: dto.medicine_id ? null : dto.drug_name ?? null,
+                    drug_role: dto.drug_role ?? "PRIMARY"
+                })
             });
         });
         return this.getPlan(planId);
@@ -2174,14 +2395,38 @@ class ChemotherapyService {
         if (!plan) {
             throw new Error("Chemotherapy plan not found");
         }
-        if (plan.treatment_status !== chemotherapy_constants_1.PLAN_STATUS.PLANNED) {
-            throw new Error("Plan items can only be edited while the plan is still PLANNED");
-        }
         const item = await this.repository.findPlanItemById(planItemId);
-        if (!item || item.chemotherapy_plan_id !== planId) {
+        if (!item || item.chemotherapy_plan_id !== planId || item.active_status !== 1) {
             throw new Error("Plan item not found on this plan");
         }
+        await this.assertPlanItemEditable(plan, item, "edited");
+        if (dto.medicine_id && dto.medicine_id !== item.medicine_id) {
+            const medicine = await this.repository.findMedicineById(dto.medicine_id);
+            if (!medicine) {
+                throw new Error("Medicine not found");
+            }
+        }
+        // The drug: a medicine from the list, or (medicine_id: null) the
+        // name the doctor typed for this patient.
+        let drugChanges = {};
+        if (dto.medicine_id) {
+            drugChanges = { medicine_id: dto.medicine_id, drug_name: null };
+        }
+        else if (dto.medicine_id === null || (dto.drug_name !== undefined && !item.medicine_id)) {
+            if (!dto.drug_name?.trim()) {
+                throw new Error("Select a drug from the list or type a drug name");
+            }
+            drugChanges = { medicine_id: null, drug_name: dto.drug_name.trim() };
+        }
         const itemChanges = {
+            ...drugChanges,
+            ...(dto.formulation !== undefined ? { formulation: dto.formulation } : {}),
+            ...(dto.infusion_type !== undefined ? { infusion_type: dto.infusion_type } : {}),
+            ...(dto.infusion_rate !== undefined ? { infusion_rate: dto.infusion_rate } : {}),
+            ...(dto.administration_day !== undefined ? { administration_day: dto.administration_day } : {}),
+            ...(dto.cycle_day !== undefined ? { cycle_day: dto.cycle_day } : {}),
+            ...(dto.timing_relative_to_primary !== undefined ? { timing_relative_to_primary: dto.timing_relative_to_primary } : {}),
+            ...(dto.administration_detail !== undefined ? { administration_detail: dto.administration_detail } : {}),
             ...(dto.drug_role !== undefined ? { drug_role: dto.drug_role } : {}),
             ...(dto.drug_sequence !== undefined ? { drug_sequence: dto.drug_sequence } : {}),
             ...(dto.drug_type !== undefined ? { drug_type: dto.drug_type } : {}),
@@ -2189,6 +2434,7 @@ class ChemotherapyService {
             ...(dto.dosage_unit !== undefined ? { protocol_dose_unit: dto.dosage_unit } : {}),
             ...(dto.dose_calculation_method !== undefined ? { dose_calculation_method: dto.dose_calculation_method } : {}),
             ...(dto.calculated_dose !== undefined ? { calculated_dose: dto.calculated_dose } : {}),
+            ...(dto.calculated_dose_unit !== undefined ? { calculated_dose_unit: dto.calculated_dose_unit } : {}),
             ...(dto.administration_route !== undefined ? { administration_route: dto.administration_route } : {}),
             ...(dto.infusion_duration_minutes !== undefined ? { infusion_duration_minutes: dto.infusion_duration_minutes } : {}),
             ...(dto.frequency !== undefined ? { frequency: dto.frequency } : {}),
@@ -2196,6 +2442,9 @@ class ChemotherapyService {
         };
         await prisma_1.default.$transaction(async (tx) => {
             await this.repository.updatePlanItem(tx, planItemId, itemChanges);
+            if (item.plan_order_id) {
+                await this.repository.touchPlanOrder(tx, item.plan_order_id);
+            }
             if (Object.keys(itemChanges).length > 0) {
                 await (0, audit_service_1.logAudit)(tx, {
                     entity_type: "chemotherapy_plan_items",
@@ -2215,15 +2464,16 @@ class ChemotherapyService {
         if (!plan) {
             throw new Error("Chemotherapy plan not found");
         }
-        if (plan.treatment_status !== chemotherapy_constants_1.PLAN_STATUS.PLANNED) {
-            throw new Error("Plan items can only be removed while the plan is still PLANNED");
-        }
         const item = await this.repository.findPlanItemById(planItemId);
-        if (!item || item.chemotherapy_plan_id !== planId) {
+        if (!item || item.chemotherapy_plan_id !== planId || item.active_status !== 1) {
             throw new Error("Plan item not found on this plan");
         }
+        await this.assertPlanItemEditable(plan, item, "removed");
         await prisma_1.default.$transaction(async (tx) => {
             await this.repository.deactivatePlanItem(tx, planItemId);
+            if (item.plan_order_id) {
+                await this.repository.touchPlanOrder(tx, item.plan_order_id);
+            }
             await (0, audit_service_1.logAudit)(tx, {
                 entity_type: "chemotherapy_plan_items",
                 entity_id: planItemId,
@@ -2231,10 +2481,448 @@ class ChemotherapyService {
                 performed_by: actingUserId,
                 patient_id: plan.patient_id,
                 branch_id: plan.branch_id,
-                change_summary: (0, audit_service_1.summarizeCreate)({ medicine_id: item.medicine_id })
+                change_summary: (0, audit_service_1.summarizeCreate)({ medicine_id: item.medicine_id, drug_name: item.drug_name })
             });
         });
         return this.getPlan(planId);
+    }
+    // Replaces the plan's baseline items (its copy of the protocol) in one
+    // transaction; cycle day orders are untouched (see savePlanOrder). Old
+    // items are deactivated, not deleted, so administration records keep
+    // their link.
+    async replacePlanItems(planId, items, actingUserId) {
+        const plan = await this.repository.findPlanForUpdate(prisma_1.default, planId);
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+        if (plan.treatment_status !== chemotherapy_constants_1.PLAN_STATUS.PLANNED) {
+            throw new Error("Plan items can only be changed while the plan is still PLANNED");
+        }
+        await this.assertPlanItemDrugs(items);
+        await prisma_1.default.$transaction(async (tx) => {
+            await this.repository.deactivateActivePlanItems(tx, planId);
+            const itemIds = await (0, idGenerator_1.generateIdBatch)(tx, chemotherapy_constants_1.ID_ENTITY.PLAN_ITEM, items.length);
+            for (const [index, item] of items.entries()) {
+                await this.repository.createPlanItem(tx, planItemCreateData(planId, itemIds[index], item, actingUserId));
+            }
+            await (0, audit_service_1.logAudit)(tx, {
+                entity_type: "chemotherapy_plan_items",
+                entity_id: planId,
+                action: audit_types_1.AUDIT_ACTION.UPDATE,
+                performed_by: actingUserId,
+                patient_id: plan.patient_id,
+                branch_id: plan.branch_id,
+                change_summary: (0, audit_service_1.summarizeCreate)({ replaced_with_item_count: items.length })
+            });
+        }, { timeout: 20000 });
+        return this.getPlan(planId);
+    }
+    // ---------------------------------------------------------------
+    // Plan hydration (Chemotherapy Order > Hydration)
+    // ---------------------------------------------------------------
+    async listPlanHydration(planId) {
+        const plan = await this.repository.findPlanForUpdate(prisma_1.default, planId);
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+        return this.repository.findPlanHydration(planId);
+    }
+    // Replaces the plan's baseline hydration rows as a whole. A cycle day's
+    // hydration is saved with its order (savePlanOrder).
+    async replacePlanHydration(planId, rows, actingUserId) {
+        const plan = await this.repository.findPlanForUpdate(prisma_1.default, planId);
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+        if (chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(plan.treatment_status)) {
+            throw new Error(`Cannot change the hydration of a plan that is already ${plan.treatment_status}`);
+        }
+        await prisma_1.default.$transaction(async (tx) => {
+            await this.repository.deletePlanHydration(tx, planId);
+            const ids = await (0, idGenerator_1.generateIdBatch)(tx, chemotherapy_constants_1.ID_ENTITY.PLAN_HYDRATION, rows.length);
+            for (const [index, row] of rows.entries()) {
+                await this.repository.createPlanHydration(tx, planHydrationCreateData(planId, ids[index], index, row, actingUserId));
+            }
+            await (0, audit_service_1.logAudit)(tx, {
+                entity_type: "chemotherapy_plan_hydration",
+                entity_id: planId,
+                action: audit_types_1.AUDIT_ACTION.UPDATE,
+                performed_by: actingUserId,
+                patient_id: plan.patient_id,
+                branch_id: plan.branch_id,
+                change_summary: (0, audit_service_1.summarizeCreate)({ row_count: rows.length })
+            });
+        });
+        return this.repository.findPlanHydration(planId);
+    }
+    // ---------------------------------------------------------------
+    // Cycle day orders (Chemotherapy Order tab). One saved order per plan
+    // + cycle + medication day, holding that day's Chemotherapy Orders,
+    // Premedication, Supportive (plan items) and Hydration rows. It is
+    // ORDERED until the consultation is submitted, then COMPLETED and
+    // read-only; completing a cycle's last medication day completes the
+    // cycle, and the last cycle completes the plan (the course).
+    // ---------------------------------------------------------------
+    async listPlanOrders(planId) {
+        const plan = await this.repository.findPlanForUpdate(prisma_1.default, planId);
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+        return this.repository.listPlanOrders([planId]);
+    }
+    async getPlanOrder(planId, cycleNumber, cycleDay) {
+        const plan = await this.repository.findPlanForUpdate(prisma_1.default, planId);
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+        const header = await this.repository.findPlanOrder(prisma_1.default, planId, cycleNumber, cycleDay);
+        return header ? this.repository.findPlanOrderWithRows(header.plan_order_id) : null;
+    }
+    async savePlanOrder(planId, cycleNumber, cycleDay, dto, actingUserId) {
+        const plan = await this.repository.findPlanForUpdate(prisma_1.default, planId);
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+        if (chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(plan.treatment_status)) {
+            throw new Error(`This chemotherapy course is already ${plan.treatment_status} - start a new plan from Treatment Plan`);
+        }
+        if (!Number.isInteger(cycleNumber) || cycleNumber < 1 || cycleNumber > plan.planned_cycles) {
+            throw new Error(`Cycle must be between 1 and ${plan.planned_cycles} for this plan`);
+        }
+        if (!Number.isInteger(cycleDay) || cycleDay < 1) {
+            throw new Error("Day must be at least 1");
+        }
+        const items = dto.items ?? [];
+        await this.assertPlanItemDrugs(items);
+        if (dto.copied_from_order_id) {
+            const source = await this.repository.findPlanOrderById(prisma_1.default, dto.copied_from_order_id);
+            if (!source || source.chemotherapy_plan_id !== planId) {
+                throw new Error("The order being copied is not on this plan");
+            }
+        }
+        const orderId = await prisma_1.default.$transaction(async (tx) => {
+            await this.repository.lockPlan(tx, planId);
+            const lockedPlan = await this.repository.findPlanForUpdate(tx, planId);
+            if (!lockedPlan || chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(lockedPlan.treatment_status)) {
+                throw new Error(`This chemotherapy course is already ${lockedPlan?.treatment_status ?? "closed"} - start a new plan from Treatment Plan`);
+            }
+            const cycles = await this.ensurePlanCycles(tx, lockedPlan, actingUserId);
+            const cycle = cycles.find((row) => row.cycle_number === cycleNumber);
+            if (!cycle) {
+                throw new Error(`Cycle ${cycleNumber} not found on this plan`);
+            }
+            if (chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status)) {
+                throw new Error(`Cycle ${cycleNumber} is already ${cycle.cycle_status} - its orders can no longer be changed`);
+            }
+            const existing = await this.repository.findPlanOrder(tx, planId, cycleNumber, cycleDay);
+            if (existing?.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED) {
+                throw new Error(`Cycle ${cycleNumber} / Day ${cycleDay} is already completed and can no longer be changed`);
+            }
+            const saveHydration = Array.isArray(dto.hydration);
+            const header = {
+                ...(dto.encounter_no ? { encounter_no: dto.encounter_no } : {}),
+                ...(dto.copied_from_order_id ? { copied_from_order_id: dto.copied_from_order_id } : {}),
+                ...(saveHydration ? { hydration_saved: true } : {}),
+                ...(dto.dosing
+                    ? {
+                        dosing_height_cm: dto.dosing.height_cm ?? null,
+                        dosing_weight_kg: dto.dosing.weight_kg ?? null,
+                        dosing_bsa: dto.dosing.bsa ?? null,
+                        dosing_serum_creatinine: dto.dosing.serum_creatinine ?? null,
+                        dosing_crcl: dto.dosing.crcl ?? null
+                    }
+                    : {})
+            };
+            let planOrderId;
+            if (existing) {
+                planOrderId = existing.plan_order_id;
+                await this.repository.updatePlanOrder(tx, planOrderId, header);
+            }
+            else {
+                planOrderId = await this.repository.generatePlanOrderId(tx);
+                await this.repository.createPlanOrder(tx, {
+                    plan_order_id: planOrderId,
+                    chemotherapy_plan_id: planId,
+                    chemotherapy_cycle_id: cycle.chemotherapy_cycle_id,
+                    cycle_number: cycleNumber,
+                    cycle_day: cycleDay,
+                    order_status: chemotherapy_constants_1.PLAN_ORDER_STATUS.ORDERED,
+                    created_by: actingUserId,
+                    ...header
+                });
+            }
+            // The cycle's current day is the one last ordered.
+            if (cycle.cycle_day !== cycleDay) {
+                await this.repository.updateCycle(tx, cycle.chemotherapy_cycle_id, { cycle_day: cycleDay, updated_by: actingUserId });
+            }
+            await this.repository.deactivatePlanOrderItems(tx, planOrderId);
+            const itemIds = await (0, idGenerator_1.generateIdBatch)(tx, chemotherapy_constants_1.ID_ENTITY.PLAN_ITEM, items.length);
+            for (const [index, item] of items.entries()) {
+                await this.repository.createPlanItem(tx, planItemCreateData(planId, itemIds[index], item, actingUserId, {
+                    plan_order_id: planOrderId,
+                    cycle_day: cycleDay
+                }));
+            }
+            if (saveHydration) {
+                const rows = dto.hydration;
+                await this.repository.deletePlanOrderHydration(tx, planOrderId);
+                const hydrationIds = await (0, idGenerator_1.generateIdBatch)(tx, chemotherapy_constants_1.ID_ENTITY.PLAN_HYDRATION, rows.length);
+                for (const [index, row] of rows.entries()) {
+                    await this.repository.createPlanHydration(tx, {
+                        ...planHydrationCreateData(planId, hydrationIds[index], index, row, actingUserId),
+                        plan_order_id: planOrderId
+                    });
+                }
+            }
+            await (0, audit_service_1.logAudit)(tx, {
+                entity_type: "chemotherapy_plan_order",
+                entity_id: planOrderId,
+                action: existing ? audit_types_1.AUDIT_ACTION.UPDATE : audit_types_1.AUDIT_ACTION.CREATE,
+                performed_by: actingUserId,
+                patient_id: lockedPlan.patient_id,
+                branch_id: lockedPlan.branch_id,
+                change_summary: (0, audit_service_1.summarizeCreate)({
+                    cycle_number: cycleNumber,
+                    cycle_day: cycleDay,
+                    item_count: items.length,
+                    hydration_count: saveHydration ? dto.hydration.length : null,
+                    copied_from_order_id: dto.copied_from_order_id ?? null,
+                    encounter_no: dto.encounter_no ?? null
+                })
+            });
+            return planOrderId;
+        }, { timeout: 30000 });
+        return this.repository.findPlanOrderWithRows(orderId);
+    }
+    /*
+     * Called when the consultation is submitted: completes the order(s)
+     * saved in this encounter. The plan moves PLANNED -> ACTIVE, the cycle
+     * PLANNED -> APPROVED -> IN_PROGRESS, and on the cycle's last
+     * medication day the cycle becomes COMPLETED; completed_cycles is then
+     * recounted and the plan is COMPLETED once every cycle is closed.
+     * Calling it again for the same encounter changes nothing.
+     */
+    async completePlanOrders(planId, encounterNo, actingUserId) {
+        if (!encounterNo?.trim()) {
+            throw new Error("encounter_no is required");
+        }
+        const plan = await this.repository.findPlanForUpdate(prisma_1.default, planId);
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+        const lastDay = await this.lastMedicationDay(plan);
+        return prisma_1.default.$transaction(async (tx) => {
+            await this.repository.lockPlan(tx, planId);
+            const lockedPlan = await this.repository.findPlanForUpdate(tx, planId);
+            if (!lockedPlan) {
+                throw new Error("Chemotherapy plan not found");
+            }
+            const orders = await this.repository.findPlanOrdersForEncounter(tx, planId, encounterNo);
+            const pending = orders.filter((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.ORDERED);
+            const result = {
+                completed_orders: [],
+                completed_cycles: [],
+                plan_completed: false,
+                treatment_status: lockedPlan.treatment_status
+            };
+            if (pending.length === 0) {
+                return result;
+            }
+            if (chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(lockedPlan.treatment_status)) {
+                throw new Error(`Cannot complete an order on a plan that is already ${lockedPlan.treatment_status}`);
+            }
+            const now = new Date();
+            if (lockedPlan.treatment_status === chemotherapy_constants_1.PLAN_STATUS.PLANNED) {
+                await this.repository.updatePlan(tx, planId, { treatment_status: chemotherapy_constants_1.PLAN_STATUS.ACTIVE, updated_by: actingUserId });
+                await (0, audit_service_1.logAudit)(tx, {
+                    entity_type: "chemotherapy_plan",
+                    entity_id: planId,
+                    action: audit_types_1.AUDIT_ACTION.STATUS_CHANGE,
+                    performed_by: actingUserId,
+                    patient_id: lockedPlan.patient_id,
+                    branch_id: lockedPlan.branch_id,
+                    change_summary: (0, audit_service_1.summarizeStatusChange)(chemotherapy_constants_1.PLAN_STATUS.PLANNED, chemotherapy_constants_1.PLAN_STATUS.ACTIVE, "First cycle day completed")
+                });
+            }
+            for (const order of pending) {
+                await this.repository.updatePlanOrder(tx, order.plan_order_id, {
+                    order_status: chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED,
+                    completed_at: now
+                });
+                result.completed_orders.push({ plan_order_id: order.plan_order_id, cycle_number: order.cycle_number, cycle_day: order.cycle_day });
+                const cycle = await this.repository.findCycleForUpdate(tx, order.chemotherapy_cycle_id);
+                if (!cycle || chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status)) {
+                    continue;
+                }
+                // Walk the cycle forward through its legal transitions only.
+                const target = order.cycle_day >= lastDay ? chemotherapy_constants_1.CYCLE_STATUS.COMPLETED : chemotherapy_constants_1.CYCLE_STATUS.IN_PROGRESS;
+                let status = cycle.cycle_status;
+                const steps = [];
+                while (status !== target) {
+                    const next = nextCycleStepTowards(status, target);
+                    if (!next) {
+                        break;
+                    }
+                    steps.push(next);
+                    status = next;
+                }
+                if (steps.length === 0) {
+                    continue;
+                }
+                await this.repository.updateCycle(tx, cycle.chemotherapy_cycle_id, {
+                    cycle_status: status,
+                    updated_by: actingUserId,
+                    ...(steps.includes(chemotherapy_constants_1.CYCLE_STATUS.APPROVED) ? { physician_approved: true, approval_date: now } : {}),
+                    ...(!cycle.actual_date ? { actual_date: now } : {}),
+                    ...(status === chemotherapy_constants_1.CYCLE_STATUS.COMPLETED ? { cycle_completed: true, completion_date: now, completion_status: "COMPLETED" } : {})
+                });
+                await (0, audit_service_1.logAudit)(tx, {
+                    entity_type: "chemotherapy_cycle",
+                    entity_id: cycle.chemotherapy_cycle_id,
+                    action: audit_types_1.AUDIT_ACTION.STATUS_CHANGE,
+                    performed_by: actingUserId,
+                    patient_id: lockedPlan.patient_id,
+                    branch_id: lockedPlan.branch_id,
+                    change_summary: (0, audit_service_1.summarizeStatusChange)(cycle.cycle_status ?? chemotherapy_constants_1.CYCLE_STATUS.PLANNED, status, `Cycle ${order.cycle_number} / Day ${order.cycle_day} completed`)
+                });
+                if (status === chemotherapy_constants_1.CYCLE_STATUS.COMPLETED) {
+                    result.completed_cycles.push(order.cycle_number);
+                }
+            }
+            const recount = await this.recountPlanCycles(tx, planId, actingUserId);
+            result.plan_completed = recount.planCompleted;
+            result.treatment_status = recount.treatmentStatus;
+            return result;
+        }, { timeout: 30000 });
+    }
+    // Creates the plan's cycle rows 1..planned_cycles (PLANNED, dated from
+    // the start date by the cycle interval) the first time they're needed,
+    // re-activating any earlier row and retiring untouched PLANNED rows
+    // beyond planned_cycles (e.g. after a protocol switch).
+    async ensurePlanCycles(tx, plan, actingUserId) {
+        const existing = await this.repository.findAllCyclesForPlan(tx, plan.chemotherapy_plan_id);
+        const interval = plan.cycle_interval_days ?? 0;
+        for (let number = 1; number <= plan.planned_cycles; number++) {
+            const row = existing.find((cycle) => cycle.cycle_number === number);
+            if (!row) {
+                const plannedDate = new Date(plan.treatment_start_date);
+                plannedDate.setUTCDate(plannedDate.getUTCDate() + (number - 1) * interval);
+                await this.repository.createCycle(tx, {
+                    chemotherapy_cycle_id: await this.repository.generateCycleId(tx),
+                    chemotherapy_plan_id: plan.chemotherapy_plan_id,
+                    cycle_number: number,
+                    planned_date: plannedDate,
+                    cycle_interval_days: plan.cycle_interval_days ?? null,
+                    cycle_status: chemotherapy_constants_1.CYCLE_STATUS.PLANNED,
+                    completion_status: "PENDING",
+                    created_by: actingUserId
+                });
+            }
+            else if (row.active_status !== 1) {
+                await this.repository.updateCycle(tx, row.chemotherapy_cycle_id, { active_status: 1, updated_by: actingUserId });
+            }
+        }
+        for (const row of existing) {
+            if (row.cycle_number > plan.planned_cycles && row.active_status === 1 && row.cycle_status === chemotherapy_constants_1.CYCLE_STATUS.PLANNED) {
+                await this.repository.updateCycle(tx, row.chemotherapy_cycle_id, { active_status: 0, updated_by: actingUserId });
+            }
+        }
+        return (await this.repository.findAllCyclesForPlan(tx, plan.chemotherapy_plan_id))
+            .filter((cycle) => cycle.active_status === 1);
+    }
+    // completed_cycles is recounted from the cycle rows (never
+    // incremented), and the plan is COMPLETED once every planned cycle is
+    // COMPLETED or CANCELLED. Shared by order completion and
+    // changeCycleStatus, under the plan row lock.
+    async recountPlanCycles(tx, planId, actingUserId) {
+        await this.repository.lockPlan(tx, planId);
+        const plan = await this.repository.findPlanForUpdate(tx, planId);
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+        const cycles = (await this.repository.findAllCyclesForPlan(tx, planId))
+            .filter((cycle) => cycle.active_status === 1 && cycle.cycle_number <= plan.planned_cycles);
+        const completed = cycles.filter((cycle) => cycle.cycle_status === chemotherapy_constants_1.CYCLE_STATUS.COMPLETED).length;
+        const closed = cycles.filter((cycle) => chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status)).length;
+        const isOpen = !chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(plan.treatment_status);
+        const planCompleted = isOpen && closed >= plan.planned_cycles;
+        await this.repository.updatePlan(tx, planId, {
+            completed_cycles: completed,
+            ...(planCompleted ? { treatment_status: chemotherapy_constants_1.PLAN_STATUS.COMPLETED, updated_by: actingUserId } : {})
+        });
+        if (planCompleted) {
+            await (0, audit_service_1.logAudit)(tx, {
+                entity_type: "chemotherapy_plan",
+                entity_id: planId,
+                action: audit_types_1.AUDIT_ACTION.STATUS_CHANGE,
+                performed_by: actingUserId,
+                patient_id: plan.patient_id,
+                branch_id: plan.branch_id,
+                change_summary: (0, audit_service_1.summarizeStatusChange)(plan.treatment_status ?? chemotherapy_constants_1.PLAN_STATUS.ACTIVE, chemotherapy_constants_1.PLAN_STATUS.COMPLETED, "All planned cycles completed")
+            });
+        }
+        return {
+            completedCycles: completed,
+            planCompleted,
+            treatmentStatus: planCompleted ? chemotherapy_constants_1.PLAN_STATUS.COMPLETED : plan.treatment_status
+        };
+    }
+    // A cycle's last medication day: the source protocol's highest item
+    // day (administration_day ?? cycle_day ?? 1), as the Chemotherapy
+    // Order tab lists them; else its no_of_days; else the plan's baseline.
+    async lastMedicationDay(plan) {
+        const protocol = plan.source_protocol_id
+            ? await this.repository.findRegimenProtocolById(plan.source_protocol_id)
+            : null;
+        const itemDay = (item) => {
+            const day = Number(item.administration_day ?? item.cycle_day ?? 1);
+            return Number.isFinite(day) && day > 0 ? day : 1;
+        };
+        const protocolDays = (protocol?.chemotherapy_regimen_protocol_items ?? []).map(itemDay);
+        if (protocolDays.length > 0) {
+            return Math.max(...protocolDays);
+        }
+        if (protocol?.no_of_days && protocol.no_of_days > 0) {
+            return protocol.no_of_days;
+        }
+        const baseline = await this.repository.findPlanById(plan.chemotherapy_plan_id);
+        const baselineDays = (baseline?.chemotherapy_plan_items ?? []).map(itemDay);
+        return baselineDays.length > 0 ? Math.max(...baselineDays) : 1;
+    }
+    // ---------------------------------------------------------------
+    // Plan item helpers
+    // ---------------------------------------------------------------
+    // Every drug is a medicine_master entry or a name the doctor typed for
+    // this patient; typed names are never added to medicine_master.
+    async assertPlanItemDrugs(items) {
+        for (const item of items) {
+            if (item.medicine_id) {
+                const medicine = await this.repository.findMedicineById(item.medicine_id);
+                if (!medicine) {
+                    throw new Error(`Medicine not found: ${item.medicine_id}`);
+                }
+            }
+            else if (!item.drug_name?.trim()) {
+                throw new Error("Each drug needs a medicine from the list or a typed drug name");
+            }
+        }
+    }
+    // A cycle day order's rows can change until that day is completed; the
+    // baseline (the plan's protocol copy) only while the plan is PLANNED.
+    async assertPlanItemEditable(plan, item, action) {
+        if (chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(plan.treatment_status)) {
+            throw new Error(`Plan items can't be ${action} on a plan that is already ${plan.treatment_status}`);
+        }
+        if (!item.plan_order_id) {
+            if (plan.treatment_status !== chemotherapy_constants_1.PLAN_STATUS.PLANNED) {
+                throw new Error(`Plan items can only be ${action} while the plan is still PLANNED`);
+            }
+            return;
+        }
+        const order = await this.repository.findPlanOrderById(prisma_1.default, item.plan_order_id);
+        if (order?.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED) {
+            throw new Error(`Cycle ${order.cycle_number} / Day ${order.cycle_day} is already completed - its drugs can't be ${action}`);
+        }
     }
     // ---------------------------------------------------------------
     // Cycles
@@ -2358,27 +3046,9 @@ class ChemotherapyService {
                 branch_id: planForContext?.branch_id,
                 change_summary: (0, audit_service_1.summarizeStatusChange)(current, dto.status, dto.reason)
             });
-            if (dto.status === chemotherapy_constants_1.CYCLE_STATUS.COMPLETED) {
-                const plan = await this.repository.findPlanForUpdate(tx, cycle.chemotherapy_plan_id);
-                if (plan && !chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(plan.treatment_status)) {
-                    const completedCycles = (plan.completed_cycles ?? 0) + 1;
-                    const allCyclesDone = completedCycles >= plan.planned_cycles;
-                    await this.repository.updatePlan(tx, plan.chemotherapy_plan_id, {
-                        completed_cycles: completedCycles,
-                        ...(allCyclesDone ? { treatment_status: chemotherapy_constants_1.PLAN_STATUS.COMPLETED } : {})
-                    });
-                    if (allCyclesDone) {
-                        await (0, audit_service_1.logAudit)(tx, {
-                            entity_type: "chemotherapy_plan",
-                            entity_id: plan.chemotherapy_plan_id,
-                            action: audit_types_1.AUDIT_ACTION.STATUS_CHANGE,
-                            performed_by: actingUserId,
-                            patient_id: plan.patient_id,
-                            branch_id: plan.branch_id,
-                            change_summary: (0, audit_service_1.summarizeStatusChange)(plan.treatment_status ?? chemotherapy_constants_1.PLAN_STATUS.ACTIVE, chemotherapy_constants_1.PLAN_STATUS.COMPLETED, "All planned cycles completed")
-                        });
-                    }
-                }
+            // A closed cycle may close the course.
+            if (dto.status === chemotherapy_constants_1.CYCLE_STATUS.COMPLETED || dto.status === chemotherapy_constants_1.CYCLE_STATUS.CANCELLED) {
+                await this.recountPlanCycles(tx, cycle.chemotherapy_plan_id, actingUserId);
             }
         });
         return this.getCycle(cycleId);
@@ -2403,6 +3073,13 @@ class ChemotherapyService {
         }
         if (planItem.chemotherapy_plan_id !== cycle.chemotherapy_plan_id) {
             throw new Error("This drug does not belong to the plan this cycle is on");
+        }
+        // A cycle day order's drug is given in that cycle only.
+        if (planItem.plan_order_id) {
+            const order = await this.repository.findPlanOrderById(prisma_1.default, planItem.plan_order_id);
+            if (order && order.chemotherapy_cycle_id !== cycleId) {
+                throw new Error(`This drug was ordered for Cycle ${order.cycle_number} / Day ${order.cycle_day}, not this cycle`);
+            }
         }
         const administrationId = await prisma_1.default.$transaction(async (tx) => {
             const newId = await this.repository.generateAdministrationId(tx);

@@ -92,10 +92,43 @@ class PrescriptionRepository {
         return prisma_1.default.encounter.findUnique({
             where: { encounter_no: encounterNo },
             include: {
-                patient_bio_data: true,
-                employees: true,
-                branch: true,
-                department_master: true
+                patient_bio_data: {
+                    select: {
+                        patient_id: true,
+                        patient_first_name: true,
+                        patient_middle_name: true,
+                        patient_last_name: true,
+                        patient_gender: true,
+                        patient_primary_mobile: true,
+                        patient_email: true,
+                        patient_type: true,
+                        branch_id: true,
+                    }
+                },
+                employees: {
+                    select: {
+                        employee_id: true,
+                        user_id: true,
+                        first_name: true,
+                        middle_name: true,
+                        last_name: true,
+                        specialization: true,
+                        designation: true,
+                    }
+                },
+                branch: {
+                    select: {
+                        branch_id: true,
+                        branch_name: true,
+                        branch_area: true,
+                    }
+                },
+                department_master: {
+                    select: {
+                        department_id: true,
+                        department_name: true,
+                    }
+                }
             }
         });
     }
@@ -170,13 +203,14 @@ class PrescriptionRepository {
     // back to the patient's most recent active plan. Returns a map keyed by
     // medicine_id so the caller can default to PRIMARY/null when absent.
     async findDrugMetadata(encounterNo, patientId, medicineIds) {
-        if (medicineIds.length === 0) {
+        const cleanIds = medicineIds.filter((id) => typeof id === "string" && id.length > 0);
+        if (cleanIds.length === 0) {
             return new Map();
         }
         const planWhere = {
             active_status: 1,
             chemotherapy_plan_items: {
-                some: { medicine_id: { in: medicineIds } }
+                some: { medicine_id: { in: cleanIds } }
             }
         };
         const plan = await prisma_1.default.chemotherapy_plan.findFirst({
@@ -193,7 +227,7 @@ class PrescriptionRepository {
             where: {
                 chemotherapy_plan_id: plan.chemotherapy_plan_id,
                 active_status: 1,
-                medicine_id: { in: medicineIds }
+                medicine_id: { in: cleanIds }
             },
             select: {
                 medicine_id: true,
@@ -201,7 +235,9 @@ class PrescriptionRepository {
                 drug_type: true
             }
         });
-        return new Map(planItems.map((item) => [
+        return new Map(planItems
+            .filter((item) => Boolean(item.medicine_id))
+            .map((item) => [
             item.medicine_id,
             {
                 drug_role: item.drug_role,

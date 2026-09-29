@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.VALIDATION_RULE = exports.LATERALITY_CANCER_TYPES = exports.MOLECULAR_BLOCK_CANCER_TYPES = exports.IHC_BLOCK_CANCER_TYPES = exports.ENCOUNTER_RECENCY_WINDOW_DAYS = exports.ENCOUNTER_OPEN_STATUS = void 0;
+exports.VALIDATION_RULE = exports.M_STAGE_VALUES = exports.N_STAGE_VALUES = exports.T_STAGE_VALUES = exports.LATERALITY_VALUES = exports.LATERALITY_CANCER_TYPES = exports.MOLECULAR_BLOCK_CANCER_TYPES = exports.IHC_BLOCK_CANCER_TYPES = exports.ENCOUNTER_RECENCY_WINDOW_DAYS = exports.ENCOUNTER_OPEN_STATUS = void 0;
 exports.isPositiveLike = isPositiveLike;
 exports.isNotDoneOrPending = isNotDoneOrPending;
 exports.isLost = isLost;
@@ -28,6 +28,16 @@ exports.MOLECULAR_BLOCK_CANCER_TYPES = [
 exports.LATERALITY_CANCER_TYPES = [
     "Breast", "Kidney", "Lung", "Ovarian", "Prostate"
 ];
+// The only values the CHECK constraints on oncology_staging_detail (and
+// oncology_staging_additional_cancers) accept - keep in sync with the DB.
+exports.LATERALITY_VALUES = ["Left", "Right", "Bilateral", "NA"];
+exports.T_STAGE_VALUES = [
+    "Tx", "T0", "Tis", "T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T3", "T4", "T4a", "T4b", "T4d"
+];
+exports.N_STAGE_VALUES = [
+    "Nx", "N0", "N1", "N1mi", "N2", "N2a", "N2b", "N3", "N3a", "N3b", "N3c"
+];
+exports.M_STAGE_VALUES = ["M0", "M1", "M1a", "M1b", "M1c"];
 exports.VALIDATION_RULE = {
     V01_HER2_FISH_REQUIRED: "V-01",
     V02_ER_PERCENT_REQUIRED: "V-02",

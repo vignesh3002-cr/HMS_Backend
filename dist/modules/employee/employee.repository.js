@@ -271,7 +271,11 @@ class EmployeeRepository {
         });
     }
     async getAllEmployees() {
-        return prisma_1.default.employees.findMany();
+        return prisma_1.default.employees.findMany({
+            take: 1000,
+            omit: { employee_photo_URL: true },
+            orderBy: { id: "desc" }
+        });
     }
     async getEmployees(query) {
         const { roleType, branchId, department, status, includeDeleted, search, page = 1, limit = 10, excludeEmployeeId, date } = query;
@@ -346,6 +350,7 @@ class EmployeeRepository {
         }
         const employees = await prisma_1.default.employees.findMany({
             where,
+            omit: { employee_photo_URL: true },
             include: {
                 user_table: {
                     select: {

@@ -10,7 +10,7 @@ function actingUserId(req) {
 // Tables this module writes to - used to strip the constraint name down to
 // just the offending column so the client gets an actionable field name
 // instead of the raw "<table>_<column>_check" identifier.
-const ONCOLOGY_TABLES = ["ihc_results", "molecular_results", "oncology_staging_detail", "derived_fields"];
+const ONCOLOGY_TABLES = ["ihc_results", "molecular_results", "oncology_staging_detail", "oncology_staging_additional_cancers", "derived_fields"];
 function fieldFromConstraintName(constraintName) {
     for (const table of ONCOLOGY_TABLES) {
         if (constraintName.startsWith(`${table}_`) && constraintName.endsWith("_check")) {
@@ -181,6 +181,7 @@ class OncologyController {
             const result = await service.listStagingDetails({
                 patient_id: req.query.patient_id,
                 diagnosis_id: req.query.diagnosis_id,
+                encounter_no: req.query.encounter_no,
                 employee_id: req.query.employee_id,
                 branch_id: req.query.branchId,
                 cancer_type_id: req.query.cancer_type_id,
