@@ -103,8 +103,14 @@ export class LabReportRepository {
     branch_id?: string | null;
     user_id?: string | null;
   }) {
+    const { report_comment, ...rest } = data;
     return prisma.lab_report.create({
-      data: data as any,
+      data: {
+        ...rest,
+        ...(report_comment !== undefined && report_comment !== null
+          ? { report_comment }
+          : {}),
+      },
       include: {
         employees: true,
         lab_order: {
