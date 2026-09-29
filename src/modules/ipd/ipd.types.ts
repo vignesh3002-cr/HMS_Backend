@@ -30,7 +30,8 @@ export interface CreateWardDTO {
 export interface UpdateWardDTO {
     ward_name?: string;
     ward_type?: string;
-    total_beds?: number;
+    floor?: string;
+    tariff?: number;
     active_status?: number;
     updated_by?: string;
 }
@@ -48,7 +49,8 @@ export interface CreateBedDTO {
 export interface UpdateBedDTO {
     bed_number?: string;
     bed_type?: string;
-    status?: string;
+    tariff?: number;
+    ward_id?: string;
     active_status?: number;
     updated_by?: string;
 }

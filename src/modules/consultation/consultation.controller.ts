@@ -78,6 +78,60 @@ export class ConsultationController {
         }
     }
 
+    async getGeneralExaminationFindings(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.listGeneralExaminationFindings({
+                search: req.query.search as string | undefined,
+                isActive: req.query.isActive === undefined ? undefined : req.query.isActive === "true"
+            });
+            return res.json({ success: true, message: "General examination findings fetched successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
+    async createCustomGeneralExaminationFinding(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.createCustomGeneralExaminationFinding(req.body, actingUserId(req));
+            return res.status(201).json({ success: true, message: "General examination finding added successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
+    async getTreatmentTypes(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.listTreatmentTypes({
+                search: req.query.search as string | undefined,
+                isActive: req.query.isActive === undefined ? undefined : req.query.isActive === "true"
+            });
+            return res.json({ success: true, message: "Treatment types fetched successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
+    async createCustomTreatmentType(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.createCustomTreatmentType(req.body, actingUserId(req));
+            return res.status(201).json({ success: true, message: "Treatment type added successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
     async getDietTypes(req: Request, res: Response) {
         try {
             return res.json({ success: true, message: "Diet types fetched successfully", data: service.listDietTypes() });
@@ -161,6 +215,68 @@ export class ConsultationController {
 
             const data = await service.removeReport(req.params.encounterReportId as string);
             return res.json({ success: true, message: "Report removed successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
+    // ---------------- Encounter molecular tests ----------------
+
+    async getMolecularTestOptions(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.listMolecularTestOptions();
+            return res.json({ success: true, message: "Molecular test options fetched successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
+    async getMolecularTests(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.listMolecularTests(req.params.encounterNo as string);
+            return res.json({ success: true, message: "Molecular tests fetched successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
+    async addMolecularTest(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.addMolecularTest(req.params.encounterNo as string, req.body, actingUserId(req));
+            return res.status(201).json({ success: true, message: "Molecular test added successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
+    async updateMolecularTest(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.updateMolecularTest(req.params.encounterMolecularTestId as string, req.body);
+            return res.json({ success: true, message: "Molecular test updated successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
+    async removeMolecularTest(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.removeMolecularTest(req.params.encounterMolecularTestId as string);
+            return res.json({ success: true, message: "Molecular test removed successfully", data });
         } catch (err: any) {
             return handleError(res, err);
         }

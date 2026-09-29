@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { EncounterRepository } from "./encounter.repository";
 import { CreateEncounterDTO, CreateIpdEncounterDTO, UpdateEncounterDTO, GetEncountersQuery } from "./encounter.types";
@@ -416,6 +417,12 @@ export class EncounterService {
             general_examination_oedema: data.general_examination_oedema,
             general_examination_lymphadenopathy:
                 data.general_examination_lymphadenopathy,
+            general_examination_others:
+                data.general_examination_others === undefined
+                    ? undefined
+                    : data.general_examination_others === null
+                        ? Prisma.JsonNull
+                        : data.general_examination_others,
 
             past_history_treatment_type: data.past_history_treatment_type,
             past_history_treatment_date: data.past_history_treatment_date

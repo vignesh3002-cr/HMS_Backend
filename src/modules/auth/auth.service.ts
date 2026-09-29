@@ -109,6 +109,7 @@ const activeMappings = user.user_branch_mapping?.filter(
   private static readonly ALLOWED_KPI_IDS = new Set([
     "doctors",
     "patients",
+    "critical-patients",
     "staff",
     "appointments",
     "prescriptions",

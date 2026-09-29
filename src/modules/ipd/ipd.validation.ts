@@ -5,6 +5,7 @@ import {
     DISCHARGE_TYPE_VALUES,
     PAYMENT_MODE_VALUES
 } from "./ipd.constants";
+import { BED_STATUS } from "./ipd.types";
 
 export const createAdmissionValidation = [
 
@@ -151,5 +152,49 @@ export const createBedValidation = [
     body("bed_type").optional().trim().isString(),
     body("tariff").optional().isNumeric().withMessage("Tariff must be a valid number"),
     body("status").optional().trim().isString(),
+];
+
+export const updateWardValidation = [
+
+    param("wardId")
+        .notEmpty()
+        .withMessage("Ward ID is required"),
+
+    body("ward_name").optional().trim().notEmpty().withMessage("Ward name cannot be empty"),
+    body("ward_type").optional().trim().isString(),
+    body("floor").optional().trim().isString(),
+    body("tariff").optional().isNumeric().withMessage("Tariff must be a valid number"),
+    body("active_status").optional().isInt({ min: 0, max: 1 }).withMessage("Active status must be 0 or 1"),
+
+];
+
+export const updateBedValidation = [
+
+    param("bedId")
+        .notEmpty()
+        .withMessage("Bed ID is required"),
+
+    body("bed_number").optional().trim().notEmpty().withMessage("Bed number cannot be empty"),
+    body("bed_type").optional().trim().isString(),
+    body("tariff").optional().isNumeric().withMessage("Tariff must be a valid number"),
+    body("ward_id").optional().trim().isString(),
+    body("active_status").optional().isInt({ min: 0, max: 1 }).withMessage("Active status must be 0 or 1"),
+
+];
+
+export const updateBedStatusValidation = [
+
+    param("id")
+        .notEmpty()
+        .withMessage("Bed ID is required"),
+
+    body("status")
+        .notEmpty()
+        .withMessage("Status is required")
+        .isIn([BED_STATUS.AVAILABLE, BED_STATUS.MAINTENANCE])
+        .withMessage(`Status must be one of: ${BED_STATUS.AVAILABLE}, ${BED_STATUS.MAINTENANCE}`),
+
+    body("remarks").optional().trim().isString(),
+
 ];
 
