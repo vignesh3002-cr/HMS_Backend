@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { CreateLabReportDto, UpdateLabReportDto, TransferLabReportDto } from "./lab-report.types";
 
@@ -97,7 +98,7 @@ export class LabReportRepository {
     report_status?: string | null;
     report_file?: string | null;
     digital_signature?: string | null;
-    report_comment?: string | null;
+    report_comment?: Prisma.InputJsonValue;
     delivered_to?: string | null;
     delivered_datetime?: Date | null;
     branch_id?: string | null;

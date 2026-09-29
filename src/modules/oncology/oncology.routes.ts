@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { OncologyController } from "./oncology.controller";
 import { authenticate } from "../auth/auth.middleware";
-import { authorize } from "../../middleware/authorize";
+import { authorize, authorizeAny } from "../../middleware/authorize";
 import {
     getCancerSubtypesValidation,
     getStagingReferenceValidation,
@@ -10,7 +10,9 @@ import {
     upsertIhcValidation,
     upsertMolecularValidation,
     getStagingDetailValidation,
-    listStagingDetailsValidation
+    listStagingDetailsValidation,
+    listInvestigationResultsValidation,
+    saveInvestigationResultsValidation
 } from "./oncology.validation";
 
 const router = Router();
@@ -55,6 +57,15 @@ router.get(
     authorize("oncology.reference.read"),
     getCancerSubtypesValidation,
     controller.getCancerScores.bind(controller)
+);
+
+// The Investigation Results tests (tumour markers etc.) of a cancer type.
+router.get(
+    "/reference/cancer-types/:cancerTypeId/investigation-parameters",
+    authenticate,
+    authorize("oncology.reference.read"),
+    getCancerSubtypesValidation,
+    controller.getInvestigationParameters.bind(controller)
 );
 
 router.get(
@@ -142,6 +153,25 @@ router.get(
     authorize("oncology.derived.read"),
     getStagingDetailValidation,
     controller.getDerivedFields.bind(controller)
+);
+
+// ---------------- Investigation Results (per visit) ----------------
+
+router.get(
+    "/investigation-results",
+    authenticate,
+    authorize("oncology.diagnosis.read"),
+    listInvestigationResultsValidation,
+    controller.listInvestigationResults.bind(controller)
+);
+
+// Saved with the Diagnosis step, so either of its permissions will do.
+router.put(
+    "/investigation-results",
+    authenticate,
+    authorizeAny("oncology.diagnosis.create", "oncology.diagnosis.update"),
+    saveInvestigationResultsValidation,
+    controller.saveInvestigationResults.bind(controller)
 );
 
 export default router;
