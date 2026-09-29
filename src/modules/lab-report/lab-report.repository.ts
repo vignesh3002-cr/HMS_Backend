@@ -104,7 +104,9 @@ export class LabReportRepository {
     user_id?: string | null;
   }) {
     return prisma.lab_report.create({
-      data,
+      data: {
+        ...data,
+      },
       include: {
         employees: true,
         lab_order: {
