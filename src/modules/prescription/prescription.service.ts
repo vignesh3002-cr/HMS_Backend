@@ -451,15 +451,17 @@ export class PrescriptionService {
             days: data.days ?? item.days ?? undefined
         }) ?? item.quantity ?? undefined;
 
-        const targetMedicineId = data.medicine_id ?? item.medicine_id;
+                const targetMedicineId = data.medicine_id ?? item.medicine_id;
 
-        const drugMetadata = await repository.findDrugMetadata(
-            "",
-            existing.patient_history?.patient_bio_data?.patient_id ?? "",
-            [targetMedicineId]
-        );
+        const drugMetadata = targetMedicineId
+            ? await repository.findDrugMetadata(
+                "",
+                existing.patient_history?.patient_bio_data?.patient_id ?? "",
+                [targetMedicineId]
+            )
+            : new Map();
 
-        const meta = drugMetadata.get(targetMedicineId);
+        const meta = targetMedicineId ? drugMetadata.get(targetMedicineId) : undefined;
 
         return repository.updatePrescriptionItem(itemId, {
             medicine_id: data.medicine_id,
