@@ -121,6 +121,41 @@ class OncologyController {
             return handleError(res, error);
         }
     }
+    async getInvestigationParameters(req, res) {
+        try {
+            const data = await service.listInvestigationParameters(req.params.cancerTypeId);
+            return res.json({ success: true, message: "Investigation tests fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async listInvestigationResults(req, res) {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ success: false, message: errors.array()[0].msg, errors: errors.array() });
+            }
+            const data = await service.listInvestigationResults(req.query.patient_id);
+            return res.json({ success: true, message: "Investigation results fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async saveInvestigationResults(req, res) {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ success: false, message: errors.array()[0].msg, errors: errors.array() });
+            }
+            const data = await service.saveInvestigationResults(req.body, actingUserId(req));
+            return res.json({ success: true, message: "Investigation results saved successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
     async reseedReference(req, res) {
         try {
             const result = await service.reseedReferenceData();

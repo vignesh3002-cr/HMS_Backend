@@ -402,57 +402,6 @@ model cancer_score {
   @@index([cancer_type_id], map: "idx_cancer_score_type")
 }
 
-/// This model contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model investigation_parameter {
-  id                           BigInt                         @id @default(autoincrement())
-  parameter_id                 String                         @unique(map: "uq_investigation_parameter_id") @db.VarChar(100)
-  cancer_type_id               String                         @db.VarChar(100)
-  chart_name                   String                         @db.VarChar(150)
-  subtype_keywords             String?                        @db.VarChar(255)
-  parameter_code               String                         @db.VarChar(50)
-  parameter_name               String                         @db.VarChar(150)
-  input_type                   String                         @default("NUMBER") @db.VarChar(20)
-  unit                         String?                        @db.VarChar(50)
-  normal_min                   Decimal?                       @db.Decimal(14, 4)
-  normal_max                   Decimal?                       @db.Decimal(14, 4)
-  range_label                  String?                        @db.VarChar(100)
-  select_options               String?                        @db.VarChar(255)
-  display_order                Int?                           @default(1)
-  active_status                Int?                           @default(1) @db.SmallInt
-  created_at                   DateTime?                      @default(now()) @db.Timestamp(6)
-  updated_at                   DateTime?                      @default(now()) @db.Timestamp(6)
-  cancer_types                 cancer_types                   @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_investigation_parameter_cancer_type")
-  patient_investigation_result patient_investigation_result[]
-
-  @@unique([cancer_type_id, chart_name, parameter_code], map: "uq_investigation_parameter_code")
-  @@index([cancer_type_id], map: "idx_investigation_parameter_type")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model patient_investigation_result {
-  id                      BigInt                   @id @default(autoincrement())
-  investigation_result_id String                   @unique(map: "uq_investigation_result_id") @db.VarChar(100)
-  patient_id              String                   @db.VarChar(100)
-  encounter_no            String                   @db.VarChar(100)
-  staging_detail_id       String?                  @db.VarChar(100)
-  parameter_id            String                   @db.VarChar(100)
-  report_date             DateTime                 @db.Date
-  value_text              String
-  value_numeric           Decimal?                 @db.Decimal(14, 4)
-  is_abnormal             Boolean                  @default(false)
-  created_by              String?                  @db.VarChar(100)
-  created_at              DateTime?                @default(now()) @db.Timestamp(6)
-  updated_at              DateTime?                @default(now()) @db.Timestamp(6)
-  encounter               encounter                @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_investigation_result_encounter")
-  investigation_parameter investigation_parameter  @relation(fields: [parameter_id], references: [parameter_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_investigation_result_parameter")
-  patient_bio_data        patient_bio_data         @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_investigation_result_patient")
-  oncology_staging_detail oncology_staging_detail? @relation(fields: [staging_detail_id], references: [staging_detail_id], onUpdate: NoAction, map: "fk_investigation_result_staging")
-
-  @@unique([encounter_no, parameter_id], map: "uq_investigation_result_visit")
-  @@index([patient_id, report_date], map: "idx_investigation_result_patient")
-}
-
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model cancer_subtypes {
   id                                  BigInt                                @id @default(autoincrement())
@@ -860,39 +809,6 @@ model chemotherapy_plan {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model chemotherapy_plan_order {
-  id                          BigInt                        @id @default(autoincrement())
-  plan_order_id               String                        @unique(map: "uq_plan_order_id") @db.VarChar(100)
-  chemotherapy_plan_id        String                        @db.VarChar(100)
-  chemotherapy_cycle_id       String                        @db.VarChar(100)
-  cycle_number                Int
-  cycle_day                   Int
-  order_status                String                        @default("ORDERED") @db.VarChar(20)
-  hydration_saved             Boolean                       @default(false)
-  copied_from_order_id        String?                       @db.VarChar(100)
-  encounter_no                String?                       @db.VarChar(100)
-  dosing_height_cm            Decimal?                      @db.Decimal(6, 2)
-  dosing_weight_kg            Decimal?                      @db.Decimal(6, 2)
-  dosing_bsa                  Decimal?                      @db.Decimal(5, 2)
-  dosing_serum_creatinine     Decimal?                      @db.Decimal(6, 2)
-  dosing_crcl                 Decimal?                      @db.Decimal(7, 2)
-  completed_at                DateTime?                     @db.Timestamp(6)
-  created_by                  String?                       @db.VarChar(100)
-  created_at                  DateTime?                     @default(now()) @db.Timestamp(6)
-  updated_at                  DateTime?                     @default(now()) @db.Timestamp(6)
-  chemotherapy_plan_hydration chemotherapy_plan_hydration[]
-  chemotherapy_plan_items     chemotherapy_plan_items[]
-  copied_from                 chemotherapy_plan_order?      @relation("plan_order_copies", fields: [copied_from_order_id], references: [plan_order_id], onUpdate: NoAction, map: "fk_plan_order_copied_from")
-  copies                      chemotherapy_plan_order[]     @relation("plan_order_copies")
-  chemotherapy_cycle          chemotherapy_cycle            @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_plan_order_cycle")
-  chemotherapy_plan           chemotherapy_plan             @relation(fields: [chemotherapy_plan_id], references: [chemotherapy_plan_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_plan_order_plan")
-
-  @@unique([chemotherapy_plan_id, cycle_number, cycle_day], map: "uq_plan_order_cycle_day")
-  @@index([chemotherapy_plan_id], map: "idx_plan_order_plan")
-  @@index([encounter_no], map: "idx_plan_order_encounter")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_plan_hydration {
   id                      BigInt                   @id @default(autoincrement())
   plan_hydration_id       String                   @unique(map: "uq_plan_hydration_id") @db.VarChar(100)
@@ -911,10 +827,11 @@ model chemotherapy_plan_hydration {
   chemotherapy_plan_order chemotherapy_plan_order? @relation(fields: [plan_order_id], references: [plan_order_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_plan_hydration_order")
   chemotherapy_plan       chemotherapy_plan        @relation(fields: [chemotherapy_plan_id], references: [chemotherapy_plan_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_plan_hydration_plan")
 
-  @@index([chemotherapy_plan_id], map: "idx_plan_hydration_plan")
   @@index([plan_order_id], map: "idx_plan_hydration_order")
+  @@index([chemotherapy_plan_id], map: "idx_plan_hydration_plan")
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_plan_items {
   id                          BigInt                        @id @default(autoincrement())
@@ -958,6 +875,40 @@ model chemotherapy_plan_items {
   chemotherapy_plan_order     chemotherapy_plan_order?      @relation(fields: [plan_order_id], references: [plan_order_id], onUpdate: NoAction, map: "fk_plan_items_order")
 
   @@index([plan_order_id], map: "idx_plan_items_order")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model chemotherapy_plan_order {
+  id                            BigInt                        @id @default(autoincrement())
+  plan_order_id                 String                        @unique(map: "uq_plan_order_id") @db.VarChar(100)
+  chemotherapy_plan_id          String                        @db.VarChar(100)
+  chemotherapy_cycle_id         String                        @db.VarChar(100)
+  cycle_number                  Int
+  cycle_day                     Int
+  order_status                  String                        @default("ORDERED") @db.VarChar(20)
+  hydration_saved               Boolean                       @default(false)
+  copied_from_order_id          String?                       @db.VarChar(100)
+  encounter_no                  String?                       @db.VarChar(100)
+  dosing_height_cm              Decimal?                      @db.Decimal(6, 2)
+  dosing_weight_kg              Decimal?                      @db.Decimal(6, 2)
+  dosing_bsa                    Decimal?                      @db.Decimal(5, 2)
+  dosing_serum_creatinine       Decimal?                      @db.Decimal(6, 2)
+  dosing_crcl                   Decimal?                      @db.Decimal(7, 2)
+  completed_at                  DateTime?                     @db.Timestamp(6)
+  created_by                    String?                       @db.VarChar(100)
+  created_at                    DateTime?                     @default(now()) @db.Timestamp(6)
+  updated_at                    DateTime?                     @default(now()) @db.Timestamp(6)
+  chemotherapy_plan_hydration   chemotherapy_plan_hydration[]
+  chemotherapy_plan_items       chemotherapy_plan_items[]
+  chemotherapy_plan_order       chemotherapy_plan_order?      @relation("chemotherapy_plan_orderTochemotherapy_plan_order", fields: [copied_from_order_id], references: [plan_order_id], onUpdate: NoAction, map: "fk_plan_order_copied_from")
+  other_chemotherapy_plan_order chemotherapy_plan_order[]     @relation("chemotherapy_plan_orderTochemotherapy_plan_order")
+  chemotherapy_cycle            chemotherapy_cycle            @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_plan_order_cycle")
+  chemotherapy_plan             chemotherapy_plan             @relation(fields: [chemotherapy_plan_id], references: [chemotherapy_plan_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_plan_order_plan")
+
+  @@unique([chemotherapy_plan_id, cycle_number, cycle_day], map: "uq_plan_order_cycle_day")
+  @@index([encounter_no], map: "idx_plan_order_encounter")
+  @@index([chemotherapy_plan_id], map: "idx_plan_order_plan")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1168,10 +1119,6 @@ model clinical_test_master {
   modifieddate DateTime? @default(now()) @db.Timestamp(6)
 }
 
-/// Comorbidities (co-existing chronic conditions) offered in the
-/// Consultation step, separate from the diagnosis catalog.
-/// Seeded by prisma/seedComorbidityMaster.ts (codes CMB_*); rows added
-/// from the consultation "+ Add" are is_custom with codes CMBX_*.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model comorbidity_master {
   id                  BigInt                @id @default(autoincrement())
@@ -1588,23 +1535,6 @@ model encounter {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model encounter_performance_status {
-  id                        BigInt                    @id @default(autoincrement())
-  encounter_no              String                    @unique @db.VarChar(100)
-  performance_status_id     BigInt
-  assessed_by               String?                   @db.VarChar(100)
-  assessed_at               DateTime                  @default(now()) @db.Timestamp(6)
-  clinical_notes            String?                   @db.VarChar(1000)
-  created_at                DateTime                  @default(now()) @db.Timestamp(6)
-  updated_at                DateTime                  @default(now()) @db.Timestamp(6)
-  employees                 employees?                @relation(fields: [assessed_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
-  encounter                 encounter                 @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_perf_status")
-  performance_status_master performance_status_master @relation(fields: [performance_status_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_perf_status_master")
-
-  @@index([encounter_no], map: "idx_encounter_perf_status_encounter")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model encounter_molecular_test {
   id                          BigInt    @id @default(autoincrement())
@@ -1622,6 +1552,24 @@ model encounter_molecular_test {
   @@index([encounter_no], map: "idx_encounter_molecular_test_encounter")
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model encounter_performance_status {
+  id                        BigInt                    @id @default(autoincrement())
+  encounter_no              String                    @unique @db.VarChar(100)
+  performance_status_id     BigInt
+  assessed_by               String?                   @db.VarChar(100)
+  assessed_at               DateTime                  @default(now()) @db.Timestamp(6)
+  clinical_notes            String?                   @db.VarChar(1000)
+  created_at                DateTime                  @default(now()) @db.Timestamp(6)
+  updated_at                DateTime                  @default(now()) @db.Timestamp(6)
+  employees                 employees?                @relation(fields: [assessed_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
+  encounter                 encounter                 @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_perf_status")
+  performance_status_master performance_status_master @relation(fields: [performance_status_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_perf_status_master")
+
+  @@index([encounter_no], map: "idx_encounter_perf_status_encounter")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model encounter_report {
   id                    BigInt           @id @default(autoincrement())
@@ -1663,6 +1611,22 @@ model encounter_symptom {
   @@index([encounter_no], map: "idx_encounter_symptom_encounter")
   @@index([status], map: "idx_encounter_symptom_status")
   @@index([symptom_id], map: "idx_encounter_symptom_symptom")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model general_examination_master {
+  id            BigInt   @id @default(autoincrement())
+  code          String   @unique(map: "uq_general_examination_code") @db.VarChar(100)
+  name          String   @db.VarChar(100)
+  description   String?  @db.VarChar(200)
+  display_order Int      @default(0)
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now()) @db.Timestamp(6)
+  updated_at    DateTime @default(now()) @db.Timestamp(6)
+  created_by    String?  @db.VarChar(100)
+  updated_by    String?  @db.VarChar(100)
+
+  @@index([is_active], map: "idx_general_examination_active")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1725,38 +1689,6 @@ model ihc_results {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model general_examination_master {
-  id            BigInt   @id @default(autoincrement())
-  code          String   @unique(map: "uq_general_examination_code") @db.VarChar(100)
-  name          String   @db.VarChar(100)
-  description   String?  @db.VarChar(200)
-  display_order Int      @default(0)
-  is_active     Boolean  @default(true)
-  created_at    DateTime @default(now()) @db.Timestamp(6)
-  updated_at    DateTime @default(now()) @db.Timestamp(6)
-  created_by    String?  @db.VarChar(100)
-  updated_by    String?  @db.VarChar(100)
-
-  @@index([is_active], map: "idx_general_examination_active")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model treatment_type_master {
-  id            BigInt   @id @default(autoincrement())
-  code          String   @unique(map: "uq_treatment_type_code") @db.VarChar(100)
-  name          String   @db.VarChar(100)
-  description   String?  @db.VarChar(200)
-  display_order Int      @default(0)
-  is_active     Boolean  @default(true)
-  created_at    DateTime @default(now()) @db.Timestamp(6)
-  updated_at    DateTime @default(now()) @db.Timestamp(6)
-  created_by    String?  @db.VarChar(100)
-  updated_by    String?  @db.VarChar(100)
-
-  @@index([is_active], map: "idx_treatment_type_active")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model immunization_master {
   id          BigInt   @id @default(autoincrement())
   code        String   @unique @db.VarChar(100)
@@ -1769,6 +1701,33 @@ model immunization_master {
   updated_by  String?  @db.VarChar(100)
 
   @@index([is_active], map: "idx_immunization_active")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model investigation_parameter {
+  id                           BigInt                         @id @default(autoincrement())
+  parameter_id                 String                         @unique(map: "uq_investigation_parameter_id") @db.VarChar(100)
+  cancer_type_id               String                         @db.VarChar(100)
+  chart_name                   String                         @db.VarChar(150)
+  subtype_keywords             String?                        @db.VarChar(255)
+  parameter_code               String                         @db.VarChar(50)
+  parameter_name               String                         @db.VarChar(150)
+  input_type                   String                         @default("NUMBER") @db.VarChar(20)
+  unit                         String?                        @db.VarChar(50)
+  normal_min                   Decimal?                       @db.Decimal(14, 4)
+  normal_max                   Decimal?                       @db.Decimal(14, 4)
+  range_label                  String?                        @db.VarChar(100)
+  select_options               String?                        @db.VarChar(255)
+  display_order                Int?                           @default(1)
+  active_status                Int?                           @default(1) @db.SmallInt
+  created_at                   DateTime?                      @default(now()) @db.Timestamp(6)
+  updated_at                   DateTime?                      @default(now()) @db.Timestamp(6)
+  cancer_types                 cancer_types                   @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_investigation_parameter_cancer_type")
+  patient_investigation_result patient_investigation_result[]
+
+  @@unique([cancer_type_id, chart_name, parameter_code], map: "uq_investigation_parameter_code")
+  @@index([cancer_type_id], map: "idx_investigation_parameter_type")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1982,6 +1941,29 @@ model lab_test_master {
   lab_test_parameter   lab_test_parameter[]
 }
 
+model lab_test_parameter {
+  id                    BigInt          @id @default(autoincrement())
+  lab_test_parameter_id String          @unique @db.VarChar(100)
+  lab_test_id           String          @db.VarChar(100)
+  parameter_name        String          @db.VarChar(100)
+  unit                  String?         @db.VarChar(50)
+  ref_range_low         Decimal?        @db.Decimal(10, 2)
+  ref_range_high        Decimal?        @db.Decimal(10, 2)
+  ref_range_text        String?         @db.VarChar(200)
+  gender                String?         @db.VarChar(10)
+  age_min               Int?
+  age_max               Int?
+  sort_order            Int?            @default(1)
+  branch_id             String?         @db.VarChar(100)
+  user_id               String?         @db.VarChar(100)
+  created_at            DateTime?       @default(now()) @db.Timestamp(6)
+  updated_at            DateTime?       @default(now()) @db.Timestamp(6)
+  lab_result            lab_result[]
+  branch                branch?         @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_parameter_branch")
+  lab_test_master       lab_test_master @relation(fields: [lab_test_id], references: [lab_test_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_parameter_test")
+  user_table            user_table?     @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_parameter_user")
+}
+
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model login_otp {
   id          BigInt   @id @default(autoincrement())
@@ -2112,6 +2094,7 @@ model oncology_audit_log {
   @@index([patient_id], map: "idx_audit_patient")
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model oncology_staging_additional_cancers {
   id                      BigInt                  @id @default(autoincrement())
@@ -2390,6 +2373,30 @@ model patient_history {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model patient_investigation_result {
+  id                      BigInt                   @id @default(autoincrement())
+  investigation_result_id String                   @unique(map: "uq_investigation_result_id") @db.VarChar(100)
+  patient_id              String                   @db.VarChar(100)
+  encounter_no            String                   @db.VarChar(100)
+  staging_detail_id       String?                  @db.VarChar(100)
+  parameter_id            String                   @db.VarChar(100)
+  report_date             DateTime                 @db.Date
+  value_text              String
+  value_numeric           Decimal?                 @db.Decimal(14, 4)
+  is_abnormal             Boolean                  @default(false)
+  created_by              String?                  @db.VarChar(100)
+  created_at              DateTime?                @default(now()) @db.Timestamp(6)
+  updated_at              DateTime?                @default(now()) @db.Timestamp(6)
+  encounter               encounter                @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_investigation_result_encounter")
+  investigation_parameter investigation_parameter  @relation(fields: [parameter_id], references: [parameter_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_investigation_result_parameter")
+  patient_bio_data        patient_bio_data         @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_investigation_result_patient")
+  oncology_staging_detail oncology_staging_detail? @relation(fields: [staging_detail_id], references: [staging_detail_id], onUpdate: NoAction, map: "fk_investigation_result_staging")
+
+  @@unique([encounter_no, parameter_id], map: "uq_investigation_result_visit")
+  @@index([patient_id, report_date], map: "idx_investigation_result_patient")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model patient_personal_history {
   id                  BigInt    @id @default(autoincrement())
   personal_history_id String    @unique(map: "uq_personal_history_id") @db.VarChar(100)
@@ -2446,6 +2453,7 @@ model prescription {
   prescription_items  prescription_items[]
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model prescription_items {
   id                   BigInt           @id @default(autoincrement())
@@ -2568,6 +2576,22 @@ model symptom_master {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model treatment_type_master {
+  id            BigInt   @id @default(autoincrement())
+  code          String   @unique(map: "uq_treatment_type_code") @db.VarChar(100)
+  name          String   @db.VarChar(100)
+  description   String?  @db.VarChar(200)
+  display_order Int      @default(0)
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now()) @db.Timestamp(6)
+  updated_at    DateTime @default(now()) @db.Timestamp(6)
+  created_by    String?  @db.VarChar(100)
+  updated_by    String?  @db.VarChar(100)
+
+  @@index([is_active], map: "idx_treatment_type_active")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model user_branch_mapping {
   user_id           String     @db.VarChar(100)
   branch_id         String     @db.VarChar(100)
@@ -2659,27 +2683,13 @@ model ward_master {
   @@index([branch_id], map: "idx_ward_branch")
 }
 
-model lab_test_parameter {
-  id                    BigInt          @id @default(autoincrement())
-  lab_test_parameter_id String          @unique @db.VarChar(100)
-  lab_test_id           String          @db.VarChar(100)
-  parameter_name        String          @db.VarChar(100)
-  unit                  String?         @db.VarChar(50)
-  ref_range_low         Decimal?        @db.Decimal(10, 2)
-  ref_range_high        Decimal?        @db.Decimal(10, 2)
-  ref_range_text        String?         @db.VarChar(200)
-  gender                String?         @db.VarChar(10)
-  age_min               Int?
-  age_max               Int?
-  sort_order            Int?            @default(1)
-  branch_id             String?         @db.VarChar(100)
-  user_id               String?         @db.VarChar(100)
-  created_at            DateTime?       @default(now()) @db.Timestamp(6)
-  updated_at            DateTime?       @default(now()) @db.Timestamp(6)
-  lab_result            lab_result[]
-  branch                branch?         @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_parameter_branch")
-  lab_test_master       lab_test_master @relation(fields: [lab_test_id], references: [lab_test_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_parameter_test")
-  user_table            user_table?     @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_parameter_user")
+enum DoctorScheduleChangeMode {
+  ADD
+  REMOVE
+  MODIFY
+  REPLACE
+  OVERRIDE
+  CANCEL
 }
 
 enum LeaveStatus {
@@ -2703,13 +2713,4 @@ enum leavestatus {
   PENDING
   APPROVED
   REJECTED
-}
-
-enum DoctorScheduleChangeMode {
-  ADD
-  REMOVE
-  MODIFY
-  REPLACE
-  OVERRIDE
-  CANCEL
 }

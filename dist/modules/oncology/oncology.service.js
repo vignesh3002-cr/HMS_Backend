@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.OncologyService = exports.OncologyValidationError = void 0;
 const client_1 = require("@prisma/client");
 const prisma_1 = __importDefault(require("../../config/prisma"));
+const idGenerator_1 = require("../../utils/idGenerator");
 const oncology_repository_1 = require("./oncology.repository");
 const chemo_validation_1 = require("./chemo.validation");
 const chemo_derivation_1 = require("./chemo.derivation");
@@ -182,6 +183,142 @@ class OncologyService {
             throw new Error("Cancer type not found");
         }
         return this.repository.findCancerScoresByType(cancerTypeId);
+    }
+    // ---------------------------------------------------------------
+    // Investigation Results (Diagnosis tab): the tests tracked for each
+    // cancer type, and their values entered on every visit.
+    // ---------------------------------------------------------------
+    async listInvestigationParameters(cancerTypeId) {
+        const cancerType = await this.repository.findCancerTypeById(cancerTypeId);
+        if (!cancerType) {
+            throw new Error("Cancer type not found");
+        }
+        return this.repository.findInvestigationParametersByType(cancerTypeId);
+    }
+    // Every visit's results for the patient, newest report first.
+    async listInvestigationResults(patientId) {
+        return this.repository.listInvestigationResultsForPatient(patientId);
+    }
+    // Saves a visit's results: each test is upserted by encounter + test;
+    // a blank value clears it. Values are checked against the test's type,
+    // and a number outside the normal range is flagged abnormal.
+    async saveInvestigationResults(dto, actingUserId) {
+        const patient = await this.repository.findPatientById(dto.patient_id);
+        if (!patient) {
+            throw new Error("Patient not found");
+        }
+        const encounter = await this.repository.findEncounterByNumber(dto.encounter_no);
+        if (!encounter || encounter.patient_id !== dto.patient_id) {
+            throw new Error("The encounter does not belong to this patient");
+        }
+        if (dto.staging_detail_id) {
+            const staging = await this.repository.findStagingDetailById(dto.staging_detail_id);
+            if (!staging || staging.patient_id !== dto.patient_id) {
+                throw new Error("The staging detail does not belong to this patient");
+            }
+        }
+        const reportDate = new Date(dto.report_date);
+        if (Number.isNaN(reportDate.getTime())) {
+            throw new Error("Report date must be a valid date");
+        }
+        const results = dto.results ?? [];
+        const parameterIds = [...new Set(results.map((result) => result.parameter_id))];
+        if (parameterIds.length !== results.length) {
+            throw new Error("Each test can only be given once per visit");
+        }
+        const parameters = await this.repository.findInvestigationParametersByIds(parameterIds);
+        const parameterById = new Map(parameters.map((parameter) => [parameter.parameter_id, parameter]));
+        const cleared = [];
+        const prepared = [];
+        for (const result of results) {
+            const parameter = parameterById.get(result.parameter_id);
+            if (!parameter || parameter.active_status !== 1) {
+                throw new Error(`Investigation test not found: ${result.parameter_id}`);
+            }
+            const text = result.value === null || result.value === undefined ? "" : String(result.value).trim();
+            if (!text) {
+                cleared.push(parameter.parameter_id);
+                continue;
+            }
+            if (parameter.input_type === "NUMBER") {
+                const value = Number(text);
+                if (!Number.isFinite(value)) {
+                    throw new Error(`${parameter.parameter_name} must be a number`);
+                }
+                const min = parameter.normal_min != null ? Number(parameter.normal_min) : null;
+                const max = parameter.normal_max != null ? Number(parameter.normal_max) : null;
+                prepared.push({
+                    parameter_id: parameter.parameter_id,
+                    value_text: text,
+                    value_numeric: value,
+                    is_abnormal: (min !== null && value < min) || (max !== null && value > max)
+                });
+                continue;
+            }
+            if (parameter.input_type === "DATE") {
+                const date = new Date(text);
+                if (!/^\d{4}-\d{2}-\d{2}/.test(text) || Number.isNaN(date.getTime())) {
+                    throw new Error(`${parameter.parameter_name} must be a valid date`);
+                }
+                prepared.push({ parameter_id: parameter.parameter_id, value_text: text.slice(0, 10), value_numeric: null, is_abnormal: false });
+                continue;
+            }
+            if (parameter.input_type === "SELECT" && parameter.select_options) {
+                const options = parameter.select_options.split("|").map((option) => option.trim());
+                if (!options.includes(text)) {
+                    throw new Error(`${parameter.parameter_name} must be one of: ${options.join(", ")}`);
+                }
+            }
+            prepared.push({ parameter_id: parameter.parameter_id, value_text: text, value_numeric: null, is_abnormal: false });
+        }
+        return prisma_1.default.$transaction(async (tx) => {
+            const existing = await this.repository.findInvestigationResultsForVisit(tx, dto.encounter_no);
+            const existingByParameter = new Map(existing.map((row) => [row.parameter_id, row]));
+            if (cleared.length > 0) {
+                await this.repository.deleteInvestigationResults(tx, dto.encounter_no, cleared);
+            }
+            const toCreate = prepared.filter((row) => !existingByParameter.has(row.parameter_id));
+            const newIds = await (0, idGenerator_1.generateIdBatch)(tx, "INVESTIGATION_RESULT", toCreate.length);
+            for (const row of prepared) {
+                const current = existingByParameter.get(row.parameter_id);
+                const values = {
+                    staging_detail_id: dto.staging_detail_id ?? current?.staging_detail_id ?? null,
+                    report_date: reportDate,
+                    value_text: row.value_text,
+                    value_numeric: row.value_numeric,
+                    is_abnormal: row.is_abnormal
+                };
+                if (current) {
+                    await this.repository.updateInvestigationResult(tx, current.investigation_result_id, values);
+                }
+                else {
+                    await this.repository.createInvestigationResult(tx, {
+                        investigation_result_id: newIds[toCreate.indexOf(row)],
+                        patient_id: dto.patient_id,
+                        encounter_no: dto.encounter_no,
+                        parameter_id: row.parameter_id,
+                        created_by: actingUserId,
+                        ...values
+                    });
+                }
+            }
+            if (prepared.length > 0 || cleared.length > 0) {
+                await (0, audit_service_1.logAudit)(tx, {
+                    entity_type: "patient_investigation_result",
+                    entity_id: dto.encounter_no,
+                    action: audit_types_1.AUDIT_ACTION.UPDATE,
+                    performed_by: actingUserId,
+                    patient_id: dto.patient_id,
+                    branch_id: encounter.branch_id ?? null,
+                    change_summary: (0, audit_service_1.summarizeCreate)({
+                        report_date: dto.report_date,
+                        saved: prepared.map((row) => `${row.parameter_id}=${row.value_text}`).join(", "),
+                        cleared: cleared.join(", ")
+                    })
+                });
+            }
+            return this.repository.findInvestigationResultsForVisit(tx, dto.encounter_no);
+        }, { timeout: 20000 });
     }
     // prisma/seedOncology.ts lives outside src/'s tsconfig rootDir (it's a
     // shared CLI + service entry point, not part of the compiled app), so

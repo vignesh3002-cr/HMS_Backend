@@ -13,6 +13,8 @@ router.get("/reference/cancer-types/:cancerTypeId/subtypes", auth_middleware_1.a
 router.get("/reference/cancer-types/:cancerTypeId/sites", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), oncology_validation_1.getCancerSubtypesValidation, controller.getAnatomicalSites.bind(controller));
 router.get("/reference/cancer-types/:cancerTypeId/grades", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), oncology_validation_1.getCancerSubtypesValidation, controller.getCancerGrades.bind(controller));
 router.get("/reference/cancer-types/:cancerTypeId/scores", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), oncology_validation_1.getCancerSubtypesValidation, controller.getCancerScores.bind(controller));
+// The Investigation Results tests (tumour markers etc.) of a cancer type.
+router.get("/reference/cancer-types/:cancerTypeId/investigation-parameters", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), oncology_validation_1.getCancerSubtypesValidation, controller.getInvestigationParameters.bind(controller));
 router.get("/reference/staging", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), oncology_validation_1.getStagingReferenceValidation, controller.getStagingReference.bind(controller));
 router.get("/reference/biomarker-tests", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), controller.getBiomarkerTests.bind(controller));
 router.get("/reference/molecular-subtypes", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), controller.getMolecularSubtypes.bind(controller));
@@ -25,4 +27,8 @@ router.put("/staging-details/:stagingDetailId", auth_middleware_1.authenticate, 
 router.put("/staging-details/:stagingDetailId/ihc", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.ihc.write"), oncology_validation_1.upsertIhcValidation, controller.upsertIhc.bind(controller));
 router.put("/staging-details/:stagingDetailId/molecular", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.molecular.write"), oncology_validation_1.upsertMolecularValidation, controller.upsertMolecular.bind(controller));
 router.get("/staging-details/:stagingDetailId/derived", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.derived.read"), oncology_validation_1.getStagingDetailValidation, controller.getDerivedFields.bind(controller));
+// ---------------- Investigation Results (per visit) ----------------
+router.get("/investigation-results", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.diagnosis.read"), oncology_validation_1.listInvestigationResultsValidation, controller.listInvestigationResults.bind(controller));
+// Saved with the Diagnosis step, so either of its permissions will do.
+router.put("/investigation-results", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("oncology.diagnosis.create", "oncology.diagnosis.update"), oncology_validation_1.saveInvestigationResultsValidation, controller.saveInvestigationResults.bind(controller));
 exports.default = router;

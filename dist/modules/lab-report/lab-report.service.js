@@ -7,6 +7,31 @@ exports.LabReportService = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const lab_report_repository_1 = require("./lab-report.repository");
 const repository = new lab_report_repository_1.LabReportRepository();
+/* report_comment is a jsonb column holding the report's comment object:
+   { text, parameters, clinicalCorrelation, overallDecision }. A comment
+   sent as that object's JSON string (as the report screens send it) is
+   stored as the object; plain text is stored as { text }. */
+const toReportComment = (value) => {
+    if (value === undefined || value === null || value === "")
+        return undefined;
+    if (typeof value !== "string")
+        return value;
+    try {
+        const parsed = JSON.parse(value);
+        if (parsed && typeof parsed === "object")
+            return parsed;
+    }
+    catch {
+        // plain text
+    }
+    return { text: value };
+};
+/* The comment's text, from a stored comment object or older string. */
+const reportCommentText = (value) => {
+    const comment = typeof value === "string" ? toReportComment(value) : value;
+    const text = comment && typeof comment === "object" ? comment.text : undefined;
+    return typeof text === "string" ? text : "";
+};
 class LabReportService {
     async getAll() {
         return repository.findAll();
@@ -77,14 +102,14 @@ class LabReportService {
             }
         }
         // 5. Structure report_comment to preserve parameters and QC decision
-        let commentPayload = data.report_comment || "";
+        let commentPayload = toReportComment(data.report_comment);
         if (data.parameters || data.clinical_correlation || data.overall_decision) {
-            commentPayload = JSON.stringify({
-                text: data.report_comment || "Laboratory diagnostic report generated.",
+            commentPayload = {
+                text: reportCommentText(commentPayload) || "Laboratory diagnostic report generated.",
                 parameters: data.parameters || [],
                 clinicalCorrelation: data.clinical_correlation || "",
                 overallDecision: data.overall_decision || "APPROVED",
-            });
+            };
         }
         const createdReport = await repository.create({
             lab_report_id,
@@ -143,14 +168,14 @@ class LabReportService {
         if (!existing) {
             throw new Error(`Lab report with id ${id} not found`);
         }
-        let commentPayload = data.report_comment;
+        let commentPayload = toReportComment(data.report_comment);
         if (data.parameters || data.clinical_correlation || data.overall_decision) {
-            commentPayload = JSON.stringify({
-                text: data.report_comment || existing.report_comment || "",
+            commentPayload = {
+                text: reportCommentText(commentPayload) || reportCommentText(existing.report_comment),
                 parameters: data.parameters || [],
                 clinicalCorrelation: data.clinical_correlation || "",
                 overallDecision: data.overall_decision || "APPROVED",
-            });
+            };
         }
         const updateData = {
             updated_at: new Date(),
