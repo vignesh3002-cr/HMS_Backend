@@ -70,6 +70,7 @@ export async function processAIChat(
                     tool: pending.toolName,
                     description: `Executed ${pending.toolName}`,
                     success: result.success,
+                    args: pending.args,
                     result: result.output,
                     error: result.error,
                 });
@@ -107,6 +108,7 @@ export async function processAIChat(
                 tool: tc.tool,
                 description: `Executed ${tc.tool}`,
                 success: tc.success,
+                args: tc.args,
                 result: tc.result,
                 error: tc.success ? undefined : tc.result?.error,
             });

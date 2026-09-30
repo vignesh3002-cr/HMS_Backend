@@ -7,7 +7,9 @@ export interface CreateLabReportDto {
   report_status?: string;
   report_file?: string;
   digital_signature?: string;
-  report_comment?: string;
+  /* The report's comment: an object ({ text, parameters, ... }), its JSON
+     string, or plain text. */
+  report_comment?: string | Record<string, unknown>;
   delivered_to?: string;
   delivered_datetime?: Date | string;
   branch_id?: string;
@@ -26,7 +28,9 @@ export interface UpdateLabReportDto {
   report_status?: string;
   report_file?: string;
   digital_signature?: string;
-  report_comment?: string;
+  /* The report's comment: an object ({ text, parameters, ... }), its JSON
+     string, or plain text. */
+  report_comment?: string | Record<string, unknown>;
   delivered_to?: string;
   delivered_datetime?: Date | string;
   branch_id?: string;

@@ -11,12 +11,21 @@ class LabOrderItemRepository {
             data
         });
     }
-    async findAll() {
+    async findAll(take = 500) {
         return prisma_1.default.lab_order_item.findMany({
+            take,
+            orderBy: { id: "desc" },
             include: {
                 lab_order: {
                     include: {
-                        patient_history: true
+                        patient_history: {
+                            select: {
+                                patient_history_id: true,
+                                patient_id: true,
+                                appointment_id: true,
+                                visit_date: true,
+                            }
+                        }
                     }
                 },
                 lab_test_master: true,

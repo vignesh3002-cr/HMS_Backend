@@ -49,32 +49,42 @@ class PrescriptionService {
         if (!data.medicines || data.medicines.length === 0) {
             throw new Error("At least one medicine is required");
         }
-        const seenMedicineIds = new Set();
+        // Items with a medicine_id come from medicine_master; the rest are
+        // drug names typed on the chemotherapy order (free text).
+        const medicineIds = data.medicines
+            .map((item) => item.medicine_id)
+            .filter((id) => Boolean(id));
         for (const item of data.medicines) {
-            if (seenMedicineIds.has(item.medicine_id)) {
-                throw new Error(`Duplicate medicine entries are not allowed within the same prescription: ${item.medicine_id}`);
+            if (!item.medicine_id && !item.drug_name?.trim()) {
+                throw new Error("Each medicine needs a medicine from the list or a drug name");
             }
-            seenMedicineIds.add(item.medicine_id);
+        }
+        const seenMedicineIds = new Set();
+        for (const medicineId of medicineIds) {
+            if (seenMedicineIds.has(medicineId)) {
+                throw new Error(`Duplicate medicine entries are not allowed within the same prescription: ${medicineId}`);
+            }
+            seenMedicineIds.add(medicineId);
         }
         // One round-trip validates every medicine instead of one query
         // per item (high-latency remote database).
-        const medicines = await repository.findMedicines(data.medicines.map((item) => item.medicine_id));
+        const medicines = await repository.findMedicines(medicineIds);
         const foundMedicineIds = new Set(medicines.map((medicine) => medicine.medicine_id));
-        for (const item of data.medicines) {
-            if (!foundMedicineIds.has(item.medicine_id)) {
-                throw new Error(`Medicine not found: ${item.medicine_id}`);
+        for (const medicineId of medicineIds) {
+            if (!foundMedicineIds.has(medicineId)) {
+                throw new Error(`Medicine not found: ${medicineId}`);
             }
         }
         const medicineRouteById = new Map(medicines.map((medicine) => [medicine.medicine_id, medicine.route ?? undefined]));
         const resolvedItems = data.medicines.map((item) => ({
             ...item,
-            resolved_route: item.route ?? medicineRouteById.get(item.medicine_id),
+            resolved_route: item.route ?? (item.medicine_id ? medicineRouteById.get(item.medicine_id) : undefined),
             resolved_quantity: computeQuantity(item)
         }));
-        // Resolve drug_role/drug_type for each medicine from the patient's
-        // chemotherapy plan (derived server-side). Falls back to PRIMARY/null
-        // when no plan entry exists (e.g. non-chemo OPD prescriptions).
-        const drugMetadata = await repository.findDrugMetadata(data.encounter_no, encounter.patient_id, data.medicines.map((item) => item.medicine_id));
+        // drug_role/drug_type: what the client sent (the chemotherapy order
+        // knows each row's tab), else the patient's chemotherapy plan
+        // (derived server-side), else PRIMARY/null (e.g. OPD prescriptions).
+        const drugMetadata = await repository.findDrugMetadata(data.encounter_no, encounter.patient_id, medicineIds);
         const diagnosisId = data.diagnosis_id ?? encounter.diagnosis_id ?? undefined;
         if (diagnosisId) {
             const diagnosis = await repository.findDiagnosis(diagnosisId);
@@ -129,11 +139,12 @@ class PrescriptionService {
             // full prescription afterwards, so no per-item return is needed.
             const itemIds = await repository.generatePrescriptionItemIds(tx, resolvedItems.length);
             await repository.createPrescriptionItems(tx, resolvedItems.map((item, index) => {
-                const meta = drugMetadata.get(item.medicine_id);
+                const meta = item.medicine_id ? drugMetadata.get(item.medicine_id) : undefined;
                 return {
                     prescription_item_id: itemIds[index],
                     prescription_id: prescription.prescription_id,
-                    medicine_id: item.medicine_id,
+                    medicine_id: item.medicine_id || null,
+                    drug_name: item.medicine_id ? null : item.drug_name?.trim() || null,
                     dosage: item.dosage,
                     unit: item.unit,
                     route: item.resolved_route,
@@ -146,8 +157,8 @@ class PrescriptionService {
                     duration: item.duration,
                     quantity: item.resolved_quantity,
                     instruction: item.instruction,
-                    drug_role: meta?.drug_role ?? item.drug_role ?? "PRIMARY",
-                    drug_type: meta?.drug_type ?? item.drug_type ?? null
+                    drug_role: item.drug_role || meta?.drug_role || "PRIMARY",
+                    drug_type: item.drug_type || meta?.drug_type || null
                 };
             }));
             return prescription.prescription_id;
@@ -248,26 +259,34 @@ class PrescriptionService {
         if (existing.prescription_status !== prescription_constants_1.PRESCRIPTION_STATUS.DRAFT) {
             throw new Error("Cannot add items to a prescription that is not in draft status");
         }
-        const medicine = await repository.findMedicine(data.medicine_id);
-        if (!medicine) {
-            throw new Error(`Medicine not found: ${data.medicine_id}`);
+        const medicineId = data.medicine_id || null;
+        const drugName = medicineId ? null : data.drug_name?.trim() || null;
+        if (!medicineId && !drugName) {
+            throw new Error("Select a medicine from the list or enter a drug name");
         }
-        const duplicate = await repository.findDuplicateMedicineItem(prescriptionId, data.medicine_id);
-        if (duplicate) {
-            throw new Error("This medicine already exists in the prescription");
+        const medicine = medicineId ? await repository.findMedicine(medicineId) : null;
+        if (medicineId) {
+            if (!medicine) {
+                throw new Error(`Medicine not found: ${medicineId}`);
+            }
+            const duplicate = await repository.findDuplicateMedicineItem(prescriptionId, medicineId);
+            if (duplicate) {
+                throw new Error("This medicine already exists in the prescription");
+            }
         }
         const quantity = computeQuantity(data);
-        const drugMetadata = await repository.findDrugMetadata("", existing.patient_history?.patient_bio_data?.patient_id ?? "", [data.medicine_id]);
-        const meta = drugMetadata.get(data.medicine_id);
+        const drugMetadata = await repository.findDrugMetadata("", existing.patient_history?.patient_bio_data?.patient_id ?? "", medicineId ? [medicineId] : []);
+        const meta = medicineId ? drugMetadata.get(medicineId) : undefined;
         return prisma_1.default.$transaction(async (tx) => {
             const itemId = await repository.generatePrescriptionItemId(tx);
             return repository.createPrescriptionItem(tx, {
                 prescription_item_id: itemId,
                 prescription_id: prescriptionId,
-                medicine_id: data.medicine_id,
+                medicine_id: medicineId,
+                drug_name: drugName,
                 dosage: data.dosage,
                 unit: data.unit,
-                route: data.route ?? medicine.route ?? undefined,
+                route: data.route ?? medicine?.route ?? undefined,
                 frequency: data.frequency,
                 before_after_food: data.before_after_food,
                 morning: data.morning ?? false,
@@ -277,8 +296,8 @@ class PrescriptionService {
                 duration: data.duration,
                 quantity,
                 instruction: data.instruction,
-                drug_role: meta?.drug_role ?? data.drug_role ?? "PRIMARY",
-                drug_type: meta?.drug_type ?? data.drug_type ?? null
+                drug_role: data.drug_role || meta?.drug_role || "PRIMARY",
+                drug_type: data.drug_type || meta?.drug_type || null
             });
         });
     }
@@ -313,11 +332,23 @@ class PrescriptionService {
             night: data.night ?? item.night ?? undefined,
             days: data.days ?? item.days ?? undefined
         }) ?? item.quantity ?? undefined;
-        const targetMedicineId = data.medicine_id ?? item.medicine_id;
-        const drugMetadata = await repository.findDrugMetadata("", existing.patient_history?.patient_bio_data?.patient_id ?? "", [targetMedicineId]);
-        const meta = drugMetadata.get(targetMedicineId);
+        // The drug: a medicine from the list, or (medicine_id: null) a
+        // typed drug name.
+        let drugChanges = {};
+        if (data.medicine_id) {
+            drugChanges = { medicine_id: data.medicine_id, drug_name: null };
+        }
+        else if (data.medicine_id === null || (data.drug_name !== undefined && !item.medicine_id)) {
+            if (!data.drug_name?.trim()) {
+                throw new Error("Select a medicine from the list or enter a drug name");
+            }
+            drugChanges = { medicine_id: null, drug_name: data.drug_name.trim() };
+        }
+        const targetMedicineId = data.medicine_id === null ? null : data.medicine_id || item.medicine_id;
+        const drugMetadata = await repository.findDrugMetadata("", existing.patient_history?.patient_bio_data?.patient_id ?? "", targetMedicineId ? [targetMedicineId] : []);
+        const meta = targetMedicineId ? drugMetadata.get(targetMedicineId) : undefined;
         return repository.updatePrescriptionItem(itemId, {
-            medicine_id: data.medicine_id,
+            ...drugChanges,
             dosage: data.dosage,
             unit: data.unit,
             route: resolvedRoute,
@@ -330,8 +361,8 @@ class PrescriptionService {
             duration: data.duration,
             quantity,
             instruction: data.instruction,
-            drug_role: meta?.drug_role ?? data.drug_role ?? item.drug_role ?? "PRIMARY",
-            drug_type: meta?.drug_type ?? data.drug_type ?? item.drug_type ?? null
+            drug_role: data.drug_role || meta?.drug_role || item.drug_role || "PRIMARY",
+            drug_type: data.drug_type || meta?.drug_type || item.drug_type || null
         });
     }
     async deletePrescriptionItem(prescriptionId, itemId) {

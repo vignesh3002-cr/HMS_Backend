@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EncounterService = void 0;
+const client_1 = require("@prisma/client");
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const encounter_repository_1 = require("./encounter.repository");
 const encounter_constants_1 = require("./encounter.constants");
@@ -279,6 +280,11 @@ class EncounterService {
             general_examination_cyanosis: data.general_examination_cyanosis,
             general_examination_oedema: data.general_examination_oedema,
             general_examination_lymphadenopathy: data.general_examination_lymphadenopathy,
+            general_examination_others: data.general_examination_others === undefined
+                ? undefined
+                : data.general_examination_others === null
+                    ? client_1.Prisma.JsonNull
+                    : data.general_examination_others,
             past_history_treatment_type: data.past_history_treatment_type,
             past_history_treatment_date: data.past_history_treatment_date
                 ? new Date(data.past_history_treatment_date)

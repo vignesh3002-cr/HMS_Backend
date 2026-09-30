@@ -146,7 +146,13 @@ class AuthController {
     }
     async getKpiPreferences(req, res) {
         try {
-            const userId = req.user?.user_id;
+            const userId = req.user?.user_id || req.user?.id || req.user?.sub;
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    message: "User not authenticated",
+                });
+            }
             const kpis = await authService.getKpiPreferences(userId);
             return res.status(200).json({
                 success: true,
@@ -162,7 +168,13 @@ class AuthController {
     }
     async saveKpiPreferences(req, res) {
         try {
-            const userId = req.user?.user_id;
+            const userId = req.user?.user_id || req.user?.id || req.user?.sub;
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    message: "User not authenticated",
+                });
+            }
             const { kpis } = req.body;
             if (!Array.isArray(kpis)) {
                 return res.status(400).json({

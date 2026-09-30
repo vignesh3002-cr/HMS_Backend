@@ -90,6 +90,7 @@ class PatientRepository {
         }
         const patients = await prisma_1.default.patient_bio_data.findMany({
             where,
+            omit: { patient_photo_url: true },
             include: {
                 branch: {
                     select: {
@@ -126,8 +127,25 @@ class PatientRepository {
                 patient_id: patientId
             },
             include: {
-                branch: true,
-                user_table: true
+                branch: {
+                    select: {
+                        branch_id: true,
+                        branch_name: true,
+                        branch_area: true,
+                        branch_code: true,
+                        branch_status: true,
+                    }
+                },
+                user_table: {
+                    select: {
+                        user_id: true,
+                        username: true,
+                        role_type: true,
+                        user_status: true,
+                        created_at: true,
+                        updated_at: true,
+                    }
+                }
             }
         });
     }

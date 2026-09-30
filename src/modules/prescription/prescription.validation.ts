@@ -6,7 +6,12 @@ const medicineItemValidation = (prefix: string) => {
     const field = (name: string) => (prefix ? `${prefix}.${name}` : name);
 
     return [
-        body(field("medicine_id")).notEmpty().withMessage("Medicine is required"),
+        body(field("medicine_id")).optional({ nullable: true }).isString(),
+        body(field("drug_name")).optional({ nullable: true }).isString().isLength({ max: 200 }).withMessage("Drug name must be at most 200 characters"),
+        // A medicine from the list, or a typed drug name (free text).
+        (prefix ? body(prefix) : body())
+            .custom((item) => Boolean(item?.medicine_id) || Boolean(String(item?.drug_name ?? "").trim()))
+            .withMessage("Medicine is required"),
         body(field("dosage")).optional().isString(),
         body(field("unit")).optional().isString(),
         body(field("route")).optional().isString(),
@@ -89,7 +94,8 @@ export const updatePrescriptionItemValidation = [
 
     param("prescriptionId").notEmpty(),
     param("itemId").notEmpty(),
-    body("medicine_id").optional().notEmpty(),
+    body("medicine_id").optional({ nullable: true }).isString().notEmpty(),
+    body("drug_name").optional({ nullable: true }).isString().isLength({ max: 200 }),
     body("dosage").optional().isString(),
     body("unit").optional().isString(),
     body("route").optional().isString(),

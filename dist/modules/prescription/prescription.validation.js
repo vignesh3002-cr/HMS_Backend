@@ -6,7 +6,12 @@ const prescription_constants_1 = require("./prescription.constants");
 const medicineItemValidation = (prefix) => {
     const field = (name) => (prefix ? `${prefix}.${name}` : name);
     return [
-        (0, express_validator_1.body)(field("medicine_id")).notEmpty().withMessage("Medicine is required"),
+        (0, express_validator_1.body)(field("medicine_id")).optional({ nullable: true }).isString(),
+        (0, express_validator_1.body)(field("drug_name")).optional({ nullable: true }).isString().isLength({ max: 200 }).withMessage("Drug name must be at most 200 characters"),
+        // A medicine from the list, or a typed drug name (free text).
+        (prefix ? (0, express_validator_1.body)(prefix) : (0, express_validator_1.body)())
+            .custom((item) => Boolean(item?.medicine_id) || Boolean(String(item?.drug_name ?? "").trim()))
+            .withMessage("Medicine is required"),
         (0, express_validator_1.body)(field("dosage")).optional().isString(),
         (0, express_validator_1.body)(field("unit")).optional().isString(),
         (0, express_validator_1.body)(field("route")).optional().isString(),
@@ -73,7 +78,8 @@ exports.addPrescriptionItemValidation = [
 exports.updatePrescriptionItemValidation = [
     (0, express_validator_1.param)("prescriptionId").notEmpty(),
     (0, express_validator_1.param)("itemId").notEmpty(),
-    (0, express_validator_1.body)("medicine_id").optional().notEmpty(),
+    (0, express_validator_1.body)("medicine_id").optional({ nullable: true }).isString().notEmpty(),
+    (0, express_validator_1.body)("drug_name").optional({ nullable: true }).isString().isLength({ max: 200 }),
     (0, express_validator_1.body)("dosage").optional().isString(),
     (0, express_validator_1.body)("unit").optional().isString(),
     (0, express_validator_1.body)("route").optional().isString(),

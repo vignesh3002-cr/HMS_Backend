@@ -283,15 +283,12 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "employee.read",
     "patient.read",
     "department.read",
+    "appointment.read",
     "pharmacy.dispense",
     "pharmacy.inventory",
 
     // Verifies drug orders against the plan before dispensing
     "chemo.plan.read",
-
-    // Verifies drug orders against the plan before dispensing
-    "chemo.plan.read",
-
   ],
 
   // LAB_TECHNICIAN
@@ -299,6 +296,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "employee.read",
     "patient.read",
     "department.read",
+    "appointment.read",
     "lab.order",
     "lab.result",
     "lab.manage",

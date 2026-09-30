@@ -33,6 +33,9 @@ exports.updateEncounterValidation = [
     (0, express_validator_1.body)("general_examination_cyanosis").optional().isBoolean(),
     (0, express_validator_1.body)("general_examination_oedema").optional().isBoolean(),
     (0, express_validator_1.body)("general_examination_lymphadenopathy").optional().isBoolean(),
+    (0, express_validator_1.body)("general_examination_others").optional({ nullable: true }).isArray(),
+    (0, express_validator_1.body)("general_examination_others.*.code").isString(),
+    (0, express_validator_1.body)("general_examination_others.*.name").isString(),
     (0, express_validator_1.body)("past_history_treatment_type").optional().isString(),
     (0, express_validator_1.body)("past_history_treatment_date")
         .optional()

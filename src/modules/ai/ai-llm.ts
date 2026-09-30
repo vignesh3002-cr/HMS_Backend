@@ -27,7 +27,75 @@ const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";
 const GOOGLE_BASE_URL = process.env.GOOGLE_BASE_URL || "https://generativelanguage.googleapis.com/v1beta/openai";
 const GOOGLE_MODEL = process.env.GOOGLE_MODEL || "gemini-3.6-flash";
 
-const MAX_TOOL_ROUNDS = 10;
+function envInt(name: string, fallback: number): number {
+    const raw = process.env[name];
+    if (raw == null || raw.trim() === "") return fallback;
+    const n = Number.parseInt(raw, 10);
+    return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+function envFloat(name: string, fallback: number): number {
+    const raw = process.env[name];
+    if (raw == null || raw.trim() === "") return fallback;
+    const n = Number.parseFloat(raw);
+    return Number.isFinite(n) ? n : fallback;
+}
+
+// Generation params. Default temperature is low on purpose: every answer here is
+// a read-back of stored HMS records, so creativity is a liability. 0.2 stops the
+// model embellishing a patient name or a dosage it just fetched.
+const LLM_MAX_TOKENS = envInt("LLM_MAX_TOKENS", 4096);
+const LLM_TEMPERATURE = envFloat("LLM_TEMPERATURE", 0.2);
+const LLM_TOP_P = envFloat("LLM_TOP_P", 0.95);
+
+// Tool-loop bounds. The round cap is only a backstop -- the wall-clock budget is
+// the limit that actually matters, because each round costs one sequential LLM
+// call plus tool execution (seconds, not milliseconds). Stopping on whichever
+// bound trips first is what makes a high round count survivable.
+//
+// Keep LLM_ROUND_BUDGET_MS comfortably below the frontend's axios timeout
+// (ai-chat.api.ts) plus the cost of the closing summary call, otherwise the
+// client gives up while the server is still working.
+const LLM_MAX_TOOL_ROUNDS = envInt("LLM_MAX_TOOL_ROUNDS", 60);
+const LLM_ROUND_BUDGET_MS = envInt("LLM_ROUND_BUDGET_MS", 45_000);
+
+// Rough token estimate (~4 chars/token) for loop telemetry only -- enough to spot
+// runaway context growth without pulling in a tokenizer dependency.
+function estimateTokens(messages: any[]): number {
+    let chars = 0;
+    for (const m of messages) {
+        if (typeof m.content === "string") chars += m.content.length;
+        if (m.tool_calls) chars += JSON.stringify(m.tool_calls).length;
+    }
+    return Math.round(chars / 4);
+}
+
+// Image columns that hold base64 data URLs (avatar-upload.tsx uses
+// canvas.toDataURL). They are meaningless to the model and can be hundreds of KB
+// each, so they must never reach the transcript.
+const IMAGE_KEYS = new Set(["patient_photo_url", "employee_photo_URL", "photo_url", "photo"]);
+
+/**
+ * Recursively drop image columns from a tool result.
+ *
+ * This is a safety net, not the primary fix -- tool executors project their own
+ * output (see projectAppointment in ai-tool-executor.ts). It sits here, at the
+ * one place tool output is serialised into the transcript, so a tool that
+ * forgets to project can never blow the context window on base64 alone.
+ */
+function stripImageFields(value: any, depth = 0): any {
+    if (depth > 8 || value == null) return value;
+    if (Array.isArray(value)) return value.map(v => stripImageFields(v, depth + 1));
+    if (typeof value !== "object") return value;
+    if (value instanceof Date) return value;
+
+    const out: any = {};
+    for (const [k, v] of Object.entries(value)) {
+        if (IMAGE_KEYS.has(k)) continue;
+        out[k] = stripImageFields(v, depth + 1);
+    }
+    return out;
+}
 
 // ──── Public ────
 
@@ -65,9 +133,28 @@ export async function chatWithLLM(
     ];
 
     const executedTools: Array<{ tool: string; args: any; result: any; success: boolean }> = [];
+    const startedAt = Date.now();
+    const deadline = startedAt + LLM_ROUND_BUDGET_MS;
 
-    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+    for (let round = 0; round < LLM_MAX_TOOL_ROUNDS; round++) {
+        // Wall-clock budget is the real cap. Checking it *before* the call means
+        // a slow round can never push the total past what the client will wait for.
+        if (Date.now() > deadline) {
+            console.log(
+                `[AI] round budget exhausted after ${round} round(s), ` +
+                `${Date.now() - startedAt}ms elapsed, ctx≈${estimateTokens(allMessages)}tok -- summarizing`
+            );
+            return { response: await summarizeWithoutTools(allMessages), toolCalls: executedTools };
+        }
+
+        const roundStart = Date.now();
         const llmResponse = await callLLM(allMessages, filteredTools);
+
+        console.log(
+            `[AI] round ${round + 1}/${LLM_MAX_TOOL_ROUNDS} ` +
+            `llm=${Date.now() - roundStart}ms total=${Date.now() - startedAt}ms ` +
+            `ctx≈${estimateTokens(allMessages)}tok toolCalls=${llmResponse.toolCalls?.length ?? 0}`
+        );
 
         // No tool calls — return final text response
         if (!llmResponse.toolCalls || llmResponse.toolCalls.length === 0) {
@@ -104,7 +191,9 @@ export async function chatWithLLM(
                 allMessages.push({
                     role: "tool",
                     tool_call_id: toolCall.id,
-                    content: JSON.stringify(result.success ? result.output : { error: result.error })
+                    content: JSON.stringify(
+                        result.success ? stripImageFields(result.output) : { error: result.error }
+                    )
                 });
             } catch (err: any) {
                 const errorResult = { success: false, error: err.message || "Tool execution failed" };
@@ -119,8 +208,34 @@ export async function chatWithLLM(
         // Loop continues — LLM will process tool results and may call more tools
     }
 
-    // Max rounds reached — return whatever we have
-    return { response: "I've completed the available operations. Please ask if you need anything else.", toolCalls: executedTools };
+    // Round cap reached — don't throw the work away. One final turn with tools
+    // disabled so the model reports what it actually retrieved instead of us
+    // handing the user a canned string and losing every successful lookup.
+    console.log(
+        `[AI] round cap reached (${LLM_MAX_TOOL_ROUNDS}), ${Date.now() - startedAt}ms elapsed, ` +
+        `ctx≈${estimateTokens(allMessages)}tok -- summarizing`
+    );
+    return { response: await summarizeWithoutTools(allMessages), toolCalls: executedTools };
+}
+
+/**
+ * Closing turn with tools disabled.
+ *
+ * Called when the loop stops on either bound. With `tools: []` the provider
+ * cannot emit another tool call, so this always terminates in a single round
+ * and the model has to commit to a text answer built from the tool results
+ * already in the transcript.
+ */
+async function summarizeWithoutTools(messages: any[]): Promise<string> {
+    try {
+        const res = await callLLM(messages, []);
+        if (res.text && res.text.trim()) return res.text;
+    } catch (err: any) {
+        // Losing the summary is survivable; losing the original error is not, so
+        // log it rather than masking it behind the fallback string.
+        console.error("[AI] closing summary call failed:", err?.message || err);
+    }
+    return "I ran out of time before I could finish. Try narrowing your question, or ask me about one record at a time.";
 }
 
 // ──── OpenRouter (OpenAI-compatible) ────
@@ -143,7 +258,8 @@ async function callOpenRouter(messages: any[], tools: any[]): Promise<LLMRespons
         messages,
         tools: tools.length > 0 ? tools : undefined,
         tool_choice: tools.length > 0 ? "auto" : undefined,
-        max_tokens: 4096,
+        max_tokens: LLM_MAX_TOKENS,
+        temperature: LLM_TEMPERATURE,
     };
 
     const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
@@ -190,9 +306,9 @@ async function callNvidia(messages: any[], tools: any[]): Promise<LLMResponse> {
         messages,
         tools: tools.length > 0 ? tools : undefined,
         tool_choice: tools.length > 0 ? "auto" : undefined,
-        max_tokens: 4096,
-        temperature: 1,
-        top_p: 0.95,
+        max_tokens: LLM_MAX_TOKENS,
+        temperature: LLM_TEMPERATURE,
+        top_p: LLM_TOP_P,
     };
 
     const response = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
@@ -237,7 +353,8 @@ async function callGoogle(messages: any[], tools: any[]): Promise<LLMResponse> {
         messages,
         tools: tools.length > 0 ? tools : undefined,
         tool_choice: tools.length > 0 ? "auto" : undefined,
-        max_tokens: 4096,
+        max_tokens: LLM_MAX_TOKENS,
+        temperature: LLM_TEMPERATURE,
     };
 
     const response = await fetch(`${GOOGLE_BASE_URL}/chat/completions`, {

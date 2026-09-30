@@ -6,10 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.OncologyService = exports.OncologyValidationError = void 0;
 const client_1 = require("@prisma/client");
 const prisma_1 = __importDefault(require("../../config/prisma"));
+const idGenerator_1 = require("../../utils/idGenerator");
 const oncology_repository_1 = require("./oncology.repository");
 const chemo_validation_1 = require("./chemo.validation");
 const chemo_derivation_1 = require("./chemo.derivation");
 const oncology_constants_1 = require("./oncology.constants");
+const tnm_parser_1 = require("./tnm.parser");
 const audit_service_1 = require("../audit/audit.service");
 const audit_types_1 = require("../audit/audit.types");
 class OncologyValidationError extends Error {
@@ -131,7 +133,12 @@ class OncologyService {
     // Reference lookups
     // ---------------------------------------------------------------
     async listCancerTypes() {
-        return this.repository.findCancerTypes();
+        const types = await this.repository.findCancerTypes();
+        // Laterality is only asked for paired-organ cancers (Section 6.2).
+        return types.map((type) => ({
+            ...type,
+            laterality_applicable: oncology_constants_1.LATERALITY_CANCER_TYPES.includes(type.cancer_type)
+        }));
     }
     async listCancerSubtypes(cancerTypeId) {
         const cancerType = await this.repository.findCancerTypeById(cancerTypeId);
@@ -145,7 +152,10 @@ class OncologyService {
         if (!cancerType) {
             throw new Error("Cancer type not found");
         }
-        return this.repository.findStagingReferenceByType(cancerTypeId);
+        const rows = await this.repository.findStagingReferenceByType(cancerTypeId);
+        // The individual, storable T / N / M values each criteria phrase
+        // names - the Diagnosis T / N / M dropdowns are built from these.
+        return rows.map((row) => ({ ...row, ...(0, tnm_parser_1.parseTnmValues)(row.tnm_criteria) }));
     }
     async listBiomarkerTests() {
         return this.repository.findBiomarkerTests();
@@ -174,6 +184,142 @@ class OncologyService {
         }
         return this.repository.findCancerScoresByType(cancerTypeId);
     }
+    // ---------------------------------------------------------------
+    // Investigation Results (Diagnosis tab): the tests tracked for each
+    // cancer type, and their values entered on every visit.
+    // ---------------------------------------------------------------
+    async listInvestigationParameters(cancerTypeId) {
+        const cancerType = await this.repository.findCancerTypeById(cancerTypeId);
+        if (!cancerType) {
+            throw new Error("Cancer type not found");
+        }
+        return this.repository.findInvestigationParametersByType(cancerTypeId);
+    }
+    // Every visit's results for the patient, newest report first.
+    async listInvestigationResults(patientId) {
+        return this.repository.listInvestigationResultsForPatient(patientId);
+    }
+    // Saves a visit's results: each test is upserted by encounter + test;
+    // a blank value clears it. Values are checked against the test's type,
+    // and a number outside the normal range is flagged abnormal.
+    async saveInvestigationResults(dto, actingUserId) {
+        const patient = await this.repository.findPatientById(dto.patient_id);
+        if (!patient) {
+            throw new Error("Patient not found");
+        }
+        const encounter = await this.repository.findEncounterByNumber(dto.encounter_no);
+        if (!encounter || encounter.patient_id !== dto.patient_id) {
+            throw new Error("The encounter does not belong to this patient");
+        }
+        if (dto.staging_detail_id) {
+            const staging = await this.repository.findStagingDetailById(dto.staging_detail_id);
+            if (!staging || staging.patient_id !== dto.patient_id) {
+                throw new Error("The staging detail does not belong to this patient");
+            }
+        }
+        const reportDate = new Date(dto.report_date);
+        if (Number.isNaN(reportDate.getTime())) {
+            throw new Error("Report date must be a valid date");
+        }
+        const results = dto.results ?? [];
+        const parameterIds = [...new Set(results.map((result) => result.parameter_id))];
+        if (parameterIds.length !== results.length) {
+            throw new Error("Each test can only be given once per visit");
+        }
+        const parameters = await this.repository.findInvestigationParametersByIds(parameterIds);
+        const parameterById = new Map(parameters.map((parameter) => [parameter.parameter_id, parameter]));
+        const cleared = [];
+        const prepared = [];
+        for (const result of results) {
+            const parameter = parameterById.get(result.parameter_id);
+            if (!parameter || parameter.active_status !== 1) {
+                throw new Error(`Investigation test not found: ${result.parameter_id}`);
+            }
+            const text = result.value === null || result.value === undefined ? "" : String(result.value).trim();
+            if (!text) {
+                cleared.push(parameter.parameter_id);
+                continue;
+            }
+            if (parameter.input_type === "NUMBER") {
+                const value = Number(text);
+                if (!Number.isFinite(value)) {
+                    throw new Error(`${parameter.parameter_name} must be a number`);
+                }
+                const min = parameter.normal_min != null ? Number(parameter.normal_min) : null;
+                const max = parameter.normal_max != null ? Number(parameter.normal_max) : null;
+                prepared.push({
+                    parameter_id: parameter.parameter_id,
+                    value_text: text,
+                    value_numeric: value,
+                    is_abnormal: (min !== null && value < min) || (max !== null && value > max)
+                });
+                continue;
+            }
+            if (parameter.input_type === "DATE") {
+                const date = new Date(text);
+                if (!/^\d{4}-\d{2}-\d{2}/.test(text) || Number.isNaN(date.getTime())) {
+                    throw new Error(`${parameter.parameter_name} must be a valid date`);
+                }
+                prepared.push({ parameter_id: parameter.parameter_id, value_text: text.slice(0, 10), value_numeric: null, is_abnormal: false });
+                continue;
+            }
+            if (parameter.input_type === "SELECT" && parameter.select_options) {
+                const options = parameter.select_options.split("|").map((option) => option.trim());
+                if (!options.includes(text)) {
+                    throw new Error(`${parameter.parameter_name} must be one of: ${options.join(", ")}`);
+                }
+            }
+            prepared.push({ parameter_id: parameter.parameter_id, value_text: text, value_numeric: null, is_abnormal: false });
+        }
+        return prisma_1.default.$transaction(async (tx) => {
+            const existing = await this.repository.findInvestigationResultsForVisit(tx, dto.encounter_no);
+            const existingByParameter = new Map(existing.map((row) => [row.parameter_id, row]));
+            if (cleared.length > 0) {
+                await this.repository.deleteInvestigationResults(tx, dto.encounter_no, cleared);
+            }
+            const toCreate = prepared.filter((row) => !existingByParameter.has(row.parameter_id));
+            const newIds = await (0, idGenerator_1.generateIdBatch)(tx, "INVESTIGATION_RESULT", toCreate.length);
+            for (const row of prepared) {
+                const current = existingByParameter.get(row.parameter_id);
+                const values = {
+                    staging_detail_id: dto.staging_detail_id ?? current?.staging_detail_id ?? null,
+                    report_date: reportDate,
+                    value_text: row.value_text,
+                    value_numeric: row.value_numeric,
+                    is_abnormal: row.is_abnormal
+                };
+                if (current) {
+                    await this.repository.updateInvestigationResult(tx, current.investigation_result_id, values);
+                }
+                else {
+                    await this.repository.createInvestigationResult(tx, {
+                        investigation_result_id: newIds[toCreate.indexOf(row)],
+                        patient_id: dto.patient_id,
+                        encounter_no: dto.encounter_no,
+                        parameter_id: row.parameter_id,
+                        created_by: actingUserId,
+                        ...values
+                    });
+                }
+            }
+            if (prepared.length > 0 || cleared.length > 0) {
+                await (0, audit_service_1.logAudit)(tx, {
+                    entity_type: "patient_investigation_result",
+                    entity_id: dto.encounter_no,
+                    action: audit_types_1.AUDIT_ACTION.UPDATE,
+                    performed_by: actingUserId,
+                    patient_id: dto.patient_id,
+                    branch_id: encounter.branch_id ?? null,
+                    change_summary: (0, audit_service_1.summarizeCreate)({
+                        report_date: dto.report_date,
+                        saved: prepared.map((row) => `${row.parameter_id}=${row.value_text}`).join(", "),
+                        cleared: cleared.join(", ")
+                    })
+                });
+            }
+            return this.repository.findInvestigationResultsForVisit(tx, dto.encounter_no);
+        }, { timeout: 20000 });
+    }
     // prisma/seedOncology.ts lives outside src/'s tsconfig rootDir (it's a
     // shared CLI + service entry point, not part of the compiled app), so
     // it's loaded via require() here instead of a static TS import - ts-node
@@ -199,6 +345,53 @@ class OncologyService {
             throw new Error("Selected subtype does not belong to the selected cancer type");
         }
         return { cancerType, subtype };
+    }
+    // Laterality is only recorded for paired-organ cancers.
+    assertLateralityApplies(cancerTypeName, laterality) {
+        if (laterality && laterality !== "NA" && !oncology_constants_1.LATERALITY_CANCER_TYPES.includes(cancerTypeName)) {
+            throw new Error(`Laterality does not apply to ${cancerTypeName}`);
+        }
+    }
+    // Secondary cancer types of a multi-type diagnosis. Each must exist,
+    // differ from the primary type and appear once; its optional subtype
+    // must belong to it.
+    async resolveAdditionalCancers(primaryCancerTypeId, list) {
+        const seen = new Set();
+        const rows = [];
+        for (const entry of list) {
+            const cancerType = await this.repository.findCancerTypeById(entry.cancer_type_id);
+            if (!cancerType) {
+                throw new Error(`Cancer type not found: ${entry.cancer_type_id}`);
+            }
+            if (entry.cancer_type_id === primaryCancerTypeId) {
+                throw new Error(`${cancerType.cancer_type} is already the primary cancer type`);
+            }
+            if (seen.has(entry.cancer_type_id)) {
+                throw new Error(`${cancerType.cancer_type} is selected more than once`);
+            }
+            seen.add(entry.cancer_type_id);
+            let subtypeId = null;
+            if (entry.cancer_subtype_id) {
+                const subtype = await this.repository.findCancerSubtypeById(entry.cancer_subtype_id);
+                if (!subtype) {
+                    throw new Error("Cancer subtype not found");
+                }
+                if (subtype.cancer_type_id !== entry.cancer_type_id) {
+                    throw new Error(`Selected subtype does not belong to ${cancerType.cancer_type}`);
+                }
+                subtypeId = subtype.subtype_id;
+            }
+            this.assertLateralityApplies(cancerType.cancer_type, entry.laterality);
+            rows.push({
+                cancer_type_id: entry.cancer_type_id,
+                cancer_subtype_id: subtypeId,
+                laterality: entry.laterality || null,
+                t_stage: entry.t_stage || null,
+                n_stage: entry.n_stage || null,
+                m_stage: entry.m_stage || null
+            });
+        }
+        return rows;
     }
     // A staging detail may only be recorded for a patient who has actually
     // been seen: their most recent encounter must be OPEN, or closed but
@@ -226,7 +419,24 @@ class OncologyService {
             throw new Error("Patient not found");
         }
         const encounter = await this.resolveQualifyingEncounter(dto.patient_id);
+        // The visit this diagnosis is recorded in: the one named (it must be
+        // this patient's), else the qualifying encounter. One staging detail
+        // per visit - re-saving in the same visit updates that row.
+        let encounterNo = encounter.encounter_no;
+        if (dto.encounter_no && dto.encounter_no !== encounter.encounter_no) {
+            const named = await this.repository.findEncounterByNumber(dto.encounter_no);
+            if (!named || named.patient_id !== dto.patient_id) {
+                throw new Error("The encounter does not belong to this patient");
+            }
+            encounterNo = named.encounter_no;
+        }
+        const existingForVisit = await this.repository.findStagingDetailByEncounter(encounterNo);
+        if (existingForVisit) {
+            throw new Error(`This visit (${encounterNo}) already has a staging detail (${existingForVisit.staging_detail_id}) - update it instead`);
+        }
         const { cancerType, subtype } = await this.resolveCancerTypeAndSubtype(dto.cancer_type_id, dto.cancer_subtype_id);
+        this.assertLateralityApplies(cancerType.cancer_type, dto.laterality);
+        const additionalCancers = await this.resolveAdditionalCancers(dto.cancer_type_id, dto.additional_cancers ?? []);
         const diagnosis = dto.diagnosis_id
             ? await this.repository.findDiagnosisById(dto.diagnosis_id)
             : null;
@@ -270,6 +480,7 @@ class OncologyService {
                 patient_id: dto.patient_id,
                 patient_history_id: dto.patient_history_id ?? null,
                 diagnosis_id: dto.diagnosis_id ?? null,
+                encounter_no: encounterNo,
                 visit_date: dto.visit_date ? new Date(dto.visit_date) : null,
                 diagnosis_date: dto.diagnosis_date ? new Date(dto.diagnosis_date) : null,
                 progression_date: dto.progression_date ? new Date(dto.progression_date) : null,
@@ -295,9 +506,6 @@ class OncologyService {
                 grade_system: dto.grade_system ?? null,
                 score: dto.score ?? null,
                 score_system: dto.score_system ?? null,
-                suggested_molecular_test: dto.suggested_molecular_test ?? null,
-                suggested_molecular_test_note: dto.suggested_molecular_test_note ?? null,
-                suggested_molecular_test_date: dto.suggested_molecular_test_date ? new Date(dto.suggested_molecular_test_date) : null,
                 notes: dto.notes ?? null,
                 performance_status: dto.performance_status ?? null,
                 // Default to whoever actually saw the patient in the
@@ -307,6 +515,9 @@ class OncologyService {
                 branch_id: dto.branch_id ?? encounter.branch_id ?? null,
                 user_id: actingUserId
             });
+            if (additionalCancers.length > 0) {
+                await this.repository.replaceAdditionalCancers(tx, newId, additionalCancers);
+            }
             if (dto.ihc) {
                 await this.repository.upsertIhcResults(tx, newId, dto.ihc);
             }
@@ -324,6 +535,7 @@ class OncologyService {
                 change_summary: (0, audit_service_1.summarizeCreate)({
                     cancer_type_id: dto.cancer_type_id,
                     cancer_subtype_id: dto.cancer_subtype_id,
+                    additional_cancers: additionalCancers,
                     clinical_stage: dto.clinical_stage ?? null,
                     diagnosis_id: dto.diagnosis_id ?? null
                 })
@@ -371,6 +583,11 @@ class OncologyService {
                 throw new Error("Branch not found");
             }
         }
+        this.assertLateralityApplies(cancerType.cancer_type, dto.laterality);
+        const finalCancerTypeId = dto.cancer_type_id ?? existing.cancer_type_id;
+        const additionalCancers = dto.additional_cancers !== undefined && dto.additional_cancers !== null
+            ? await this.resolveAdditionalCancers(finalCancerTypeId, dto.additional_cancers)
+            : null;
         const staging = {
             cancer_type: cancerType.cancer_type,
             clinical_stage: dto.clinical_stage !== undefined ? dto.clinical_stage : existing.clinical_stage,
@@ -427,9 +644,6 @@ class OncologyService {
             ...(dto.grade_system !== undefined && dto.grade_system !== null ? { grade_system: dto.grade_system } : {}),
             ...(dto.score !== undefined ? { score: dto.score || null } : {}),
             ...(dto.score_system !== undefined ? { score_system: dto.score_system || null } : {}),
-            ...(dto.suggested_molecular_test !== undefined ? { suggested_molecular_test: dto.suggested_molecular_test || null } : {}),
-            ...(dto.suggested_molecular_test_note !== undefined ? { suggested_molecular_test_note: dto.suggested_molecular_test_note || null } : {}),
-            ...(dto.suggested_molecular_test_date !== undefined ? { suggested_molecular_test_date: dto.suggested_molecular_test_date ? new Date(dto.suggested_molecular_test_date) : null } : {}),
             ...(dto.notes !== undefined ? { notes: dto.notes || null } : {}),
             ...(dto.performance_status !== undefined && dto.performance_status !== null ? { performance_status: dto.performance_status } : {}),
             ...(dto.employee_id !== undefined && dto.employee_id !== null ? { employee_id: dto.employee_id } : {}),
@@ -437,6 +651,13 @@ class OncologyService {
         };
         await prisma_1.default.$transaction(async (tx) => {
             await this.repository.updateStagingDetail(tx, stagingDetailId, stagingChanges);
+            if (additionalCancers) {
+                await this.repository.replaceAdditionalCancers(tx, stagingDetailId, additionalCancers);
+            }
+            else if (finalCancerTypeId !== existing.cancer_type_id) {
+                // The new primary type can't also stay listed as an additional one.
+                await this.repository.removeAdditionalCancerType(tx, stagingDetailId, finalCancerTypeId);
+            }
             if (dto.ihc) {
                 await this.repository.upsertIhcResults(tx, stagingDetailId, dto.ihc);
             }
@@ -444,7 +665,12 @@ class OncologyService {
                 await this.repository.upsertMolecularResults(tx, stagingDetailId, dto.molecular);
             }
             await this.repository.upsertDerivedFields(tx, stagingDetailId, derivedPersistPayload(derived));
-            const auditChanges = { ...stagingChanges, ...(dto.ihc ?? {}), ...(dto.molecular ?? {}) };
+            const auditChanges = {
+                ...stagingChanges,
+                ...(additionalCancers ? { additional_cancers: additionalCancers } : {}),
+                ...(dto.ihc ?? {}),
+                ...(dto.molecular ?? {})
+            };
             if (Object.keys(auditChanges).length > 0) {
                 await (0, audit_service_1.logAudit)(tx, {
                     entity_type: "oncology_staging_detail",
@@ -453,7 +679,19 @@ class OncologyService {
                     performed_by: actingUserId,
                     patient_id: existing.patient_id,
                     branch_id: (dto.branch_id ?? existing.branch_id) ?? null,
-                    change_summary: (0, audit_service_1.diffFields)({ ...existing, ...mapIhcRowToInput(existing.ihc_results), ...mapMolecularRowToInput(existing.molecular_results) }, auditChanges)
+                    change_summary: (0, audit_service_1.diffFields)({
+                        ...existing,
+                        additional_cancers: existing.oncology_staging_additional_cancers.map((cancer) => ({
+                            cancer_type_id: cancer.cancer_type_id,
+                            cancer_subtype_id: cancer.cancer_subtype_id,
+                            laterality: cancer.laterality,
+                            t_stage: cancer.t_stage,
+                            n_stage: cancer.n_stage,
+                            m_stage: cancer.m_stage
+                        })),
+                        ...mapIhcRowToInput(existing.ihc_results),
+                        ...mapMolecularRowToInput(existing.molecular_results)
+                    }, auditChanges)
                 });
             }
         });

@@ -49,6 +49,58 @@ class ConsultationRepository {
     async createDrugConsumption(data) {
         return prisma_1.default.drug_consumption_master.create({ data });
     }
+    async getGeneralExaminationFindings(query) {
+        const where = {};
+        if (query.isActive !== undefined)
+            where.is_active = query.isActive;
+        if (query.search) {
+            where.OR = [
+                { name: { contains: query.search, mode: "insensitive" } },
+                { code: { contains: query.search, mode: "insensitive" } }
+            ];
+        }
+        return prisma_1.default.general_examination_master.findMany({ where, orderBy: [{ display_order: "asc" }, { name: "asc" }] });
+    }
+    async findGeneralExaminationFindingByCode(code) {
+        return prisma_1.default.general_examination_master.findUnique({ where: { code } });
+    }
+    async findGeneralExaminationFindingByName(name) {
+        return prisma_1.default.general_examination_master.findFirst({ where: { name: { equals: name, mode: "insensitive" } } });
+    }
+    async createGeneralExaminationFinding(data) {
+        return prisma_1.default.general_examination_master.create({ data });
+    }
+    // New options go after the existing ones in the list.
+    async nextGeneralExaminationFindingDisplayOrder() {
+        const result = await prisma_1.default.general_examination_master.aggregate({ _max: { display_order: true } });
+        return (result._max.display_order ?? 0) + 1;
+    }
+    async getTreatmentTypes(query) {
+        const where = {};
+        if (query.isActive !== undefined)
+            where.is_active = query.isActive;
+        if (query.search) {
+            where.OR = [
+                { name: { contains: query.search, mode: "insensitive" } },
+                { code: { contains: query.search, mode: "insensitive" } }
+            ];
+        }
+        return prisma_1.default.treatment_type_master.findMany({ where, orderBy: [{ display_order: "asc" }, { name: "asc" }] });
+    }
+    async findTreatmentTypeByCode(code) {
+        return prisma_1.default.treatment_type_master.findUnique({ where: { code } });
+    }
+    async findTreatmentTypeByName(name) {
+        return prisma_1.default.treatment_type_master.findFirst({ where: { name: { equals: name, mode: "insensitive" } } });
+    }
+    async createTreatmentType(data) {
+        return prisma_1.default.treatment_type_master.create({ data });
+    }
+    // New options go after the existing ones in the list.
+    async nextTreatmentTypeDisplayOrder() {
+        const result = await prisma_1.default.treatment_type_master.aggregate({ _max: { display_order: true } });
+        return (result._max.display_order ?? 0) + 1;
+    }
     // ---------------- Personal history ----------------
     async findPersonalHistoryByEncounter(encounterNo) {
         return prisma_1.default.patient_personal_history.findUnique({ where: { encounter_no: encounterNo } });
@@ -82,6 +134,33 @@ class ConsultationRepository {
     }
     async deleteReport(encounterReportId) {
         return prisma_1.default.encounter_report.delete({ where: { encounter_report_id: encounterReportId } });
+    }
+    // ---------------- Encounter molecular tests ----------------
+    async findMolecularTestsByEncounter(encounterNo) {
+        return prisma_1.default.encounter_molecular_test.findMany({
+            where: { encounter_no: encounterNo },
+            orderBy: { created_at: "asc" }
+        });
+    }
+    async findMolecularTestById(encounterMolecularTestId) {
+        return prisma_1.default.encounter_molecular_test.findUnique({ where: { encounter_molecular_test_id: encounterMolecularTestId } });
+    }
+    async findMolecularTestByName(encounterNo, testName) {
+        return prisma_1.default.encounter_molecular_test.findFirst({
+            where: { encounter_no: encounterNo, test_name: { equals: testName, mode: "insensitive" } }
+        });
+    }
+    async createMolecularTest(data) {
+        return prisma_1.default.encounter_molecular_test.create({ data });
+    }
+    async updateMolecularTest(encounterMolecularTestId, data) {
+        return prisma_1.default.encounter_molecular_test.update({
+            where: { encounter_molecular_test_id: encounterMolecularTestId },
+            data
+        });
+    }
+    async deleteMolecularTest(encounterMolecularTestId) {
+        return prisma_1.default.encounter_molecular_test.delete({ where: { encounter_molecular_test_id: encounterMolecularTestId } });
     }
     // ---------------- Existence checks ----------------
     async findEncounterByNumber(encounterNo) {

@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { generateId } from "../../utils/idGenerator";
-import { ID_ENTITY } from "./chemotherapy.constants";
+import { ID_ENTITY, OPEN_PLAN_STATUSES, PLAN_ORDER_STATUS } from "./chemotherapy.constants";
 import { PlanFilterQuery, RegimenProtocolFilterQuery } from "./chemotherapy.types";
 
 export class ChemotherapyRepository {
@@ -941,9 +941,11 @@ export class ChemotherapyRepository {
 
     }
 
+    // Plan items without an order are the plan's baseline copy of the
+    // protocol; each cycle day's saved order is read via the order helpers.
     private planInclude = {
         chemotherapy_plan_items: {
-            where: { active_status: 1 },
+            where: { active_status: 1, plan_order_id: null },
             include: { medicine_master: true }
         },
         chemotherapy_cycle: { where: { active_status: 1 }, orderBy: { cycle_number: "asc" as const } },
@@ -965,6 +967,28 @@ export class ChemotherapyRepository {
             where: { chemotherapy_plan_id: planId },
             include: this.planInclude
         });
+
+    }
+
+    // Baseline hydration rows (not tied to a cycle day's order).
+    async findPlanHydration(planId: string) {
+
+        return prisma.chemotherapy_plan_hydration.findMany({
+            where: { chemotherapy_plan_id: planId, plan_order_id: null },
+            orderBy: { display_order: "asc" }
+        });
+
+    }
+
+    async deletePlanHydration(tx: Prisma.TransactionClient, planId: string) {
+
+        return tx.chemotherapy_plan_hydration.deleteMany({ where: { chemotherapy_plan_id: planId, plan_order_id: null } });
+
+    }
+
+    async createPlanHydration(tx: Prisma.TransactionClient, data: Prisma.chemotherapy_plan_hydrationUncheckedCreateInput) {
+
+        return tx.chemotherapy_plan_hydration.create({ data });
 
     }
 
@@ -1021,19 +1045,195 @@ export class ChemotherapyRepository {
 
     }
 
-    // Latest active plan for a patient, newest first. When branchIds is
-    // null (top-level admin) every branch is visible.
+    // The patient's open (PLANNED / ACTIVE) plan if there is one, else
+    // their latest plan of any status. When branchIds is null (top-level
+    // admin) every branch is visible.
     async findLatestPlanForPatient(patientId: string, branchIds: string[] | null) {
 
-        return prisma.chemotherapy_plan.findFirst({
-            where: {
-                active_status: 1,
-                patient_id: patientId,
-                ...(branchIds ? { branch_id: { in: branchIds } } : {})
-            },
+        const where: Prisma.chemotherapy_planWhereInput = {
+            active_status: 1,
+            patient_id: patientId,
+            ...(branchIds ? { branch_id: { in: branchIds } } : {})
+        };
+
+        const open = await prisma.chemotherapy_plan.findFirst({
+            where: { ...where, treatment_status: { in: OPEN_PLAN_STATUSES } },
             include: this.planInclude,
             orderBy: { created_at: "desc" }
         });
+
+        return open ?? prisma.chemotherapy_plan.findFirst({
+            where,
+            include: this.planInclude,
+            orderBy: { created_at: "desc" }
+        });
+
+    }
+
+    // The patient's open plan in any branch - one course at a time.
+    async findOpenPlanForPatient(patientId: string) {
+
+        return prisma.chemotherapy_plan.findFirst({
+            where: { active_status: 1, patient_id: patientId, treatment_status: { in: OPEN_PLAN_STATUSES } },
+            select: {
+                chemotherapy_plan_id: true,
+                regimen_name: true,
+                treatment_status: true,
+                branch: { select: { branch_name: true } }
+            },
+            orderBy: { created_at: "desc" }
+        });
+
+    }
+
+    // Holds the plan row until the transaction ends, so concurrent order
+    // saves / completions on one plan run one after another.
+    async lockPlan(tx: Prisma.TransactionClient, planId: string) {
+
+        await tx.$queryRaw`SELECT 1 FROM chemotherapy_plan WHERE chemotherapy_plan_id = ${planId} FOR UPDATE`;
+
+    }
+
+    // -----------------------------------------------------------------
+    // chemotherapy_plan_order - one saved order per plan + cycle + day
+    // -----------------------------------------------------------------
+
+    private planOrderRowsInclude = {
+        chemotherapy_plan_items: {
+            where: { active_status: 1 },
+            include: { medicine_master: true },
+            orderBy: { drug_sequence: "asc" as const }
+        },
+        chemotherapy_plan_hydration: { orderBy: { display_order: "asc" as const } }
+    } satisfies Prisma.chemotherapy_plan_orderInclude;
+
+    async generatePlanOrderId(tx: Prisma.TransactionClient) {
+
+        return generateId(tx, ID_ENTITY.PLAN_ORDER);
+
+    }
+
+    async listPlanOrders(planIds: string[]) {
+
+        return prisma.chemotherapy_plan_order.findMany({
+            where: { chemotherapy_plan_id: { in: planIds } },
+            include: { chemotherapy_cycle: { select: { cycle_status: true } } },
+            orderBy: [{ cycle_number: "asc" }, { cycle_day: "asc" }]
+        });
+
+    }
+
+    async findPlanOrderWithRows(planOrderId: string) {
+
+        return prisma.chemotherapy_plan_order.findUnique({
+            where: { plan_order_id: planOrderId },
+            include: this.planOrderRowsInclude
+        });
+
+    }
+
+    async findPlanOrdersWithRows(planOrderIds: string[]) {
+
+        return prisma.chemotherapy_plan_order.findMany({
+            where: { plan_order_id: { in: planOrderIds } },
+            include: this.planOrderRowsInclude
+        });
+
+    }
+
+    async findPlanOrder(tx: Prisma.TransactionClient, planId: string, cycleNumber: number, cycleDay: number) {
+
+        return tx.chemotherapy_plan_order.findUnique({
+            where: {
+                chemotherapy_plan_id_cycle_number_cycle_day: {
+                    chemotherapy_plan_id: planId,
+                    cycle_number: cycleNumber,
+                    cycle_day: cycleDay
+                }
+            }
+        });
+
+    }
+
+    async findPlanOrderById(tx: Prisma.TransactionClient, planOrderId: string) {
+
+        return tx.chemotherapy_plan_order.findUnique({ where: { plan_order_id: planOrderId } });
+
+    }
+
+    async findPlanOrdersForEncounter(tx: Prisma.TransactionClient, planId: string, encounterNo: string) {
+
+        return tx.chemotherapy_plan_order.findMany({
+            where: { chemotherapy_plan_id: planId, encounter_no: encounterNo },
+            orderBy: [{ cycle_number: "asc" }, { cycle_day: "asc" }]
+        });
+
+    }
+
+    async createPlanOrder(tx: Prisma.TransactionClient, data: Prisma.chemotherapy_plan_orderUncheckedCreateInput) {
+
+        return tx.chemotherapy_plan_order.create({ data });
+
+    }
+
+    async updatePlanOrder(
+        tx: Prisma.TransactionClient,
+        planOrderId: string,
+        data: Prisma.chemotherapy_plan_orderUncheckedUpdateInput
+    ) {
+
+        return tx.chemotherapy_plan_order.update({
+            where: { plan_order_id: planOrderId },
+            data: { ...data, updated_at: new Date() }
+        });
+
+    }
+
+    async touchPlanOrder(tx: Prisma.TransactionClient, planOrderId: string) {
+
+        return tx.chemotherapy_plan_order.update({
+            where: { plan_order_id: planOrderId },
+            data: { updated_at: new Date() }
+        });
+
+    }
+
+    async deactivatePlanOrderItems(tx: Prisma.TransactionClient, planOrderId: string) {
+
+        return tx.chemotherapy_plan_items.updateMany({
+            where: { plan_order_id: planOrderId, active_status: 1 },
+            data: { active_status: 0, updated_at: new Date() }
+        });
+
+    }
+
+    async deletePlanOrderHydration(tx: Prisma.TransactionClient, planOrderId: string) {
+
+        return tx.chemotherapy_plan_hydration.deleteMany({ where: { plan_order_id: planOrderId } });
+
+    }
+
+    // Drops a plan's not-yet-completed orders (their items are deactivated
+    // first so they don't fall back to the baseline when the FK nulls).
+    async deleteOpenPlanOrders(tx: Prisma.TransactionClient, planId: string) {
+
+        const orders = await tx.chemotherapy_plan_order.findMany({
+            where: { chemotherapy_plan_id: planId, order_status: PLAN_ORDER_STATUS.ORDERED },
+            select: { plan_order_id: true }
+        });
+        const orderIds = orders.map((order) => order.plan_order_id);
+
+        if (orderIds.length === 0) {
+            return 0;
+        }
+
+        await tx.chemotherapy_plan_items.updateMany({
+            where: { plan_order_id: { in: orderIds }, active_status: 1 },
+            data: { active_status: 0, updated_at: new Date() }
+        });
+        await tx.chemotherapy_plan_order.deleteMany({ where: { plan_order_id: { in: orderIds } } });
+
+        return orderIds.length;
 
     }
 
@@ -1068,6 +1268,16 @@ export class ChemotherapyRepository {
         return tx.chemotherapy_plan_items.update({
             where: { chemotherapy_plan_item_id: planItemId },
             data: { ...data, updated_at: new Date() }
+        });
+
+    }
+
+    // Baseline items only - cycle day orders keep theirs.
+    async deactivateActivePlanItems(tx: Prisma.TransactionClient, planId: string) {
+
+        return tx.chemotherapy_plan_items.updateMany({
+            where: { chemotherapy_plan_id: planId, active_status: 1, plan_order_id: null },
+            data: { active_status: 0, updated_at: new Date() }
         });
 
     }
@@ -1117,6 +1327,17 @@ export class ChemotherapyRepository {
     async findCycleForUpdate(tx: Prisma.TransactionClient, cycleId: string) {
 
         return tx.chemotherapy_cycle.findUnique({ where: { chemotherapy_cycle_id: cycleId } });
+
+    }
+
+    // Every cycle row of a plan, inactive ones included (cycle_number is
+    // unique per plan regardless of active_status).
+    async findAllCyclesForPlan(tx: Prisma.TransactionClient, planId: string) {
+
+        return tx.chemotherapy_cycle.findMany({
+            where: { chemotherapy_plan_id: planId },
+            orderBy: { cycle_number: "asc" }
+        });
 
     }
 

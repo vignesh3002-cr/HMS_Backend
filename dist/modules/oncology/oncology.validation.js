@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.listStagingDetailsValidation = exports.getStagingDetailValidation = exports.upsertMolecularValidation = exports.upsertIhcValidation = exports.updateStagingDetailValidation = exports.createStagingDetailValidation = exports.getStagingReferenceValidation = exports.getCancerSubtypesValidation = void 0;
+exports.saveInvestigationResultsValidation = exports.listInvestigationResultsValidation = exports.listStagingDetailsValidation = exports.getStagingDetailValidation = exports.upsertMolecularValidation = exports.upsertIhcValidation = exports.updateStagingDetailValidation = exports.createStagingDetailValidation = exports.getStagingReferenceValidation = exports.getCancerSubtypesValidation = void 0;
 const express_validator_1 = require("express-validator");
+const oncology_constants_1 = require("./oncology.constants");
 // Request-shape validation only (types, presence, ranges that would otherwise
 // throw a raw DB error - e.g. an out-of-range percent). The clinical
 // cross-field business rules (V-01..V-08) live in chemo.validation.ts and run
@@ -32,6 +33,7 @@ const molecularBodyValidation = [
 ];
 exports.createStagingDetailValidation = [
     (0, express_validator_1.body)("patient_id").notEmpty().withMessage("patient_id is required"),
+    (0, express_validator_1.body)("encounter_no").optional({ nullable: true }).isString().notEmpty().withMessage("encounter_no cannot be blank when provided"),
     (0, express_validator_1.body)("diagnosis_id").optional({ nullable: true }).notEmpty().withMessage("diagnosis_id cannot be blank when provided"),
     (0, express_validator_1.body)("cancer_type_id").notEmpty().withMessage("cancer_type_id is required"),
     (0, express_validator_1.body)("cancer_subtype_id").notEmpty().withMessage("cancer_subtype_id is required"),
@@ -41,7 +43,17 @@ exports.createStagingDetailValidation = [
     (0, express_validator_1.body)("relapse_date").optional({ nullable: true }).isISO8601(),
     (0, express_validator_1.body)("biopsy_date").optional({ nullable: true }).isISO8601(),
     (0, express_validator_1.body)("metastasis_sites").optional({ nullable: true }).isArray(),
-    (0, express_validator_1.body)("laterality").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("additional_cancers").optional({ nullable: true }).isArray(),
+    (0, express_validator_1.body)("additional_cancers.*.cancer_type_id").notEmpty().withMessage("Each additional cancer requires a cancer_type_id"),
+    (0, express_validator_1.body)("additional_cancers.*.cancer_subtype_id").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("laterality").optional({ nullable: true }).isIn(oncology_constants_1.LATERALITY_VALUES).withMessage(`Laterality must be one of: ${oncology_constants_1.LATERALITY_VALUES.join(", ")}`),
+    (0, express_validator_1.body)("t_stage").optional({ nullable: true }).isIn(oncology_constants_1.T_STAGE_VALUES).withMessage(`T stage must be a single value, one of: ${oncology_constants_1.T_STAGE_VALUES.join(", ")}`),
+    (0, express_validator_1.body)("n_stage").optional({ nullable: true }).isIn(oncology_constants_1.N_STAGE_VALUES).withMessage(`N stage must be a single value, one of: ${oncology_constants_1.N_STAGE_VALUES.join(", ")}`),
+    (0, express_validator_1.body)("m_stage").optional({ nullable: true }).isIn(oncology_constants_1.M_STAGE_VALUES).withMessage(`M stage must be a single value, one of: ${oncology_constants_1.M_STAGE_VALUES.join(", ")}`),
+    (0, express_validator_1.body)("additional_cancers.*.laterality").optional({ nullable: true }).isIn(oncology_constants_1.LATERALITY_VALUES).withMessage(`Laterality must be one of: ${oncology_constants_1.LATERALITY_VALUES.join(", ")}`),
+    (0, express_validator_1.body)("additional_cancers.*.t_stage").optional({ nullable: true }).isIn(oncology_constants_1.T_STAGE_VALUES).withMessage(`T stage must be a single value, one of: ${oncology_constants_1.T_STAGE_VALUES.join(", ")}`),
+    (0, express_validator_1.body)("additional_cancers.*.n_stage").optional({ nullable: true }).isIn(oncology_constants_1.N_STAGE_VALUES).withMessage(`N stage must be a single value, one of: ${oncology_constants_1.N_STAGE_VALUES.join(", ")}`),
+    (0, express_validator_1.body)("additional_cancers.*.m_stage").optional({ nullable: true }).isIn(oncology_constants_1.M_STAGE_VALUES).withMessage(`M stage must be a single value, one of: ${oncology_constants_1.M_STAGE_VALUES.join(", ")}`),
     (0, express_validator_1.body)("site").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("grade").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("grade_system").optional({ nullable: true }).isString(),
@@ -49,9 +61,6 @@ exports.createStagingDetailValidation = [
     (0, express_validator_1.body)("score_system").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("pre_diagnosis").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("disease_status").optional({ nullable: true }).isString(),
-    (0, express_validator_1.body)("suggested_molecular_test").optional({ nullable: true }).isString(),
-    (0, express_validator_1.body)("suggested_molecular_test_note").optional({ nullable: true }).isString(),
-    (0, express_validator_1.body)("suggested_molecular_test_date").optional({ nullable: true }).isISO8601(),
     (0, express_validator_1.body)("notes").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("performance_status").optional({ nullable: true }).isInt({ min: 0, max: 4 }).withMessage("performance_status must be an ECOG score between 0 and 4"),
     ...ihcBodyValidation,
@@ -68,7 +77,17 @@ exports.updateStagingDetailValidation = [
     (0, express_validator_1.body)("relapse_date").optional({ nullable: true }).isISO8601(),
     (0, express_validator_1.body)("biopsy_date").optional({ nullable: true }).isISO8601(),
     (0, express_validator_1.body)("metastasis_sites").optional({ nullable: true }).isArray(),
-    (0, express_validator_1.body)("laterality").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("additional_cancers").optional({ nullable: true }).isArray(),
+    (0, express_validator_1.body)("additional_cancers.*.cancer_type_id").notEmpty().withMessage("Each additional cancer requires a cancer_type_id"),
+    (0, express_validator_1.body)("additional_cancers.*.cancer_subtype_id").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("laterality").optional({ nullable: true }).isIn(oncology_constants_1.LATERALITY_VALUES).withMessage(`Laterality must be one of: ${oncology_constants_1.LATERALITY_VALUES.join(", ")}`),
+    (0, express_validator_1.body)("t_stage").optional({ nullable: true }).isIn(oncology_constants_1.T_STAGE_VALUES).withMessage(`T stage must be a single value, one of: ${oncology_constants_1.T_STAGE_VALUES.join(", ")}`),
+    (0, express_validator_1.body)("n_stage").optional({ nullable: true }).isIn(oncology_constants_1.N_STAGE_VALUES).withMessage(`N stage must be a single value, one of: ${oncology_constants_1.N_STAGE_VALUES.join(", ")}`),
+    (0, express_validator_1.body)("m_stage").optional({ nullable: true }).isIn(oncology_constants_1.M_STAGE_VALUES).withMessage(`M stage must be a single value, one of: ${oncology_constants_1.M_STAGE_VALUES.join(", ")}`),
+    (0, express_validator_1.body)("additional_cancers.*.laterality").optional({ nullable: true }).isIn(oncology_constants_1.LATERALITY_VALUES).withMessage(`Laterality must be one of: ${oncology_constants_1.LATERALITY_VALUES.join(", ")}`),
+    (0, express_validator_1.body)("additional_cancers.*.t_stage").optional({ nullable: true }).isIn(oncology_constants_1.T_STAGE_VALUES).withMessage(`T stage must be a single value, one of: ${oncology_constants_1.T_STAGE_VALUES.join(", ")}`),
+    (0, express_validator_1.body)("additional_cancers.*.n_stage").optional({ nullable: true }).isIn(oncology_constants_1.N_STAGE_VALUES).withMessage(`N stage must be a single value, one of: ${oncology_constants_1.N_STAGE_VALUES.join(", ")}`),
+    (0, express_validator_1.body)("additional_cancers.*.m_stage").optional({ nullable: true }).isIn(oncology_constants_1.M_STAGE_VALUES).withMessage(`M stage must be a single value, one of: ${oncology_constants_1.M_STAGE_VALUES.join(", ")}`),
     (0, express_validator_1.body)("site").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("grade").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("grade_system").optional({ nullable: true }).isString(),
@@ -76,9 +95,6 @@ exports.updateStagingDetailValidation = [
     (0, express_validator_1.body)("score_system").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("pre_diagnosis").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("disease_status").optional({ nullable: true }).isString(),
-    (0, express_validator_1.body)("suggested_molecular_test").optional({ nullable: true }).isString(),
-    (0, express_validator_1.body)("suggested_molecular_test_note").optional({ nullable: true }).isString(),
-    (0, express_validator_1.body)("suggested_molecular_test_date").optional({ nullable: true }).isISO8601(),
     (0, express_validator_1.body)("notes").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("performance_status").optional({ nullable: true }).isInt({ min: 0, max: 4 }).withMessage("performance_status must be an ECOG score between 0 and 4"),
     ...ihcBodyValidation,
@@ -105,8 +121,20 @@ exports.getStagingDetailValidation = [
     (0, express_validator_1.param)("stagingDetailId").notEmpty()
 ];
 exports.listStagingDetailsValidation = [
+    (0, express_validator_1.query)("encounter_no").optional().isString(),
     (0, express_validator_1.query)("page").optional().isInt({ min: 1 }),
     (0, express_validator_1.query)("limit").optional().isInt({ min: 1, max: 100 }),
     (0, express_validator_1.query)("date_from").optional().isISO8601(),
     (0, express_validator_1.query)("date_to").optional().isISO8601()
+];
+exports.listInvestigationResultsValidation = [
+    (0, express_validator_1.query)("patient_id").notEmpty().withMessage("patient_id is required")
+];
+exports.saveInvestigationResultsValidation = [
+    (0, express_validator_1.body)("patient_id").notEmpty().withMessage("patient_id is required"),
+    (0, express_validator_1.body)("encounter_no").notEmpty().withMessage("encounter_no is required"),
+    (0, express_validator_1.body)("staging_detail_id").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("report_date").isISO8601().withMessage("Report date must be a valid date"),
+    (0, express_validator_1.body)("results").isArray().withMessage("results must be an array"),
+    (0, express_validator_1.body)("results.*.parameter_id").notEmpty().withMessage("Each result needs a parameter_id")
 ];

@@ -20,9 +20,21 @@ function fieldFromConstraintName(constraintName) {
     }
     return constraintName;
 }
+// Constraints whose violation has a message of its own.
+const CONSTRAINT_MESSAGES = {
+    uq_open_chemo_plan_per_patient: "This patient already has an open chemotherapy plan. A new plan can be started once its last cycle day is completed, or after it is discontinued or cancelled.",
+    chk_plan_items_drug: "Each drug needs a medicine from the list or a typed drug name.",
+    uq_plan_order_cycle_day: "This cycle day's order was just saved from another screen - reload and try again.",
+    chk_plan_order_cycle_day: "Cycle and day must be at least 1."
+};
 function handleError(res, error) {
     if (typeof error?.clientVersion === "string") {
         console.error("[chemotherapy] database error:", error.message);
+        const detail = `${error.message ?? ""} ${JSON.stringify(error.meta ?? {})}`;
+        const known = Object.keys(CONSTRAINT_MESSAGES).find((name) => detail.includes(name));
+        if (known) {
+            return res.status(400).json({ success: false, message: CONSTRAINT_MESSAGES[known] });
+        }
         const constraintMatch = /constraint "([a-zA-Z0-9_]+)"/.exec(error.message ?? "");
         return res.status(400).json({
             success: false,
@@ -476,7 +488,7 @@ class ChemotherapyController {
         try {
             if (!checkValidation(req, res))
                 return;
-            const data = await service.updatePlan(req.params.planId, req.body, actingUserId(req));
+            const data = await service.updatePlan(req.params.planId, req.body, actingUserId(req), req.user?.hospital_id ?? null);
             return res.json({ success: true, message: "Chemotherapy plan updated successfully", data });
         }
         catch (error) {
@@ -495,6 +507,84 @@ class ChemotherapyController {
         }
     }
     // ---------------- Plan items ----------------
+    async replacePlanItems(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.replacePlanItems(req.params.planId, req.body.items ?? [], actingUserId(req));
+            return res.json({ success: true, message: "Plan items saved successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async getPlanHydration(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.listPlanHydration(req.params.planId);
+            return res.json({ success: true, message: "Plan hydration fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async replacePlanHydration(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.replacePlanHydration(req.params.planId, req.body.rows ?? [], actingUserId(req));
+            return res.json({ success: true, message: "Plan hydration saved successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    // ---------------- Cycle day orders ----------------
+    async listPlanOrders(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.listPlanOrders(req.params.planId);
+            return res.json({ success: true, message: "Plan orders fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async getPlanOrder(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.getPlanOrder(req.params.planId, Number(req.params.cycleNumber), Number(req.params.cycleDay));
+            return res.json({ success: true, message: "Plan order fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async savePlanOrder(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.savePlanOrder(req.params.planId, Number(req.params.cycleNumber), Number(req.params.cycleDay), req.body, actingUserId(req));
+            return res.json({ success: true, message: "Cycle day order saved successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async completePlanOrders(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.completePlanOrders(req.params.planId, req.body.encounter_no, actingUserId(req));
+            return res.json({ success: true, message: "Cycle day order completed successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
     async addPlanItem(req, res) {
         try {
             if (!checkValidation(req, res))

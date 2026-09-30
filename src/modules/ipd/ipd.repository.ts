@@ -210,9 +210,10 @@ export class IpdRepository {
 
     }
 
-    async updateBed(bedId: string, data: Prisma.bed_masterUncheckedUpdateInput) {
+    async updateBed(bedId: string, data: Prisma.bed_masterUncheckedUpdateInput, tx?: Prisma.TransactionClient) {
 
-        return prisma.bed_master.update({ where: { bed_id: bedId }, data });
+        const client: any = tx ?? prisma;
+        return client.bed_master.update({ where: { bed_id: bedId }, data });
 
     }
 
@@ -220,12 +221,18 @@ export class IpdRepository {
         tx: Prisma.TransactionClient,
         bedId: string,
         status: string,
-        updatedBy?: string
+        updatedBy?: string,
+        remarks?: string
     ) {
 
         return tx.bed_master.update({
             where: { bed_id: bedId },
-            data: { status, updated_by: updatedBy, updated_at: new Date() },
+            data: {
+                status,
+                updated_by: updatedBy,
+                updated_at: new Date(),
+                ...(remarks !== undefined ? { remarks } : {}),
+            },
         });
 
     }
@@ -260,14 +267,6 @@ export class IpdRepository {
                         patient_gender: true,
                         patient_primary_mobile: true,
                         patient_dob: true,
-                    },
-                },
-                appointment_history: {
-                    select: {
-                        appointment_id: true,
-                        appointment_date: true,
-                        appointment_time: true,
-                        reason_for_visit: true,
                     },
                 },
                 branch: {
@@ -571,14 +570,6 @@ export class IpdRepository {
                         patient_gender: true,
                         patient_primary_mobile: true,
                         patient_dob: true,
-                    },
-                },
-                appointment_history: {
-                    select: {
-                        appointment_id: true,
-                        appointment_date: true,
-                        appointment_time: true,
-                        reason_for_visit: true,
                     },
                 },
                 branch: {

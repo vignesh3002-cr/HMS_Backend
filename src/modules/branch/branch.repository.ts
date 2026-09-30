@@ -41,7 +41,12 @@ export class BranchRepository {
         branch_status: "Active"
       },
       include: {
-        hospital: true
+        hospital: {
+          select: {
+            hospital_id: true,
+            hospital_name: true,
+          }
+        }
       }
     });
   }
@@ -144,10 +149,18 @@ export class BranchRepository {
     const users = await prisma.user_table.findMany({
       where,
       include: {
-        employees: true,
+        employees: {
+          select: {
+            employee_id: true,
+            first_name: true,
+            middle_name: true,
+            last_name: true,
+            email: true,
+          }
+        },
         user_branch_mapping: {
           where: { status: 1 },
-          include: { branch: true },
+          select: { branch_id: true },
         },
       },
     });

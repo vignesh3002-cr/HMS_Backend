@@ -783,9 +783,11 @@ class ChemotherapyRepository {
             data: { ...data, updated_at: new Date() }
         });
     }
+    // Plan items without an order are the plan's baseline copy of the
+    // protocol; each cycle day's saved order is read via the order helpers.
     planInclude = {
         chemotherapy_plan_items: {
-            where: { active_status: 1 },
+            where: { active_status: 1, plan_order_id: null },
             include: { medicine_master: true }
         },
         chemotherapy_cycle: { where: { active_status: 1 }, orderBy: { cycle_number: "asc" } },
@@ -805,6 +807,19 @@ class ChemotherapyRepository {
             where: { chemotherapy_plan_id: planId },
             include: this.planInclude
         });
+    }
+    // Baseline hydration rows (not tied to a cycle day's order).
+    async findPlanHydration(planId) {
+        return prisma_1.default.chemotherapy_plan_hydration.findMany({
+            where: { chemotherapy_plan_id: planId, plan_order_id: null },
+            orderBy: { display_order: "asc" }
+        });
+    }
+    async deletePlanHydration(tx, planId) {
+        return tx.chemotherapy_plan_hydration.deleteMany({ where: { chemotherapy_plan_id: planId, plan_order_id: null } });
+    }
+    async createPlanHydration(tx, data) {
+        return tx.chemotherapy_plan_hydration.create({ data });
     }
     async findPlanForUpdate(tx, planId) {
         return tx.chemotherapy_plan.findUnique({ where: { chemotherapy_plan_id: planId } });
@@ -847,18 +862,138 @@ class ChemotherapyRepository {
             select: { branch_id: true }
         });
     }
-    // Latest active plan for a patient, newest first. When branchIds is
-    // null (top-level admin) every branch is visible.
+    // The patient's open (PLANNED / ACTIVE) plan if there is one, else
+    // their latest plan of any status. When branchIds is null (top-level
+    // admin) every branch is visible.
     async findLatestPlanForPatient(patientId, branchIds) {
-        return prisma_1.default.chemotherapy_plan.findFirst({
-            where: {
-                active_status: 1,
-                patient_id: patientId,
-                ...(branchIds ? { branch_id: { in: branchIds } } : {})
-            },
+        const where = {
+            active_status: 1,
+            patient_id: patientId,
+            ...(branchIds ? { branch_id: { in: branchIds } } : {})
+        };
+        const open = await prisma_1.default.chemotherapy_plan.findFirst({
+            where: { ...where, treatment_status: { in: chemotherapy_constants_1.OPEN_PLAN_STATUSES } },
             include: this.planInclude,
             orderBy: { created_at: "desc" }
         });
+        return open ?? prisma_1.default.chemotherapy_plan.findFirst({
+            where,
+            include: this.planInclude,
+            orderBy: { created_at: "desc" }
+        });
+    }
+    // The patient's open plan in any branch - one course at a time.
+    async findOpenPlanForPatient(patientId) {
+        return prisma_1.default.chemotherapy_plan.findFirst({
+            where: { active_status: 1, patient_id: patientId, treatment_status: { in: chemotherapy_constants_1.OPEN_PLAN_STATUSES } },
+            select: {
+                chemotherapy_plan_id: true,
+                regimen_name: true,
+                treatment_status: true,
+                branch: { select: { branch_name: true } }
+            },
+            orderBy: { created_at: "desc" }
+        });
+    }
+    // Holds the plan row until the transaction ends, so concurrent order
+    // saves / completions on one plan run one after another.
+    async lockPlan(tx, planId) {
+        await tx.$queryRaw `SELECT 1 FROM chemotherapy_plan WHERE chemotherapy_plan_id = ${planId} FOR UPDATE`;
+    }
+    // -----------------------------------------------------------------
+    // chemotherapy_plan_order - one saved order per plan + cycle + day
+    // -----------------------------------------------------------------
+    planOrderRowsInclude = {
+        chemotherapy_plan_items: {
+            where: { active_status: 1 },
+            include: { medicine_master: true },
+            orderBy: { drug_sequence: "asc" }
+        },
+        chemotherapy_plan_hydration: { orderBy: { display_order: "asc" } }
+    };
+    async generatePlanOrderId(tx) {
+        return (0, idGenerator_1.generateId)(tx, chemotherapy_constants_1.ID_ENTITY.PLAN_ORDER);
+    }
+    async listPlanOrders(planIds) {
+        return prisma_1.default.chemotherapy_plan_order.findMany({
+            where: { chemotherapy_plan_id: { in: planIds } },
+            include: { chemotherapy_cycle: { select: { cycle_status: true } } },
+            orderBy: [{ cycle_number: "asc" }, { cycle_day: "asc" }]
+        });
+    }
+    async findPlanOrderWithRows(planOrderId) {
+        return prisma_1.default.chemotherapy_plan_order.findUnique({
+            where: { plan_order_id: planOrderId },
+            include: this.planOrderRowsInclude
+        });
+    }
+    async findPlanOrdersWithRows(planOrderIds) {
+        return prisma_1.default.chemotherapy_plan_order.findMany({
+            where: { plan_order_id: { in: planOrderIds } },
+            include: this.planOrderRowsInclude
+        });
+    }
+    async findPlanOrder(tx, planId, cycleNumber, cycleDay) {
+        return tx.chemotherapy_plan_order.findUnique({
+            where: {
+                chemotherapy_plan_id_cycle_number_cycle_day: {
+                    chemotherapy_plan_id: planId,
+                    cycle_number: cycleNumber,
+                    cycle_day: cycleDay
+                }
+            }
+        });
+    }
+    async findPlanOrderById(tx, planOrderId) {
+        return tx.chemotherapy_plan_order.findUnique({ where: { plan_order_id: planOrderId } });
+    }
+    async findPlanOrdersForEncounter(tx, planId, encounterNo) {
+        return tx.chemotherapy_plan_order.findMany({
+            where: { chemotherapy_plan_id: planId, encounter_no: encounterNo },
+            orderBy: [{ cycle_number: "asc" }, { cycle_day: "asc" }]
+        });
+    }
+    async createPlanOrder(tx, data) {
+        return tx.chemotherapy_plan_order.create({ data });
+    }
+    async updatePlanOrder(tx, planOrderId, data) {
+        return tx.chemotherapy_plan_order.update({
+            where: { plan_order_id: planOrderId },
+            data: { ...data, updated_at: new Date() }
+        });
+    }
+    async touchPlanOrder(tx, planOrderId) {
+        return tx.chemotherapy_plan_order.update({
+            where: { plan_order_id: planOrderId },
+            data: { updated_at: new Date() }
+        });
+    }
+    async deactivatePlanOrderItems(tx, planOrderId) {
+        return tx.chemotherapy_plan_items.updateMany({
+            where: { plan_order_id: planOrderId, active_status: 1 },
+            data: { active_status: 0, updated_at: new Date() }
+        });
+    }
+    async deletePlanOrderHydration(tx, planOrderId) {
+        return tx.chemotherapy_plan_hydration.deleteMany({ where: { plan_order_id: planOrderId } });
+    }
+    // Drops a plan's not-yet-completed orders (their items are deactivated
+    // first so they don't fall back to the baseline when the FK nulls).
+    async deleteOpenPlanOrders(tx, planId) {
+        const orders = await tx.chemotherapy_plan_order.findMany({
+            where: { chemotherapy_plan_id: planId, order_status: chemotherapy_constants_1.PLAN_ORDER_STATUS.ORDERED },
+            select: { plan_order_id: true }
+        });
+        const orderIds = orders.map((order) => order.plan_order_id);
+        if (orderIds.length === 0) {
+            return 0;
+        }
+        await tx.chemotherapy_plan_items.updateMany({
+            where: { plan_order_id: { in: orderIds }, active_status: 1 },
+            data: { active_status: 0, updated_at: new Date() }
+        });
+        await tx.chemotherapy_plan_order.deleteMany({ where: { plan_order_id: { in: orderIds } } });
+        return orderIds.length;
     }
     // -----------------------------------------------------------------
     // chemotherapy_plan_items
@@ -876,6 +1011,13 @@ class ChemotherapyRepository {
         return tx.chemotherapy_plan_items.update({
             where: { chemotherapy_plan_item_id: planItemId },
             data: { ...data, updated_at: new Date() }
+        });
+    }
+    // Baseline items only - cycle day orders keep theirs.
+    async deactivateActivePlanItems(tx, planId) {
+        return tx.chemotherapy_plan_items.updateMany({
+            where: { chemotherapy_plan_id: planId, active_status: 1, plan_order_id: null },
+            data: { active_status: 0, updated_at: new Date() }
         });
     }
     async deactivatePlanItem(tx, planItemId) {
@@ -908,6 +1050,14 @@ class ChemotherapyRepository {
     }
     async findCycleForUpdate(tx, cycleId) {
         return tx.chemotherapy_cycle.findUnique({ where: { chemotherapy_cycle_id: cycleId } });
+    }
+    // Every cycle row of a plan, inactive ones included (cycle_number is
+    // unique per plan regardless of active_status).
+    async findAllCyclesForPlan(tx, planId) {
+        return tx.chemotherapy_cycle.findMany({
+            where: { chemotherapy_plan_id: planId },
+            orderBy: { cycle_number: "asc" }
+        });
     }
     async listCyclesForPlan(planId) {
         return prisma_1.default.chemotherapy_cycle.findMany({

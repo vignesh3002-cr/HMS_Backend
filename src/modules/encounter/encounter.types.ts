@@ -32,6 +32,8 @@ export interface UpdateEncounterDTO {
     general_examination_cyanosis?: boolean;
     general_examination_oedema?: boolean;
     general_examination_lymphadenopathy?: boolean;
+    // Extra findings ticked from general_examination_master.
+    general_examination_others?: { code: string; name: string }[] | null;
 
     // Past History treatment details + previous reports free text.
     past_history_treatment_type?: string;

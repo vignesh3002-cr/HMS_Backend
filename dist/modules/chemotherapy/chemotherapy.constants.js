@@ -7,7 +7,7 @@
 // the soft-delete convention used everywhere else in this codebase (doctor
 // schedules, appointments) - nothing here is ever hard-deleted.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PROTOCOL_ACTIVE_STATUS = exports.PROTOCOL_TYPE = exports.ID_ENTITY = exports.DRUG_ROLE = exports.PLAN_CONFIRMATION_RULE = exports.CYCLE_ADMINISTRABLE_STATUSES = exports.CYCLE_TERMINAL_STATUSES = exports.CYCLE_STATUS_TRANSITIONS = exports.CYCLE_STATUS = exports.PLAN_TERMINAL_STATUSES = exports.PLAN_STATUS_TRANSITIONS = exports.PLAN_STATUS = void 0;
+exports.PROTOCOL_ACTIVE_STATUS = exports.PROTOCOL_TYPE = exports.ID_ENTITY = exports.DRUG_ROLE = exports.PLAN_CONFIRMATION_RULE = exports.CYCLE_ADMINISTRABLE_STATUSES = exports.CYCLE_TERMINAL_STATUSES = exports.CYCLE_STATUS_TRANSITIONS = exports.CYCLE_STATUS = exports.PLAN_ORDER_STATUS = exports.OPEN_PLAN_STATUSES = exports.PLAN_TERMINAL_STATUSES = exports.PLAN_STATUS_TRANSITIONS = exports.PLAN_STATUS = void 0;
 exports.PLAN_STATUS = {
     PLANNED: "PLANNED",
     ACTIVE: "ACTIVE",
@@ -30,6 +30,14 @@ exports.PLAN_STATUS_TRANSITIONS = {
 exports.PLAN_TERMINAL_STATUSES = [
     exports.PLAN_STATUS.COMPLETED, exports.PLAN_STATUS.DISCONTINUED, exports.PLAN_STATUS.CANCELLED
 ];
+// A plan is one course: a patient has at most one open plan at a time
+// (enforced by the uq_open_chemo_plan_per_patient partial index too).
+exports.OPEN_PLAN_STATUSES = [exports.PLAN_STATUS.PLANNED, exports.PLAN_STATUS.ACTIVE];
+// A cycle day's saved order: ORDERED until its consultation is submitted.
+exports.PLAN_ORDER_STATUS = {
+    ORDERED: "ORDERED",
+    COMPLETED: "COMPLETED"
+};
 exports.CYCLE_STATUS = {
     PLANNED: "PLANNED",
     APPROVED: "APPROVED",
@@ -70,6 +78,8 @@ exports.DRUG_ROLE = {
 exports.ID_ENTITY = {
     PLAN: "CHEMOTHERAPY_PLAN",
     PLAN_ITEM: "CHEMOTHERAPY_PLAN_ITEM",
+    PLAN_HYDRATION: "CHEMOTHERAPY_PLAN_HYDRATION",
+    PLAN_ORDER: "CHEMOTHERAPY_PLAN_ORDER",
     CYCLE: "CHEMOTHERAPY_CYCLE",
     ADMINISTRATION: "CHEMOTHERAPY_ADMINISTRATION",
     ADVERSE_EVENT: "CHEMOTHERAPY_ADVERSE_EVENT",

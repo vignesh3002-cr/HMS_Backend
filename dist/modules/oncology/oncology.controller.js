@@ -10,7 +10,7 @@ function actingUserId(req) {
 // Tables this module writes to - used to strip the constraint name down to
 // just the offending column so the client gets an actionable field name
 // instead of the raw "<table>_<column>_check" identifier.
-const ONCOLOGY_TABLES = ["ihc_results", "molecular_results", "oncology_staging_detail", "derived_fields"];
+const ONCOLOGY_TABLES = ["ihc_results", "molecular_results", "oncology_staging_detail", "oncology_staging_additional_cancers", "derived_fields"];
 function fieldFromConstraintName(constraintName) {
     for (const table of ONCOLOGY_TABLES) {
         if (constraintName.startsWith(`${table}_`) && constraintName.endsWith("_check")) {
@@ -121,6 +121,41 @@ class OncologyController {
             return handleError(res, error);
         }
     }
+    async getInvestigationParameters(req, res) {
+        try {
+            const data = await service.listInvestigationParameters(req.params.cancerTypeId);
+            return res.json({ success: true, message: "Investigation tests fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async listInvestigationResults(req, res) {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ success: false, message: errors.array()[0].msg, errors: errors.array() });
+            }
+            const data = await service.listInvestigationResults(req.query.patient_id);
+            return res.json({ success: true, message: "Investigation results fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async saveInvestigationResults(req, res) {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ success: false, message: errors.array()[0].msg, errors: errors.array() });
+            }
+            const data = await service.saveInvestigationResults(req.body, actingUserId(req));
+            return res.json({ success: true, message: "Investigation results saved successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
     async reseedReference(req, res) {
         try {
             const result = await service.reseedReferenceData();
@@ -181,6 +216,7 @@ class OncologyController {
             const result = await service.listStagingDetails({
                 patient_id: req.query.patient_id,
                 diagnosis_id: req.query.diagnosis_id,
+                encounter_no: req.query.encounter_no,
                 employee_id: req.query.employee_id,
                 branch_id: req.query.branchId,
                 cancer_type_id: req.query.cancer_type_id,

@@ -375,6 +375,41 @@ export class IpdController {
 
     }
 
+    async updateWard(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const ward = await service.updateWard(req.params.wardId as string, req.body, (req as any).user);
+
+            return res.json({
+                success: true,
+                message: "Ward updated successfully",
+                data: ward
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
     async createBed(req: Request, res: Response) {
 
         try {
@@ -396,6 +431,81 @@ export class IpdController {
             return res.status(201).json({
                 success: true,
                 message: "Bed created successfully",
+                data: bed
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async updateBed(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const bed = await service.updateBed(req.params.bedId as string, req.body, (req as any).user);
+
+            return res.json({
+                success: true,
+                message: "Bed updated successfully",
+                data: bed
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async updateBedStatus(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const bed = await service.updateBedStatus(
+                req.params.id as string,
+                req.body.status as string,
+                (req as any).user,
+                req.body.remarks as string | undefined
+            );
+
+            return res.json({
+                success: true,
+                message: "Bed status updated successfully",
                 data: bed
             });
 
