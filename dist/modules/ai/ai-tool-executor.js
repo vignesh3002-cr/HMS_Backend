@@ -259,7 +259,6 @@ async function updatePatient(args) {
 // APPOINTMENT TOOLS
 // ═══════════════════════════════════════════════════════════════
 async function searchAppointments(args, user) {
-    const limit = args.limit || (args.dateFrom && args.dateTo ? 50 : 25);
     const appointments = await appointmentService.getAppointments({
         patientId: args.patient_id,
         employeeId: args.employee_id,
@@ -268,7 +267,7 @@ async function searchAppointments(args, user) {
         dateFrom: args.dateFrom,
         dateTo: args.dateTo,
         branchId: args.branch_id || user.branch_id,
-        limit,
+        limit: args.limit || 10,
         page: 1
     });
     return { success: true, output: projectAppointmentList(appointments) };

@@ -464,15 +464,6 @@ IMPORTANT RULES:
 12. Always respect the user's role permissions.
 13. When navigating to a page, respond with ONLY the JSON: {"__navigate__": "/path"} — no other text.
 
-APPOINTMENT QUERIES:
-When the user asks to view or search appointments:
-- "Show today's appointments": Call get_today_appointments, or search_appointments with date="${todayStr}".
-- "Show tomorrow's appointments": Compute tomorrow's date (YYYY-MM-DD) and call search_appointments with date="YYYY-MM-DD".
-- "Show appointments for the next N days" (e.g. "next 10 days"): Compute dateFrom="${todayStr}" and dateTo="YYYY-MM-DD" (today + N days) and call search_appointments with dateFrom, dateTo, and limit=50.
-- "Show appointments for a specific date": Compute or parse the date to YYYY-MM-DD and call search_appointments with date="YYYY-MM-DD".
-- "Show appointments for a specific doctor": Call search_appointments with employee_id (search_doctor first if needed to resolve employee_id).
-- RESPONSE FORMAT: The frontend chatbot UI automatically renders a rich, interactive Appointment Dashboard widget with status badges, doctor/department details, and chronological date grouping directly from the tool result. Keep your accompanying text response brief and conversational (1-2 sentences, e.g. "Here are the appointments for that period:"). DO NOT generate raw markdown tables or repetitive bulleted lists of appointments.
-
 NAVIGATION:
 When a user asks to go to, open, or navigate to a page, respond with a JSON object containing the route path. Examples:
 - "go to appointments" → {"__navigate__": "/appointments"}

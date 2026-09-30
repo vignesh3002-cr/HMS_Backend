@@ -117,6 +117,16 @@ class OncologyRepository {
     async findDiagnosisById(diagnosisId) {
         return prisma_1.default.diagnosis.findUnique({ where: { diagnosis_id: diagnosisId } });
     }
+    async findEncounterByNumber(encounterNo) {
+        return prisma_1.default.encounter.findUnique({ where: { encounter_no: encounterNo } });
+    }
+    // The staging detail recorded in a visit (one per encounter).
+    async findStagingDetailByEncounter(encounterNo) {
+        return prisma_1.default.oncology_staging_detail.findFirst({
+            where: { encounter_no: encounterNo },
+            select: { staging_detail_id: true }
+        });
+    }
     async findMostRecentEncounterForPatient(patientId) {
         return prisma_1.default.encounter.findFirst({
             where: { patient_id: patientId },
@@ -138,9 +148,37 @@ class OncologyRepository {
             data: { ...data, updated_at: new Date() }
         });
     }
+    async replaceAdditionalCancers(tx, stagingDetailId, cancers) {
+        await tx.oncology_staging_additional_cancers.deleteMany({
+            where: { staging_detail_id: stagingDetailId }
+        });
+        if (cancers.length > 0) {
+            await tx.oncology_staging_additional_cancers.createMany({
+                data: cancers.map((cancer, index) => ({
+                    staging_detail_id: stagingDetailId,
+                    cancer_type_id: cancer.cancer_type_id,
+                    cancer_subtype_id: cancer.cancer_subtype_id,
+                    laterality: cancer.laterality,
+                    t_stage: cancer.t_stage,
+                    n_stage: cancer.n_stage,
+                    m_stage: cancer.m_stage,
+                    display_order: index + 1
+                }))
+            });
+        }
+    }
+    async removeAdditionalCancerType(tx, stagingDetailId, cancerTypeId) {
+        return tx.oncology_staging_additional_cancers.deleteMany({
+            where: { staging_detail_id: stagingDetailId, cancer_type_id: cancerTypeId }
+        });
+    }
     stagingDetailInclude = {
         cancer_types: true,
         cancer_subtypes: true,
+        oncology_staging_additional_cancers: {
+            orderBy: { display_order: "asc" },
+            include: { cancer_types: true, cancer_subtypes: true }
+        },
         ihc_results: true,
         molecular_results: true,
         derived_fields: true,
@@ -170,12 +208,13 @@ class OncologyRepository {
         const where = {
             ...(filters.patient_id ? { patient_id: filters.patient_id } : {}),
             ...(filters.diagnosis_id ? { diagnosis_id: filters.diagnosis_id } : {}),
+            ...(filters.encounter_no ? { encounter_no: filters.encounter_no } : {}),
             ...(filters.employee_id ? { employee_id: filters.employee_id } : {}),
             ...(filters.branch_id ? { branch_id: filters.branch_id } : {}),
             ...(filters.cancer_type_id ? { cancer_type_id: filters.cancer_type_id } : {}),
             ...(filters.date_from || filters.date_to
                 ? {
-                    created_at: {
+                    visit_date: {
                         ...(filters.date_from ? { gte: new Date(filters.date_from) } : {}),
                         ...(filters.date_to ? { lte: new Date(filters.date_to) } : {})
                     }
@@ -183,10 +222,16 @@ class OncologyRepository {
                 : {})
         };
         const [rows, total] = await Promise.all([
+            // Newest visit first - a row saved on one day may record an
+            // earlier (or, when re-saved, later) visit, so the visit date
+            // orders the history, not the save date.
             prisma_1.default.oncology_staging_detail.findMany({
                 where,
                 include: this.stagingDetailInclude,
-                orderBy: { created_at: "desc" },
+                orderBy: [
+                    { visit_date: { sort: "desc", nulls: "last" } },
+                    { created_at: "desc" }
+                ],
                 skip: (page - 1) * limit,
                 take: limit
             }),

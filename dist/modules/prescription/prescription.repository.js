@@ -92,10 +92,43 @@ class PrescriptionRepository {
         return prisma_1.default.encounter.findUnique({
             where: { encounter_no: encounterNo },
             include: {
-                patient_bio_data: true,
-                employees: true,
-                branch: true,
-                department_master: true
+                patient_bio_data: {
+                    select: {
+                        patient_id: true,
+                        patient_first_name: true,
+                        patient_middle_name: true,
+                        patient_last_name: true,
+                        patient_gender: true,
+                        patient_primary_mobile: true,
+                        patient_email: true,
+                        patient_type: true,
+                        branch_id: true,
+                    }
+                },
+                employees: {
+                    select: {
+                        employee_id: true,
+                        user_id: true,
+                        first_name: true,
+                        middle_name: true,
+                        last_name: true,
+                        specialization: true,
+                        designation: true,
+                    }
+                },
+                branch: {
+                    select: {
+                        branch_id: true,
+                        branch_name: true,
+                        branch_area: true,
+                    }
+                },
+                department_master: {
+                    select: {
+                        department_id: true,
+                        department_name: true,
+                    }
+                }
             }
         });
     }
@@ -201,7 +234,9 @@ class PrescriptionRepository {
                 drug_type: true
             }
         });
-        return new Map(planItems.map((item) => [
+        return new Map(planItems
+            .filter((item) => Boolean(item.medicine_id))
+            .map((item) => [
             item.medicine_id,
             {
                 drug_role: item.drug_role,

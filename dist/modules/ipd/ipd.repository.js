@@ -190,14 +190,6 @@ class IpdRepository {
                         patient_dob: true,
                     },
                 },
-                appointment_history: {
-                    select: {
-                        appointment_id: true,
-                        appointment_date: true,
-                        appointment_time: true,
-                        reason_for_visit: true,
-                    },
-                },
                 branch: {
                     select: { branch_id: true, branch_name: true },
                 },
@@ -396,14 +388,6 @@ class IpdRepository {
                         patient_gender: true,
                         patient_primary_mobile: true,
                         patient_dob: true,
-                    },
-                },
-                appointment_history: {
-                    select: {
-                        appointment_id: true,
-                        appointment_date: true,
-                        appointment_time: true,
-                        reason_for_visit: true,
                     },
                 },
                 branch: {

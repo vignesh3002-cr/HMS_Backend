@@ -54,9 +54,9 @@ async function processAIChat(request, user) {
                     tool: pending.toolName,
                     description: `Executed ${pending.toolName}`,
                     success: result.success,
+                    args: pending.args,
                     result: result.output,
                     error: result.error,
-                    args: pending.args,
                 });
                 const summary = result.success
                     ? `Operation completed successfully.\n\n${typeof result.output === "string" ? result.output : JSON.stringify(result.output, null, 2)}`
@@ -81,9 +81,9 @@ async function processAIChat(request, user) {
                 tool: tc.tool,
                 description: `Executed ${tc.tool}`,
                 success: tc.success,
+                args: tc.args,
                 result: tc.result,
                 error: tc.success ? undefined : tc.result?.error,
-                args: tc.args,
             });
             // Handle destructive tools — require confirmation on next message
             if (isDestructiveTool(tc.tool) && tc.success) {
