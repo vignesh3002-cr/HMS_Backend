@@ -97,7 +97,7 @@ export class LabReportRepository {
     report_status?: string | null;
     report_file?: string | null;
     digital_signature?: string | null;
-    report_comment?: string | null;
+    report_comment?: any;
     delivered_to?: string | null;
     delivered_datetime?: Date | null;
     branch_id?: string | null;

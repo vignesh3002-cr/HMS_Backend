@@ -1469,7 +1469,6 @@ model encounter {
   encounter_performance_status        encounter_performance_status?
   encounter_report                    encounter_report[]
   encounter_symptom                   encounter_symptom[]
-  oncology_staging_detail             oncology_staging_detail?
   patient_allergy                     patient_allergy[]
   patient_comorbidity                 patient_comorbidity[]
   patient_personal_history            patient_personal_history?
@@ -1682,8 +1681,8 @@ model lab_order {
   updated_at            DateTime?            @default(now()) @db.Timestamp(6)
   patient_history_id    String?              @db.VarChar(100)
   lab_description       String?              @db.VarChar
-  cancellation_reason   String?
   cancelled_by          String?              @db.VarChar(100)
+  cancellation_reason   String?
   lab_history           lab_history[]
   appointment_history   appointment_history? @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_order_appointment")
   branch                branch?              @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_order_branch")
@@ -1732,48 +1731,48 @@ model lab_report {
   report_status      String?       @default("Generated") @db.VarChar(100)
   report_file        String?
   digital_signature  String?
+  report_comment     Json?
   delivered_to       String?       @db.VarChar(100)
   delivered_datetime DateTime?     @db.Timestamp(6)
   branch_id          String?       @db.VarChar(100)
   user_id            String?       @db.VarChar(100)
   created_at         DateTime?     @default(now()) @db.Timestamp(6)
   updated_at         DateTime?     @default(now()) @db.Timestamp(6)
-  report_comment     Json?
   lab_history        lab_history[]
+  lab_result         lab_result[]
   branch             branch?       @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_report_branch")
   employees          employees?    @relation(fields: [approved_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_report_employee")
   lab_order          lab_order     @relation(fields: [lab_order_id], references: [lab_order_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_report_order")
   user_table         user_table?   @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_report_user")
-  lab_result         lab_result[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model lab_result {
-  id                    BigInt              @id @default(autoincrement())
-  lab_result_id         String              @unique @db.VarChar(100)
-  sample_collection_id  String              @db.VarChar(100)
-  lab_order_item_id     String              @db.VarChar(100)
-  parameter_name        String              @db.VarChar(100)
-  result_value          String?             @db.VarChar(100)
-  abnormal_flag         String?             @db.VarChar(100)
-  result_comment        String?
-  verified_by           String?             @db.VarChar(100)
-  verified_datetime     DateTime?           @db.Timestamp(6)
-  result_status         String?             @default("Pending") @db.VarChar(100)
-  branch_id             String?             @db.VarChar(100)
-  user_id               String?             @db.VarChar(100)
-  created_at            DateTime?           @default(now()) @db.Timestamp(6)
-  updated_at            DateTime?           @default(now()) @db.Timestamp(6)
-  lab_report_id         String?             @db.VarChar(100)
-  lab_test_parameter_id String?             @db.VarChar(100)
+  id                   BigInt            @id @default(autoincrement())
+  lab_result_id        String            @unique @db.VarChar(100)
+  sample_collection_id String            @db.VarChar(100)
+  lab_order_item_id    String            @db.VarChar(100)
+  parameter_name       String            @db.VarChar(100)
+  result_value         String?           @db.VarChar(100)
+  abnormal_flag        String?           @db.VarChar(100)
+  result_comment       String?
+  verified_by          String?           @db.VarChar(100)
+  verified_datetime    DateTime?         @db.Timestamp(6)
+  result_status         String?           @default("Pending") @db.VarChar(100)
+  branch_id             String?           @db.VarChar(100)
+  user_id               String?           @db.VarChar(100)
+  created_at            DateTime?         @default(now()) @db.Timestamp(6)
+  updated_at            DateTime?         @default(now()) @db.Timestamp(6)
+  lab_report_id         String?           @db.VarChar(100)
+  lab_test_parameter_id String?           @db.VarChar(100)
   lab_history           lab_history[]
-  branch                branch?             @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_result_branch")
-  employees             employees?          @relation(fields: [verified_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_result_employee")
-  lab_order_item        lab_order_item      @relation(fields: [lab_order_item_id], references: [lab_order_item_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_result_order_item")
+  branch                branch?           @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_result_branch")
+  employees             employees?        @relation(fields: [verified_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_result_employee")
+  lab_order_item        lab_order_item    @relation(fields: [lab_order_item_id], references: [lab_order_item_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_result_order_item")
+  sample_collection     sample_collection @relation(fields: [sample_collection_id], references: [sample_collection_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_result_sample")
+  user_table            user_table?       @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_result_user")
+  lab_report            lab_report?       @relation(fields: [lab_report_id], references: [lab_report_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_result_report")
   lab_test_parameter    lab_test_parameter? @relation(fields: [lab_test_parameter_id], references: [lab_test_parameter_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_result_parameter")
-  lab_report            lab_report?         @relation(fields: [lab_report_id], references: [lab_report_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_result_report")
-  sample_collection     sample_collection   @relation(fields: [sample_collection_id], references: [sample_collection_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_result_sample")
-  user_table            user_table?         @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_result_user")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1796,54 +1795,54 @@ model lab_test_category {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model lab_test_master {
-  id                   BigInt               @id @default(autoincrement())
-  lab_test_id          String               @unique @db.VarChar(100)
-  lab_test_category_id String               @db.VarChar(100)
-  test_name            String               @db.VarChar(100)
-  test_code            String               @unique @db.VarChar(100)
-  sample_type          String?              @db.VarChar(100)
-  required_volume      String?              @db.VarChar(100)
-  unit                 String?              @db.VarChar(100)
-  reference_range      String?              @db.VarChar(100)
-  price                Decimal?             @db.Decimal(10, 2)
+  id                   BigInt             @id @default(autoincrement())
+  lab_test_id          String             @unique @db.VarChar(100)
+  lab_test_category_id String             @db.VarChar(100)
+  test_name            String             @db.VarChar(100)
+  test_code            String             @unique @db.VarChar(100)
+  sample_type          String?            @db.VarChar(100)
+  required_volume      String?            @db.VarChar(100)
+  unit                 String?            @db.VarChar(100)
+  reference_range      String?            @db.VarChar(100)
+  price                Decimal?           @db.Decimal(10, 2)
   tat_hours            Int?
-  test_status          Int?                 @default(1) @db.SmallInt
-  branch_id            String?              @db.VarChar(100)
-  user_id              String?              @db.VarChar(100)
-  created_at           DateTime?            @default(now()) @db.Timestamp(6)
-  updated_at           DateTime?            @default(now()) @db.Timestamp(6)
-  outsource_lab        String?              @db.VarChar(100)
-  is_outsourced        Boolean?             @default(false)
+  test_status          Int?               @default(1) @db.SmallInt
+  branch_id            String?            @db.VarChar(100)
+  user_id              String?            @db.VarChar(100)
+  created_at           DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at           DateTime?          @default(now()) @db.Timestamp(6)
+  outsource_lab        String?            @db.VarChar(100)
+  is_outsourced        Boolean?           @default(false)
   encounter_report     encounter_report[]
   lab_order_item       lab_order_item[]
-  branch               branch?              @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_branch")
-  lab_test_category    lab_test_category    @relation(fields: [lab_test_category_id], references: [lab_test_category_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_category")
-  user_table           user_table?          @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_user")
   lab_test_parameter   lab_test_parameter[]
+  branch               branch?            @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_branch")
+  lab_test_category    lab_test_category  @relation(fields: [lab_test_category_id], references: [lab_test_category_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_category")
+  user_table           user_table?        @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_user")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model lab_test_parameter {
-  id                    BigInt          @id @default(autoincrement())
-  lab_test_parameter_id String          @unique @db.VarChar(100)
-  lab_test_id           String          @db.VarChar(100)
-  parameter_name        String          @db.VarChar(100)
-  unit                  String?         @db.VarChar(50)
-  ref_range_low         Decimal?        @db.Decimal(10, 2)
-  ref_range_high        Decimal?        @db.Decimal(10, 2)
-  ref_range_text        String?         @db.VarChar(200)
-  gender                String?         @db.VarChar(10)
+  id                    BigInt              @id @default(autoincrement())
+  lab_test_parameter_id String              @unique @db.VarChar(100)
+  lab_test_id           String              @db.VarChar(100)
+  parameter_name        String              @db.VarChar(100)
+  unit                  String?             @db.VarChar(50)
+  ref_range_low         Decimal?            @db.Decimal(10, 2)
+  ref_range_high        Decimal?            @db.Decimal(10, 2)
+  ref_range_text        String?             @db.VarChar(200)
+  gender                String?             @db.VarChar(10)
   age_min               Int?
   age_max               Int?
-  sort_order            Int?            @default(1)
-  branch_id             String?         @db.VarChar(100)
-  user_id               String?         @db.VarChar(100)
-  created_at            DateTime?       @default(now()) @db.Timestamp(6)
-  updated_at            DateTime?       @default(now()) @db.Timestamp(6)
+  sort_order            Int?                @default(1)
+  branch_id             String?             @db.VarChar(100)
+  user_id               String?             @db.VarChar(100)
+  created_at            DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at            DateTime?           @default(now()) @db.Timestamp(6)
   lab_result            lab_result[]
-  branch                branch?         @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_parameter_branch")
-  lab_test_master       lab_test_master @relation(fields: [lab_test_id], references: [lab_test_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_parameter_test")
-  user_table            user_table?     @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_parameter_user")
+  lab_test_master       lab_test_master     @relation(fields: [lab_test_id], references: [lab_test_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_parameter_test")
+  branch                branch?             @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_parameter_branch")
+  user_table            user_table?         @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_parameter_user")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -2016,10 +2015,6 @@ model oncology_staging_detail {
   relapse_date                        DateTime?                             @db.Date
   score                               String?
   score_system                        String?                               @db.VarChar(255)
-  encounter_no                        String?                               @unique(map: "uq_staging_detail_encounter", where: raw("(encounter_no IS NOT NULL)")) @db.VarChar(100)
-  suggested_molecular_test            String?                               @db.VarChar(255)
-  suggested_molecular_test_date       DateTime?                             @db.Date
-  suggested_molecular_test_note       String?
   chemotherapy_plan                   chemotherapy_plan[]
   derived_fields                      derived_fields?
   ihc_results                         ihc_results?
@@ -2029,13 +2024,10 @@ model oncology_staging_detail {
   cancer_types                        cancer_types                          @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_cancer_type")
   diagnosis                           diagnosis?                            @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_diagnosis")
   employees                           employees?                            @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_employee")
-  encounter                           encounter?                            @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_encounter")
   patient_bio_data                    patient_bio_data                      @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_patient")
   patient_history                     patient_history?                      @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_patient_history")
   cancer_subtypes                     cancer_subtypes                       @relation(fields: [cancer_subtype_id], references: [subtype_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_subtype")
   user_table                          user_table?                           @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_user")
-
-  @@index([encounter_no], map: "idx_staging_detail_encounter")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -2125,7 +2117,6 @@ model patient_comorbidity {
   updated_at                 DateTime           @default(now()) @db.Timestamp(6)
   updated_by                 String?            @db.VarChar(100)
   comorbidity_id             BigInt
-  diagnosis_id               String?            @db.VarChar(100)
   comorbidity_master         comorbidity_master @relation(fields: [comorbidity_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_patient_comorbidity_master")
   encounter                  encounter?         @relation(fields: [identified_at_encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction)
   employees                  employees?         @relation(fields: [identified_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)

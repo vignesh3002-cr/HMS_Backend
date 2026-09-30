@@ -451,7 +451,7 @@ export class PrescriptionService {
             days: data.days ?? item.days ?? undefined
         }) ?? item.quantity ?? undefined;
 
-        const targetMedicineId = data.medicine_id ?? item.medicine_id;
+        const targetMedicineId = data.medicine_id ?? item.medicine_id ?? "";
 
         const drugMetadata = await repository.findDrugMetadata(
             "",
