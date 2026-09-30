@@ -350,7 +350,11 @@ async updateEmployeePhoto(
     });
 }
 async getAllEmployees() {
-    return prisma.employees.findMany();
+    return prisma.employees.findMany({
+        take: 1000,
+        omit: { employee_photo_URL: true },
+        orderBy: { id: "desc" }
+    });
 }
 async getEmployees(query: GetEmployeesQuery) {
             const {
@@ -493,9 +497,11 @@ if (roleType) {
  
 }
 const employees = await prisma.employees.findMany({
- 
+
     where,
- 
+
+    omit: { employee_photo_URL: true },
+
     include: {
  
         user_table: {

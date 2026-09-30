@@ -444,10 +444,10 @@ model patient_investigation_result {
   created_by              String?                  @db.VarChar(100)
   created_at              DateTime?                @default(now()) @db.Timestamp(6)
   updated_at              DateTime?                @default(now()) @db.Timestamp(6)
-  patient_bio_data        patient_bio_data         @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_investigation_result_patient")
   encounter               encounter                @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_investigation_result_encounter")
-  oncology_staging_detail oncology_staging_detail? @relation(fields: [staging_detail_id], references: [staging_detail_id], onDelete: SetNull, onUpdate: NoAction, map: "fk_investigation_result_staging")
   investigation_parameter investigation_parameter  @relation(fields: [parameter_id], references: [parameter_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_investigation_result_parameter")
+  patient_bio_data        patient_bio_data         @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_investigation_result_patient")
+  oncology_staging_detail oncology_staging_detail? @relation(fields: [staging_detail_id], references: [staging_detail_id], onUpdate: NoAction, map: "fk_investigation_result_staging")
 
   @@unique([encounter_no, parameter_id], map: "uq_investigation_result_visit")
   @@index([patient_id, report_date], map: "idx_investigation_result_patient")
@@ -487,12 +487,12 @@ model cancer_types {
   anatomical_site_master              anatomical_site_master[]
   cancer_grade_master                 cancer_grade_master[]
   cancer_score                        cancer_score[]
-  investigation_parameter             investigation_parameter[]
   cancer_subtypes                     cancer_subtypes[]
   diagnosis                           diagnosis?                            @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction)
   chemotherapy_plan                   chemotherapy_plan[]
   chemotherapy_protocol_cancers       chemotherapy_protocol_cancers[]
   chemotherapy_regimen_protocol       chemotherapy_regimen_protocol[]
+  investigation_parameter             investigation_parameter[]
   molecular_subtypes                  molecular_subtypes[]
   oncology_staging_additional_cancers oncology_staging_additional_cancers[]
   oncology_staging_detail             oncology_staging_detail[]
@@ -1512,76 +1512,76 @@ model employees {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model encounter {
-  encounter_id                        BigInt                        @id @default(autoincrement())
-  encounter_no                        String                        @unique @db.VarChar(100)
-  branch_id                           String                        @db.VarChar(100)
-  encounter_ts                        DateTime                      @default(now()) @db.Timestamptz(6)
-  encounter_type                      String                        @default("OPD") @db.VarChar(100)
-  status                              String                        @default("OPEN") @db.VarChar(100)
+  encounter_id                        BigInt                         @id @default(autoincrement())
+  encounter_no                        String                         @unique @db.VarChar(100)
+  branch_id                           String                         @db.VarChar(100)
+  encounter_ts                        DateTime                       @default(now()) @db.Timestamptz(6)
+  encounter_type                      String                         @default("OPD") @db.VarChar(100)
+  status                              String                         @default("OPEN") @db.VarChar(100)
   notes                               String?
-  created_at                          DateTime                      @default(now()) @db.Timestamptz(6)
-  employee_id                         String?                       @db.VarChar(100)
-  patient_id                          String                        @db.VarChar(100)
-  appointment_id                      String?                       @unique @db.VarChar(100)
+  created_at                          DateTime                       @default(now()) @db.Timestamptz(6)
+  employee_id                         String?                        @db.VarChar(100)
+  patient_id                          String                         @db.VarChar(100)
+  appointment_id                      String?                        @unique @db.VarChar(100)
   advice                              String?
-  checkout_time                       DateTime?                     @db.Timestamptz(6)
+  checkout_time                       DateTime?                      @db.Timestamptz(6)
   chief_complaint                     String?
   clinical_notes                      String?
-  closed_at                           DateTime?                     @db.Timestamptz(6)
-  closed_by                           String?                       @db.VarChar(100)
-  department_id                       String?                       @db.VarChar(100)
+  closed_at                           DateTime?                      @db.Timestamptz(6)
+  closed_by                           String?                        @db.VarChar(100)
+  department_id                       String?                        @db.VarChar(100)
   diastolic_bp                        Int?
-  follow_up_date                      DateTime?                     @db.Date
-  height                              Decimal?                      @db.Decimal(5, 2)
+  follow_up_date                      DateTime?                      @db.Date
+  height                              Decimal?                       @db.Decimal(5, 2)
   pulse                               Int?
   respiratory_rate                    Int?
   schedule_id                         BigInt?
   spo2                                Int?
   symptoms                            String?
   systolic_bp                         Int?
-  temperature                         Decimal?                      @db.Decimal(5, 2)
-  weight                              Decimal?                      @db.Decimal(5, 2)
-  user_id                             String?                       @db.VarChar(100)
-  diagnosis_id                        String?                       @db.VarChar(100)
-  diagnosis_text                      String?                       @db.VarChar(100)
-  createdBy                           String?                       @db.VarChar
-  blood_sugar                         Decimal?                      @db.Decimal
+  temperature                         Decimal?                       @db.Decimal(5, 2)
+  weight                              Decimal?                       @db.Decimal(5, 2)
+  user_id                             String?                        @db.VarChar(100)
+  diagnosis_id                        String?                        @db.VarChar(100)
+  diagnosis_text                      String?                        @db.VarChar(100)
+  createdBy                           String?                        @db.VarChar
+  blood_sugar                         Decimal?                       @db.Decimal
   pain_score                          BigInt?
-  BMI                                 Decimal?                      @db.Decimal
+  BMI                                 Decimal?                       @db.Decimal
   clinical_findings                   String?
   cns_examination                     String?
   cvs_examination                     String?
   history_of_present_illness          String?
   per_abdomen_examination             String?
-  general_examination_clubbing        Boolean?                      @default(false)
-  general_examination_cyanosis        Boolean?                      @default(false)
-  general_examination_icterus         Boolean?                      @default(false)
-  general_examination_lymphadenopathy Boolean?                      @default(false)
-  general_examination_oedema          Boolean?                      @default(false)
-  general_examination_pallor          Boolean?                      @default(false)
+  general_examination_clubbing        Boolean?                       @default(false)
+  general_examination_cyanosis        Boolean?                       @default(false)
+  general_examination_icterus         Boolean?                       @default(false)
+  general_examination_lymphadenopathy Boolean?                       @default(false)
+  general_examination_oedema          Boolean?                       @default(false)
+  general_examination_pallor          Boolean?                       @default(false)
   respiratory_examination             String?
-  past_history_treatment_date         DateTime?                     @db.Date
+  past_history_treatment_date         DateTime?                      @db.Date
   past_history_treatment_note         String?
   past_history_treatment_response     String?
   past_history_treatment_type         String?
   previous_reports                    String?
   general_examination_others          Json?
   chemotherapy_plan                   chemotherapy_plan[]
-  appointment_history                 appointment_history?          @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_appointment")
-  branch                              branch                        @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_branch")
-  department_master                   department_master?            @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_department")
-  employees                           employees?                    @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_doctor")
-  patient_bio_data                    patient_bio_data              @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_patient")
-  doctor_schedule                     doctor_schedule?              @relation(fields: [schedule_id], references: [schedule_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_schedule")
-  user_table                          user_table?                   @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_user")
+  appointment_history                 appointment_history?           @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_appointment")
+  branch                              branch                         @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_branch")
+  department_master                   department_master?             @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_department")
+  employees                           employees?                     @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_doctor")
+  patient_bio_data                    patient_bio_data               @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_patient")
+  doctor_schedule                     doctor_schedule?               @relation(fields: [schedule_id], references: [schedule_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_schedule")
+  user_table                          user_table?                    @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_user")
   encounter_molecular_test            encounter_molecular_test[]
   encounter_performance_status        encounter_performance_status?
   encounter_report                    encounter_report[]
   encounter_symptom                   encounter_symptom[]
   oncology_staging_detail             oncology_staging_detail?
-  patient_investigation_result        patient_investigation_result[]
   patient_allergy                     patient_allergy[]
   patient_comorbidity                 patient_comorbidity[]
+  patient_investigation_result        patient_investigation_result[]
   patient_personal_history            patient_personal_history?
 
   @@index([patient_id], map: "idx_encounter_patient")
@@ -2179,7 +2179,6 @@ model oncology_staging_detail {
   chemotherapy_plan                   chemotherapy_plan[]
   derived_fields                      derived_fields?
   ihc_results                         ihc_results?
-  patient_investigation_result        patient_investigation_result[]
   molecular_results                   molecular_results?
   oncology_staging_additional_cancers oncology_staging_additional_cancers[]
   branch                              branch?                               @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_branch")
@@ -2191,6 +2190,7 @@ model oncology_staging_detail {
   patient_history                     patient_history?                      @relation(fields: [patient_history_id], references: [patient_history_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_patient_history")
   cancer_subtypes                     cancer_subtypes                       @relation(fields: [cancer_subtype_id], references: [subtype_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_subtype")
   user_table                          user_table?                           @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_user")
+  patient_investigation_result        patient_investigation_result[]
 
   @@index([encounter_no], map: "idx_staging_detail_encounter")
 }
@@ -2262,12 +2262,12 @@ model patient_bio_data {
   chemotherapy_plan              chemotherapy_plan?
   encounter                      encounter[]
   oncology_staging_detail        oncology_staging_detail[]
-  patient_investigation_result   patient_investigation_result[]
   patient_allergy                patient_allergy[]
   branch                         branch?                        @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_patient_bio_branch")
   user_table                     user_table?                    @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_patient_bio_user")
   patient_comorbidity            patient_comorbidity[]
   patient_history                patient_history[]
+  patient_investigation_result   patient_investigation_result[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

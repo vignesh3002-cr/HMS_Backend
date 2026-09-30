@@ -62,15 +62,57 @@ class EncounterRepository {
         return prisma_1.default.appointment_history.findUnique({
             where: { appointment_id: appointmentId },
             include: {
-                patient_bio_data: true,
-                employees: {
-                    include: {
-                        user_table: { select: { role_type: true } }
+                patient_bio_data: {
+                    select: {
+                        patient_id: true,
+                        patient_first_name: true,
+                        patient_middle_name: true,
+                        patient_last_name: true,
+                        patient_gender: true,
+                        patient_primary_mobile: true,
+                        patient_email: true,
+                        patient_type: true,
+                        branch_id: true,
+                        patient_active: true,
                     }
                 },
-                branch: true,
-                department_master: true,
-                doctor_schedule: true
+                employees: {
+                    select: {
+                        employee_id: true,
+                        first_name: true,
+                        middle_name: true,
+                        last_name: true,
+                        specialization: true,
+                        branch_id: true,
+                        emp_status: true,
+                        user_table: {
+                            select: { role_type: true }
+                        }
+                    }
+                },
+                branch: {
+                    select: {
+                        branch_id: true,
+                        branch_name: true,
+                        branch_area: true,
+                        branch_status: true,
+                    }
+                },
+                department_master: {
+                    select: {
+                        department_id: true,
+                        department_name: true,
+                    }
+                },
+                doctor_schedule: {
+                    select: {
+                        schedule_id: true,
+                        day_of_week: true,
+                        shift_name: true,
+                        start_time: true,
+                        end_time: true,
+                    }
+                }
             }
         });
     }
@@ -83,16 +125,64 @@ class EncounterRepository {
                 ]
             },
             include: {
-                patient_bio_data: true,
-                employees: {
-                    include: {
-                        user_table: { select: { role_type: true } }
+                patient_bio_data: {
+                    select: {
+                        patient_id: true,
+                        patient_first_name: true,
+                        patient_middle_name: true,
+                        patient_last_name: true,
+                        patient_gender: true,
+                        patient_primary_mobile: true,
+                        patient_email: true,
+                        patient_type: true,
+                        branch_id: true,
+                        patient_active: true,
                     }
                 },
-                branch: true,
-                department_master: true,
-                ward_master: true,
-                bed_master: true
+                employees: {
+                    select: {
+                        employee_id: true,
+                        first_name: true,
+                        middle_name: true,
+                        last_name: true,
+                        specialization: true,
+                        branch_id: true,
+                        emp_status: true,
+                        user_table: {
+                            select: { role_type: true }
+                        }
+                    }
+                },
+                branch: {
+                    select: {
+                        branch_id: true,
+                        branch_name: true,
+                        branch_area: true,
+                        branch_status: true,
+                    }
+                },
+                department_master: {
+                    select: {
+                        department_id: true,
+                        department_name: true,
+                    }
+                },
+                ward_master: {
+                    select: {
+                        ward_id: true,
+                        ward_name: true,
+                        ward_type: true,
+                        floor: true,
+                    }
+                },
+                bed_master: {
+                    select: {
+                        bed_id: true,
+                        bed_number: true,
+                        bed_type: true,
+                        status: true,
+                    }
+                }
             }
         });
     }

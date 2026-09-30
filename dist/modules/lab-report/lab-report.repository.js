@@ -90,7 +90,7 @@ class LabReportRepository {
     }
     async create(data) {
         return prisma_1.default.lab_report.create({
-            data,
+            data: data,
             include: {
                 employees: true,
                 lab_order: {

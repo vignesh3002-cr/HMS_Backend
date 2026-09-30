@@ -58,8 +58,18 @@ router.put("/plans/:planId", auth_middleware_1.authenticate, (0, authorize_1.aut
 router.patch("/plans/:planId/status", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.planStatusValidation, controller.changePlanStatus.bind(controller));
 // ---------------- Plan items ----------------
 router.post("/plans/:planId/items", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.addPlanItemValidation, controller.addPlanItem.bind(controller));
+router.put("/plans/:planId/items", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.replacePlanItemsValidation, controller.replacePlanItems.bind(controller));
 router.put("/plans/:planId/items/:planItemId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.updatePlanItemValidation, controller.updatePlanItem.bind(controller));
 router.delete("/plans/:planId/items/:planItemId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), controller.removePlanItem.bind(controller));
+// ---------------- Plan hydration ----------------
+router.get("/plans/:planId/hydration", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.planIdParamValidation, controller.getPlanHydration.bind(controller));
+router.put("/plans/:planId/hydration", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.planHydrationValidation, controller.replacePlanHydration.bind(controller));
+// ---------------- Cycle day orders ----------------
+// "complete" is registered before the ":cycleNumber/:cycleDay" routes.
+router.post("/plans/:planId/orders/complete", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.completePlanOrdersValidation, controller.completePlanOrders.bind(controller));
+router.get("/plans/:planId/orders", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.planIdParamValidation, controller.listPlanOrders.bind(controller));
+router.get("/plans/:planId/orders/:cycleNumber/:cycleDay", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.planOrderParamValidation, controller.getPlanOrder.bind(controller));
+router.put("/plans/:planId/orders/:cycleNumber/:cycleDay", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.savePlanOrderValidation, controller.savePlanOrder.bind(controller));
 // ---------------- Cycles ----------------
 router.post("/plans/:planId/cycles", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.cycle.manage"), chemotherapy_validation_1.createCycleValidation, controller.createCycle.bind(controller));
 router.get("/plans/:planId/cycles", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.planIdParamValidation, controller.listCyclesForPlan.bind(controller));

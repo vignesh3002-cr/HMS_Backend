@@ -14,8 +14,11 @@ router.get("/stats/patients-today", auth_middleware_1.authenticate, (0, authoriz
 router.get("/stats/overview", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.read"), branchScope_1.branchScope, controller.getIpdOverview.bind(controller));
 router.get("/wards", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.read"), branchScope_1.branchScope, controller.listWards.bind(controller));
 router.post("/wards", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("ward.manage", "admission.create"), branchScope_1.branchScope, ipd_validation_1.createWardValidation, controller.createWard.bind(controller));
+router.patch("/wards/:wardId", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("ward.manage", "admission.create"), branchScope_1.branchScope, ipd_validation_1.updateWardValidation, controller.updateWard.bind(controller));
 router.get("/beds", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.read"), branchScope_1.branchScope, controller.listBeds.bind(controller));
 router.post("/beds", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("bed.manage", "admission.create"), branchScope_1.branchScope, ipd_validation_1.createBedValidation, controller.createBed.bind(controller));
+router.patch("/beds/:bedId", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("bed.manage", "admission.create"), branchScope_1.branchScope, ipd_validation_1.updateBedValidation, controller.updateBed.bind(controller));
+router.patch("/beds/:id/status", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("bed.manage", "admission.create"), branchScope_1.branchScope, ipd_validation_1.updateBedStatusValidation, controller.updateBedStatus.bind(controller));
 router.get("/:ipNumber", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.read"), ipd_validation_1.getAdmissionByIpNumberValidation, controller.getAdmissionByIpNumber.bind(controller));
 router.patch("/:id", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.update"), ipd_validation_1.updateAdmissionValidation, controller.updateAdmission.bind(controller));
 router.post("/:id/discharge", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.discharge"), ipd_validation_1.dischargeAdmissionValidation, controller.dischargeAdmission.bind(controller));
