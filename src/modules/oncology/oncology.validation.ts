@@ -156,3 +156,20 @@ export const listStagingDetailsValidation = [
     query("date_to").optional().isISO8601()
 
 ];
+
+export const listInvestigationResultsValidation = [
+
+    query("patient_id").notEmpty().withMessage("patient_id is required")
+
+];
+
+export const saveInvestigationResultsValidation = [
+
+    body("patient_id").notEmpty().withMessage("patient_id is required"),
+    body("encounter_no").notEmpty().withMessage("encounter_no is required"),
+    body("staging_detail_id").optional({ nullable: true }).isString(),
+    body("report_date").isISO8601().withMessage("Report date must be a valid date"),
+    body("results").isArray().withMessage("results must be an array"),
+    body("results.*.parameter_id").notEmpty().withMessage("Each result needs a parameter_id")
+
+];

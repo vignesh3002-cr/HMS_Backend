@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { CreateLabReportDto, UpdateLabReportDto, TransferLabReportDto } from "./lab-report.types";
 
@@ -97,16 +98,14 @@ export class LabReportRepository {
     report_status?: string | null;
     report_file?: string | null;
     digital_signature?: string | null;
-    report_comment?: string | null;
+    report_comment?: any;
     delivered_to?: string | null;
     delivered_datetime?: Date | null;
     branch_id?: string | null;
     user_id?: string | null;
   }) {
     return prisma.lab_report.create({
-      data: {
-        ...data,
-      },
+      data: data as any,
       include: {
         employees: true,
         lab_order: {

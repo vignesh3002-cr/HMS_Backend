@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.listStagingDetailsValidation = exports.getStagingDetailValidation = exports.upsertMolecularValidation = exports.upsertIhcValidation = exports.updateStagingDetailValidation = exports.createStagingDetailValidation = exports.getStagingReferenceValidation = exports.getCancerSubtypesValidation = void 0;
+exports.saveInvestigationResultsValidation = exports.listInvestigationResultsValidation = exports.listStagingDetailsValidation = exports.getStagingDetailValidation = exports.upsertMolecularValidation = exports.upsertIhcValidation = exports.updateStagingDetailValidation = exports.createStagingDetailValidation = exports.getStagingReferenceValidation = exports.getCancerSubtypesValidation = void 0;
 const express_validator_1 = require("express-validator");
 const oncology_constants_1 = require("./oncology.constants");
 // Request-shape validation only (types, presence, ranges that would otherwise
@@ -126,4 +126,15 @@ exports.listStagingDetailsValidation = [
     (0, express_validator_1.query)("limit").optional().isInt({ min: 1, max: 100 }),
     (0, express_validator_1.query)("date_from").optional().isISO8601(),
     (0, express_validator_1.query)("date_to").optional().isISO8601()
+];
+exports.listInvestigationResultsValidation = [
+    (0, express_validator_1.query)("patient_id").notEmpty().withMessage("patient_id is required")
+];
+exports.saveInvestigationResultsValidation = [
+    (0, express_validator_1.body)("patient_id").notEmpty().withMessage("patient_id is required"),
+    (0, express_validator_1.body)("encounter_no").notEmpty().withMessage("encounter_no is required"),
+    (0, express_validator_1.body)("staging_detail_id").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("report_date").isISO8601().withMessage("Report date must be a valid date"),
+    (0, express_validator_1.body)("results").isArray().withMessage("results must be an array"),
+    (0, express_validator_1.body)("results.*.parameter_id").notEmpty().withMessage("Each result needs a parameter_id")
 ];

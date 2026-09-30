@@ -33,6 +33,8 @@ const ENTITY_TARGET: Record<string, { table: string; column: string; padTo?: num
     ANATOMICAL_SITE: { table: "anatomical_site_master", column: "site_id", padTo: 4 },
     CANCER_GRADE: { table: "cancer_grade_master", column: "grade_id", padTo: 4 },
     CANCER_SCORE: { table: "cancer_score", column: "score_id", padTo: 4 },
+    INVESTIGATION_PARAMETER: { table: "investigation_parameter", column: "parameter_id", padTo: 4 },
+    INVESTIGATION_RESULT: { table: "patient_investigation_result", column: "investigation_result_id", padTo: 7 },
     ADMISSION: { table: "admission", column: "ip_number" },
     WARD: { table: "ward_master", column: "ward_id" },
     BED: { table: "bed_master", column: "bed_id" },

@@ -272,3 +272,24 @@ export interface StagingDetailFilterQuery {
     limit?: number;
 
 }
+
+// One test value of a visit's Investigation Results (Diagnosis tab). A
+// blank value clears that test for the visit.
+export interface InvestigationResultInput {
+
+    parameter_id: string;
+    value?: string | number | null;
+
+}
+
+// PUT /oncology/investigation-results - the visit's results, replaced per
+// test (upserted by encounter + parameter).
+export interface SaveInvestigationResultsDto {
+
+    patient_id: string;
+    encounter_no: string;
+    staging_detail_id?: string | null;
+    report_date: string;
+    results: InvestigationResultInput[];
+
+}

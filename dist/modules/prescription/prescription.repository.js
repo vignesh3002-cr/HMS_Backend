@@ -203,13 +203,14 @@ class PrescriptionRepository {
     // back to the patient's most recent active plan. Returns a map keyed by
     // medicine_id so the caller can default to PRIMARY/null when absent.
     async findDrugMetadata(encounterNo, patientId, medicineIds) {
-        if (medicineIds.length === 0) {
+        const cleanIds = medicineIds.filter((id) => typeof id === "string" && id.length > 0);
+        if (cleanIds.length === 0) {
             return new Map();
         }
         const planWhere = {
             active_status: 1,
             chemotherapy_plan_items: {
-                some: { medicine_id: { in: medicineIds } }
+                some: { medicine_id: { in: cleanIds } }
             }
         };
         const plan = await prisma_1.default.chemotherapy_plan.findFirst({
@@ -226,7 +227,7 @@ class PrescriptionRepository {
             where: {
                 chemotherapy_plan_id: plan.chemotherapy_plan_id,
                 active_status: 1,
-                medicine_id: { in: medicineIds }
+                medicine_id: { in: cleanIds }
             },
             select: {
                 medicine_id: true,

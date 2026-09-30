@@ -231,20 +231,22 @@ export class PrescriptionRepository {
     // chemotherapy plan. Prefers the plan linked to the encounter, then falls
     // back to the patient's most recent active plan. Returns a map keyed by
     // medicine_id so the caller can default to PRIMARY/null when absent.
-    async findDrugMetadata(
+        async findDrugMetadata(
         encounterNo: string,
         patientId: string,
-        medicineIds: string[]
+        medicineIds: (string | null | undefined)[]
     ) {
 
-        if (medicineIds.length === 0) {
+        const cleanIds = medicineIds.filter((id): id is string => typeof id === "string" && id.length > 0);
+
+        if (cleanIds.length === 0) {
             return new Map<string, { drug_role?: string | null; drug_type?: string | null }>();
         }
 
         const planWhere: Prisma.chemotherapy_planWhereInput = {
             active_status: 1,
             chemotherapy_plan_items: {
-                some: { medicine_id: { in: medicineIds } }
+                some: { medicine_id: { in: cleanIds } }
             }
         };
 
@@ -264,7 +266,7 @@ export class PrescriptionRepository {
             where: {
                 chemotherapy_plan_id: plan.chemotherapy_plan_id,
                 active_status: 1,
-                medicine_id: { in: medicineIds }
+                medicine_id: { in: cleanIds }
             },
             select: {
                 medicine_id: true,
