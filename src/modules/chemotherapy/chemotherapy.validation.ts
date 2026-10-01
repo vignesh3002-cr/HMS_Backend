@@ -461,7 +461,8 @@ function planItemListRules(prefix: string) {
         body(`${prefix}administration_route`).optional({ nullable: true }).isString().isLength({ max: 100 }),
         body(`${prefix}infusion_type`).optional({ nullable: true }).isString().isLength({ max: 100 }),
         body(`${prefix}frequency`).optional({ nullable: true }).isString().isLength({ max: 100 }),
-        body(`${prefix}timing_relative_to_primary`).optional({ nullable: true }).isString().isLength({ max: 100 })
+        body(`${prefix}timing_relative_to_primary`).optional({ nullable: true }).isString().isLength({ max: 100 }),
+        body(`${prefix}duration`).optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Duration must be at most 100 characters")
     ];
 
 }
@@ -490,6 +491,58 @@ const planItemRowRules = [
     body("timing_relative_to_primary").optional({ nullable: true }).isString().isLength({ max: 100 }),
     body("administration_detail").optional({ nullable: true }).isString(),
     body("remarks").optional({ nullable: true }).isString()
+];
+
+// Discharge (take-home) rows. drug_role is not accepted from the body: the
+// endpoint always stores the row as DISCHARGE on this patient's plan.
+export const addPlanDischargeMedicineValidation = [
+
+    param("planId").notEmpty(),
+    ...drugIdentityRules(""),
+    body("drug_sequence").isInt({ min: 1 }).withMessage("A discharge medicine requires a drug_sequence >= 1"),
+    body("drug_type").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("dosage").optional({ nullable: true }).isFloat({ min: 0 }).withMessage("Dose must be a number"),
+    body("dosage_unit").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("frequency").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("administration_detail").optional({ nullable: true }).isString(),
+    body("duration").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Duration must be at most 100 characters"),
+    body("remarks").optional({ nullable: true }).isString()
+
+];
+
+// Every field is optional, but drug_sequence still has to be a whole number
+// >= 1 when it is sent.
+export const updatePlanDischargeMedicineValidation = [
+
+    param("planId").notEmpty(),
+    param("planItemId").notEmpty(),
+    /* No whole-body drug check here: a partial edit may send only a dosage,
+       so the service rejects a drug change that leaves the row with neither
+       a medicine nor a name. */
+    body("medicine_id").optional({ nullable: true }).isString(),
+    body("drug_name").optional({ nullable: true }).isString().isLength({ max: 200 }).withMessage("Drug name must be at most 200 characters"),
+    body("drug_sequence").optional().isInt({ min: 1 }),
+    body("drug_type").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("dosage").optional({ nullable: true }).isFloat({ min: 0 }).withMessage("Dose must be a number"),
+    body("dosage_unit").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("frequency").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("administration_detail").optional({ nullable: true }).isString(),
+    body("duration").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Duration must be at most 100 characters"),
+    body("remarks").optional({ nullable: true }).isString()
+
+];
+
+export const planDischargeParamValidation = [
+
+    param("planId").notEmpty()
+
+];
+
+export const planDischargeItemParamValidation = [
+
+    param("planId").notEmpty(),
+    param("planItemId").notEmpty()
+
 ];
 
 export const replacePlanItemsValidation = [

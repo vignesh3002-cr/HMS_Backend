@@ -190,10 +190,11 @@ function planItemCreateData(
         administration_detail: item.administration_detail ?? null,
         maximum_dose: item.maximum_dose ?? null,
         minimum_dose: item.minimum_dose ?? null,
-        dose_required: item.dose_required ?? true,
-        remarks: item.remarks ?? null,
-        created_by: actingUserId
-    };
+            dose_required: item.dose_required ?? true,
+            remarks: item.remarks ?? null,
+            duration: item.duration ?? null,
+            created_by: actingUserId
+        };
 
 }
 
@@ -3422,7 +3423,8 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             ...(dto.administration_route !== undefined ? { administration_route: dto.administration_route } : {}),
             ...(dto.infusion_duration_minutes !== undefined ? { infusion_duration_minutes: dto.infusion_duration_minutes } : {}),
             ...(dto.frequency !== undefined ? { frequency: dto.frequency } : {}),
-            ...(dto.remarks !== undefined ? { remarks: dto.remarks } : {})
+            ...(dto.remarks !== undefined ? { remarks: dto.remarks } : {}),
+            ...(dto.duration !== undefined ? { duration: dto.duration } : {})
         };
 
         await prisma.$transaction(async (tx) => {
@@ -3590,6 +3592,204 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
         });
 
         return this.repository.findPlanHydration(planId);
+
+    }
+
+    // ---------------------------------------------------------------
+    // Discharge (take-home) medicines. These rows belong to THIS patient's
+    // plan only: a drug picked from medicine_master is stored by medicine_id,
+    // a name the doctor types is stored as drug_name on the plan item and
+    // is never written to medicine_master, and neither the regimen protocol's
+    // discharge instructions nor its master data are touched.
+    // ---------------------------------------------------------------
+
+    async listPlanDischargeMedicines(planId: string) {
+
+        const plan = await this.repository.findPlanForUpdate(prisma, planId);
+
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+
+        return this.repository.findPlanDischargeItems(planId);
+
+    }
+
+    async addPlanDischargeMedicine(planId: string, dto: AddPlanItemDto, actingUserId: string) {
+
+        const plan = await this.repository.findPlanForUpdate(prisma, planId);
+
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+
+        if (PLAN_TERMINAL_STATUSES.includes(plan.treatment_status as PlanStatus)) {
+            throw new Error(`Cannot add a discharge medicine to a plan that is already ${plan.treatment_status}`);
+        }
+
+        await this.assertPlanItemDrugs([dto]);
+
+        const item: PlanItemInputDto = { ...dto, drug_role: DRUG_ROLE.DISCHARGE };
+
+        await prisma.$transaction(async (tx) => {
+
+            const itemId = await this.repository.generatePlanItemId(tx);
+
+            await this.repository.createPlanItem(tx, planItemCreateData(planId, itemId, item, actingUserId));
+
+            await logAudit(tx, {
+                entity_type: "chemotherapy_plan_items",
+                entity_id: itemId,
+                action: AUDIT_ACTION.CREATE,
+                performed_by: actingUserId,
+                patient_id: plan.patient_id,
+                branch_id: plan.branch_id,
+                change_summary: summarizeCreate({
+                    discharge_medicine: true,
+                    medicine_id: dto.medicine_id ?? null,
+                    drug_name: dto.medicine_id ? null : dto.drug_name ?? null
+                })
+            });
+
+        });
+
+        return this.repository.findPlanDischargeItems(planId);
+
+    }
+
+    async updatePlanDischargeMedicine(
+        planId: string,
+        planItemId: string,
+        dto: Partial<AddPlanItemDto>,
+        actingUserId: string
+    ) {
+
+        const plan = await this.repository.findPlanForUpdate(prisma, planId);
+
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+
+        const item = await this.repository.findPlanItemById(planItemId);
+
+        if (!item || item.chemotherapy_plan_id !== planId || item.active_status !== 1) {
+            throw new Error("Plan item not found on this plan");
+        }
+
+        if (item.drug_role !== DRUG_ROLE.DISCHARGE) {
+            throw new Error("That row is not a discharge medicine");
+        }
+
+        if (PLAN_TERMINAL_STATUSES.includes(plan.treatment_status as PlanStatus)) {
+            throw new Error(`Cannot change a discharge medicine on a plan that is already ${plan.treatment_status}`);
+        }
+
+        const changes = await this.planDischargeItemChanges(item, dto);
+
+        if (Object.keys(changes).length === 0) {
+            return this.repository.findPlanDischargeItems(planId);
+        }
+
+        await prisma.$transaction(async (tx) => {
+
+            await this.repository.updatePlanItem(tx, planItemId, changes);
+
+            await logAudit(tx, {
+                entity_type: "chemotherapy_plan_items",
+                entity_id: planItemId,
+                action: AUDIT_ACTION.UPDATE,
+                performed_by: actingUserId,
+                patient_id: plan.patient_id,
+                branch_id: plan.branch_id,
+                change_summary: diffFields(item, changes)
+            });
+
+        });
+
+        return this.repository.findPlanDischargeItems(planId);
+
+    }
+
+    async removePlanDischargeMedicine(planId: string, planItemId: string, actingUserId: string) {
+
+        const plan = await this.repository.findPlanForUpdate(prisma, planId);
+
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+
+        const item = await this.repository.findPlanItemById(planItemId);
+
+        if (!item || item.chemotherapy_plan_id !== planId || item.active_status !== 1) {
+            throw new Error("Plan item not found on this plan");
+        }
+
+        if (item.drug_role !== DRUG_ROLE.DISCHARGE) {
+            throw new Error("That row is not a discharge medicine");
+        }
+
+        await prisma.$transaction(async (tx) => {
+
+            await this.repository.deactivatePlanItem(tx, planItemId);
+
+            await logAudit(tx, {
+                entity_type: "chemotherapy_plan_items",
+                entity_id: planItemId,
+                action: AUDIT_ACTION.DEACTIVATE,
+                performed_by: actingUserId,
+                patient_id: plan.patient_id,
+                branch_id: plan.branch_id,
+                change_summary: summarizeCreate({ discharge_medicine: true, medicine_id: item.medicine_id, drug_name: item.drug_name })
+            });
+
+        });
+
+        return this.repository.findPlanDischargeItems(planId);
+
+    }
+
+    /* A discharge row edit: the drug (a medicine from the list, or - with
+       medicine_id null - a name typed for this patient) and its columns.
+       drug_role is fixed by the endpoint and never taken from the body. */
+    private async planDischargeItemChanges(
+        item: { medicine_id: string | null; drug_name: string | null },
+        dto: Partial<AddPlanItemDto>
+    ) {
+
+        let drugChanges: Record<string, unknown> = {};
+
+        if (dto.medicine_id) {
+            drugChanges = { medicine_id: dto.medicine_id, drug_name: null };
+        } else if (dto.medicine_id === null || (dto.drug_name !== undefined && !item.medicine_id)) {
+
+            if (!dto.drug_name?.trim()) {
+                throw new Error("Select a drug from the list or type a drug name");
+            }
+
+            drugChanges = { medicine_id: null, drug_name: dto.drug_name.trim() };
+
+        }
+
+        const changes = {
+            ...drugChanges,
+            ...(dto.drug_sequence !== undefined ? { drug_sequence: dto.drug_sequence } : {}),
+            ...(dto.drug_type !== undefined ? { drug_type: dto.drug_type } : {}),
+            ...(dto.dosage !== undefined ? { protocol_dose: dto.dosage } : {}),
+            ...(dto.dosage_unit !== undefined ? { protocol_dose_unit: dto.dosage_unit } : {}),
+            ...(dto.frequency !== undefined ? { frequency: dto.frequency } : {}),
+            ...(dto.administration_detail !== undefined ? { administration_detail: dto.administration_detail } : {}),
+            ...(dto.duration !== undefined ? { duration: dto.duration } : {}),
+            ...(dto.remarks !== undefined ? { remarks: dto.remarks } : {})
+        };
+
+        if (dto.medicine_id && dto.medicine_id !== item.medicine_id) {
+            const medicine = await this.repository.findMedicineById(dto.medicine_id);
+            if (!medicine) {
+                throw new Error("Medicine not found");
+            }
+        }
+
+        return changes;
 
     }
 
