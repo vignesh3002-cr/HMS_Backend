@@ -120,9 +120,15 @@ class OncologyRepository {
         });
     }
     async listInvestigationResultsForPatient(patientId) {
+        // Each result carries its test and the test's cancer type, so the
+        // History tab can group the trends per cancer type.
         return prisma_1.default.patient_investigation_result.findMany({
             where: { patient_id: patientId },
-            include: { investigation_parameter: true },
+            include: {
+                investigation_parameter: {
+                    include: { cancer_types: { select: { cancer_type_id: true, cancer_type: true } } }
+                }
+            },
             orderBy: [{ report_date: "desc" }, { created_at: "desc" }]
         });
     }

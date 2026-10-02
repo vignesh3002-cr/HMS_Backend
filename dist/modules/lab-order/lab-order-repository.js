@@ -40,10 +40,6 @@ class LabOrderRepository {
                 order_datetime: true,
                 priority: true,
                 order_status: true,
-                clinical_notes: true,
-                provisional_diagnosis: true,
-                created_at: true,
-                updated_at: true,
                 patient_history: {
                     select: {
                         patient_history_id: true,
@@ -65,14 +61,7 @@ class LabOrderRepository {
                         department_id: true,
                         department_name: true
                     }
-                },
-                lab_order_item: {
-                    include: {
-                        lab_test_master: true,
-                        sample_collection: true
-                    }
-                },
-                lab_report: true
+                }
             },
             orderBy: {
                 created_at: "desc"
