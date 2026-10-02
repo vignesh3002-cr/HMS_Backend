@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { CreateLabReportDto, UpdateLabReportDto, TransferLabReportDto } from "./lab-report.types";
 

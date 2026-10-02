@@ -149,6 +149,84 @@ export class OncologyRepository {
     }
 
     // -----------------------------------------------------------------
+    // investigation_parameter / patient_investigation_result - the tests
+    // tracked per cancer type and the values entered on each visit.
+    // -----------------------------------------------------------------
+
+    async findInvestigationParametersByType(cancerTypeId: string) {
+
+        return prisma.investigation_parameter.findMany({
+            where: { cancer_type_id: cancerTypeId, active_status: 1 },
+            orderBy: [{ chart_name: "asc" as const }, { display_order: "asc" as const }]
+        });
+
+    }
+
+    async findInvestigationParametersByIds(parameterIds: string[]) {
+
+        return prisma.investigation_parameter.findMany({
+            where: { parameter_id: { in: parameterIds } }
+        });
+
+    }
+
+    async listInvestigationResultsForPatient(patientId: string) {
+
+        // Each result carries its test and the test's cancer type, so the
+        // History tab can group the trends per cancer type.
+        return prisma.patient_investigation_result.findMany({
+            where: { patient_id: patientId },
+            include: {
+                investigation_parameter: {
+                    include: { cancer_types: { select: { cancer_type_id: true, cancer_type: true } } }
+                }
+            },
+            orderBy: [{ report_date: "desc" as const }, { created_at: "desc" as const }]
+        });
+
+    }
+
+    async findInvestigationResultsForVisit(tx: Prisma.TransactionClient, encounterNo: string) {
+
+        return tx.patient_investigation_result.findMany({
+            where: { encounter_no: encounterNo },
+            include: { investigation_parameter: true },
+            orderBy: { parameter_id: "asc" as const }
+        });
+
+    }
+
+    async createInvestigationResult(
+        tx: Prisma.TransactionClient,
+        data: Prisma.patient_investigation_resultUncheckedCreateInput
+    ) {
+
+        return tx.patient_investigation_result.create({ data });
+
+    }
+
+    async updateInvestigationResult(
+        tx: Prisma.TransactionClient,
+        investigationResultId: string,
+        data: Prisma.patient_investigation_resultUncheckedUpdateInput
+    ) {
+
+        return tx.patient_investigation_result.update({
+            where: { investigation_result_id: investigationResultId },
+            data: { ...data, updated_at: new Date() }
+        });
+
+    }
+
+    async deleteInvestigationResults(tx: Prisma.TransactionClient, encounterNo: string, parameterIds: string[]) {
+
+        return tx.patient_investigation_result.deleteMany({
+            where: { encounter_no: encounterNo, parameter_id: { in: parameterIds } }
+        });
+
+    }
+
+    // -----------------------------------------------------------------
     // Supporting entity lookups (existence checks only - these tables
     // belong to other modules, so no write access here)
     // -----------------------------------------------------------------

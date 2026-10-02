@@ -105,6 +105,49 @@ class OncologyRepository {
         });
     }
     // -----------------------------------------------------------------
+    // investigation_parameter / patient_investigation_result - the tests
+    // tracked per cancer type and the values entered on each visit.
+    // -----------------------------------------------------------------
+    async findInvestigationParametersByType(cancerTypeId) {
+        return prisma_1.default.investigation_parameter.findMany({
+            where: { cancer_type_id: cancerTypeId, active_status: 1 },
+            orderBy: [{ chart_name: "asc" }, { display_order: "asc" }]
+        });
+    }
+    async findInvestigationParametersByIds(parameterIds) {
+        return prisma_1.default.investigation_parameter.findMany({
+            where: { parameter_id: { in: parameterIds } }
+        });
+    }
+    async listInvestigationResultsForPatient(patientId) {
+        return prisma_1.default.patient_investigation_result.findMany({
+            where: { patient_id: patientId },
+            include: { investigation_parameter: true },
+            orderBy: [{ report_date: "desc" }, { created_at: "desc" }]
+        });
+    }
+    async findInvestigationResultsForVisit(tx, encounterNo) {
+        return tx.patient_investigation_result.findMany({
+            where: { encounter_no: encounterNo },
+            include: { investigation_parameter: true },
+            orderBy: { parameter_id: "asc" }
+        });
+    }
+    async createInvestigationResult(tx, data) {
+        return tx.patient_investigation_result.create({ data });
+    }
+    async updateInvestigationResult(tx, investigationResultId, data) {
+        return tx.patient_investigation_result.update({
+            where: { investigation_result_id: investigationResultId },
+            data: { ...data, updated_at: new Date() }
+        });
+    }
+    async deleteInvestigationResults(tx, encounterNo, parameterIds) {
+        return tx.patient_investigation_result.deleteMany({
+            where: { encounter_no: encounterNo, parameter_id: { in: parameterIds } }
+        });
+    }
+    // -----------------------------------------------------------------
     // Supporting entity lookups (existence checks only - these tables
     // belong to other modules, so no write access here)
     // -----------------------------------------------------------------
