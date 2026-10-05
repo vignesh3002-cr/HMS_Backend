@@ -393,6 +393,7 @@ export class OncologyRepository {
             t_stage: string | null;
             n_stage: string | null;
             m_stage: string | null;
+            histopathology: string | null;
         }[]
     ) {
 
@@ -410,6 +411,7 @@ export class OncologyRepository {
                     t_stage: cancer.t_stage,
                     n_stage: cancer.n_stage,
                     m_stage: cancer.m_stage,
+                    histopathology: cancer.histopathology,
                     display_order: index + 1
                 }))
             });
@@ -425,26 +427,26 @@ export class OncologyRepository {
 
     }
 
+    // Only the columns the screens and the ICD cascade read - every staging
+    // response carries these, so whole master rows / the patient's bio data
+    // (the row already has patient_id) would only add payload.
     private stagingDetailInclude = {
-        cancer_types: true,
-        cancer_subtypes: true,
+        cancer_types: {
+            select: { cancer_type_id: true, cancer_type: true, icd10: true, icd_o3_topography: true, staging_system: true }
+        },
+        cancer_subtypes: {
+            select: { subtype_id: true, subtype_name: true, icd10_subtype: true, icd_o3_morphology: true }
+        },
         oncology_staging_additional_cancers: {
             orderBy: { display_order: "asc" as const },
-            include: { cancer_types: true, cancer_subtypes: true }
+            include: {
+                cancer_types: { select: { cancer_type_id: true, cancer_type: true } },
+                cancer_subtypes: { select: { subtype_id: true, subtype_name: true } }
+            }
         },
         ihc_results: true,
         molecular_results: true,
         derived_fields: true,
-        patient_bio_data: {
-            select: {
-                patient_id: true,
-                patient_first_name: true,
-                patient_last_name: true,
-                patient_dob: true,
-                patient_age: true,
-                patient_gender: true
-            }
-        },
         employees: {
             select: { employee_id: true, first_name: true, last_name: true }
         }
@@ -459,12 +461,9 @@ export class OncologyRepository {
 
     }
 
-    async listStagingDetails(filters: StagingDetailFilterQuery) {
+    private stagingDetailWhere(filters: StagingDetailFilterQuery): Prisma.oncology_staging_detailWhereInput {
 
-        const page = filters.page && filters.page > 0 ? filters.page : 1;
-        const limit = filters.limit && filters.limit > 0 ? Math.min(filters.limit, 100) : 20;
-
-        const where: Prisma.oncology_staging_detailWhereInput = {
+        return {
             ...(filters.patient_id ? { patient_id: filters.patient_id } : {}),
             ...(filters.diagnosis_id ? { diagnosis_id: filters.diagnosis_id } : {}),
             ...(filters.encounter_no ? { encounter_no: filters.encounter_no } : {}),
@@ -481,17 +480,57 @@ export class OncologyRepository {
                 : {})
         };
 
+    }
+
+    // Newest visit first - a row saved on one day may record an earlier
+    // (or, when re-saved, later) visit, so the visit date orders the
+    // history, not the save date.
+    private stagingDetailOrder: Prisma.oncology_staging_detailOrderByWithRelationInput[] = [
+        { visit_date: { sort: "desc", nulls: "last" } },
+        { created_at: "desc" }
+    ];
+
+    private pageOf(filters: StagingDetailFilterQuery) {
+
+        const page = filters.page && filters.page > 0 ? filters.page : 1;
+        const limit = filters.limit && filters.limit > 0 ? Math.min(filters.limit, 100) : 20;
+
+        return { page, limit };
+
+    }
+
+    async listStagingDetails(filters: StagingDetailFilterQuery) {
+
+        const { page, limit } = this.pageOf(filters);
+        const where = this.stagingDetailWhere(filters);
+
         const [rows, total] = await Promise.all([
-            // Newest visit first - a row saved on one day may record an
-            // earlier (or, when re-saved, later) visit, so the visit date
-            // orders the history, not the save date.
             prisma.oncology_staging_detail.findMany({
                 where,
                 include: this.stagingDetailInclude,
-                orderBy: [
-                    { visit_date: { sort: "desc", nulls: "last" } },
-                    { created_at: "desc" }
-                ],
+                orderBy: this.stagingDetailOrder,
+                skip: (page - 1) * limit,
+                take: limit
+            }),
+            prisma.oncology_staging_detail.count({ where })
+        ]);
+
+        return { rows, total, page, limit };
+
+    }
+
+    // The same list, just each row's id and visit (view=ids) - for the
+    // lookups that only need to know which row to load or update.
+    async listStagingDetailIds(filters: StagingDetailFilterQuery) {
+
+        const { page, limit } = this.pageOf(filters);
+        const where = this.stagingDetailWhere(filters);
+
+        const [rows, total] = await Promise.all([
+            prisma.oncology_staging_detail.findMany({
+                where,
+                select: { staging_detail_id: true, encounter_no: true, visit_date: true },
+                orderBy: this.stagingDetailOrder,
                 skip: (page - 1) * limit,
                 take: limit
             }),

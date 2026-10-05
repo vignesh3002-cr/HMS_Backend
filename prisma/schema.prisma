@@ -2128,6 +2128,7 @@ model oncology_staging_additional_cancers {
   t_stage                 String?                 @db.VarChar(100)
   n_stage                 String?                 @db.VarChar(100)
   m_stage                 String?                 @db.VarChar(100)
+  histopathology          String?                 @db.VarChar(100)
   oncology_staging_detail oncology_staging_detail @relation(fields: [staging_detail_id], references: [staging_detail_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_staging_additional_cancer_staging")
   cancer_subtypes         cancer_subtypes?        @relation(fields: [cancer_subtype_id], references: [subtype_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_additional_cancer_subtype")
   cancer_types            cancer_types            @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_additional_cancer_type")
@@ -2176,6 +2177,7 @@ model oncology_staging_detail {
   relapse_date                        DateTime?                             @db.Date
   score                               String?
   score_system                        String?                               @db.VarChar(255)
+  histopathology                      String?                               @db.VarChar(100)
   encounter_no                        String?                               @unique(map: "uq_staging_detail_encounter", where: raw("(encounter_no IS NOT NULL)")) @db.VarChar(100)
   suggested_molecular_test            String?                               @db.VarChar(255)
   suggested_molecular_test_date       DateTime?                             @db.Date

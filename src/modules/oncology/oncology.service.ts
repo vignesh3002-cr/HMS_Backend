@@ -7,10 +7,7 @@ import { deriveOncologyFields, deriveHer2Positive } from "./chemo.derivation";
 import {
     ENCOUNTER_OPEN_STATUS,
     ENCOUNTER_RECENCY_WINDOW_DAYS,
-    LATERALITY_CANCER_TYPES,
-    M_STAGE_VALUES,
-    N_STAGE_VALUES,
-    T_STAGE_VALUES
+    LATERALITY_CANCER_TYPES
 } from "./oncology.constants";
 import { parseTnmValues } from "./tnm.parser";
 import { logAudit, diffFields, summarizeCreate } from "../audit/audit.service";
@@ -525,38 +522,6 @@ export class OncologyService {
 
     }
 
-    // A T / N / M value is storable when it's an AJCC value, or one the
-    // doctors added for that cancer type (tnm_stage_master).
-    private async assertTnmValues(
-        cancerTypeId: string,
-        cancerTypeName: string,
-        values: { t_stage?: string | null; n_stage?: string | null; m_stage?: string | null }
-    ) {
-
-        const checks = [
-            { axis: "T", value: values.t_stage, ajcc: T_STAGE_VALUES },
-            { axis: "N", value: values.n_stage, ajcc: N_STAGE_VALUES },
-            { axis: "M", value: values.m_stage, ajcc: M_STAGE_VALUES }
-        ].filter((check) => check.value && !check.ajcc.includes(check.value));
-
-        if (checks.length === 0) {
-            return;
-        }
-
-        const added = await this.repository.findTnmStagesByType(cancerTypeId);
-
-        for (const check of checks) {
-
-            const known = added.some((row) => row.axis === check.axis && row.stage_value === check.value);
-
-            if (!known) {
-                throw new Error(`${check.axis} stage '${check.value}' is not a recognised value for ${cancerTypeName}`);
-            }
-
-        }
-
-    }
-
     // ---------------------------------------------------------------
     // Investigation Results (Diagnosis tab): the tests tracked for each
     // cancer type, and their values entered on every visit.
@@ -824,6 +789,7 @@ export class OncologyService {
             t_stage: string | null;
             n_stage: string | null;
             m_stage: string | null;
+            histopathology: string | null;
         }[] = [];
 
         for (const entry of list) {
@@ -863,7 +829,6 @@ export class OncologyService {
             }
 
             this.assertLateralityApplies(cancerType.cancer_type, entry.laterality);
-            await this.assertTnmValues(entry.cancer_type_id, cancerType.cancer_type, entry);
 
             rows.push({
                 cancer_type_id: entry.cancer_type_id,
@@ -871,7 +836,8 @@ export class OncologyService {
                 laterality: entry.laterality || null,
                 t_stage: entry.t_stage || null,
                 n_stage: entry.n_stage || null,
-                m_stage: entry.m_stage || null
+                m_stage: entry.m_stage || null,
+                histopathology: entry.histopathology?.trim() || null
             });
 
         }
@@ -948,7 +914,6 @@ export class OncologyService {
         const { cancerType, subtype } = await this.resolveCancerTypeAndSubtype(dto.cancer_type_id, dto.cancer_subtype_id);
 
         this.assertLateralityApplies(cancerType.cancer_type, dto.laterality);
-        await this.assertTnmValues(dto.cancer_type_id, cancerType.cancer_type, dto);
 
         const additionalCancers = await this.resolveAdditionalCancers(dto.cancer_type_id, dto.additional_cancers ?? []);
 
@@ -1025,6 +990,7 @@ export class OncologyService {
                 consulting_oncologist: dto.consulting_oncologist ?? null,
                 cancer_type_id: dto.cancer_type_id,
                 cancer_subtype_id: dto.cancer_subtype_id,
+                histopathology: dto.histopathology?.trim() || null,
                 icd10_code: cascade.icd10_code,
                 icd_o3_topo: cascade.icd_o3_topo,
                 icd_o3_morpho: cascade.icd_o3_morpho,
@@ -1149,7 +1115,6 @@ export class OncologyService {
         this.assertLateralityApplies(cancerType.cancer_type, dto.laterality);
 
         const finalCancerTypeId = dto.cancer_type_id ?? existing.cancer_type_id;
-        await this.assertTnmValues(finalCancerTypeId, cancerType.cancer_type, dto);
 
         const additionalCancers = dto.additional_cancers !== undefined && dto.additional_cancers !== null
             ? await this.resolveAdditionalCancers(finalCancerTypeId, dto.additional_cancers)
@@ -1210,6 +1175,7 @@ export class OncologyService {
                 icd_o3_morpho: cascade.icd_o3_morpho,
                 staging_system: cascade.staging_system
             } : {}),
+            ...(dto.histopathology !== undefined ? { histopathology: dto.histopathology?.trim() || null } : {}),
             ...(dto.clinical_stage !== undefined && dto.clinical_stage !== null ? { clinical_stage: dto.clinical_stage } : {}),
             ...(dto.t_stage !== undefined && dto.t_stage !== null ? { t_stage: dto.t_stage } : {}),
             ...(dto.n_stage !== undefined && dto.n_stage !== null ? { n_stage: dto.n_stage } : {}),
@@ -1414,6 +1380,10 @@ export class OncologyService {
     }
 
     async listStagingDetails(filters: StagingDetailFilterQuery) {
+
+        if (filters.view === "ids") {
+            return this.repository.listStagingDetailIds(filters);
+        }
 
         const { rows, total, page, limit } = await this.repository.listStagingDetails(filters);
         const params = await this.repository.loadClinicalParameters();

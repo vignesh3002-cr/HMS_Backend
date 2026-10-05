@@ -436,7 +436,8 @@ export class OncologyController {
                 date_from: req.query.date_from as string | undefined,
                 date_to: req.query.date_to as string | undefined,
                 page: req.query.page ? Number(req.query.page) : undefined,
-                limit: req.query.limit ? Number(req.query.limit) : undefined
+                limit: req.query.limit ? Number(req.query.limit) : undefined,
+                view: req.query.view === "ids" ? "ids" : undefined
             });
 
             return res.json({

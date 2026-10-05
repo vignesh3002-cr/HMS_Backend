@@ -78,14 +78,18 @@ type DiagnosedCancer = {
     cancer_subtype: string | null;
 };
 
+// histopathology: the doctor's own wording for this patient, which wins
+// over the subtype's name wherever the diagnosis is shown or copied.
 type StagingCancers = {
     cancer_type_id: string;
     cancer_subtype_id: string;
+    histopathology?: string | null;
     cancer_types: { cancer_type: string };
     cancer_subtypes: { subtype_name: string };
     oncology_staging_additional_cancers?: {
         cancer_type_id: string;
         cancer_subtype_id: string | null;
+        histopathology?: string | null;
         cancer_types: { cancer_type: string };
         cancer_subtypes: { subtype_name: string } | null;
     }[];
@@ -98,13 +102,13 @@ function diagnosedCancers(staging: StagingCancers): DiagnosedCancer[] {
             cancer_type_id: staging.cancer_type_id,
             cancer_subtype_id: staging.cancer_subtype_id,
             cancer_type: staging.cancer_types.cancer_type,
-            cancer_subtype: staging.cancer_subtypes.subtype_name
+            cancer_subtype: staging.histopathology || staging.cancer_subtypes.subtype_name
         },
         ...(staging.oncology_staging_additional_cancers ?? []).map((extra) => ({
             cancer_type_id: extra.cancer_type_id,
             cancer_subtype_id: extra.cancer_subtype_id,
             cancer_type: extra.cancer_types.cancer_type,
-            cancer_subtype: extra.cancer_subtypes?.subtype_name ?? null
+            cancer_subtype: extra.histopathology || extra.cancer_subtypes?.subtype_name || null
         }))
     ];
 
@@ -398,7 +402,7 @@ export class ChemotherapyService {
             staging_detail_id: staging.staging_detail_id,
             patient_id: staging.patient_id,
             cancer_type: staging.cancer_types.cancer_type,
-            cancer_subtype: staging.cancer_subtypes.subtype_name,
+            cancer_subtype: staging.histopathology || staging.cancer_subtypes.subtype_name,
             additional_cancers: cancers.slice(1),
             clinical_stage: staging.clinical_stage,
             suggested_therapy: staging.derived_fields?.suggested_therapy ?? null,
