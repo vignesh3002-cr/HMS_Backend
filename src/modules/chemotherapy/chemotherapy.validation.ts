@@ -457,6 +457,10 @@ function planItemListRules(prefix: string) {
         body(`${prefix}calculated_dose`).optional({ nullable: true }).isFloat({ min: 0 }),
         body(`${prefix}infusion_duration_minutes`).optional({ nullable: true }).isInt({ min: 0 }).withMessage("Infusion duration must be whole minutes"),
         body(`${prefix}administration_day`).optional({ nullable: true }).isInt({ min: 1 }),
+        /* Free text on the row, e.g. the Dilution tab's "500 mL"; the column
+           is VARCHAR(100), so reject a longer value here rather than let it
+           fail on insert. */
+        body(`${prefix}dilution_volume`).optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Dilution volume must be at most 100 characters"),
         body(`${prefix}formulation`).optional({ nullable: true }).isString().isLength({ max: 100 }),
         body(`${prefix}administration_route`).optional({ nullable: true }).isString().isLength({ max: 100 }),
         body(`${prefix}infusion_type`).optional({ nullable: true }).isString().isLength({ max: 100 }),

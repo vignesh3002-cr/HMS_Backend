@@ -281,7 +281,7 @@ export interface PlanItemInputDto {
     // name - no medicine_id and a drug_name kept only on this plan.
     medicine_id?: string | null;
     drug_name?: string | null;
-    drug_role?: "PRIMARY" | "PREMEDICATION" | "POSTMEDICATION" | "SUPPORTIVE" | "DISCHARGE";
+    drug_role?: "PRIMARY" | "PREMEDICATION" | "POSTMEDICATION" | "SUPPORTIVE" | "DISCHARGE" | "DILUTION";
     drug_sequence: number;
     drug_type?: string | null;
     dosage?: number | null;
