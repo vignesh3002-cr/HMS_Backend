@@ -3,6 +3,21 @@ import prisma from "../../config/prisma";
 import { generateId } from "../../utils/idGenerator";
 import { ClinicalParameters, StagingDetailFilterQuery } from "./oncology.types";
 
+// The master tables a doctor can add Diagnosis dropdown values to: the id
+// column, the id_sequences entity it's generated from, and which of
+// display_order / active_status / updated_at the table keeps.
+export const REFERENCE_TABLES = {
+    anatomical_site_master: { idColumn: "site_id", entity: "ANATOMICAL_SITE", ordered: true, hasActiveStatus: true, hasUpdatedAt: true },
+    cancer_subtypes: { idColumn: "subtype_id", entity: "CANCER_SUBTYPE", ordered: false, hasActiveStatus: true, hasUpdatedAt: false },
+    staging_reference: { idColumn: "stage_ref_id", entity: "STAGING_REFERENCE", ordered: false, hasActiveStatus: false, hasUpdatedAt: false },
+    cancer_grade_master: { idColumn: "grade_id", entity: "CANCER_GRADE", ordered: true, hasActiveStatus: true, hasUpdatedAt: true },
+    cancer_score: { idColumn: "score_id", entity: "CANCER_SCORE", ordered: true, hasActiveStatus: true, hasUpdatedAt: true },
+    tnm_stage_master: { idColumn: "tnm_id", entity: "TNM_STAGE", ordered: true, hasActiveStatus: true, hasUpdatedAt: true },
+    disease_status_master: { idColumn: "disease_status_id", entity: "DISEASE_STATUS", ordered: true, hasActiveStatus: true, hasUpdatedAt: true }
+} as const;
+
+export type ReferenceTable = keyof typeof REFERENCE_TABLES;
+
 // Fallback values match prisma/seedOncology.ts's CLINICAL_PARAMETERS exactly -
 // used only if a row is somehow missing from the DB, so derivation never
 // hard-fails just because the reference seed hasn't been (re)run yet.
@@ -144,6 +159,71 @@ export class OncologyRepository {
         return prisma.cancer_score.findMany({
             where: { cancer_type_id: cancerTypeId, active_status: 1 },
             orderBy: [{ score_system: "asc" as const }, { display_order: "asc" as const }]
+        });
+
+    }
+
+    // T / N / M values doctors added for a cancer type, on top of the AJCC
+    // values the staging criteria name.
+    async findTnmStagesByType(cancerTypeId: string) {
+
+        return prisma.tnm_stage_master.findMany({
+            where: { cancer_type_id: cancerTypeId, active_status: 1 },
+            orderBy: [{ axis: "asc" as const }, { display_order: "asc" as const }]
+        });
+
+    }
+
+    async findDiseaseStatuses() {
+
+        return prisma.disease_status_master.findMany({
+            where: { active_status: 1 },
+            orderBy: [{ display_order: "asc" as const }, { status_name: "asc" as const }]
+        });
+
+    }
+
+    // -----------------------------------------------------------------
+    // Values a doctor adds from a Diagnosis dropdown. Each lands in its own
+    // master table; these helpers are shared by all of them.
+    // -----------------------------------------------------------------
+
+    private referenceDelegate(client: Prisma.TransactionClient | typeof prisma, table: ReferenceTable) {
+
+        return (client as any)[table];
+
+    }
+
+    async findReferenceValue(table: ReferenceTable, where: Record<string, unknown>) {
+
+        return this.referenceDelegate(prisma, table).findFirst({ where });
+
+    }
+
+    async nextReferenceDisplayOrder(table: ReferenceTable, where: Record<string, unknown>): Promise<number> {
+
+        const result = await this.referenceDelegate(prisma, table).aggregate({
+            where,
+            _max: { display_order: true }
+        });
+
+        return (result._max.display_order ?? 0) + 1;
+
+    }
+
+    async createReferenceValue(tx: Prisma.TransactionClient, table: ReferenceTable, data: Record<string, unknown>) {
+
+        return this.referenceDelegate(tx, table).create({ data });
+
+    }
+
+    async reactivateReferenceValue(tx: Prisma.TransactionClient, table: ReferenceTable, id: string) {
+
+        const config = REFERENCE_TABLES[table];
+
+        return this.referenceDelegate(tx, table).update({
+            where: { [config.idColumn]: id },
+            data: { active_status: 1, ...(config.hasUpdatedAt ? { updated_at: new Date() } : {}) }
         });
 
     }

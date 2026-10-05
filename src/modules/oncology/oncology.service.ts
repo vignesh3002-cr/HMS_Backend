@@ -1,10 +1,17 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
-import { generateIdBatch } from "../../utils/idGenerator";
-import { OncologyRepository } from "./oncology.repository";
+import { generateId, generateIdBatch } from "../../utils/idGenerator";
+import { OncologyRepository, REFERENCE_TABLES, ReferenceTable } from "./oncology.repository";
 import { validateOncologyRecord } from "./chemo.validation";
 import { deriveOncologyFields, deriveHer2Positive } from "./chemo.derivation";
-import { ENCOUNTER_OPEN_STATUS, ENCOUNTER_RECENCY_WINDOW_DAYS, LATERALITY_CANCER_TYPES } from "./oncology.constants";
+import {
+    ENCOUNTER_OPEN_STATUS,
+    ENCOUNTER_RECENCY_WINDOW_DAYS,
+    LATERALITY_CANCER_TYPES,
+    M_STAGE_VALUES,
+    N_STAGE_VALUES,
+    T_STAGE_VALUES
+} from "./oncology.constants";
 import { parseTnmValues } from "./tnm.parser";
 import { logAudit, diffFields, summarizeCreate } from "../audit/audit.service";
 import { AUDIT_ACTION } from "../audit/audit.types";
@@ -37,6 +44,9 @@ export class OncologyValidationError extends Error {
     }
 
 }
+
+// Case-insensitive equality filter for a text column.
+const insensitive = (value: string) => ({ equals: value, mode: "insensitive" as const });
 
 // ---------------------------------------------------------------------------
 // DB row -> validation/derivation Input mappers. Decimal columns (her2_fish_ratio,
@@ -266,6 +276,284 @@ export class OncologyService {
         }
 
         return this.repository.findCancerScoresByType(cancerTypeId);
+
+    }
+
+    async listTnmStages(cancerTypeId: string) {
+
+        await this.requireCancerType(cancerTypeId);
+
+        return this.repository.findTnmStagesByType(cancerTypeId);
+
+    }
+
+    async listDiseaseStatuses() {
+
+        return this.repository.findDiseaseStatuses();
+
+    }
+
+    // ---------------------------------------------------------------
+    // Values a doctor adds from a Diagnosis dropdown (Body Site,
+    // Histopathology, Cancer Stage, Grade, Score, T / N / M - per cancer
+    // type - and Disease Status). Each is stored in its master table, so it
+    // is offered for every patient from then on.
+    // ---------------------------------------------------------------
+
+    private async requireCancerType(cancerTypeId: string) {
+
+        const cancerType = await this.repository.findCancerTypeById(cancerTypeId);
+
+        if (!cancerType) {
+            throw new Error("Cancer type not found");
+        }
+
+        return cancerType;
+
+    }
+
+    // The same value (any letter case) already there is returned instead of
+    // a duplicate row - re-activated first if it had been retired.
+    private async addReferenceValue(
+        table: ReferenceTable,
+        match: Record<string, unknown>,
+        build: () => Promise<Record<string, unknown>>,
+        actingUserId: string
+    ): Promise<{ row: any; created: boolean }> {
+
+        const config = REFERENCE_TABLES[table];
+        const existing = await this.repository.findReferenceValue(table, match);
+
+        if (existing) {
+
+            if (!config.hasActiveStatus || existing.active_status === 1) {
+                return { row: existing, created: false };
+            }
+
+            const entityId = existing[config.idColumn] as string;
+            const row = await prisma.$transaction(async (tx) => {
+
+                const updated = await this.repository.reactivateReferenceValue(tx, table, entityId);
+
+                await logAudit(tx, {
+                    entity_type: table,
+                    entity_id: entityId,
+                    action: AUDIT_ACTION.UPDATE,
+                    performed_by: actingUserId,
+                    change_summary: diffFields(existing, { active_status: 1 })
+                });
+
+                return updated;
+
+            });
+
+            return { row, created: true };
+
+        }
+
+        const fields = await build();
+        const row = await prisma.$transaction(async (tx) => {
+
+            const entityId = await generateId(tx, config.entity);
+            const created = await this.repository.createReferenceValue(tx, table, {
+                [config.idColumn]: entityId,
+                ...fields,
+                ...(config.hasActiveStatus ? { active_status: 1 } : {}),
+                created_by: actingUserId
+            });
+
+            await logAudit(tx, {
+                entity_type: table,
+                entity_id: entityId,
+                action: AUDIT_ACTION.CREATE,
+                performed_by: actingUserId,
+                change_summary: summarizeCreate(fields)
+            });
+
+            return created;
+
+        }, { timeout: 20000 });
+
+        return { row, created: true };
+
+    }
+
+    async addAnatomicalSite(cancerTypeId: string, value: string, actingUserId: string) {
+
+        await this.requireCancerType(cancerTypeId);
+        const siteName = value.trim();
+
+        return this.addReferenceValue(
+            "anatomical_site_master",
+            { cancer_type_id: cancerTypeId, site_name: insensitive(siteName) },
+            async () => ({
+                cancer_type_id: cancerTypeId,
+                site_name: siteName,
+                display_order: await this.repository.nextReferenceDisplayOrder("anatomical_site_master", { cancer_type_id: cancerTypeId })
+            }),
+            actingUserId
+        );
+
+    }
+
+    async addCancerSubtype(cancerTypeId: string, value: string, actingUserId: string) {
+
+        await this.requireCancerType(cancerTypeId);
+        const subtypeName = value.trim();
+
+        return this.addReferenceValue(
+            "cancer_subtypes",
+            { cancer_type_id: cancerTypeId, subtype_name: insensitive(subtypeName) },
+            async () => ({ cancer_type_id: cancerTypeId, subtype_name: subtypeName }),
+            actingUserId
+        );
+
+    }
+
+    // A Cancer Stage is a staging_reference row with just its label (and
+    // the cancer type's staging system); it names no TNM criteria.
+    async addStagingStage(cancerTypeId: string, value: string, actingUserId: string) {
+
+        const cancerType = await this.requireCancerType(cancerTypeId);
+        const stageLabel = value.trim();
+
+        return this.addReferenceValue(
+            "staging_reference",
+            { cancer_type_id: cancerTypeId, stage_label: insensitive(stageLabel) },
+            async () => ({
+                cancer_type_id: cancerTypeId,
+                stage_label: stageLabel,
+                staging_system: cancerType.staging_system ?? null
+            }),
+            actingUserId
+        );
+
+    }
+
+    // The Grade list shows the value alone, so one value per cancer type
+    // whatever its system.
+    async addCancerGrade(cancerTypeId: string, value: string, system: string, actingUserId: string) {
+
+        await this.requireCancerType(cancerTypeId);
+        const gradeValue = value.trim();
+
+        return this.addReferenceValue(
+            "cancer_grade_master",
+            { cancer_type_id: cancerTypeId, grade_value: insensitive(gradeValue) },
+            async () => ({
+                cancer_type_id: cancerTypeId,
+                grade_system: system.trim(),
+                grade_value: gradeValue,
+                display_order: await this.repository.nextReferenceDisplayOrder("cancer_grade_master", { cancer_type_id: cancerTypeId })
+            }),
+            actingUserId
+        );
+
+    }
+
+    // Scores are listed per score system, so the value is unique within
+    // its system (uq_cancer_score_value).
+    async addCancerScore(cancerTypeId: string, value: string, system: string, actingUserId: string) {
+
+        await this.requireCancerType(cancerTypeId);
+        const scoreValue = value.trim();
+        const scoreSystem = system.trim();
+
+        return this.addReferenceValue(
+            "cancer_score",
+            {
+                cancer_type_id: cancerTypeId,
+                score_system: insensitive(scoreSystem),
+                score_value: insensitive(scoreValue)
+            },
+            async () => ({
+                cancer_type_id: cancerTypeId,
+                score_system: scoreSystem,
+                score_value: scoreValue,
+                display_order: await this.repository.nextReferenceDisplayOrder("cancer_score", {
+                    cancer_type_id: cancerTypeId,
+                    score_system: scoreSystem
+                })
+            }),
+            actingUserId
+        );
+
+    }
+
+    async addTnmStage(cancerTypeId: string, axis: string, value: string, actingUserId: string) {
+
+        await this.requireCancerType(cancerTypeId);
+        const stageAxis = axis.toUpperCase();
+        // "t4c" -> "T4c": the axis letter is always upper case.
+        const trimmed = value.trim();
+        const stageValue = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+
+        if (stageValue.charAt(0) !== stageAxis) {
+            throw new Error(`${stageAxis} stage values must start with "${stageAxis}"`);
+        }
+
+        return this.addReferenceValue(
+            "tnm_stage_master",
+            { cancer_type_id: cancerTypeId, axis: stageAxis, stage_value: insensitive(stageValue) },
+            async () => ({
+                cancer_type_id: cancerTypeId,
+                axis: stageAxis,
+                stage_value: stageValue,
+                display_order: await this.repository.nextReferenceDisplayOrder("tnm_stage_master", {
+                    cancer_type_id: cancerTypeId,
+                    axis: stageAxis
+                })
+            }),
+            actingUserId
+        );
+
+    }
+
+    async addDiseaseStatus(value: string, actingUserId: string) {
+
+        const statusName = value.trim();
+
+        return this.addReferenceValue(
+            "disease_status_master",
+            { status_name: insensitive(statusName) },
+            async () => ({
+                status_name: statusName,
+                display_order: await this.repository.nextReferenceDisplayOrder("disease_status_master", {})
+            }),
+            actingUserId
+        );
+
+    }
+
+    // A T / N / M value is storable when it's an AJCC value, or one the
+    // doctors added for that cancer type (tnm_stage_master).
+    private async assertTnmValues(
+        cancerTypeId: string,
+        cancerTypeName: string,
+        values: { t_stage?: string | null; n_stage?: string | null; m_stage?: string | null }
+    ) {
+
+        const checks = [
+            { axis: "T", value: values.t_stage, ajcc: T_STAGE_VALUES },
+            { axis: "N", value: values.n_stage, ajcc: N_STAGE_VALUES },
+            { axis: "M", value: values.m_stage, ajcc: M_STAGE_VALUES }
+        ].filter((check) => check.value && !check.ajcc.includes(check.value));
+
+        if (checks.length === 0) {
+            return;
+        }
+
+        const added = await this.repository.findTnmStagesByType(cancerTypeId);
+
+        for (const check of checks) {
+
+            const known = added.some((row) => row.axis === check.axis && row.stage_value === check.value);
+
+            if (!known) {
+                throw new Error(`${check.axis} stage '${check.value}' is not a recognised value for ${cancerTypeName}`);
+            }
+
+        }
 
     }
 
@@ -575,6 +863,7 @@ export class OncologyService {
             }
 
             this.assertLateralityApplies(cancerType.cancer_type, entry.laterality);
+            await this.assertTnmValues(entry.cancer_type_id, cancerType.cancer_type, entry);
 
             rows.push({
                 cancer_type_id: entry.cancer_type_id,
@@ -659,6 +948,7 @@ export class OncologyService {
         const { cancerType, subtype } = await this.resolveCancerTypeAndSubtype(dto.cancer_type_id, dto.cancer_subtype_id);
 
         this.assertLateralityApplies(cancerType.cancer_type, dto.laterality);
+        await this.assertTnmValues(dto.cancer_type_id, cancerType.cancer_type, dto);
 
         const additionalCancers = await this.resolveAdditionalCancers(dto.cancer_type_id, dto.additional_cancers ?? []);
 
@@ -859,6 +1149,8 @@ export class OncologyService {
         this.assertLateralityApplies(cancerType.cancer_type, dto.laterality);
 
         const finalCancerTypeId = dto.cancer_type_id ?? existing.cancer_type_id;
+        await this.assertTnmValues(finalCancerTypeId, cancerType.cancer_type, dto);
+
         const additionalCancers = dto.additional_cancers !== undefined && dto.additional_cancers !== null
             ? await this.resolveAdditionalCancers(finalCancerTypeId, dto.additional_cancers)
             : null;

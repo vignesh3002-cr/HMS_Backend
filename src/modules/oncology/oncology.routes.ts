@@ -12,7 +12,12 @@ import {
     getStagingDetailValidation,
     listStagingDetailsValidation,
     listInvestigationResultsValidation,
-    saveInvestigationResultsValidation
+    saveInvestigationResultsValidation,
+    addReferenceValueValidation,
+    addGradeValidation,
+    addScoreValidation,
+    addTnmStageValidation,
+    addDiseaseStatusValidation
 } from "./oncology.validation";
 
 const router = Router();
@@ -88,6 +93,85 @@ router.get(
     authenticate,
     authorize("oncology.reference.read"),
     controller.getMolecularSubtypes.bind(controller)
+);
+
+// T / N / M values doctors added for a cancer type (the AJCC ones come with
+// /reference/staging).
+router.get(
+    "/reference/cancer-types/:cancerTypeId/tnm-stages",
+    authenticate,
+    authorize("oncology.reference.read"),
+    getCancerSubtypesValidation,
+    controller.getTnmStages.bind(controller)
+);
+
+router.get(
+    "/reference/disease-statuses",
+    authenticate,
+    authorize("oncology.reference.read"),
+    controller.getDiseaseStatuses.bind(controller)
+);
+
+// ---------------- Values added from a Diagnosis dropdown ----------------
+// Added by the doctor while recording a diagnosis, so either Diagnosis
+// permission will do.
+
+const addReferenceAccess = authorizeAny("oncology.diagnosis.create", "oncology.diagnosis.update");
+
+router.post(
+    "/reference/cancer-types/:cancerTypeId/sites",
+    authenticate,
+    addReferenceAccess,
+    addReferenceValueValidation,
+    controller.addAnatomicalSite.bind(controller)
+);
+
+router.post(
+    "/reference/cancer-types/:cancerTypeId/subtypes",
+    authenticate,
+    addReferenceAccess,
+    addReferenceValueValidation,
+    controller.addCancerSubtype.bind(controller)
+);
+
+router.post(
+    "/reference/cancer-types/:cancerTypeId/stages",
+    authenticate,
+    addReferenceAccess,
+    addReferenceValueValidation,
+    controller.addStagingStage.bind(controller)
+);
+
+router.post(
+    "/reference/cancer-types/:cancerTypeId/grades",
+    authenticate,
+    addReferenceAccess,
+    addGradeValidation,
+    controller.addCancerGrade.bind(controller)
+);
+
+router.post(
+    "/reference/cancer-types/:cancerTypeId/scores",
+    authenticate,
+    addReferenceAccess,
+    addScoreValidation,
+    controller.addCancerScore.bind(controller)
+);
+
+router.post(
+    "/reference/cancer-types/:cancerTypeId/tnm-stages",
+    authenticate,
+    addReferenceAccess,
+    addTnmStageValidation,
+    controller.addTnmStage.bind(controller)
+);
+
+router.post(
+    "/reference/disease-statuses",
+    authenticate,
+    addReferenceAccess,
+    addDiseaseStatusValidation,
+    controller.addDiseaseStatus.bind(controller)
 );
 
 router.post(

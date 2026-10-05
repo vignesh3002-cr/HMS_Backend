@@ -1,5 +1,5 @@
 import { body, param, query } from "express-validator";
-import { LATERALITY_VALUES, M_STAGE_VALUES, N_STAGE_VALUES, T_STAGE_VALUES } from "./oncology.constants";
+import { LATERALITY_VALUES } from "./oncology.constants";
 
 // Request-shape validation only (types, presence, ranges that would otherwise
 // throw a raw DB error - e.g. an out-of-range percent). The clinical
@@ -60,13 +60,13 @@ export const createStagingDetailValidation = [
     body("additional_cancers.*.cancer_type_id").notEmpty().withMessage("Each additional cancer requires a cancer_type_id"),
     body("additional_cancers.*.cancer_subtype_id").optional({ nullable: true }).isString(),
     body("laterality").optional({ nullable: true }).isIn(LATERALITY_VALUES).withMessage(`Laterality must be one of: ${LATERALITY_VALUES.join(", ")}`),
-    body("t_stage").optional({ nullable: true }).isIn(T_STAGE_VALUES).withMessage(`T stage must be a single value, one of: ${T_STAGE_VALUES.join(", ")}`),
-    body("n_stage").optional({ nullable: true }).isIn(N_STAGE_VALUES).withMessage(`N stage must be a single value, one of: ${N_STAGE_VALUES.join(", ")}`),
-    body("m_stage").optional({ nullable: true }).isIn(M_STAGE_VALUES).withMessage(`M stage must be a single value, one of: ${M_STAGE_VALUES.join(", ")}`),
+    body("t_stage").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("T stage must be a single value"),
+    body("n_stage").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("N stage must be a single value"),
+    body("m_stage").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("M stage must be a single value"),
     body("additional_cancers.*.laterality").optional({ nullable: true }).isIn(LATERALITY_VALUES).withMessage(`Laterality must be one of: ${LATERALITY_VALUES.join(", ")}`),
-    body("additional_cancers.*.t_stage").optional({ nullable: true }).isIn(T_STAGE_VALUES).withMessage(`T stage must be a single value, one of: ${T_STAGE_VALUES.join(", ")}`),
-    body("additional_cancers.*.n_stage").optional({ nullable: true }).isIn(N_STAGE_VALUES).withMessage(`N stage must be a single value, one of: ${N_STAGE_VALUES.join(", ")}`),
-    body("additional_cancers.*.m_stage").optional({ nullable: true }).isIn(M_STAGE_VALUES).withMessage(`M stage must be a single value, one of: ${M_STAGE_VALUES.join(", ")}`),
+    body("additional_cancers.*.t_stage").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("T stage must be a single value"),
+    body("additional_cancers.*.n_stage").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("N stage must be a single value"),
+    body("additional_cancers.*.m_stage").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("M stage must be a single value"),
     body("site").optional({ nullable: true }).isString(),
     body("grade").optional({ nullable: true }).isString(),
     body("grade_system").optional({ nullable: true }).isString(),
@@ -97,13 +97,13 @@ export const updateStagingDetailValidation = [
     body("additional_cancers.*.cancer_type_id").notEmpty().withMessage("Each additional cancer requires a cancer_type_id"),
     body("additional_cancers.*.cancer_subtype_id").optional({ nullable: true }).isString(),
     body("laterality").optional({ nullable: true }).isIn(LATERALITY_VALUES).withMessage(`Laterality must be one of: ${LATERALITY_VALUES.join(", ")}`),
-    body("t_stage").optional({ nullable: true }).isIn(T_STAGE_VALUES).withMessage(`T stage must be a single value, one of: ${T_STAGE_VALUES.join(", ")}`),
-    body("n_stage").optional({ nullable: true }).isIn(N_STAGE_VALUES).withMessage(`N stage must be a single value, one of: ${N_STAGE_VALUES.join(", ")}`),
-    body("m_stage").optional({ nullable: true }).isIn(M_STAGE_VALUES).withMessage(`M stage must be a single value, one of: ${M_STAGE_VALUES.join(", ")}`),
+    body("t_stage").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("T stage must be a single value"),
+    body("n_stage").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("N stage must be a single value"),
+    body("m_stage").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("M stage must be a single value"),
     body("additional_cancers.*.laterality").optional({ nullable: true }).isIn(LATERALITY_VALUES).withMessage(`Laterality must be one of: ${LATERALITY_VALUES.join(", ")}`),
-    body("additional_cancers.*.t_stage").optional({ nullable: true }).isIn(T_STAGE_VALUES).withMessage(`T stage must be a single value, one of: ${T_STAGE_VALUES.join(", ")}`),
-    body("additional_cancers.*.n_stage").optional({ nullable: true }).isIn(N_STAGE_VALUES).withMessage(`N stage must be a single value, one of: ${N_STAGE_VALUES.join(", ")}`),
-    body("additional_cancers.*.m_stage").optional({ nullable: true }).isIn(M_STAGE_VALUES).withMessage(`M stage must be a single value, one of: ${M_STAGE_VALUES.join(", ")}`),
+    body("additional_cancers.*.t_stage").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("T stage must be a single value"),
+    body("additional_cancers.*.n_stage").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("N stage must be a single value"),
+    body("additional_cancers.*.m_stage").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("M stage must be a single value"),
     body("site").optional({ nullable: true }).isString(),
     body("grade").optional({ nullable: true }).isString(),
     body("grade_system").optional({ nullable: true }).isString(),
@@ -154,6 +154,54 @@ export const listStagingDetailsValidation = [
     query("limit").optional().isInt({ min: 1, max: 100 }),
     query("date_from").optional().isISO8601(),
     query("date_to").optional().isISO8601()
+
+];
+
+// ---------------- Values added from a Diagnosis dropdown ----------------
+
+const referenceValueRule = body("value")
+    .isString().withMessage("A value is required")
+    .bail()
+    .trim()
+    .notEmpty().withMessage("A value is required")
+    .isLength({ max: 100 }).withMessage("The value must be 100 characters or fewer");
+
+export const addReferenceValueValidation = [
+
+    param("cancerTypeId").notEmpty(),
+    referenceValueRule
+
+];
+
+export const addGradeValidation = [
+
+    ...addReferenceValueValidation,
+    body("system").isString().bail().trim().notEmpty().withMessage("A grade system is required")
+        .isLength({ max: 100 }).withMessage("The grade system must be 100 characters or fewer")
+
+];
+
+export const addScoreValidation = [
+
+    ...addReferenceValueValidation,
+    body("system").isString().bail().trim().notEmpty().withMessage("A score system is required")
+        .isLength({ max: 150 }).withMessage("The score system must be 150 characters or fewer")
+
+];
+
+export const addTnmStageValidation = [
+
+    ...addReferenceValueValidation,
+    body("axis").isIn(["T", "N", "M"]).withMessage("axis must be T, N or M"),
+    // A stage value: its axis letter, then up to 19 more characters.
+    body("value").matches(/^[TNMtnm][A-Za-z0-9()+\-./ ]{0,19}$/)
+        .withMessage("Enter a stage value such as T4c, N1c or M1d")
+
+];
+
+export const addDiseaseStatusValidation = [
+
+    referenceValueRule
 
 ];
 
