@@ -196,6 +196,7 @@ export interface CreateStagingDetailDto {
     diagnosis_date?: string | null;
     progression_date?: string | null;
     relapse_date?: string | null;
+    second_primary_date?: string | null;
     biopsy_date?: string | null;
     consulting_oncologist?: string | null;
     cancer_type_id: string;
@@ -236,6 +237,7 @@ export interface UpdateStagingDetailDto {
     diagnosis_date?: string | null;
     progression_date?: string | null;
     relapse_date?: string | null;
+    second_primary_date?: string | null;
     biopsy_date?: string | null;
     consulting_oncologist?: string | null;
     cancer_type_id?: string;

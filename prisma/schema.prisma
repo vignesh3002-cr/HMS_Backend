@@ -2175,6 +2175,7 @@ model oncology_staging_detail {
   notes                               String?
   progression_date                    DateTime?                             @db.Date
   relapse_date                        DateTime?                             @db.Date
+  second_primary_date                 DateTime?                             @db.Date
   score                               String?
   score_system                        String?                               @db.VarChar(255)
   histopathology                      String?                               @db.VarChar(100)

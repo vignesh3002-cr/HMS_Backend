@@ -986,6 +986,7 @@ export class OncologyService {
                 diagnosis_date: dto.diagnosis_date ? new Date(dto.diagnosis_date) : null,
                 progression_date: dto.progression_date ? new Date(dto.progression_date) : null,
                 relapse_date: dto.relapse_date ? new Date(dto.relapse_date) : null,
+                second_primary_date: dto.second_primary_date ? new Date(dto.second_primary_date) : null,
                 biopsy_date: dto.biopsy_date ? new Date(dto.biopsy_date) : null,
                 consulting_oncologist: dto.consulting_oncologist ?? null,
                 cancer_type_id: dto.cancer_type_id,
@@ -1165,6 +1166,7 @@ export class OncologyService {
             ...(dto.diagnosis_date !== undefined ? { diagnosis_date: dto.diagnosis_date ? new Date(dto.diagnosis_date) : null } : {}),
             ...(dto.progression_date !== undefined ? { progression_date: dto.progression_date ? new Date(dto.progression_date) : null } : {}),
             ...(dto.relapse_date !== undefined ? { relapse_date: dto.relapse_date ? new Date(dto.relapse_date) : null } : {}),
+            ...(dto.second_primary_date !== undefined ? { second_primary_date: dto.second_primary_date ? new Date(dto.second_primary_date) : null } : {}),
             ...(dto.biopsy_date !== undefined ? { biopsy_date: dto.biopsy_date ? new Date(dto.biopsy_date) : null } : {}),
             ...(dto.consulting_oncologist !== undefined && dto.consulting_oncologist !== null ? { consulting_oncologist: dto.consulting_oncologist } : {}),
             ...(subtypeChanging ? {
