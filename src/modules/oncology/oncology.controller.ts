@@ -187,6 +187,121 @@ export class OncologyController {
 
     }
 
+    async getTnmStages(req: Request, res: Response) {
+
+        try {
+
+            const data = await service.listTnmStages(req.params.cancerTypeId as string);
+            return res.json({ success: true, message: "T / N / M stages fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async getDiseaseStatuses(req: Request, res: Response) {
+
+        try {
+
+            const data = await service.listDiseaseStatuses();
+            return res.json({ success: true, message: "Disease statuses fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    // ---------------- Values added from a Diagnosis dropdown ----------------
+
+    // 201 with the new row, or 200 with the row that already had this value.
+    private async respondReferenceValue(
+        req: Request,
+        res: Response,
+        label: string,
+        add: () => Promise<{ row: any; created: boolean }>
+    ) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ success: false, message: errors.array()[0].msg, errors: errors.array() });
+            }
+
+            const { row, created } = await add();
+
+            return res.status(created ? 201 : 200).json({
+                success: true,
+                message: created ? `${label} added successfully` : `${label} already exists`,
+                data: row,
+                created
+            });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async addAnatomicalSite(req: Request, res: Response) {
+
+        return this.respondReferenceValue(req, res, "Body site", () =>
+            service.addAnatomicalSite(req.params.cancerTypeId as string, req.body.value, actingUserId(req))
+        );
+
+    }
+
+    async addCancerSubtype(req: Request, res: Response) {
+
+        return this.respondReferenceValue(req, res, "Histopathology", () =>
+            service.addCancerSubtype(req.params.cancerTypeId as string, req.body.value, actingUserId(req))
+        );
+
+    }
+
+    async addStagingStage(req: Request, res: Response) {
+
+        return this.respondReferenceValue(req, res, "Cancer stage", () =>
+            service.addStagingStage(req.params.cancerTypeId as string, req.body.value, actingUserId(req))
+        );
+
+    }
+
+    async addCancerGrade(req: Request, res: Response) {
+
+        return this.respondReferenceValue(req, res, "Grade", () =>
+            service.addCancerGrade(req.params.cancerTypeId as string, req.body.value, req.body.system, actingUserId(req))
+        );
+
+    }
+
+    async addCancerScore(req: Request, res: Response) {
+
+        return this.respondReferenceValue(req, res, "Score", () =>
+            service.addCancerScore(req.params.cancerTypeId as string, req.body.value, req.body.system, actingUserId(req))
+        );
+
+    }
+
+    async addTnmStage(req: Request, res: Response) {
+
+        return this.respondReferenceValue(req, res, `${req.body.axis ?? ""} stage`.trim(), () =>
+            service.addTnmStage(req.params.cancerTypeId as string, req.body.axis, req.body.value, actingUserId(req))
+        );
+
+    }
+
+    async addDiseaseStatus(req: Request, res: Response) {
+
+        return this.respondReferenceValue(req, res, "Disease status", () =>
+            service.addDiseaseStatus(req.body.value, actingUserId(req))
+        );
+
+    }
+
     async listInvestigationResults(req: Request, res: Response) {
 
         try {
@@ -321,7 +436,8 @@ export class OncologyController {
                 date_from: req.query.date_from as string | undefined,
                 date_to: req.query.date_to as string | undefined,
                 page: req.query.page ? Number(req.query.page) : undefined,
-                limit: req.query.limit ? Number(req.query.limit) : undefined
+                limit: req.query.limit ? Number(req.query.limit) : undefined,
+                view: req.query.view === "ids" ? "ids" : undefined
             });
 
             return res.json({

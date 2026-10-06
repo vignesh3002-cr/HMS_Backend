@@ -175,6 +175,9 @@ export interface AdditionalCancerDto {
     t_stage?: string | null;
     n_stage?: string | null;
     m_stage?: string | null;
+    // The doctor's own wording of this cancer's histopathology for this
+    // patient; null = the subtype's name.
+    histopathology?: string | null;
 
 }
 
@@ -193,10 +196,14 @@ export interface CreateStagingDetailDto {
     diagnosis_date?: string | null;
     progression_date?: string | null;
     relapse_date?: string | null;
+    second_primary_date?: string | null;
     biopsy_date?: string | null;
     consulting_oncologist?: string | null;
     cancer_type_id: string;
     cancer_subtype_id: string;
+    // The doctor's own wording of the histopathology for this patient;
+    // null = the subtype's name.
+    histopathology?: string | null;
     // Every other cancer type selected in the Diagnosis step (the primary
     // one is cancer_type_id / cancer_subtype_id above).
     additional_cancers?: AdditionalCancerDto[] | null;
@@ -230,10 +237,13 @@ export interface UpdateStagingDetailDto {
     diagnosis_date?: string | null;
     progression_date?: string | null;
     relapse_date?: string | null;
+    second_primary_date?: string | null;
     biopsy_date?: string | null;
     consulting_oncologist?: string | null;
     cancer_type_id?: string;
     cancer_subtype_id?: string;
+    // null clears the patient's own wording (back to the subtype's name).
+    histopathology?: string | null;
     // Replaces the stored list when present; omitted leaves it unchanged.
     additional_cancers?: AdditionalCancerDto[] | null;
     clinical_stage?: string | null;
@@ -270,6 +280,8 @@ export interface StagingDetailFilterQuery {
     date_to?: string;
     page?: number;
     limit?: number;
+    // "ids": just each row's id / visit, for lookups that need nothing else.
+    view?: "ids";
 
 }
 

@@ -85,7 +85,11 @@ export const DRUG_ROLE = {
     PRIMARY: "PRIMARY",
     PREMEDICATION: "PREMEDICATION",
     POSTMEDICATION: "POSTMEDICATION",
-    SUPPORTIVE: "SUPPORTIVE"
+    SUPPORTIVE: "SUPPORTIVE",
+    DISCHARGE: "DISCHARGE",
+    /* The Dilution tab: the diluent / volume an agent is prepared in, saved
+       on the patient's cycle day order like the other drug tabs. */
+    DILUTION: "DILUTION"
 } as const;
 
 export const ID_ENTITY = {

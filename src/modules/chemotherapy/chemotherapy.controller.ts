@@ -969,6 +969,86 @@ export class ChemotherapyController {
 
     }
 
+    // ---------------- Discharge (take-home) medicines ----------------
+    // Scoped to one patient's plan; never the regimen protocol or its
+    // master tables.
+
+    async listPlanDischargeMedicines(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            const data = await service.listPlanDischargeMedicines(req.params.planId as string);
+            return res.json({ success: true, message: "Discharge medicines fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async addPlanDischargeMedicine(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            const data = await service.addPlanDischargeMedicine(
+                req.params.planId as string,
+                req.body,
+                actingUserId(req)
+            );
+
+            return res.status(201).json({ success: true, message: "Discharge medicine added to this patient successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async updatePlanDischargeMedicine(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            const data = await service.updatePlanDischargeMedicine(
+                req.params.planId as string,
+                req.params.planItemId as string,
+                req.body,
+                actingUserId(req)
+            );
+
+            return res.json({ success: true, message: "Discharge medicine updated successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async removePlanDischargeMedicine(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            const data = await service.removePlanDischargeMedicine(
+                req.params.planId as string,
+                req.params.planItemId as string,
+                actingUserId(req)
+            );
+
+            return res.json({ success: true, message: "Discharge medicine removed successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
     // ---------------- Cycles ----------------
 
     async createCycle(req: Request, res: Response) {
