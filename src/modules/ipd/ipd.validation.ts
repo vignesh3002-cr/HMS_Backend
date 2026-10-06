@@ -5,7 +5,7 @@ import {
     DISCHARGE_TYPE_VALUES,
     PAYMENT_MODE_VALUES
 } from "./ipd.constants";
-import { BED_STATUS } from "./ipd.types";
+import { MANUAL_BED_STATUSES } from "./ipd.constants";
 
 export const createAdmissionValidation = [
 
@@ -101,6 +101,68 @@ export const transferAdmissionValidation = [
 
 ];
 
+export const admitAdmissionValidation = [
+
+    param("id")
+        .notEmpty()
+        .withMessage("Admission ID or IP number is required"),
+
+    body("ward_id").optional().isString(),
+    body("bed_id").optional().isString(),
+
+];
+
+// Reserve takes the same optional ward/bed override as admit.
+export const reserveBedValidation = admitAdmissionValidation;
+
+// Cancel / no-show of a planned admission, with an optional reason.
+export const closePlannedValidation = [
+
+    param("id")
+        .notEmpty()
+        .withMessage("Admission ID or IP number is required"),
+
+    body("reason")
+        .optional()
+        .isString()
+        .isLength({ max: 500 })
+        .withMessage("Reason must be at most 500 characters"),
+
+];
+
+// Daycare booking: doctor slot + PLANNED daycare admission (ward required,
+// bed optional, session length more than 0 and at most 1 day).
+export const createDaycareValidation = [
+
+    body("patient_id").notEmpty().withMessage("Patient is required"),
+    body("branch_id").notEmpty().withMessage("Branch is required"),
+    body("department_id").notEmpty().withMessage("Department is required"),
+    body("employee_id").notEmpty().withMessage("Doctor is required"),
+    body("ward_id").notEmpty().withMessage("Ward is required for a daycare booking"),
+    body("bed_id").optional().isString(),
+    body("appointment_date")
+        .notEmpty().withMessage("Date is required")
+        .isISO8601().withMessage("Date must be a valid date"),
+    body("appointment_time")
+        .notEmpty().withMessage("Time slot is required")
+        .matches(/^\d{1,2}:\d{2}(:\d{2})?$/).withMessage("Time slot must be HH:mm"),
+    body("expected_stay_days")
+        .isFloat({ gt: 0, max: 1 })
+        .withMessage("Daycare duration must be more than 0 and at most 24 hours"),
+    body("payment_mode").optional().isString(),
+    body("advance_amount").optional().isFloat({ min: 0 }),
+    body("provisional_diagnosis").optional().isString(),
+    body("reason_for_visit").optional().isString(),
+
+];
+
+export const daycareOccupancyValidation = [
+
+    query("wardId").notEmpty().withMessage("Ward is required"),
+    query("date").isISO8601().withMessage("Date must be a valid date (yyyy-MM-dd)"),
+
+];
+
 export const IPD_SORT_FIELDS = [
     "ip_number",
     "patient",
@@ -191,8 +253,8 @@ export const updateBedStatusValidation = [
     body("status")
         .notEmpty()
         .withMessage("Status is required")
-        .isIn([BED_STATUS.AVAILABLE, BED_STATUS.MAINTENANCE])
-        .withMessage(`Status must be one of: ${BED_STATUS.AVAILABLE}, ${BED_STATUS.MAINTENANCE}`),
+        .isIn([...MANUAL_BED_STATUSES])
+        .withMessage(`Status must be one of: ${MANUAL_BED_STATUSES.join(", ")}`),
 
     body("remarks").optional().trim().isString(),
 

@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateBedStatusValidation = exports.updateBedValidation = exports.updateWardValidation = exports.createBedValidation = exports.createWardValidation = exports.getAdmissionByIpNumberValidation = exports.getAdmissionsValidation = exports.IPD_SORT_FIELDS = exports.transferAdmissionValidation = exports.dischargeAdmissionValidation = exports.updateAdmissionValidation = exports.createAdmissionValidation = void 0;
+exports.updateBedStatusValidation = exports.updateBedValidation = exports.updateWardValidation = exports.createBedValidation = exports.createWardValidation = exports.getAdmissionByIpNumberValidation = exports.getAdmissionsValidation = exports.IPD_SORT_FIELDS = exports.closePlannedValidation = exports.reserveBedValidation = exports.admitAdmissionValidation = exports.transferAdmissionValidation = exports.dischargeAdmissionValidation = exports.updateAdmissionValidation = exports.createAdmissionValidation = void 0;
 const express_validator_1 = require("express-validator");
 const ipd_constants_1 = require("./ipd.constants");
-const ipd_types_1 = require("./ipd.types");
+const ipd_constants_2 = require("./ipd.constants");
 exports.createAdmissionValidation = [
     (0, express_validator_1.body)("patient_id")
         .notEmpty()
@@ -78,6 +78,26 @@ exports.transferAdmissionValidation = [
         .withMessage("Target bed is required"),
     (0, express_validator_1.body)("reason").optional().isString(),
 ];
+exports.admitAdmissionValidation = [
+    (0, express_validator_1.param)("id")
+        .notEmpty()
+        .withMessage("Admission ID or IP number is required"),
+    (0, express_validator_1.body)("ward_id").optional().isString(),
+    (0, express_validator_1.body)("bed_id").optional().isString(),
+];
+// Reserve takes the same optional ward/bed override as admit.
+exports.reserveBedValidation = exports.admitAdmissionValidation;
+// Cancel / no-show of a planned admission, with an optional reason.
+exports.closePlannedValidation = [
+    (0, express_validator_1.param)("id")
+        .notEmpty()
+        .withMessage("Admission ID or IP number is required"),
+    (0, express_validator_1.body)("reason")
+        .optional()
+        .isString()
+        .isLength({ max: 500 })
+        .withMessage("Reason must be at most 500 characters"),
+];
 exports.IPD_SORT_FIELDS = [
     "ip_number",
     "patient",
@@ -149,7 +169,7 @@ exports.updateBedStatusValidation = [
     (0, express_validator_1.body)("status")
         .notEmpty()
         .withMessage("Status is required")
-        .isIn([ipd_types_1.BED_STATUS.AVAILABLE, ipd_types_1.BED_STATUS.MAINTENANCE])
-        .withMessage(`Status must be one of: ${ipd_types_1.BED_STATUS.AVAILABLE}, ${ipd_types_1.BED_STATUS.MAINTENANCE}`),
+        .isIn([...ipd_constants_2.MANUAL_BED_STATUSES])
+        .withMessage(`Status must be one of: ${ipd_constants_2.MANUAL_BED_STATUSES.join(", ")}`),
     (0, express_validator_1.body)("remarks").optional().trim().isString(),
 ];

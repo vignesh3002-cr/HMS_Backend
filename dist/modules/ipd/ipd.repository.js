@@ -13,6 +13,16 @@ const idGenerator_1 = require("../../utils/idGenerator");
  * through the provided tx client so row policies + the admission vlog
  * sequence stay consistent within the same transaction.
  */
+// Bed fields shown alongside an admission -- status + reservation so the
+// roster can tell a reserved bed from a merely requested one.
+const admissionBedSelect = {
+    bed_id: true,
+    bed_number: true,
+    bed_type: true,
+    status: true,
+    reserved_admission_id: true,
+    reserved_until: true,
+};
 class IpdRepository {
     // ------------------------------------------------------------------ wards
     async findWardById(wardId) {
@@ -127,6 +137,24 @@ class IpdRepository {
                 ward_master: {
                     select: { ward_id: true, ward_name: true, branch_id: true },
                 },
+                // Current occupant, for the bed board.
+                admission: {
+                    where: { status: "ADMITTED" },
+                    take: 1,
+                    select: {
+                        admission_id: true,
+                        ip_number: true,
+                        admission_date: true,
+                        patient_bio_data: {
+                            select: {
+                                patient_id: true,
+                                patient_first_name: true,
+                                patient_last_name: true,
+                                patient_gender: true,
+                            },
+                        },
+                    },
+                },
             },
         });
     }
@@ -159,9 +187,68 @@ class IpdRepository {
             where: { bed_id: bedId },
             data: {
                 status,
+                // Reservation fields only mean something while RESERVED;
+                // every other transition drops them (use reserveBed to set).
+                reserved_admission_id: null,
+                reserved_until: null,
                 updated_by: updatedBy,
                 updated_at: new Date(),
                 ...(remarks !== undefined ? { remarks } : {}),
+            },
+        });
+    }
+    async reserveBed(tx, bedId, admissionId, reservedUntil, updatedBy) {
+        return tx.bed_master.update({
+            where: { bed_id: bedId },
+            data: {
+                status: "RESERVED",
+                reserved_admission_id: admissionId,
+                reserved_until: reservedUntil,
+                updated_by: updatedBy,
+                updated_at: new Date(),
+            },
+        });
+    }
+    /*
+     * Returns every bed RESERVED for these admissions (except keepBedId) to
+     * AVAILABLE. The status guard means a bed that has meanwhile been
+     * admitted into is never touched.
+     */
+    async releaseReservations(tx, admissionIds, updatedBy, keepBedId) {
+        if (admissionIds.length === 0)
+            return { count: 0 };
+        return tx.bed_master.updateMany({
+            where: {
+                status: "RESERVED",
+                reserved_admission_id: { in: admissionIds },
+                ...(keepBedId ? { bed_id: { not: keepBedId } } : {}),
+            },
+            data: {
+                status: "AVAILABLE",
+                reserved_admission_id: null,
+                reserved_until: null,
+                updated_by: updatedBy,
+                updated_at: new Date(),
+            },
+        });
+    }
+    async findReservationHolders(admissionIds) {
+        if (admissionIds.length === 0)
+            return [];
+        return prisma_1.default.admission.findMany({
+            where: { admission_id: { in: admissionIds } },
+            select: {
+                admission_id: true,
+                ip_number: true,
+                admission_date: true,
+                patient_bio_data: {
+                    select: {
+                        patient_id: true,
+                        patient_first_name: true,
+                        patient_last_name: true,
+                        patient_gender: true,
+                    },
+                },
             },
         });
     }
@@ -209,7 +296,7 @@ class IpdRepository {
                     select: { ward_id: true, ward_name: true },
                 },
                 bed_master: {
-                    select: { bed_id: true, bed_number: true, bed_type: true },
+                    select: admissionBedSelect,
                 },
                 admission_transfer_log: {
                     orderBy: { transferred_at: "desc" },
@@ -232,7 +319,7 @@ class IpdRepository {
                 },
                 branch: { select: { branch_id: true, branch_name: true } },
                 ward_master: { select: { ward_id: true, ward_name: true } },
-                bed_master: { select: { bed_id: true, bed_number: true } },
+                bed_master: { select: admissionBedSelect },
                 admission_transfer_log: {
                     orderBy: { transferred_at: "desc" },
                 },
@@ -316,7 +403,7 @@ class IpdRepository {
                         },
                     },
                     ward_master: { select: { ward_id: true, ward_name: true } },
-                    bed_master: { select: { bed_id: true, bed_number: true } },
+                    bed_master: { select: admissionBedSelect },
                 },
                 orderBy,
                 skip: (page - 1) * limit,
@@ -340,7 +427,15 @@ class IpdRepository {
          * Row-level lock on the bed row so two concurrent admit requests
          * cannot both read AVAILABLE and double-assign the same bed.
          */
-        return tx.$queryRawUnsafe(`SELECT bed_id, status FROM public.bed_master WHERE bed_id = $1 FOR UPDATE`, bedId);
+        return tx.$queryRawUnsafe(`SELECT bed_id, status, reserved_admission_id, reserved_until FROM public.bed_master WHERE bed_id = $1 FOR UPDATE`, bedId);
+    }
+    async lockPatientForAdmission(tx, patientId) {
+        /*
+         * Row-level lock on the patient so two concurrent admit requests for
+         * the same patient (into different beds) are serialized and the
+         * second one sees the first one's ADMITTED row.
+         */
+        return tx.$queryRawUnsafe(`SELECT patient_id FROM public.patient_bio_data WHERE patient_id = $1 FOR UPDATE`, patientId);
     }
     async updateAdmission(admissionId, data) {
         return prisma_1.default.admission.update({ where: { admission_id: admissionId }, data });
@@ -355,10 +450,10 @@ class IpdRepository {
     async createTransferLog(tx, data) {
         return tx.admission_transfer_log.create({ data });
     }
-    async updateEncounterDischarge(tx, encounterNo, dischargeDate) {
+    async updateEncounterDischarge(tx, encounterNo, dischargeDate, closedBy) {
         return tx.encounter.update({
             where: { encounter_no: encounterNo },
-            data: { status: "CLOSED", closed_at: dischargeDate, checkout_time: dischargeDate },
+            data: { status: "CLOSED", closed_at: dischargeDate, checkout_time: dischargeDate, closed_by: closedBy },
         });
     }
     async updateAppointmentCompleted(tx, appointmentId) {
@@ -409,7 +504,7 @@ class IpdRepository {
                     select: { ward_id: true, ward_name: true },
                 },
                 bed_master: {
-                    select: { bed_id: true, bed_number: true, bed_type: true },
+                    select: admissionBedSelect,
                 },
                 admission_transfer_log: {
                     orderBy: { transferred_at: "desc" },

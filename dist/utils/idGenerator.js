@@ -41,6 +41,8 @@ const ENTITY_TARGET = {
     WARD: { table: "ward_master", column: "ward_id" },
     BED: { table: "bed_master", column: "bed_id" },
     ADMISSION_TRANSFER: { table: "admission_transfer_log", column: "transfer_log_id" },
+    PHARMACY_SLIP: { table: "pharmacy_slip", column: "pharmacy_slip_id", padTo: 7 },
+    PHARMACY_SLIP_ITEM: { table: "pharmacy_slip_item", column: "pharmacy_slip_item_id", padTo: 7 },
 };
 // Generates `count` consecutive ids for one entity while holding the
 // sequence row lock exactly once. Batch callers (e.g. prescription items)

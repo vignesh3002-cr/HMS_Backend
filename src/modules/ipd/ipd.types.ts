@@ -4,11 +4,19 @@ export const IPD_STATUS = {
     DISCHARGED: "DISCHARGED",
     TRANSFERRED: "TRANSFERRED",
     CANCELLED: "CANCELLED",
+    // A planned request that was never admitted (marked by staff, or by the
+    // IPD bed job once the planned day plus a grace day has passed).
+    NO_SHOW: "NO_SHOW",
 } as const;
 
+// AVAILABLE -> RESERVED (held for one planned admission, expires) -> OCCUPIED
+// -> CLEANING (after discharge / transfer-out) -> AVAILABLE. MAINTENANCE takes
+// a bed out of service.
 export const BED_STATUS = {
     AVAILABLE: "AVAILABLE",
+    RESERVED: "RESERVED",
     OCCUPIED: "OCCUPIED",
+    CLEANING: "CLEANING",
     MAINTENANCE: "MAINTENANCE",
 } as const;
 
@@ -18,6 +26,34 @@ export const WARD_STATUS = {
 } as const;
 
 export const DAYCARE = "Daycare";
+
+/*
+ * A daycare booking: the doctor's OPD slot (appointment_date + _time, IST)
+ * plus a PLANNED daycare admission in a required ward. The bed is optional --
+ * staff pick it close to the day. expected_stay_days is the session length
+ * (days + hours/24), more than 0 and at most 1.
+ */
+export interface DaycareBookingDTO {
+    patient_id: string;
+    branch_id: string;
+    department_id: string;
+    employee_id: string;
+    appointment_date: string; // yyyy-MM-dd (IST)
+    appointment_time: string; // HH:mm (IST)
+    ward_id: string;
+    bed_id?: string;
+    expected_stay_days: number;
+    payment_mode?: string;
+    advance_amount?: number;
+    provisional_diagnosis?: string;
+    reason_for_visit?: string;
+}
+
+/** The authenticated user acting on an admission (req.user). */
+export interface IpdActor {
+    user_id: string;
+    role?: string;
+}
 
 export interface CreateWardDTO {
     branch_id: string;

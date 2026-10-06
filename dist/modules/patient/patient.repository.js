@@ -143,7 +143,6 @@ class PatientRepository {
                         role_type: true,
                         user_status: true,
                         created_at: true,
-                        updated_at: true,
                     }
                 }
             }

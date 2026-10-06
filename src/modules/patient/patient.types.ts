@@ -30,6 +30,9 @@ export interface CreatePatientRequest {
     referred_by?: string | null;
     referral_contact?: string | null;
     referral_notes?: string | null;
+    referral_address?: string | null;
+    referral_mail?: string | null;
+    referral_branch_name?: string | null;
 
     photo?: string;
 
@@ -74,6 +77,9 @@ export interface UpdatePatientRequest {
     referred_by?: string | null;
     referral_contact?: string | null;
     referral_notes?: string | null;
+    referral_address?: string | null;
+    referral_mail?: string | null;
+    referral_branch_name?: string | null;
 
     photo?: string;
 
