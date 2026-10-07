@@ -12,6 +12,10 @@ router.post("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("adm
 router.get("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.read"), branchScope_1.branchScope, ipd_validation_1.getAdmissionsValidation, controller.listAdmissions.bind(controller));
 router.get("/stats/patients-today", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.read"), branchScope_1.branchScope, controller.getAdmittedPatientsToday.bind(controller));
 router.get("/stats/overview", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.read"), branchScope_1.branchScope, controller.getIpdOverview.bind(controller));
+// Daycare booking (doctor slot + planned daycare admission) and the ward
+// capacity view the booking form uses to hide full slots.
+router.post("/daycare", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.create"), ipd_validation_1.createDaycareValidation, controller.bookDaycare.bind(controller));
+router.get("/daycare/occupancy", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.read"), ipd_validation_1.daycareOccupancyValidation, controller.getDaycareOccupancy.bind(controller));
 router.get("/wards", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.read"), branchScope_1.branchScope, controller.listWards.bind(controller));
 router.post("/wards", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("ward.manage", "admission.create"), branchScope_1.branchScope, ipd_validation_1.createWardValidation, controller.createWard.bind(controller));
 router.patch("/wards/:wardId", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("ward.manage", "admission.create"), branchScope_1.branchScope, ipd_validation_1.updateWardValidation, controller.updateWard.bind(controller));

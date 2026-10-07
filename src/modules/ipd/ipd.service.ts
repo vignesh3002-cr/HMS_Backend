@@ -1491,7 +1491,7 @@ export class IpdService {
 
         return beds.map(({ admission, ...bed }) => ({
             ...bed,
-            occupant: admission[0] ?? null,
+            occupant: admission ?? null,
             reserved_for:
                 bed.status === BED_STATUS.RESERVED && bed.reserved_admission_id
                     ? holderById.get(bed.reserved_admission_id) ?? null

@@ -638,6 +638,14 @@ class AppointmentService {
             !!data.branch_id ||
             !!data.appointment_date ||
             !!data.appointment_time;
+        // A daycare booking's slot was capacity-checked against its ward
+        // together with the daycare request -- moving it would bypass that.
+        if (scheduleChanged) {
+            const daycare = await new ipd_service_1.IpdService().findPlannedDaycareForAppointment(appointmentNo);
+            if (daycare) {
+                throw new Error(`This appointment belongs to daycare booking ${daycare.ip_number} -- cancel it and book the daycare again to change the date, time or doctor`);
+            }
+        }
         return prisma_1.default.$transaction(async (tx) => {
             let scheduleId = existing.schedule_id;
             let tokenNumber = existing.token_number;
@@ -712,6 +720,16 @@ class AppointmentService {
             appointment_constants_1.APPOINTMENT_STATUS.CANCELLED &&
             !cancelReason) {
             throw new Error("Cancellation reason is required when cancelling an appointment");
+        }
+        // Cancelling / no-showing a daycare booking's slot closes the planned
+        // daycare request with it (and frees any bed it held), atomically.
+        if (status === appointment_constants_1.APPOINTMENT_STATUS.CANCELLED ||
+            status === appointment_constants_1.APPOINTMENT_STATUS.NO_SHOW) {
+            return this.transformAppointmentFields(await prisma_1.default.$transaction(async (tx) => {
+                const updated = await repository.updateAppointmentStatus(appointmentNo, status, cancelReason, cancelledBy, tx);
+                await new ipd_service_1.IpdService().closePlannedForAppointment(tx, appointmentNo, status === appointment_constants_1.APPOINTMENT_STATUS.CANCELLED ? "CANCELLED" : "NO_SHOW", cancelReason, cancelledBy || "SYSTEM");
+                return updated;
+            }));
         }
         return this.transformAppointmentFields(await repository.updateAppointmentStatus(appointmentNo, status, cancelReason, cancelledBy));
     }

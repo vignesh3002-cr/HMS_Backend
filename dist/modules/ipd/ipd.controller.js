@@ -3,7 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.IpdController = void 0;
 const express_validator_1 = require("express-validator");
 const ipd_service_1 = require("./ipd.service");
+const ipd_daycare_service_1 = require("./ipd.daycare.service");
 const service = new ipd_service_1.IpdService();
+const daycareService = new ipd_daycare_service_1.DaycareService(service);
 class IpdController {
     async createAdmission(req, res) {
         try {
@@ -256,6 +258,53 @@ class IpdController {
                 success: true,
                 message: "Bed reservation released",
                 data: admission
+            });
+        }
+        catch (error) {
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+    async bookDaycare(req, res) {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+            const admission = await daycareService.book(req.body, req.user);
+            return res.status(201).json({
+                success: true,
+                message: "Daycare booked",
+                data: admission
+            });
+        }
+        catch (error) {
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+    async getDaycareOccupancy(req, res) {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+            const occupancy = await service.getDaycareOccupancy(req.query.wardId, req.query.date, req.user);
+            return res.json({
+                success: true,
+                data: occupancy
             });
         }
         catch (error) {

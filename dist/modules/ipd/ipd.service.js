@@ -26,6 +26,27 @@ const istDateString = (at) => new Date(at.getTime() + ipd_constants_1.IST_OFFSET
 const startOfIstDay = (istDate) => new Date(Date.parse(`${istDate}T00:00:00.000Z`) - ipd_constants_1.IST_OFFSET_MS);
 /** Whole days from IST date `from` to IST date `to` (negative if earlier). */
 const istDayDiff = (from, to) => Math.round((Date.parse(`${to}T00:00:00.000Z`) - Date.parse(`${from}T00:00:00.000Z`)) / DAY_MS);
+/** UTC instant of an IST date (yyyy-MM-dd) + time (HH:mm). */
+const istSlotToUtc = (istDate, time) => {
+    const t = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(String(time ?? "").trim());
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(istDate ?? "")) || !t) {
+        throw new Error("A valid date and time slot are required");
+    }
+    return new Date(Date.parse(`${istDate}T${t[1].padStart(2, "0")}:${t[2]}:00.000Z`) - ipd_constants_1.IST_OFFSET_MS);
+};
+// Emergency admissions are admitted on the spot and may start without a
+// doctor / department (assigned afterwards from the IPD list).
+const isEmergencyType = (admissionType) => String(admissionType ?? "").trim().toUpperCase() === ipd_constants_1.ADMISSION_TYPE.EMERGENCY;
+/*
+ * Most daycare sessions running at the same moment within [start, end) --
+ * concurrency can only rise at a session start, so checking the window start
+ * and every session start inside it is enough.
+ */
+const peakDaycareOverlap = (slots, start, end) => {
+    const overlapping = slots.filter((s) => s.start < end && s.end > start);
+    const instants = [start, ...overlapping.map((s) => s.start).filter((t) => t > start && t < end)];
+    return instants.reduce((peak, t) => Math.max(peak, overlapping.filter((s) => s.start <= t && s.end > t).length), 0);
+};
 class IpdService {
     ipdRepository;
     constructor(ipdRepository = new ipd_repository_1.IpdRepository()) {
@@ -71,7 +92,9 @@ class IpdService {
      * Opens the IPD encounter inside the caller's admit transaction, so a
      * patient can never end up ADMITTED (bed occupied) without an encounter.
      */
-    async openIpEncounter(tx, admission, employeeId, createdBy) {
+    async openIpEncounter(tx, admission, 
+    // null for an emergency admitted before a doctor is assigned.
+    employeeId, createdBy) {
         const encounterNo = await encounterRepository.generateEncounterNumber(tx);
         await encounterRepository.createEncounter(tx, {
             createdBy,
@@ -140,14 +163,14 @@ class IpdService {
         }
     }
     async validateAdmissionContext(data) {
-        const { branchId, departmentId, employeeId, wardId, bedId } = data;
+        const { branchId, departmentId, employeeId, wardId, bedId, allowUnassigned = false } = data;
         if (departmentId) {
             const department = await this.ipdRepository.findDepartmentById(departmentId);
             if (!department) {
                 throw new Error("Department not found");
             }
         }
-        else {
+        else if (!allowUnassigned) {
             throw new Error("Department is required");
         }
         if (employeeId) {
@@ -172,7 +195,7 @@ class IpdService {
                 throw new Error("Doctor is not assigned to the selected branch");
             }
         }
-        else {
+        else if (!allowUnassigned) {
             throw new Error("Attending doctor is required");
         }
         if (wardId) {
@@ -252,12 +275,18 @@ class IpdService {
         if (actor) {
             await this.assertBranchAccess(actor, branchId);
         }
+        const isEmergency = isEmergencyType(data.admission_type);
+        // Emergency = admitted on the spot into a chosen bed, never planned.
+        if (isEmergency && status !== ipd_types_1.IPD_STATUS.ADMITTED) {
+            throw new Error("An emergency admission is admitted immediately -- choose a ward and bed");
+        }
         await this.validateAdmissionContext({
             branchId,
             departmentId,
             employeeId,
             wardId,
             bedId,
+            allowUnassigned: isEmergency,
         });
         if (status !== ipd_types_1.IPD_STATUS.PLANNED && status !== ipd_types_1.IPD_STATUS.ADMITTED) {
             throw new Error("A new admission must be PLANNED or ADMITTED");
@@ -307,9 +336,12 @@ class IpdService {
                     advance_amount: data.advance_amount !== undefined
                         ? Number(data.advance_amount)
                         : undefined,
-                    admission_date: data.admission_date
-                        ? new Date(data.admission_date)
-                        : undefined,
+                    // An emergency is admitted now, whatever date was sent.
+                    admission_date: isEmergency
+                        ? new Date()
+                        : data.admission_date
+                            ? new Date(data.admission_date)
+                            : undefined,
                     status,
                     created_by: createdBy,
                 });
@@ -411,6 +443,24 @@ class IpdService {
         const departmentId = data.department_id !== undefined ? cleanId(data.department_id) : cleanId(existing.department_id);
         const employeeId = data.employee_id !== undefined ? cleanId(data.employee_id) : cleanId(existing.employee_id);
         const locationChanged = wardId !== cleanId(existing.ward_id) || bedId !== cleanId(existing.bed_id);
+        const doctorChanged = departmentId !== cleanId(existing.department_id) ||
+            employeeId !== cleanId(existing.employee_id);
+        // A daycare request booked with a doctor slot: its date, time, doctor,
+        // ward and duration were capacity-checked together with that slot, so
+        // they can only change by cancelling and booking again. The bed (and
+        // payment / diagnosis details) stay editable.
+        if (!isAdmitted && existing.is_daycare && existing.appointment_id) {
+            const fixedFieldChanged = data.admission_date !== undefined ||
+                (data.ward_id !== undefined && wardId !== cleanId(existing.ward_id)) ||
+                doctorChanged ||
+                (data.expected_stay_days !== undefined &&
+                    Number(data.expected_stay_days) !== Number(existing.expected_stay_days)) ||
+                data.is_daycare === false ||
+                (data.admission_type !== undefined && data.admission_type !== existing.admission_type);
+            if (fixedFieldChanged) {
+                throw new Error("The date, time, doctor, ward and duration of a daycare booking are fixed -- cancel it and book again to change them");
+            }
+        }
         if (isAdmitted && locationChanged) {
             throw new Error("Use transfer to move an admitted patient to another ward or bed");
         }
@@ -419,9 +469,7 @@ class IpdService {
         }
         // For a PLANNED admission ward/bed are only a request -- no bed is
         // held, so only their existence, branch and active state are checked.
-        const contextChanged = locationChanged ||
-            departmentId !== cleanId(existing.department_id) ||
-            employeeId !== cleanId(existing.employee_id);
+        const contextChanged = locationChanged || doctorChanged;
         if (contextChanged) {
             await this.validateAdmissionContext({
                 branchId: existing.branch_id,
@@ -436,6 +484,15 @@ class IpdService {
             // back -- the new bed is only a request until reserved again.
             if (!isAdmitted && locationChanged) {
                 await this.ipdRepository.releaseReservations(tx, [existing.admission_id], actor.user_id, bedId ?? undefined);
+            }
+            // Assigning / changing the doctor of an admitted patient (e.g. an
+            // emergency admitted without one) moves their open IPD encounter
+            // with it, so the doctor sees the patient in their list.
+            if (isAdmitted && doctorChanged && existing.encounter_no) {
+                await tx.encounter.update({
+                    where: { encounter_no: existing.encounter_no },
+                    data: { employee_id: employeeId, department_id: departmentId },
+                });
             }
             // Explicit whitelist: spreading the request body here would let a
             // PATCH rewrite patient_id, branch_id, encounter_no, ...
@@ -488,6 +545,7 @@ class IpdService {
             employeeId: existing.employee_id,
             wardId,
             bedId,
+            allowUnassigned: isEmergencyType(existing.admission_type),
         });
         try {
             await prisma_1.default.$transaction(async (tx) => {
@@ -504,7 +562,7 @@ class IpdService {
                 await this.claimBed(tx, bedId, existing.admission_id);
                 const admittedAt = new Date();
                 const encounterNo = current.encounter_no
-                    ?? await this.openIpEncounter(tx, existing, existing.employee_id, actor.user_id);
+                    ?? await this.openIpEncounter(tx, existing, existing.employee_id ?? null, actor.user_id);
                 await this.ipdRepository.updateAdmissionTx(tx, existing.admission_id, {
                     status: ipd_types_1.IPD_STATUS.ADMITTED,
                     ward_id: wardId,
@@ -558,6 +616,7 @@ class IpdService {
             employeeId: existing.employee_id,
             wardId,
             bedId,
+            allowUnassigned: isEmergencyType(existing.admission_type),
         });
         await prisma_1.default.$transaction(async (tx) => {
             // Same lock order as admit (patient, then bed), so reserving and
@@ -626,8 +685,221 @@ class IpdService {
                 throw new Error("This admission request has already been admitted or cancelled");
             }
             await this.ipdRepository.releaseReservations(tx, [existing.admission_id], actor.user_id);
+            // A daycare request and its doctor slot live and die together.
+            if (existing.appointment_id) {
+                await tx.appointment_history.updateMany({
+                    where: {
+                        appointment_id: existing.appointment_id,
+                        status: { in: ["SCHEDULED", "RESCHEDULED"] },
+                    },
+                    data: status === ipd_types_1.IPD_STATUS.CANCELLED
+                        ? {
+                            status: "CANCELLED",
+                            cancel_reason: (reason?.trim() || `Daycare request ${existing.ip_number} cancelled`).slice(0, 100),
+                            cancelled_at: new Date(),
+                            cancelled_by: actor.user_id,
+                            notification_status: "NOT_REQUIRED",
+                        }
+                        : { status: "NO_SHOW", notification_status: "NOT_REQUIRED" },
+                });
+            }
         });
         return this.getAdmissionByIpNumber(existing.admission_id);
+    }
+    /*
+     * The other direction: an appointment was cancelled / marked no-show, so
+     * the PLANNED daycare request booked with it follows (and gives back any
+     * bed it held). Runs in the appointment update's own transaction.
+     */
+    async closePlannedForAppointment(tx, appointmentId, status, reason, updatedBy) {
+        const linked = await tx.admission.findMany({
+            where: { appointment_id: appointmentId, status: ipd_types_1.IPD_STATUS.PLANNED },
+            select: { admission_id: true },
+        });
+        if (linked.length === 0)
+            return 0;
+        const ids = linked.map((a) => a.admission_id);
+        const result = await tx.admission.updateMany({
+            where: { admission_id: { in: ids }, status: ipd_types_1.IPD_STATUS.PLANNED },
+            data: {
+                status,
+                cancellation_reason: reason?.trim() ||
+                    (status === ipd_types_1.IPD_STATUS.CANCELLED ? "Linked appointment cancelled" : "Linked appointment marked no-show"),
+                updated_by: updatedBy,
+                updated_at: new Date(),
+            },
+        });
+        await this.ipdRepository.releaseReservations(tx, ids, updatedBy);
+        return result.count;
+    }
+    /** The PLANNED daycare request booked with this appointment, if any. */
+    async findPlannedDaycareForAppointment(appointmentId) {
+        return prisma_1.default.admission.findFirst({
+            where: { appointment_id: appointmentId, status: ipd_types_1.IPD_STATUS.PLANNED, is_daycare: true },
+            select: { ip_number: true },
+        });
+    }
+    // ---------------------------------------------------------------- daycare
+    /** Beds of a ward that can take a daycare patient (active, not under maintenance). */
+    async countDaycareCapacity(client, wardId) {
+        return client.bed_master.count({
+            where: {
+                ward_id: wardId,
+                active_status: 1,
+                status: { not: ipd_types_1.BED_STATUS.MAINTENANCE },
+            },
+        });
+    }
+    /*
+     * Daycare sessions (planned or running) in a ward that touch one IST day.
+     * A session runs from admission_date for expected_stay_days; one without a
+     * duration is assumed to run to the end of that day.
+     */
+    async daycareSlotsForDay(client, wardId, istDate) {
+        const dayStart = startOfIstDay(istDate);
+        const dayEnd = new Date(dayStart.getTime() + DAY_MS);
+        const rows = await client.admission.findMany({
+            where: {
+                ward_id: wardId,
+                is_daycare: true,
+                status: { in: [ipd_types_1.IPD_STATUS.PLANNED, ipd_types_1.IPD_STATUS.ADMITTED] },
+                admission_date: { lt: dayEnd },
+            },
+            select: {
+                admission_id: true,
+                ip_number: true,
+                status: true,
+                admission_date: true,
+                expected_stay_days: true,
+            },
+        });
+        return rows
+            .map((r) => {
+            const start = new Date(r.admission_date);
+            const stay = Number(r.expected_stay_days) || 0;
+            const end = stay > 0
+                ? new Date(start.getTime() + stay * DAY_MS)
+                : new Date(startOfIstDay(istDateString(start)).getTime() + DAY_MS);
+            return { admission_id: r.admission_id, ip_number: r.ip_number, status: r.status, start, end };
+        })
+            .filter((s) => s.end > dayStart);
+    }
+    /** Capacity and booked sessions of a daycare ward on one IST day (booking form). */
+    async getDaycareOccupancy(wardId, istDate, actor) {
+        const ward = await this.ipdRepository.findWardById(wardId);
+        if (!ward) {
+            throw httpError("Ward not found", 404);
+        }
+        await this.assertBranchAccess(actor, ward.branch_id);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(istDate ?? ""))) {
+            throw new Error("A valid date (yyyy-MM-dd) is required");
+        }
+        const [capacity, slots] = await Promise.all([
+            this.countDaycareCapacity(prisma_1.default, wardId),
+            this.daycareSlotsForDay(prisma_1.default, wardId, istDate),
+        ]);
+        return {
+            ward_id: wardId,
+            date: istDate,
+            capacity,
+            bookings: slots.map((s) => ({
+                ip_number: s.ip_number,
+                status: s.status,
+                start: s.start.toISOString(),
+                end: s.end.toISOString(),
+            })),
+        };
+    }
+    /*
+     * Step 1 of a daycare booking (DaycareService.book): under the ward row
+     * lock, check the ward still has a free place for the whole session and
+     * create the PLANNED daycare request. The caller then books the doctor's
+     * slot and links it -- or discards this request if that fails.
+     */
+    async createDaycareRequest(data, actor) {
+        const clean = (val) => {
+            const str = val === null || val === undefined ? "" : String(val).trim();
+            return str.length > 0 ? str : null;
+        };
+        const patientId = clean(data.patient_id);
+        const branchId = clean(data.branch_id);
+        const departmentId = clean(data.department_id);
+        const employeeId = clean(data.employee_id);
+        const wardId = clean(data.ward_id);
+        const bedId = clean(data.bed_id);
+        if (!patientId)
+            throw new Error("Patient is required");
+        if (!branchId)
+            throw new Error("Branch is required");
+        if (!wardId)
+            throw new Error("Ward is required for a daycare booking");
+        const stay = Number(data.expected_stay_days);
+        if (!(stay > 0) || stay > 1) {
+            throw new Error("Daycare duration must be more than 0 and at most 24 hours");
+        }
+        const start = istSlotToUtc(data.appointment_date, data.appointment_time);
+        const end = new Date(start.getTime() + stay * DAY_MS);
+        const patient = await prisma_1.default.patient_bio_data.findUnique({
+            where: { patient_id: patientId },
+            select: { patient_active: true },
+        });
+        if (!patient)
+            throw new Error("Patient not found");
+        if (patient.patient_active !== "Active")
+            throw new Error("Patient is inactive");
+        const branch = await prisma_1.default.branch.findUnique({ where: { branch_id: branchId } });
+        if (!branch)
+            throw new Error("Branch not found");
+        if (branch.branch_status !== "Active")
+            throw new Error("Branch is inactive");
+        await this.assertBranchAccess(actor, branchId);
+        await this.validateAdmissionContext({ branchId, departmentId, employeeId, wardId, bedId });
+        return prisma_1.default.$transaction(async (tx) => {
+            // Serializes daycare bookings per ward, so two desks can't both
+            // take the last place.
+            await tx.$queryRawUnsafe(`SELECT ward_id FROM public.ward_master WHERE ward_id = $1 FOR UPDATE`, wardId);
+            const capacity = await this.countDaycareCapacity(tx, wardId);
+            if (capacity === 0) {
+                throw new Error("This ward has no usable beds for daycare");
+            }
+            const slots = await this.daycareSlotsForDay(tx, wardId, data.appointment_date);
+            if (peakDaycareOverlap(slots, start, end) >= capacity) {
+                throw new Error("The ward is full for this time -- pick another slot or ward");
+            }
+            const ipNumber = await this.ipdRepository.generateAdmissionId(tx);
+            await this.ipdRepository.createAdmission(tx, {
+                admission_id: ipNumber,
+                ip_number: ipNumber,
+                patient_id: patientId,
+                branch_id: branchId,
+                department_id: departmentId ?? undefined,
+                employee_id: employeeId ?? undefined,
+                admission_type: ipd_constants_1.ADMISSION_TYPE.DAYCARE,
+                is_daycare: true,
+                provisional_diagnosis: data.provisional_diagnosis?.trim() || undefined,
+                ward_id: wardId,
+                bed_id: bedId ?? undefined,
+                payment_mode: data.payment_mode?.trim() || undefined,
+                expected_stay_days: stay,
+                advance_amount: data.advance_amount !== undefined ? Number(data.advance_amount) : undefined,
+                admission_date: start,
+                status: ipd_types_1.IPD_STATUS.PLANNED,
+                created_by: actor.user_id,
+            });
+            return ipNumber;
+        });
+    }
+    async linkDaycareAppointment(admissionId, appointmentId) {
+        return prisma_1.default.admission.update({
+            where: { admission_id: admissionId },
+            data: { appointment_id: appointmentId },
+        });
+    }
+    /** Undoes step 1 when booking the doctor's slot failed (never shown to anyone). */
+    async discardDaycareRequest(admissionId) {
+        return prisma_1.default.admission.deleteMany({
+            where: { admission_id: admissionId, status: ipd_types_1.IPD_STATUS.PLANNED, appointment_id: null },
+        });
     }
     async dischargeAdmission(id, actor, data) {
         const existing = await this.getAdmissionForActor(id, actor);
@@ -776,7 +1048,7 @@ class IpdService {
         const holderById = new Map(holders.map((h) => [h.admission_id, h]));
         return beds.map(({ admission, ...bed }) => ({
             ...bed,
-            occupant: admission[0] ?? null,
+            occupant: admission ?? null,
             reserved_for: bed.status === ipd_types_1.BED_STATUS.RESERVED && bed.reserved_admission_id
                 ? holderById.get(bed.reserved_admission_id) ?? null
                 : null,

@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { generateId } from "../../utils/idGenerator";
-import { ID_ENTITY, OPEN_PLAN_STATUSES, PLAN_ORDER_STATUS } from "./chemotherapy.constants";
+import { DRUG_ROLE, ID_ENTITY, OPEN_PLAN_STATUSES, PLAN_ORDER_STATUS } from "./chemotherapy.constants";
 import { PlanFilterQuery, RegimenProtocolFilterQuery } from "./chemotherapy.types";
 
 export class ChemotherapyRepository {
@@ -1272,12 +1272,34 @@ export class ChemotherapyRepository {
 
     }
 
-    // Baseline items only - cycle day orders keep theirs.
+    // Baseline items only - cycle day orders keep theirs. Discharge rows are
+    // the doctor's own take-home drugs for this patient, not a copy of the
+    // protocol, so a protocol swap or a baseline replace leaves them alone.
     async deactivateActivePlanItems(tx: Prisma.TransactionClient, planId: string) {
 
         return tx.chemotherapy_plan_items.updateMany({
-            where: { chemotherapy_plan_id: planId, active_status: 1, plan_order_id: null },
+            where: {
+                chemotherapy_plan_id: planId,
+                active_status: 1,
+                plan_order_id: null,
+                drug_role: { not: DRUG_ROLE.DISCHARGE }
+            },
             data: { active_status: 0, updated_at: new Date() }
+        });
+
+    }
+
+    // This patient's discharge (take-home) rows - drug_role DISCHARGE.
+    async findPlanDischargeItems(planId: string) {
+
+        return prisma.chemotherapy_plan_items.findMany({
+            where: {
+                chemotherapy_plan_id: planId,
+                active_status: 1,
+                drug_role: DRUG_ROLE.DISCHARGE
+            },
+            include: { medicine_master: true },
+            orderBy: { drug_sequence: "asc" as const }
         });
 
     }

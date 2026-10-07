@@ -180,7 +180,6 @@ export class IpdRepository {
                 // Current occupant, for the bed board.
                 admission: {
                     where: { status: "ADMITTED" },
-                    take: 1,
                     select: {
                         admission_id: true,
                         ip_number: true,

@@ -10,6 +10,10 @@ import {
     listPlansValidation,
     addPlanItemValidation,
     updatePlanItemValidation,
+    addPlanDischargeMedicineValidation,
+    updatePlanDischargeMedicineValidation,
+    planDischargeParamValidation,
+    planDischargeItemParamValidation,
     planHydrationValidation,
     replacePlanItemsValidation,
     planOrderParamValidation,
@@ -406,6 +410,42 @@ router.delete(
     authenticate,
     authorize("chemo.plan.update"),
     controller.removePlanItem.bind(controller)
+);
+
+// ---------------- Plan discharge (take-home) medicines ----------------
+// This patient's own rows. Mounted under /plans/:planId/discharge-medicines
+// so they can never collide with the order routes above.
+
+router.get(
+    "/plans/:planId/discharge-medicines",
+    authenticate,
+    authorize("chemo.plan.read"),
+    planDischargeParamValidation,
+    controller.listPlanDischargeMedicines.bind(controller)
+);
+
+router.post(
+    "/plans/:planId/discharge-medicines",
+    authenticate,
+    authorize("chemo.plan.update"),
+    addPlanDischargeMedicineValidation,
+    controller.addPlanDischargeMedicine.bind(controller)
+);
+
+router.put(
+    "/plans/:planId/discharge-medicines/:planItemId",
+    authenticate,
+    authorize("chemo.plan.update"),
+    updatePlanDischargeMedicineValidation,
+    controller.updatePlanDischargeMedicine.bind(controller)
+);
+
+router.delete(
+    "/plans/:planId/discharge-medicines/:planItemId",
+    authenticate,
+    authorize("chemo.plan.update"),
+    planDischargeItemParamValidation,
+    controller.removePlanDischargeMedicine.bind(controller)
 );
 
 // ---------------- Plan hydration ----------------

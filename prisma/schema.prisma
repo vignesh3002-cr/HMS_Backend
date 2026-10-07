@@ -286,8 +286,6 @@ model bed_master {
   created_at            DateTime?   @default(now()) @db.Timestamp(6)
   updated_by            String?     @db.VarChar(100)
   updated_at            DateTime?   @default(now()) @db.Timestamp(6)
-  /// Set only while status = RESERVED: the planned admission holding the bed
-  /// and when the hold lapses (the IPD bed job releases it after that).
   reserved_admission_id String?     @db.VarChar(100)
   reserved_until        DateTime?   @db.Timestamp(6)
   admission             admission?
@@ -295,8 +293,8 @@ model bed_master {
   ward_master           ward_master @relation(fields: [ward_id], references: [ward_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_bed_ward")
 
   @@unique([ward_id, bed_number], map: "uq_bed_ward_number")
-  @@index([status], map: "idx_bed_status")
   @@index([reserved_until], map: "idx_bed_reserved_until", where: raw("((status)::text = 'RESERVED'::text)"))
+  @@index([status], map: "idx_bed_status")
   @@index([ward_id], map: "idx_bed_ward")
 }
 
@@ -1241,6 +1239,19 @@ model diagnosis_medicine_mapping {
   created_at      DateTime?       @default(now()) @db.Timestamp(6)
   diagnosis       diagnosis       @relation(fields: [diagnosis_id], references: [diagnosis_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_dm_diagnosis")
   medicine_master medicine_master @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_dm_medicine")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model disease_status_master {
+  id                BigInt    @id @default(autoincrement())
+  disease_status_id String    @unique(map: "uq_disease_status_id") @db.VarChar(100)
+  status_name       String    @db.VarChar(100)
+  display_order     Int?      @default(1)
+  active_status     Int?      @default(1) @db.SmallInt
+  created_by        String?   @db.VarChar(100)
+  created_at        DateTime? @default(now()) @db.Timestamp(6)
+  updated_at        DateTime? @default(now()) @db.Timestamp(6)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -2447,6 +2458,70 @@ model performance_status_master {
   @@index([is_active], map: "idx_perf_status_active")
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pharmacy_slip {
+  id                  BigInt               @id @default(autoincrement())
+  pharmacy_slip_id    String               @unique(map: "uq_pharmacy_slip_id") @db.VarChar(100)
+  patient_id          String               @db.VarChar(100)
+  branch_id           String               @db.VarChar(100)
+  encounter_no        String?              @db.VarChar(100)
+  appointment_id      String?              @db.VarChar(100)
+  plan_order_id       String?              @unique(map: "uq_pharmacy_slip_order", where: raw("((plan_order_id IS NOT NULL) AND ((slip_status)::text <> 'CANCELLED'::text))")) @db.VarChar(100)
+  cycle_number        Int?
+  cycle_day           Int?
+  protocol_name       String?              @db.VarChar(100)
+  regimen_name        String?              @db.VarChar(100)
+  slip_status         String               @default("DRAFT") @db.VarChar(20)
+  issued_at           DateTime?            @db.Timestamp(6)
+  issued_by           String?              @db.VarChar(100)
+  printed_at          DateTime?            @db.Timestamp(6)
+  printed_by          String?              @db.VarChar(100)
+  cancelled_at        DateTime?            @db.Timestamp(6)
+  cancelled_by        String?              @db.VarChar(100)
+  cancellation_reason String?              @db.VarChar(255)
+  created_by          String?              @db.VarChar(100)
+  created_at          DateTime?            @default(now()) @db.Timestamp(6)
+  updated_by          String?              @db.VarChar(100)
+  updated_at          DateTime?            @default(now()) @db.Timestamp(6)
+  branch              branch               @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_branch")
+  encounter           encounter?           @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_encounter")
+  patient_bio_data    patient_bio_data     @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_patient")
+  pharmacy_slip_item  pharmacy_slip_item[]
+
+  @@index([branch_id], map: "idx_pharmacy_slip_branch")
+  @@index([encounter_no], map: "idx_pharmacy_slip_encounter")
+  @@index([patient_id, created_at(sort: Desc)], map: "idx_pharmacy_slip_patient")
+  @@index([slip_status, created_at(sort: Desc)], map: "idx_pharmacy_slip_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pharmacy_slip_item {
+  id                    BigInt           @id @default(autoincrement())
+  pharmacy_slip_item_id String           @unique(map: "uq_pharmacy_slip_item_id") @db.VarChar(100)
+  pharmacy_slip_id      String           @db.VarChar(100)
+  display_order         Int              @default(0)
+  medicine_id           String?          @db.VarChar(100)
+  drug_name             String?          @db.VarChar(200)
+  brand_name            String?          @db.VarChar(255)
+  dose                  String?          @db.VarChar(100)
+  dose_unit             String?          @db.VarChar(50)
+  quantity              Int?
+  drug_role             String?          @db.VarChar(100)
+  route                 String?          @db.VarChar(100)
+  frequency             String?          @db.VarChar(100)
+  duration              String?          @db.VarChar(100)
+  instructions          String?          @db.VarChar(255)
+  created_at            DateTime?        @default(now()) @db.Timestamp(6)
+  updated_at            DateTime?        @default(now()) @db.Timestamp(6)
+  medicine_master       medicine_master? @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_item_medicine")
+  pharmacy_slip         pharmacy_slip    @relation(fields: [pharmacy_slip_id], references: [pharmacy_slip_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pharmacy_slip_item_slip")
+
+  @@index([medicine_id], map: "idx_pharmacy_slip_item_medicine")
+  @@index([pharmacy_slip_id, display_order], map: "idx_pharmacy_slip_item_slip")
+}
+
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model prescription {
   id                  BigInt               @id @default(autoincrement())
@@ -2597,6 +2672,25 @@ model symptom_master {
   @@index([category], map: "idx_symptom_category")
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model tnm_stage_master {
+  id             BigInt       @id @default(autoincrement())
+  tnm_id         String       @unique(map: "uq_tnm_stage_id") @db.VarChar(100)
+  cancer_type_id String       @db.VarChar(100)
+  axis           String       @db.VarChar(1)
+  stage_value    String       @db.VarChar(100)
+  display_order  Int?         @default(1)
+  active_status  Int?         @default(1) @db.SmallInt
+  created_by     String?      @db.VarChar(100)
+  created_at     DateTime?    @default(now()) @db.Timestamp(6)
+  updated_at     DateTime?    @default(now()) @db.Timestamp(6)
+  cancer_types   cancer_types @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tnm_stage_cancer_type")
+
+  @@index([cancer_type_id], map: "idx_tnm_stage_type")
+}
+
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model treatment_type_master {
   id            BigInt   @id @default(autoincrement())
@@ -2703,106 +2797,6 @@ model ward_master {
   branch        branch       @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ward_branch")
 
   @@index([branch_id], map: "idx_ward_branch")
-}
-
-/// One issued pharmacy document per visit, independent of which medication
-/// source its lines came from. The source is a registry key (source_type)
-/// plus an opaque pointer (source_ref) rather than a foreign key, so adding a
-/// new medication source is an adapter, not a migration.
-model pharmacy_slip {
-  id                  BigInt               @id @default(autoincrement())
-  pharmacy_slip_id    String               @unique(map: "uq_pharmacy_slip_id") @db.VarChar(100)
-  patient_id          String               @db.VarChar(100)
-  branch_id           String               @db.VarChar(100)
-  encounter_no        String?              @db.VarChar(100)
-  appointment_id      String?              @db.VarChar(100)
-  plan_order_id       String?              @unique(map: "uq_pharmacy_slip_order", where: raw("((plan_order_id IS NOT NULL) AND ((slip_status)::text <> 'CANCELLED'::text))")) @db.VarChar(100)
-  cycle_number        Int?
-  cycle_day           Int?
-  protocol_name       String?              @db.VarChar(100)
-  regimen_name        String?              @db.VarChar(100)
-  slip_status         String               @default("DRAFT") @db.VarChar(20)
-  issued_at           DateTime?            @db.Timestamp(6)
-  issued_by           String?              @db.VarChar(100)
-  printed_at          DateTime?            @db.Timestamp(6)
-  printed_by          String?              @db.VarChar(100)
-  cancelled_at        DateTime?            @db.Timestamp(6)
-  cancelled_by        String?              @db.VarChar(100)
-  cancellation_reason String?              @db.VarChar(255)
-  created_by          String?              @db.VarChar(100)
-  created_at          DateTime?            @default(now()) @db.Timestamp(6)
-  updated_by          String?              @db.VarChar(100)
-  updated_at          DateTime?            @default(now()) @db.Timestamp(6)
-  branch              branch               @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_branch")
-  encounter           encounter?           @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_encounter")
-  patient_bio_data    patient_bio_data     @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_patient")
-  pharmacy_slip_item  pharmacy_slip_item[]
-
-  @@index([patient_id, created_at(sort: Desc)], map: "idx_pharmacy_slip_patient")
-  @@index([branch_id], map: "idx_pharmacy_slip_branch")
-  @@index([encounter_no], map: "idx_pharmacy_slip_encounter")
-  @@index([slip_status, created_at(sort: Desc)], map: "idx_pharmacy_slip_status")
-}
-
-/// A frozen copy of one medicine line on a slip, taken when the slip was
-/// created so a later edit to the plan, protocol or prescription cannot rewrite
-/// an already-issued document. quantity is the pharmacy's pack quantity, kept
-/// separate from the clinical dose.
-model pharmacy_slip_item {
-  id                    BigInt           @id @default(autoincrement())
-  pharmacy_slip_item_id String           @unique(map: "uq_pharmacy_slip_item_id") @db.VarChar(100)
-  pharmacy_slip_id      String           @db.VarChar(100)
-  display_order         Int              @default(0)
-  medicine_id           String?          @db.VarChar(100)
-  drug_name             String?          @db.VarChar(200)
-  brand_name            String?          @db.VarChar(255)
-  dose                  String?          @db.VarChar(100)
-  dose_unit             String?          @db.VarChar(50)
-  quantity              Int?
-  drug_role             String?          @db.VarChar(100)
-  route                 String?          @db.VarChar(100)
-  frequency             String?          @db.VarChar(100)
-  duration              String?          @db.VarChar(100)
-  instructions          String?          @db.VarChar(255)
-  created_at            DateTime?        @default(now()) @db.Timestamp(6)
-  updated_at            DateTime?        @default(now()) @db.Timestamp(6)
-  medicine_master       medicine_master? @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_item_medicine")
-  pharmacy_slip         pharmacy_slip    @relation(fields: [pharmacy_slip_id], references: [pharmacy_slip_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pharmacy_slip_item_slip")
-
-  @@index([pharmacy_slip_id, display_order], map: "idx_pharmacy_slip_item_slip")
-  @@index([medicine_id], map: "idx_pharmacy_slip_item_medicine")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
-model disease_status_master {
-  id                BigInt    @id @default(autoincrement())
-  disease_status_id String    @unique(map: "uq_disease_status_id") @db.VarChar(100)
-  status_name       String    @db.VarChar(100)
-  display_order     Int?      @default(1)
-  active_status     Int?      @default(1) @db.SmallInt
-  created_by        String?   @db.VarChar(100)
-  created_at        DateTime? @default(now()) @db.Timestamp(6)
-  updated_at        DateTime? @default(now()) @db.Timestamp(6)
-}
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
-model tnm_stage_master {
-  id             BigInt       @id @default(autoincrement())
-  tnm_id         String       @unique(map: "uq_tnm_stage_id") @db.VarChar(100)
-  cancer_type_id String       @db.VarChar(100)
-  axis           String       @db.VarChar(1)
-  stage_value    String       @db.VarChar(100)
-  display_order  Int?         @default(1)
-  active_status  Int?         @default(1) @db.SmallInt
-  created_by     String?      @db.VarChar(100)
-  created_at     DateTime?    @default(now()) @db.Timestamp(6)
-  updated_at     DateTime?    @default(now()) @db.Timestamp(6)
-  cancer_types   cancer_types @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tnm_stage_cancer_type")
-
-  @@index([cancer_type_id], map: "idx_tnm_stage_type")
 }
 
 enum DoctorScheduleChangeMode {
