@@ -55,7 +55,7 @@ model admission {
   id                     BigInt                   @id @default(autoincrement())
   admission_id           String                   @unique @db.VarChar(100)
   ip_number              String                   @unique @db.VarChar(100)
-  patient_id             String                   @db.VarChar(100)
+  patient_id             String                   @unique(map: "uq_admission_patient_admitted", where: raw("((status)::text = 'ADMITTED'::text)")) @db.VarChar(100)
   appointment_id         String?                  @db.VarChar(100)
   encounter_no           String?                  @db.VarChar(100)
   branch_id              String                   @db.VarChar(100)
@@ -64,7 +64,7 @@ model admission {
   admission_type         String                   @db.VarChar(100)
   provisional_diagnosis  String?
   ward_id                String?                  @db.VarChar(100)
-  bed_id                 String?                  @db.VarChar(100)
+  bed_id                 String?                  @unique(map: "uq_admission_bed_admitted", where: raw("(((status)::text = 'ADMITTED'::text) AND (bed_id IS NOT NULL))")) @db.VarChar(100)
   is_daycare             Boolean                  @default(false)
   payment_mode           String?                  @db.VarChar(100)
   insurance_provider     String?                  @db.VarChar(100)
@@ -80,6 +80,7 @@ model admission {
   created_at             DateTime?                @default(now()) @db.Timestamp(6)
   updated_by             String?                  @db.VarChar(100)
   updated_at             DateTime?                @default(now()) @db.Timestamp(6)
+  cancellation_reason    String?
   bed_master             bed_master?              @relation(fields: [bed_id], references: [bed_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_bed")
   branch                 branch                   @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_branch")
   department_master      department_master?       @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_department")
@@ -210,6 +211,8 @@ model appointment_history {
   lab_history                     lab_history[]
   lab_order                       lab_order[]
   patient_history                 patient_history[]
+
+  @@index([appointment_date], map: "idx_appointment_pending_date", where: raw("((status)::text = ANY ((ARRAY['SCHEDULED'::character varying, 'RESCHEDULED'::character varying])::text[]))"))
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -269,27 +272,30 @@ model appointment_reschedule_queue {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model bed_master {
-  id            BigInt      @id @default(autoincrement())
-  bed_id        String      @unique @db.VarChar(100)
-  ward_id       String      @db.VarChar(100)
-  branch_id     String      @db.VarChar(100)
-  bed_number    String      @db.VarChar(100)
-  bed_type      String?     @db.VarChar(100)
-  tariff        Decimal?    @db.Decimal(10, 2)
-  status        String      @default("AVAILABLE") @db.VarChar(100)
-  remarks       String?
-  active_status Int?        @default(1) @db.SmallInt
-  created_by    String?     @db.VarChar(100)
-  created_at    DateTime?   @default(now()) @db.Timestamp(6)
-  updated_by    String?     @db.VarChar(100)
-  updated_at    DateTime?   @default(now()) @db.Timestamp(6)
-  admission     admission[]
-  branch        branch      @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_bed_branch")
-  ward_master   ward_master @relation(fields: [ward_id], references: [ward_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_bed_ward")
+  id                    BigInt      @id @default(autoincrement())
+  bed_id                String      @unique @db.VarChar(100)
+  ward_id               String      @db.VarChar(100)
+  branch_id             String      @db.VarChar(100)
+  bed_number            String      @db.VarChar(100)
+  bed_type              String?     @db.VarChar(100)
+  tariff                Decimal?    @db.Decimal(10, 2)
+  status                String      @default("AVAILABLE") @db.VarChar(100)
+  remarks               String?
+  active_status         Int?        @default(1) @db.SmallInt
+  created_by            String?     @db.VarChar(100)
+  created_at            DateTime?   @default(now()) @db.Timestamp(6)
+  updated_by            String?     @db.VarChar(100)
+  updated_at            DateTime?   @default(now()) @db.Timestamp(6)
+  reserved_admission_id String?     @db.VarChar(100)
+  reserved_until        DateTime?   @db.Timestamp(6)
+  admission             admission?
+  branch                branch      @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_bed_branch")
+  ward_master           ward_master @relation(fields: [ward_id], references: [ward_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_bed_ward")
 
   @@unique([ward_id, bed_number], map: "uq_bed_ward_number")
   @@index([status], map: "idx_bed_status")
   @@index([ward_id], map: "idx_bed_ward")
+  @@index([reserved_until], map: "idx_bed_reserved_until", where: raw("((status)::text = 'RESERVED'::text)"))
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1236,6 +1242,7 @@ model diagnosis_medicine_mapping {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model disease_status_master {
   id                BigInt    @id @default(autoincrement())
   disease_status_id String    @unique(map: "uq_disease_status_id") @db.VarChar(100)
@@ -2176,14 +2183,14 @@ model oncology_staging_detail {
   notes                               String?
   progression_date                    DateTime?                             @db.Date
   relapse_date                        DateTime?                             @db.Date
-  second_primary_date                 DateTime?                             @db.Date
   score                               String?
   score_system                        String?                               @db.VarChar(255)
-  histopathology                      String?                               @db.VarChar(100)
   encounter_no                        String?                               @unique(map: "uq_staging_detail_encounter", where: raw("(encounter_no IS NOT NULL)")) @db.VarChar(100)
   suggested_molecular_test            String?                               @db.VarChar(255)
   suggested_molecular_test_date       DateTime?                             @db.Date
   suggested_molecular_test_note       String?
+  histopathology                      String?                               @db.VarChar(100)
+  second_primary_date                 DateTime?                             @db.Date
   chemotherapy_plan                   chemotherapy_plan[]
   derived_fields                      derived_fields?
   ihc_results                         ihc_results?
@@ -2264,7 +2271,7 @@ model patient_bio_data {
   referral_address               String?                        @db.VarChar
   referral_mail                  String?                        @db.VarChar
   referral_branch_name           String?                        @db.VarChar
-  admission                      admission[]
+  admission                      admission?
   appointment_history            appointment_history[]
   appointment_reschedule_queue   appointment_reschedule_queue[]
   chemotherapy_plan              chemotherapy_plan?
@@ -2604,6 +2611,7 @@ model symptom_master {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model tnm_stage_master {
   id             BigInt       @id @default(autoincrement())
   tnm_id         String       @unique(map: "uq_tnm_stage_id") @db.VarChar(100)
@@ -2735,8 +2743,6 @@ model pharmacy_slip {
   pharmacy_slip_id    String               @unique(map: "uq_pharmacy_slip_id") @db.VarChar(100)
   patient_id          String               @db.VarChar(100)
   branch_id           String               @db.VarChar(100)
-  source_type         String               @db.VarChar(50)
-  source_ref          String?              @db.VarChar(100)
   encounter_no        String?              @db.VarChar(100)
   appointment_id      String?              @db.VarChar(100)
   plan_order_id       String?              @unique(map: "uq_pharmacy_slip_order", where: raw("((plan_order_id IS NOT NULL) AND ((slip_status)::text <> 'CANCELLED'::text))")) @db.VarChar(100)
@@ -2752,8 +2758,6 @@ model pharmacy_slip {
   cancelled_at        DateTime?            @db.Timestamp(6)
   cancelled_by        String?              @db.VarChar(100)
   cancellation_reason String?              @db.VarChar(255)
-  remarks             String?              @db.VarChar(255)
-  active_status       Int?                 @default(1) @db.SmallInt
   created_by          String?              @db.VarChar(100)
   created_at          DateTime?            @default(now()) @db.Timestamp(6)
   updated_by          String?              @db.VarChar(100)
@@ -2766,7 +2770,6 @@ model pharmacy_slip {
   @@index([branch_id], map: "idx_pharmacy_slip_branch")
   @@index([encounter_no], map: "idx_pharmacy_slip_encounter")
   @@index([patient_id, created_at(sort: Desc)], map: "idx_pharmacy_slip_patient")
-  @@index([source_type, source_ref], map: "idx_pharmacy_slip_source")
   @@index([slip_status, created_at(sort: Desc)], map: "idx_pharmacy_slip_status")
 }
 
@@ -2782,22 +2785,12 @@ model pharmacy_slip_item {
   brand_name            String?          @db.VarChar(255)
   dose                  String?          @db.VarChar(100)
   dose_unit             String?          @db.VarChar(50)
-  quantity              Decimal?         @db.Decimal(10, 2)
-  quantity_unit         String?          @db.VarChar(50)
+  quantity              Int?
   drug_role             String?          @db.VarChar(100)
   route                 String?          @db.VarChar(100)
   frequency             String?          @db.VarChar(100)
   duration              String?          @db.VarChar(100)
   instructions          String?          @db.VarChar(255)
-  source_item_ref       String?          @db.VarChar(100)
-  is_narcotic           Boolean          @default(false)
-  is_high_risk          Boolean          @default(false)
-  is_batch_required     Boolean          @default(false)
-  is_expiry_required    Boolean          @default(false)
-  batch_no              String?          @db.VarChar(100)
-  expiry_date           DateTime?        @db.Date
-  item_status           String           @default("PENDING") @db.VarChar(20)
-  remarks               String?          @db.VarChar(255)
   created_at            DateTime?        @default(now()) @db.Timestamp(6)
   updated_at            DateTime?        @default(now()) @db.Timestamp(6)
   medicine_master       medicine_master? @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_item_medicine")
