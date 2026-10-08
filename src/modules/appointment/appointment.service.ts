@@ -1232,6 +1232,21 @@ export class AppointmentService {
             !!data.appointment_date ||
             !!data.appointment_time;
 
+        // A daycare booking's slot was capacity-checked against its ward
+        // together with the daycare request -- moving it would bypass that.
+        if (scheduleChanged) {
+            const daycare =
+                await new IpdService().findPlannedDaycareForAppointment(
+                    appointmentNo
+                );
+
+            if (daycare) {
+                throw new Error(
+                    `This appointment belongs to daycare booking ${daycare.ip_number} -- cancel it and book the daycare again to change the date, time or doctor`
+                );
+            }
+        }
+
         return prisma.$transaction(
             async (tx) => {
 
@@ -1431,6 +1446,37 @@ export class AppointmentService {
         ) {
             throw new Error(
                 "Cancellation reason is required when cancelling an appointment"
+            );
+        }
+
+        // Cancelling / no-showing a daycare booking's slot closes the planned
+        // daycare request with it (and frees any bed it held), atomically.
+        if (
+            status === APPOINTMENT_STATUS.CANCELLED ||
+            status === APPOINTMENT_STATUS.NO_SHOW
+        ) {
+            return this.transformAppointmentFields(
+                await prisma.$transaction(async (tx) => {
+
+                    const updated =
+                        await repository.updateAppointmentStatus(
+                            appointmentNo,
+                            status,
+                            cancelReason,
+                            cancelledBy,
+                            tx
+                        );
+
+                    await new IpdService().closePlannedForAppointment(
+                        tx,
+                        appointmentNo,
+                        status === APPOINTMENT_STATUS.CANCELLED ? "CANCELLED" : "NO_SHOW",
+                        cancelReason,
+                        cancelledBy || "SYSTEM"
+                    );
+
+                    return updated;
+                })
             );
         }
 

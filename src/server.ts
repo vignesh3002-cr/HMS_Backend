@@ -17,6 +17,7 @@ import permissionRoutes from "./modules/permission/permission.routes";
 import roleRoutes from "./modules/role/role.routes";
 import prescriptionRoutes from "./modules/prescription/prescription.routes";
 import chemotherapyRoutes from "./modules/chemotherapy/chemotherapy.routes";
+import pharmacyRoutes from "./modules/pharmacy/pharmacy.routes";
 import oncologyRoutes from "./modules/oncology/oncology.routes";
 import auditRoutes from "./modules/audit/audit.routes";
 import exportRoutes from "./modules/export/export.routes";
@@ -39,7 +40,6 @@ import aiChatRoutes from "./modules/ai/ai-chat.routes";
 import patientDocumentRoutes from "./modules/patient-document/patientDocument.routes";
 
 import { hashPassword } from "./utils/bcrypt";
-import { startAppointmentStatusJob } from "./jobs/appointment-status.job";
 
 // Fix BigInt serialization - Prisma returns BigInt types
 // that JSON.stringify can't handle
@@ -137,6 +137,7 @@ app.use("/api/lab-test-master", labTestMasterRoutes);
 app.use("/api/lab-order", labOrderRoutes);
 app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/chemotherapy", chemotherapyRoutes);
+app.use("/api/pharmacy", pharmacyRoutes);
 app.use("/api/lab-order-item", labOrderItemRoutes);
 app.use("/api/lab-report", labReportRoutes);
 app.use("/api/encounters", encounterRoutes);
@@ -177,10 +178,9 @@ app.use("/api/hashpassword", async (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-// Background sweep: cancels SCHEDULED/RESCHEDULED appointments whose day
-// has fully passed (IST). Scoped strictly to those two statuses -- terminal
-// and in-flight states are never touched.
-startAppointmentStatusJob();
+// Daily day-boundary sweeps (appointment NO_SHOW, IPD bed reservations and
+// planned-admission NO_SHOW) run inside Postgres via pg_cron -- see
+// prisma/sql/20261007_daily_sweeps_pg_cron.sql. Nothing is polled from here.
 
 app.listen(PORT, () => {
 

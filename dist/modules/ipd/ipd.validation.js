@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateBedStatusValidation = exports.updateBedValidation = exports.updateWardValidation = exports.createBedValidation = exports.createWardValidation = exports.getAdmissionByIpNumberValidation = exports.getAdmissionsValidation = exports.IPD_SORT_FIELDS = exports.transferAdmissionValidation = exports.dischargeAdmissionValidation = exports.updateAdmissionValidation = exports.createAdmissionValidation = void 0;
+exports.updateBedStatusValidation = exports.updateBedValidation = exports.updateWardValidation = exports.createBedValidation = exports.createWardValidation = exports.getAdmissionByIpNumberValidation = exports.getAdmissionsValidation = exports.IPD_SORT_FIELDS = exports.daycareOccupancyValidation = exports.createDaycareValidation = exports.closePlannedValidation = exports.reserveBedValidation = exports.admitAdmissionValidation = exports.transferAdmissionValidation = exports.dischargeAdmissionValidation = exports.updateAdmissionValidation = exports.createAdmissionValidation = void 0;
 const express_validator_1 = require("express-validator");
 const ipd_constants_1 = require("./ipd.constants");
-const ipd_types_1 = require("./ipd.types");
+const ipd_constants_2 = require("./ipd.constants");
 exports.createAdmissionValidation = [
     (0, express_validator_1.body)("patient_id")
         .notEmpty()
@@ -78,6 +78,53 @@ exports.transferAdmissionValidation = [
         .withMessage("Target bed is required"),
     (0, express_validator_1.body)("reason").optional().isString(),
 ];
+exports.admitAdmissionValidation = [
+    (0, express_validator_1.param)("id")
+        .notEmpty()
+        .withMessage("Admission ID or IP number is required"),
+    (0, express_validator_1.body)("ward_id").optional().isString(),
+    (0, express_validator_1.body)("bed_id").optional().isString(),
+];
+// Reserve takes the same optional ward/bed override as admit.
+exports.reserveBedValidation = exports.admitAdmissionValidation;
+// Cancel / no-show of a planned admission, with an optional reason.
+exports.closePlannedValidation = [
+    (0, express_validator_1.param)("id")
+        .notEmpty()
+        .withMessage("Admission ID or IP number is required"),
+    (0, express_validator_1.body)("reason")
+        .optional()
+        .isString()
+        .isLength({ max: 500 })
+        .withMessage("Reason must be at most 500 characters"),
+];
+// Daycare booking: doctor slot + PLANNED daycare admission (ward required,
+// bed optional, session length more than 0 and at most 1 day).
+exports.createDaycareValidation = [
+    (0, express_validator_1.body)("patient_id").notEmpty().withMessage("Patient is required"),
+    (0, express_validator_1.body)("branch_id").notEmpty().withMessage("Branch is required"),
+    (0, express_validator_1.body)("department_id").notEmpty().withMessage("Department is required"),
+    (0, express_validator_1.body)("employee_id").notEmpty().withMessage("Doctor is required"),
+    (0, express_validator_1.body)("ward_id").notEmpty().withMessage("Ward is required for a daycare booking"),
+    (0, express_validator_1.body)("bed_id").optional().isString(),
+    (0, express_validator_1.body)("appointment_date")
+        .notEmpty().withMessage("Date is required")
+        .isISO8601().withMessage("Date must be a valid date"),
+    (0, express_validator_1.body)("appointment_time")
+        .notEmpty().withMessage("Time slot is required")
+        .matches(/^\d{1,2}:\d{2}(:\d{2})?$/).withMessage("Time slot must be HH:mm"),
+    (0, express_validator_1.body)("expected_stay_days")
+        .isFloat({ gt: 0, max: 1 })
+        .withMessage("Daycare duration must be more than 0 and at most 24 hours"),
+    (0, express_validator_1.body)("payment_mode").optional().isString(),
+    (0, express_validator_1.body)("advance_amount").optional().isFloat({ min: 0 }),
+    (0, express_validator_1.body)("provisional_diagnosis").optional().isString(),
+    (0, express_validator_1.body)("reason_for_visit").optional().isString(),
+];
+exports.daycareOccupancyValidation = [
+    (0, express_validator_1.query)("wardId").notEmpty().withMessage("Ward is required"),
+    (0, express_validator_1.query)("date").isISO8601().withMessage("Date must be a valid date (yyyy-MM-dd)"),
+];
 exports.IPD_SORT_FIELDS = [
     "ip_number",
     "patient",
@@ -149,7 +196,7 @@ exports.updateBedStatusValidation = [
     (0, express_validator_1.body)("status")
         .notEmpty()
         .withMessage("Status is required")
-        .isIn([ipd_types_1.BED_STATUS.AVAILABLE, ipd_types_1.BED_STATUS.MAINTENANCE])
-        .withMessage(`Status must be one of: ${ipd_types_1.BED_STATUS.AVAILABLE}, ${ipd_types_1.BED_STATUS.MAINTENANCE}`),
+        .isIn([...ipd_constants_2.MANUAL_BED_STATUSES])
+        .withMessage(`Status must be one of: ${ipd_constants_2.MANUAL_BED_STATUSES.join(", ")}`),
     (0, express_validator_1.body)("remarks").optional().trim().isString(),
 ];

@@ -204,8 +204,8 @@ class AppointmentRepository {
             data
         });
     }
-    async updateAppointmentStatus(appointmentId, status, cancelReason, cancelledBy) {
-        return prisma_1.default.appointment_history.update({
+    async updateAppointmentStatus(appointmentId, status, cancelReason, cancelledBy, client = prisma_1.default) {
+        return client.appointment_history.update({
             where: { appointment_id: appointmentId },
             data: {
                 status,

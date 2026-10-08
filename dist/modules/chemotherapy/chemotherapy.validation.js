@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.planIdParamValidation = exports.cycleIdParamValidation = exports.recordFollowupValidation = exports.recordLabReviewValidation = exports.recordAdverseEventValidation = exports.recordVitalsValidation = exports.recordAdministrationValidation = exports.updateCycleValidation = exports.cycleStatusValidation = exports.createCycleValidation = exports.updatePlanItemValidation = exports.addPlanItemValidation = exports.planHydrationValidation = exports.completePlanOrdersValidation = exports.savePlanOrderValidation = exports.planOrderParamValidation = exports.replacePlanItemsValidation = exports.listPlansValidation = exports.planStatusValidation = exports.updatePlanValidation = exports.createPlanValidation = exports.updateRegimenProtocolItemValidation = exports.removeDischargeInstructionValidation = exports.updateDischargeInstructionValidation = exports.addDischargeInstructionValidation = exports.addRegimenProtocolItemValidation = exports.createPersonalizedProtocolVersionValidation = exports.removePersonalizedProtocolDilutionValidation = exports.updatePersonalizedProtocolDilutionValidation = exports.addPersonalizedProtocolDilutionValidation = exports.removePersonalizedProtocolDayValidation = exports.updatePersonalizedProtocolDayValidation = exports.addPersonalizedProtocolDayValidation = exports.removePersonalizedProtocolItemValidation = exports.updatePersonalizedProtocolItemValidation = exports.addPersonalizedProtocolItemValidation = exports.updatePersonalizedProtocolValidation = exports.personalizeRegimenProtocolValidation = exports.protocolIdParamValidation = exports.updateRegimenProtocolValidation = exports.createRegimenProtocolValidation = exports.getRegimenProtocolValidation = exports.listRegimenProtocolsValidation = exports.previewPlanValidation = void 0;
+exports.planIdParamValidation = exports.cycleIdParamValidation = exports.recordFollowupValidation = exports.recordLabReviewValidation = exports.recordAdverseEventValidation = exports.recordVitalsValidation = exports.recordAdministrationValidation = exports.updateCycleValidation = exports.cycleStatusValidation = exports.createCycleValidation = exports.updatePlanItemValidation = exports.addPlanItemValidation = exports.planHydrationValidation = exports.completePlanOrdersValidation = exports.savePlanOrderValidation = exports.planOrderParamValidation = exports.replacePlanItemsValidation = exports.planDischargeItemParamValidation = exports.planDischargeParamValidation = exports.updatePlanDischargeMedicineValidation = exports.addPlanDischargeMedicineValidation = exports.listPlansValidation = exports.planStatusValidation = exports.updatePlanValidation = exports.createPlanValidation = exports.updateRegimenProtocolItemValidation = exports.removeDischargeInstructionValidation = exports.updateDischargeInstructionValidation = exports.addDischargeInstructionValidation = exports.addRegimenProtocolItemValidation = exports.createPersonalizedProtocolVersionValidation = exports.removePersonalizedProtocolDilutionValidation = exports.updatePersonalizedProtocolDilutionValidation = exports.addPersonalizedProtocolDilutionValidation = exports.removePersonalizedProtocolDayValidation = exports.updatePersonalizedProtocolDayValidation = exports.addPersonalizedProtocolDayValidation = exports.removePersonalizedProtocolItemValidation = exports.updatePersonalizedProtocolItemValidation = exports.addPersonalizedProtocolItemValidation = exports.updatePersonalizedProtocolValidation = exports.personalizeRegimenProtocolValidation = exports.protocolIdParamValidation = exports.updateRegimenProtocolValidation = exports.createRegimenProtocolValidation = exports.getRegimenProtocolValidation = exports.listRegimenProtocolsValidation = exports.previewPlanValidation = void 0;
 const express_validator_1 = require("express-validator");
 const chemotherapy_constants_1 = require("./chemotherapy.constants");
 exports.previewPlanValidation = [
@@ -375,11 +375,16 @@ function planItemListRules(prefix) {
         (0, express_validator_1.body)(`${prefix}calculated_dose`).optional({ nullable: true }).isFloat({ min: 0 }),
         (0, express_validator_1.body)(`${prefix}infusion_duration_minutes`).optional({ nullable: true }).isInt({ min: 0 }).withMessage("Infusion duration must be whole minutes"),
         (0, express_validator_1.body)(`${prefix}administration_day`).optional({ nullable: true }).isInt({ min: 1 }),
+        /* Free text on the row, e.g. the Dilution tab's "500 mL"; the column
+           is VARCHAR(100), so reject a longer value here rather than let it
+           fail on insert. */
+        (0, express_validator_1.body)(`${prefix}dilution_volume`).optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Dilution volume must be at most 100 characters"),
         (0, express_validator_1.body)(`${prefix}formulation`).optional({ nullable: true }).isString().isLength({ max: 100 }),
         (0, express_validator_1.body)(`${prefix}administration_route`).optional({ nullable: true }).isString().isLength({ max: 100 }),
         (0, express_validator_1.body)(`${prefix}infusion_type`).optional({ nullable: true }).isString().isLength({ max: 100 }),
         (0, express_validator_1.body)(`${prefix}frequency`).optional({ nullable: true }).isString().isLength({ max: 100 }),
-        (0, express_validator_1.body)(`${prefix}timing_relative_to_primary`).optional({ nullable: true }).isString().isLength({ max: 100 })
+        (0, express_validator_1.body)(`${prefix}timing_relative_to_primary`).optional({ nullable: true }).isString().isLength({ max: 100 }),
+        (0, express_validator_1.body)(`${prefix}duration`).optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Duration must be at most 100 characters")
     ];
 }
 function hydrationRowRules(prefix) {
@@ -403,6 +408,46 @@ const planItemRowRules = [
     (0, express_validator_1.body)("timing_relative_to_primary").optional({ nullable: true }).isString().isLength({ max: 100 }),
     (0, express_validator_1.body)("administration_detail").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("remarks").optional({ nullable: true }).isString()
+];
+// Discharge (take-home) rows. drug_role is not accepted from the body: the
+// endpoint always stores the row as DISCHARGE on this patient's plan.
+exports.addPlanDischargeMedicineValidation = [
+    (0, express_validator_1.param)("planId").notEmpty(),
+    ...drugIdentityRules(""),
+    (0, express_validator_1.body)("drug_sequence").isInt({ min: 1 }).withMessage("A discharge medicine requires a drug_sequence >= 1"),
+    (0, express_validator_1.body)("drug_type").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)("dosage").optional({ nullable: true }).isFloat({ min: 0 }).withMessage("Dose must be a number"),
+    (0, express_validator_1.body)("dosage_unit").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)("frequency").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)("administration_detail").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("duration").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Duration must be at most 100 characters"),
+    (0, express_validator_1.body)("remarks").optional({ nullable: true }).isString()
+];
+// Every field is optional, but drug_sequence still has to be a whole number
+// >= 1 when it is sent.
+exports.updatePlanDischargeMedicineValidation = [
+    (0, express_validator_1.param)("planId").notEmpty(),
+    (0, express_validator_1.param)("planItemId").notEmpty(),
+    /* No whole-body drug check here: a partial edit may send only a dosage,
+       so the service rejects a drug change that leaves the row with neither
+       a medicine nor a name. */
+    (0, express_validator_1.body)("medicine_id").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("drug_name").optional({ nullable: true }).isString().isLength({ max: 200 }).withMessage("Drug name must be at most 200 characters"),
+    (0, express_validator_1.body)("drug_sequence").optional().isInt({ min: 1 }),
+    (0, express_validator_1.body)("drug_type").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)("dosage").optional({ nullable: true }).isFloat({ min: 0 }).withMessage("Dose must be a number"),
+    (0, express_validator_1.body)("dosage_unit").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)("frequency").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)("administration_detail").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("duration").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Duration must be at most 100 characters"),
+    (0, express_validator_1.body)("remarks").optional({ nullable: true }).isString()
+];
+exports.planDischargeParamValidation = [
+    (0, express_validator_1.param)("planId").notEmpty()
+];
+exports.planDischargeItemParamValidation = [
+    (0, express_validator_1.param)("planId").notEmpty(),
+    (0, express_validator_1.param)("planItemId").notEmpty()
 ];
 exports.replacePlanItemsValidation = [
     (0, express_validator_1.param)("planId").notEmpty(),

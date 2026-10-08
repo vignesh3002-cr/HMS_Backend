@@ -616,6 +616,53 @@ class ChemotherapyController {
             return handleError(res, error);
         }
     }
+    // ---------------- Discharge (take-home) medicines ----------------
+    // Scoped to one patient's plan; never the regimen protocol or its
+    // master tables.
+    async listPlanDischargeMedicines(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.listPlanDischargeMedicines(req.params.planId);
+            return res.json({ success: true, message: "Discharge medicines fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async addPlanDischargeMedicine(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.addPlanDischargeMedicine(req.params.planId, req.body, actingUserId(req));
+            return res.status(201).json({ success: true, message: "Discharge medicine added to this patient successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async updatePlanDischargeMedicine(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.updatePlanDischargeMedicine(req.params.planId, req.params.planItemId, req.body, actingUserId(req));
+            return res.json({ success: true, message: "Discharge medicine updated successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async removePlanDischargeMedicine(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.removePlanDischargeMedicine(req.params.planId, req.params.planItemId, actingUserId(req));
+            return res.json({ success: true, message: "Discharge medicine removed successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
     // ---------------- Cycles ----------------
     async createCycle(req, res) {
         try {
