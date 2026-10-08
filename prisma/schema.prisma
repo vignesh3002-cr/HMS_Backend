@@ -902,6 +902,8 @@ model chemotherapy_plan_order {
   dosing_bsa                    Decimal?                      @db.Decimal(5, 2)
   dosing_serum_creatinine       Decimal?                      @db.Decimal(6, 2)
   dosing_crcl                   Decimal?                      @db.Decimal(7, 2)
+  chemo_instructions            String?
+  additional_notes              String?
   completed_at                  DateTime?                     @db.Timestamp(6)
   created_by                    String?                       @db.VarChar(100)
   created_at                    DateTime?                     @default(now()) @db.Timestamp(6)
