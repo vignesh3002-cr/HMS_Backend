@@ -18,9 +18,12 @@ import {
 } from "./ipd.types";
 import {
     ADMISSION_TYPE,
+    DISCHARGE_TYPE,
     IPD_STATUS_VALUES,
     IST_OFFSET_MS,
     MANUAL_BED_STATUSES,
+    PATIENT_STATUS_AT_DISCHARGE,
+    PATIENT_STATUS_AT_DISCHARGE_VALUES,
     RESERVATION_MAX_DAYS_AHEAD,
 } from "./ipd.constants";
 
@@ -1257,6 +1260,10 @@ export class IpdService {
             discharge_type?: string;
             discharge_summary?: string;
             discharge_date?: string | Date;
+            discharge_advice?: string;
+            review_date?: string | Date;
+            discharge_disease_status?: string;
+            patient_status_at_discharge?: string;
         }
     ) {
 
@@ -1272,6 +1279,47 @@ export class IpdService {
             ? new Date(data.discharge_date)
             : new Date();
 
+        if (Number.isNaN(dischargeDate.getTime())) {
+            throw new Error("Invalid discharge date");
+        }
+
+        // A discharge can't predate the admission it closes, and (barring
+        // clock skew) can't be claimed to happen in the future.
+        if (dischargeDate.getTime() < new Date(existing.admission_date).getTime()) {
+            throw new Error("Discharge date cannot be before the admission date");
+        }
+        if (dischargeDate.getTime() > Date.now() + 60_000) {
+            throw new Error("Discharge date cannot be in the future");
+        }
+
+        // The take-home follow-up date, if given -- it has to fall on or
+        // after discharge, or "review" doesn't mean anything.
+        let reviewDate: Date | undefined;
+        if (data?.review_date) {
+            reviewDate = new Date(data.review_date);
+            if (Number.isNaN(reviewDate.getTime())) {
+                throw new Error("Invalid review date");
+            }
+            if (reviewDate.getTime() < dischargeDate.getTime()) {
+                throw new Error("Review date must be on or after the discharge date");
+            }
+        }
+
+        // DECEASED is a consequence of the discharge type, not a separate
+        // clinical judgement call -- it's forced rather than offered as a
+        // choice, and can't be contradicted by a different status.
+        const patientStatusAtDischarge =
+            data?.discharge_type === DISCHARGE_TYPE.DECEASED
+                ? PATIENT_STATUS_AT_DISCHARGE.DECEASED
+                : data?.patient_status_at_discharge;
+
+        if (
+            patientStatusAtDischarge &&
+            !PATIENT_STATUS_AT_DISCHARGE_VALUES.includes(patientStatusAtDischarge)
+        ) {
+            throw new Error("Invalid patient status at discharge");
+        }
+
         return await prisma.$transaction(async (tx) => {
 
             const updated = await this.ipdRepository.updateAdmissionTx(
@@ -1282,6 +1330,10 @@ export class IpdService {
                     discharge_date: dischargeDate,
                     discharge_type: data?.discharge_type,
                     discharge_summary: data?.discharge_summary,
+                    discharge_advice: data?.discharge_advice,
+                    review_date: reviewDate,
+                    discharge_disease_status: data?.discharge_disease_status,
+                    patient_status_at_discharge: patientStatusAtDischarge,
                     updated_by: closedBy,
                 }
             );

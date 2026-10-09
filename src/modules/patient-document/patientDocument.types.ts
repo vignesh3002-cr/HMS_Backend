@@ -7,6 +7,13 @@ export interface UploadPatientDocumentDTO {
   file_data: string; // Base64 string
   category?: string;
   uploaded_by?: string;
+  // The OPD visit or IPD stay this document belongs to -- the common column
+  // across both modules. Optional so a document can still be uploaded
+  // without one (kept patient-scoped only, as before).
+  encounter_no?: string;
+  // Free-text taxonomy (see patientDocument.constants.ts), validated at the
+  // service layer.
+  document_type?: string;
 }
 
 export interface PatientDocumentMeta {
@@ -21,9 +28,10 @@ export interface PatientDocumentMeta {
   uploaded_by: string | null;
   created_at: Date | null;
   updated_at: Date | null;
+  encounter_no: string | null;
+  document_type: string | null;
 }
 
 export interface PatientDocumentFull extends PatientDocumentMeta {
   file_data: string;
 }
-

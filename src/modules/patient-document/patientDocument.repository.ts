@@ -1,6 +1,38 @@
 import prisma from "../../config/prisma";
 import { UploadPatientDocumentDTO, PatientDocumentMeta, PatientDocumentFull } from "./patientDocument.types";
 
+const METADATA_SELECT = {
+  id: true,
+  document_id: true,
+  patient_id: true,
+  file_name: true,
+  original_name: true,
+  file_type: true,
+  file_size: true,
+  category: true,
+  uploaded_by: true,
+  created_at: true,
+  updated_at: true,
+  encounter_no: true,
+  document_type: true,
+} as const;
+
+const toMeta = (r: any): PatientDocumentMeta => ({
+  id: r.document_id,
+  document_id: r.document_id,
+  patient_id: r.patient_id,
+  file_name: r.file_name,
+  original_name: r.original_name,
+  file_type: r.file_type,
+  file_size: Number(r.file_size),
+  category: r.category,
+  uploaded_by: r.uploaded_by,
+  created_at: r.created_at,
+  updated_at: r.updated_at,
+  encounter_no: r.encounter_no ?? null,
+  document_type: r.document_type ?? null,
+});
+
 export class PatientDocumentRepository {
   async createDocument(data: {
     document_id: string;
@@ -12,6 +44,8 @@ export class PatientDocumentRepository {
     file_data: string;
     category?: string;
     uploaded_by?: string;
+    encounter_no?: string;
+    document_type?: string;
   }): Promise<PatientDocumentMeta> {
     const record = await (prisma as any).patient_document.create({
       data: {
@@ -24,69 +58,34 @@ export class PatientDocumentRepository {
         file_data: data.file_data,
         category: data.category || "Clinical",
         uploaded_by: data.uploaded_by || null,
+        encounter_no: data.encounter_no || null,
+        document_type: data.document_type || null,
       },
-      select: {
-        id: true,
-        document_id: true,
-        patient_id: true,
-        file_name: true,
-        original_name: true,
-        file_type: true,
-        file_size: true,
-        category: true,
-        uploaded_by: true,
-        created_at: true,
-        updated_at: true,
-      },
+      select: METADATA_SELECT,
     });
 
-    return {
-      id: record.document_id,
-      document_id: record.document_id,
-      patient_id: record.patient_id,
-      file_name: record.file_name,
-      original_name: record.original_name,
-      file_type: record.file_type,
-      file_size: Number(record.file_size),
-      category: record.category,
-      uploaded_by: record.uploaded_by,
-      created_at: record.created_at,
-      updated_at: record.updated_at,
-    };
+    return toMeta(record);
   }
 
   async findByPatientId(patientId: string): Promise<PatientDocumentMeta[]> {
     const records = await (prisma as any).patient_document.findMany({
       where: { patient_id: patientId },
       orderBy: { created_at: "desc" },
-      select: {
-        id: true,
-        document_id: true,
-        patient_id: true,
-        file_name: true,
-        original_name: true,
-        file_type: true,
-        file_size: true,
-        category: true,
-        uploaded_by: true,
-        created_at: true,
-        updated_at: true,
-      },
+      select: METADATA_SELECT,
     });
 
-    return records.map((r: any) => ({
-      id: r.document_id,
-      document_id: r.document_id,
-      patient_id: r.patient_id,
-      file_name: r.file_name,
-      original_name: r.original_name,
-      file_type: r.file_type,
-      file_size: Number(r.file_size),
-      category: r.category,
-      uploaded_by: r.uploaded_by,
-      created_at: r.created_at,
-      updated_at: r.updated_at,
-    }));
+    return records.map(toMeta);
+  }
+
+  /** Documents attached to one OPD visit or IPD stay -- the common link. */
+  async findByEncounterNo(encounterNo: string): Promise<PatientDocumentMeta[]> {
+    const records = await (prisma as any).patient_document.findMany({
+      where: { encounter_no: encounterNo },
+      orderBy: { created_at: "desc" },
+      select: METADATA_SELECT,
+    });
+
+    return records.map(toMeta);
   }
 
   async findByDocumentId(documentId: string): Promise<PatientDocumentFull | null> {
@@ -97,18 +96,8 @@ export class PatientDocumentRepository {
     if (!record) return null;
 
     return {
-      id: record.document_id,
-      document_id: record.document_id,
-      patient_id: record.patient_id,
-      file_name: record.file_name,
-      original_name: record.original_name,
-      file_type: record.file_type,
-      file_size: Number(record.file_size),
+      ...toMeta(record),
       file_data: record.file_data,
-      category: record.category,
-      uploaded_by: record.uploaded_by,
-      created_at: record.created_at,
-      updated_at: record.updated_at,
     };
   }
 
@@ -121,4 +110,3 @@ export class PatientDocumentRepository {
 }
 
 export const patientDocumentRepository = new PatientDocumentRepository();
-

@@ -32,6 +32,21 @@ export const DISCHARGE_TYPE = {
 
 export const DISCHARGE_TYPE_VALUES: string[] = Object.values(DISCHARGE_TYPE);
 
+// The patient's clinical condition at the moment of discharge -- distinct
+// from discharge_type (why they're leaving). DECEASED is never picked
+// manually: it's forced automatically when discharge_type is DECEASED (see
+// IpdService.dischargeAdmission).
+export const PATIENT_STATUS_AT_DISCHARGE = {
+    STABLE: "STABLE",
+    IMPROVED: "IMPROVED",
+    UNCHANGED: "UNCHANGED",
+    DETERIORATED: "DETERIORATED",
+    CRITICAL: "CRITICAL",
+    DECEASED: "DECEASED",
+} as const;
+
+export const PATIENT_STATUS_AT_DISCHARGE_VALUES: string[] = Object.values(PATIENT_STATUS_AT_DISCHARGE);
+
 export const ADMISSION_DEFAULT_STATUS = IPD_STATUS.ADMITTED;
 
 export const WARD_TYPE_DEFAULT = "GENERAL";

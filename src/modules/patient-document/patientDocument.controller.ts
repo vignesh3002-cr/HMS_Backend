@@ -22,6 +22,10 @@ export class PatientDocumentController {
         category,
         uploaded_by,
         uploadedBy,
+        encounter_no,
+        encounterNo,
+        document_type,
+        documentType,
       } = req.body;
 
       const pid = patient_id || patientId;
@@ -32,6 +36,8 @@ export class PatientDocumentController {
       const fdata = file_data || fileData;
       const cat = category || "Clinical";
       const upBy = uploaded_by || uploadedBy || (req as any).user?.name || "Doctor";
+      const encNo = encounter_no || encounterNo || undefined;
+      const docType = document_type || documentType || undefined;
 
       if (!pid) {
         return res.status(400).json({ success: false, message: "patient_id is required" });
@@ -52,6 +58,8 @@ export class PatientDocumentController {
         file_data: fdata,
         category: cat,
         uploaded_by: upBy,
+        encounter_no: encNo,
+        document_type: docType,
       });
 
       return res.status(201).json({
@@ -85,6 +93,27 @@ export class PatientDocumentController {
       return res.status(500).json({
         success: false,
         message: err.message || "Failed to fetch patient documents",
+      });
+    }
+  };
+
+  getDocumentsByEncounter = async (req: Request, res: Response) => {
+    try {
+      const encounterNo = String(req.params.encounterNo || "");
+      if (!encounterNo) {
+        return res.status(400).json({ success: false, message: "encounterNo is required" });
+      }
+
+      const docs = await this.service.getDocumentsByEncounter(encounterNo);
+      return res.status(200).json({
+        success: true,
+        data: docs,
+      });
+    } catch (err: any) {
+      console.error("Error fetching encounter documents:", err);
+      return res.status(500).json({
+        success: false,
+        message: err.message || "Failed to fetch encounter documents",
       });
     }
   };

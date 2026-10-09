@@ -52,42 +52,59 @@ model RolePermission {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model admission {
-  id                     BigInt                   @id @default(autoincrement())
-  admission_id           String                   @unique @db.VarChar(100)
-  ip_number              String                   @unique @db.VarChar(100)
-  patient_id             String                   @unique(map: "uq_admission_patient_admitted", where: raw("((status)::text = 'ADMITTED'::text)")) @db.VarChar(100)
-  appointment_id         String?                  @db.VarChar(100)
-  encounter_no           String?                  @db.VarChar(100)
-  branch_id              String                   @db.VarChar(100)
-  department_id          String?                  @db.VarChar(100)
-  employee_id            String?                  @db.VarChar(100)
-  admission_type         String                   @db.VarChar(100)
-  provisional_diagnosis  String?
-  ward_id                String?                  @db.VarChar(100)
-  bed_id                 String?                  @unique(map: "uq_admission_bed_admitted", where: raw("(((status)::text = 'ADMITTED'::text) AND (bed_id IS NOT NULL))")) @db.VarChar(100)
-  is_daycare             Boolean                  @default(false)
-  payment_mode           String?                  @db.VarChar(100)
-  insurance_provider     String?                  @db.VarChar(100)
-  insurance_policy_no    String?                  @db.VarChar(100)
-  admission_date         DateTime                 @default(now()) @db.Timestamp(6)
-  expected_stay_days     Decimal?                 @db.Decimal(4, 2)
-  discharge_date         DateTime?                @db.Timestamp(6)
-  discharge_type         String?                  @db.VarChar(100)
-  discharge_summary      String?
-  advance_amount         Decimal?                 @db.Decimal(10, 2)
-  status                 String                   @default("ADMITTED") @db.VarChar(100)
-  created_by             String?                  @db.VarChar(100)
-  created_at             DateTime?                @default(now()) @db.Timestamp(6)
-  updated_by             String?                  @db.VarChar(100)
-  updated_at             DateTime?                @default(now()) @db.Timestamp(6)
-  cancellation_reason    String?
-  bed_master             bed_master?              @relation(fields: [bed_id], references: [bed_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_bed")
-  branch                 branch                   @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_branch")
-  department_master      department_master?       @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_department")
-  employees              employees?               @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_employee")
-  patient_bio_data       patient_bio_data         @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_patient")
-  ward_master            ward_master?             @relation(fields: [ward_id], references: [ward_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_ward")
-  admission_transfer_log admission_transfer_log[]
+  id                          BigInt                      @id @default(autoincrement())
+  admission_id                String                      @unique @db.VarChar(100)
+  ip_number                   String                      @unique @db.VarChar(100)
+  patient_id                  String                      @unique(map: "uq_admission_patient_admitted", where: raw("((status)::text = 'ADMITTED'::text)")) @db.VarChar(100)
+  appointment_id              String?                     @db.VarChar(100)
+  encounter_no                String?                     @db.VarChar(100)
+  branch_id                   String                      @db.VarChar(100)
+  department_id               String?                     @db.VarChar(100)
+  employee_id                 String?                     @db.VarChar(100)
+  admission_type              String                      @db.VarChar(100)
+  provisional_diagnosis       String?
+  ward_id                     String?                     @db.VarChar(100)
+  bed_id                      String?                     @unique(map: "uq_admission_bed_admitted", where: raw("(((status)::text = 'ADMITTED'::text) AND (bed_id IS NOT NULL))")) @db.VarChar(100)
+  is_daycare                  Boolean                     @default(false)
+  payment_mode                String?                     @db.VarChar(100)
+  insurance_provider          String?                     @db.VarChar(100)
+  insurance_policy_no         String?                     @db.VarChar(100)
+  admission_date              DateTime                    @default(now()) @db.Timestamp(6)
+  expected_stay_days          Decimal?                    @db.Decimal(4, 2)
+  discharge_date              DateTime?                   @db.Timestamp(6)
+  discharge_type              String?                     @db.VarChar(100)
+  discharge_summary           String?
+  advance_amount              Decimal?                    @db.Decimal(10, 2)
+  status                      String                      @default("ADMITTED") @db.VarChar(100)
+  created_by                  String?                     @db.VarChar(100)
+  created_at                  DateTime?                   @default(now()) @db.Timestamp(6)
+  updated_by                  String?                     @db.VarChar(100)
+  updated_at                  DateTime?                   @default(now()) @db.Timestamp(6)
+  cancellation_reason         String?
+  /// Take-home instructions for the patient -- distinct from
+  /// discharge_summary, which is the clinical record written for other
+  /// doctors.
+  discharge_advice            String?
+  /// Target follow-up date; converted into a real appointment through
+  /// discharge_review_reminder once the patient confirms.
+  review_date                 DateTime?                   @db.Date
+  /// Free-text label, same denormalized pattern as
+  /// oncology_staging_detail.disease_status -- sourced from the same
+  /// disease_status_master list the doctor's Diagnosis form maintains, not
+  /// an FK to it.
+  discharge_disease_status    String?                     @db.VarChar(100)
+  /// Fixed vocabulary (STABLE / IMPROVED / UNCHANGED / DETERIORATED /
+  /// CRITICAL / DECEASED), validated at the app layer like discharge_type.
+  patient_status_at_discharge String?                     @db.VarChar(100)
+  bed_master                  bed_master?                 @relation(fields: [bed_id], references: [bed_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_bed")
+  branch                      branch                      @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_branch")
+  department_master           department_master?          @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_department")
+  employees                   employees?                  @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_employee")
+  encounter                   encounter?                  @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_encounter")
+  patient_bio_data            patient_bio_data            @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_patient")
+  ward_master                 ward_master?                @relation(fields: [ward_id], references: [ward_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_ward")
+  admission_transfer_log      admission_transfer_log[]
+  discharge_review_reminder   discharge_review_reminder[]
 
   @@index([appointment_id], map: "idx_admission_appointment")
   @@index([bed_id, status], map: "idx_admission_bed_status")
@@ -110,6 +127,58 @@ model admission_transfer_log {
   admission       admission @relation(fields: [admission_id], references: [admission_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_transfer_admission")
 
   @@index([admission_id], map: "idx_transfer_admission")
+}
+
+/// * A due-date tracker for admission.review_date -- not yet a booked
+///  * appointment, just a "the patient needs to be contacted for a follow-up by
+///  * this date" record. Modeled on appointment_reschedule_queue /
+///  * appointment_reschedule_action_log (same shape, same problem: track
+///  * progress toward getting a patient onto a slot).
+///  *
+///  * status: PENDING -> CONTACTED -> CONFIRMED / NO_RESPONSE / CANCELLED
+///  *         -> CONVERTED_TO_APPOINTMENT (converted_appointment_id set, once a
+///  *         real appointment_history row is booked for the follow-up).
+model discharge_review_reminder {
+  id                       BigInt                 @id @default(autoincrement())
+  reminder_id              String                 @unique @db.VarChar(100)
+  admission_id             String                 @db.VarChar(100)
+  patient_id               String                 @db.VarChar(100)
+  due_date                 DateTime               @db.Date
+  status                   String                 @default("PENDING") @db.VarChar(100)
+  converted_appointment_id String?                @db.VarChar(100)
+  created_by               String?                @db.VarChar(100)
+  created_at               DateTime               @default(now()) @db.Timestamp(6)
+  updated_at               DateTime               @default(now()) @db.Timestamp(6)
+  admission                admission              @relation(fields: [admission_id], references: [admission_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_review_reminder_admission")
+  appointment_history      appointment_history?   @relation(fields: [converted_appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_review_reminder_appointment")
+  patient_bio_data         patient_bio_data       @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_review_reminder_patient")
+  followup_contact_log     followup_contact_log[]
+
+  @@index([admission_id], map: "idx_review_reminder_admission")
+  @@index([status, due_date], map: "idx_review_reminder_status_due")
+}
+
+/// * Append-only audit trail of every contact attempt against one reminder --
+///  * an automated SMS/email send once a provider exists, or a manual call
+///  * logged by staff. Mirrors appointment_reschedule_action_log's shape
+///  * exactly: one row per action, never updated.
+///  *
+///  * action: SMS_SENT / EMAIL_SENT / CALL_MADE / PATIENT_CONFIRMED /
+///  *         PATIENT_DECLINED / NO_ANSWER / RESCHEDULE_REQUESTED
+///  * performed_by: a staff user_id for a manual call, or "SYSTEM" for an
+///  * automated send -- same convention admission.updated_by uses for the
+///  * nightly sweep.
+model followup_contact_log {
+  id                        BigInt                    @id @default(autoincrement())
+  log_id                    String                    @unique @db.VarChar(100)
+  reminder_id               String                    @db.VarChar(100)
+  action                    String                    @db.VarChar(100)
+  performed_by              String                    @db.VarChar(100)
+  notes                     String?
+  created_at                DateTime                  @default(now()) @db.Timestamp(6)
+  discharge_review_reminder discharge_review_reminder @relation(fields: [reminder_id], references: [reminder_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_followup_log_reminder")
+
+  @@index([reminder_id], map: "idx_followup_log_reminder")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -206,6 +275,7 @@ model appointment_history {
   appointment_reschedule_queue    appointment_reschedule_queue[]
   chemotherapy_cycle              chemotherapy_cycle[]
   chemotherapy_plan               chemotherapy_plan[]
+  discharge_review_reminder       discharge_review_reminder[]
   doctor_transfer_appointment_log doctor_transfer_appointment_log[]
   encounter                       encounter?
   lab_history                     lab_history[]
@@ -912,6 +982,8 @@ model chemotherapy_plan_order {
   created_by                    String?                       @db.VarChar(100)
   created_at                    DateTime?                     @default(now()) @db.Timestamp(6)
   updated_at                    DateTime?                     @default(now()) @db.Timestamp(6)
+  chemo_instructions            String?
+  additional_notes              String?
   chemotherapy_plan_hydration   chemotherapy_plan_hydration[]
   chemotherapy_plan_items       chemotherapy_plan_items[]
   chemotherapy_plan_order       chemotherapy_plan_order?      @relation("chemotherapy_plan_orderTochemotherapy_plan_order", fields: [copied_from_order_id], references: [plan_order_id], onUpdate: NoAction, map: "fk_plan_order_copied_from")
@@ -1539,6 +1611,7 @@ model encounter {
   past_history_treatment_type         String?
   previous_reports                    String?
   general_examination_others          Json?
+  admission                           admission[]
   chemotherapy_plan                   chemotherapy_plan[]
   appointment_history                 appointment_history?           @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_appointment")
   branch                              branch                         @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_branch")
@@ -1554,6 +1627,7 @@ model encounter {
   oncology_staging_detail             oncology_staging_detail?
   patient_allergy                     patient_allergy[]
   patient_comorbidity                 patient_comorbidity[]
+  patient_document                    patient_document[]
   patient_investigation_result        patient_investigation_result[]
   patient_personal_history            patient_personal_history?
   pharmacy_slip                       pharmacy_slip[]
@@ -1857,6 +1931,9 @@ model lab_order_item {
   updated_at        DateTime?           @default(now()) @db.Timestamp(6)
   branch_id         String?             @db.VarChar(100)
   user_id           String?             @db.VarChar(100)
+  clinical_notes    String?
+  priority          String?             @default("Normal") @db.VarChar(100)
+  target_date       DateTime?           @db.Date
   lab_history       lab_history[]
   branch            branch?             @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_order_item_branch")
   lab_order         lab_order           @relation(fields: [lab_order_id], references: [lab_order_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_order_item_order")
@@ -2190,6 +2267,7 @@ model oncology_staging_detail {
   suggested_molecular_test_note       String?
   histopathology                      String?                               @db.VarChar(100)
   second_primary_date                 DateTime?                             @db.Date
+  form_state                          Json?
   chemotherapy_plan                   chemotherapy_plan[]
   derived_fields                      derived_fields?
   ihc_results                         ihc_results?
@@ -2274,6 +2352,7 @@ model patient_bio_data {
   appointment_history            appointment_history[]
   appointment_reschedule_queue   appointment_reschedule_queue[]
   chemotherapy_plan              chemotherapy_plan?
+  discharge_review_reminder      discharge_review_reminder[]
   encounter                      encounter[]
   oncology_staging_detail        oncology_staging_detail[]
   patient_allergy                patient_allergy[]
@@ -2312,20 +2391,30 @@ model patient_comorbidity {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model patient_document {
-  id            BigInt    @id @default(autoincrement())
-  document_id   String    @unique @db.VarChar(100)
-  patient_id    String    @db.VarChar(100)
-  file_name     String    @db.VarChar(255)
-  original_name String    @db.VarChar(255)
-  file_type     String    @db.VarChar(100)
+  id            BigInt     @id @default(autoincrement())
+  document_id   String     @unique @db.VarChar(100)
+  patient_id    String     @db.VarChar(100)
+  file_name     String     @db.VarChar(255)
+  original_name String     @db.VarChar(255)
+  file_type     String     @db.VarChar(100)
   file_size     BigInt
   file_data     String
-  category      String?   @default("Clinical") @db.VarChar(100)
-  uploaded_by   String?   @db.VarChar(100)
-  created_at    DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime? @default(now()) @db.Timestamptz(6)
+  category      String?    @default("Clinical") @db.VarChar(100)
+  uploaded_by   String?    @db.VarChar(100)
+  created_at    DateTime?  @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?  @default(now()) @db.Timestamptz(6)
+  /// The OPD visit or IPD stay this document belongs to -- the common
+  /// column across both modules (see IPD_flaws.md #2 / #9). Nullable so
+  /// existing rows (uploaded before this column existed) stay valid.
+  encounter_no  String?    @db.VarChar(100)
+  /// Free-text taxonomy (BIOPSY_REPORT / DISCHARGE_DOCUMENT / LAB_REPORT /
+  /// IMAGING / CONSENT_FORM / OTHER), validated at the app layer like
+  /// category already is.
+  document_type String?    @db.VarChar(100)
+  encounter     encounter? @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_patient_document_encounter")
 
   @@index([patient_id], map: "idx_patient_document_patient")
+  @@index([encounter_no], map: "idx_patient_document_encounter", where: raw("(encounter_no IS NOT NULL)"))
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

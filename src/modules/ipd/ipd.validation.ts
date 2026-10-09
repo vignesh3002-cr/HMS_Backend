@@ -3,7 +3,8 @@ import {
     IPD_STATUS_VALUES,
     ADMISSION_TYPE_VALUES,
     DISCHARGE_TYPE_VALUES,
-    PAYMENT_MODE_VALUES
+    PAYMENT_MODE_VALUES,
+    PATIENT_STATUS_AT_DISCHARGE_VALUES
 } from "./ipd.constants";
 import { MANUAL_BED_STATUSES } from "./ipd.constants";
 
@@ -80,6 +81,12 @@ export const dischargeAdmissionValidation = [
     body("discharge_type").optional().isIn(DISCHARGE_TYPE_VALUES),
     body("discharge_summary").optional().isString(),
     body("discharge_date").optional().isISO8601(),
+    body("discharge_advice").optional().isString(),
+    body("review_date").optional().isISO8601(),
+    // Free text, same denormalized pattern as oncology_staging_detail's --
+    // not validated against disease_status_master (see ipd.service.ts).
+    body("discharge_disease_status").optional().isString(),
+    body("patient_status_at_discharge").optional().isIn(PATIENT_STATUS_AT_DISCHARGE_VALUES),
 
 ];
 
