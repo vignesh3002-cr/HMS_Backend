@@ -463,6 +463,10 @@ export interface SavePlanOrderDto {
     } | null;
     encounter_no?: string | null;
     copied_from_order_id?: string | null;
+    // The Chemotherapy Order's "Post Chemo Instructions" / "Additional
+    // Notes"; left out = left untouched, empty = cleared.
+    chemo_instructions?: string | null;
+    additional_notes?: string | null;
 
 }
 
