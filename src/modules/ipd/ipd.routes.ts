@@ -8,6 +8,11 @@ import {
     updateAdmissionValidation,
     dischargeAdmissionValidation,
     transferAdmissionValidation,
+    admitAdmissionValidation,
+    reserveBedValidation,
+    closePlannedValidation,
+    createDaycareValidation,
+    daycareOccupancyValidation,
     getAdmissionsValidation,
     getAdmissionByIpNumberValidation,
     createWardValidation,
@@ -54,6 +59,24 @@ router.get(
     controller.getIpdOverview.bind(controller)
 );
 
+// Daycare booking (doctor slot + planned daycare admission) and the ward
+// capacity view the booking form uses to hide full slots.
+router.post(
+    "/daycare",
+    authenticate,
+    authorize("admission.create"),
+    createDaycareValidation,
+    controller.bookDaycare.bind(controller)
+);
+
+router.get(
+    "/daycare/occupancy",
+    authenticate,
+    authorize("admission.read"),
+    daycareOccupancyValidation,
+    controller.getDaycareOccupancy.bind(controller)
+);
+
 router.get(
     "/wards",
     authenticate,
@@ -78,6 +101,14 @@ router.patch(
     branchScope,
     updateWardValidation,
     controller.updateWard.bind(controller)
+);
+
+router.delete(
+    "/wards/:wardId",
+    authenticate,
+    authorizeAny("ward.manage", "admission.create"),
+    branchScope,
+    controller.deleteWard.bind(controller)
 );
 
 router.get(
@@ -106,6 +137,14 @@ router.patch(
     controller.updateBed.bind(controller)
 );
 
+router.delete(
+    "/beds/:bedId",
+    authenticate,
+    authorizeAny("bed.manage", "admission.create"),
+    branchScope,
+    controller.deleteBed.bind(controller)
+);
+
 router.patch(
     "/beds/:id/status",
     authenticate,
@@ -129,6 +168,46 @@ router.patch(
     authorize("admission.update"),
     updateAdmissionValidation,
     controller.updateAdmission.bind(controller)
+);
+
+// Status transitions have dedicated endpoints -- PATCH /:id only edits details.
+router.post(
+    "/:id/admit",
+    authenticate,
+    authorize("admission.update"),
+    admitAdmissionValidation,
+    controller.admitAdmission.bind(controller)
+);
+
+router.post(
+    "/:id/cancel",
+    authenticate,
+    authorize("admission.update"),
+    closePlannedValidation,
+    controller.cancelAdmission.bind(controller)
+);
+
+router.post(
+    "/:id/no-show",
+    authenticate,
+    authorize("admission.update"),
+    closePlannedValidation,
+    controller.markNoShow.bind(controller)
+);
+
+router.post(
+    "/:id/reserve",
+    authenticate,
+    authorize("admission.update"),
+    reserveBedValidation,
+    controller.reserveBed.bind(controller)
+);
+
+router.post(
+    "/:id/release-reservation",
+    authenticate,
+    authorize("admission.update"),
+    controller.releaseReservation.bind(controller)
 );
 
 router.post(

@@ -38,6 +38,27 @@ export const WARD_TYPE_DEFAULT = "GENERAL";
 export const BED_TYPE_DEFAULT = "GENERAL";
 export const BED_STATUS_DEFAULT = BED_STATUS.AVAILABLE;
 
+// Statuses staff can set by hand. RESERVED and OCCUPIED only ever come from
+// the reserve / admit / transfer / discharge flows.
+export const MANUAL_BED_STATUSES = [
+    BED_STATUS.AVAILABLE,
+    BED_STATUS.CLEANING,
+    BED_STATUS.MAINTENANCE,
+] as const;
+
+// A bed can be reserved for a planned admission dated at most this many days
+// ahead (0 = today only, 1 = today or tomorrow). The reservation lapses at the
+// end of the planned day (IST).
+//
+// The nightly pg_cron sweep (prisma/sql/20261007_daily_sweeps_pg_cron.sql)
+// releases lapsed reservations and turns PLANNED admissions whose planned
+// day has passed into NO_SHOW.
+export const RESERVATION_MAX_DAYS_AHEAD = 1;
+
+// The hospital runs on IST (UTC+05:30, no DST) -- same fixed offset as the
+// appointment job, so day boundaries don't depend on the server timezone.
+export const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
+
 export const PAYMENT_MODE_VALUES = [
     "CASH",
     "CARD",

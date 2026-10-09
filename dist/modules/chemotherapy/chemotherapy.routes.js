@@ -61,6 +61,13 @@ router.post("/plans/:planId/items", auth_middleware_1.authenticate, (0, authoriz
 router.put("/plans/:planId/items", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.replacePlanItemsValidation, controller.replacePlanItems.bind(controller));
 router.put("/plans/:planId/items/:planItemId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.updatePlanItemValidation, controller.updatePlanItem.bind(controller));
 router.delete("/plans/:planId/items/:planItemId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), controller.removePlanItem.bind(controller));
+// ---------------- Plan discharge (take-home) medicines ----------------
+// This patient's own rows. Mounted under /plans/:planId/discharge-medicines
+// so they can never collide with the order routes above.
+router.get("/plans/:planId/discharge-medicines", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.planDischargeParamValidation, controller.listPlanDischargeMedicines.bind(controller));
+router.post("/plans/:planId/discharge-medicines", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.addPlanDischargeMedicineValidation, controller.addPlanDischargeMedicine.bind(controller));
+router.put("/plans/:planId/discharge-medicines/:planItemId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.updatePlanDischargeMedicineValidation, controller.updatePlanDischargeMedicine.bind(controller));
+router.delete("/plans/:planId/discharge-medicines/:planItemId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.planDischargeItemParamValidation, controller.removePlanDischargeMedicine.bind(controller));
 // ---------------- Plan hydration ----------------
 router.get("/plans/:planId/hydration", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.planIdParamValidation, controller.getPlanHydration.bind(controller));
 router.put("/plans/:planId/hydration", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.planHydrationValidation, controller.replacePlanHydration.bind(controller));

@@ -307,10 +307,11 @@ export class AppointmentRepository {
         appointmentId: string,
         status: string,
         cancelReason?: string,
-        cancelledBy?: string | null
+        cancelledBy?: string | null,
+        client: Prisma.TransactionClient = prisma
     ) {
 
-        return prisma.appointment_history.update({
+        return client.appointment_history.update({
             where: { appointment_id: appointmentId },
             data: {
                 status,

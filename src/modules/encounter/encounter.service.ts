@@ -462,6 +462,23 @@ export class EncounterService {
             throw new Error("Encounter is already closed");
         }
 
+        /*
+         * An admitted patient's IPD encounter stays open for the whole stay
+         * and is closed by IPD discharge (which records discharge type and
+         * summary and releases the bed). Closing it here used to discharge
+         * the patient silently, so it is refused instead.
+         */
+        const activeAdmission = await prisma.admission.findFirst({
+            where: { encounter_no: encounterNo, status: IPD_STATUS.ADMITTED },
+            select: { ip_number: true },
+        });
+
+        if (activeAdmission) {
+            throw new Error(
+                `This encounter belongs to admitted patient IP ${activeAdmission.ip_number}. Discharge the patient from In-Patient Admissions instead.`
+            );
+        }
+
         return prisma.$transaction(async (tx) => {
 
             const closedAt = new Date();
@@ -481,39 +498,6 @@ export class EncounterService {
                     APPOINTMENT_STATUS.COMPLETED
                 );
 
-            }
-
-            // IPD discharge hook: if encounter has an associated active admission, close the IPD stay and release the bed
-            const associatedAdmission = await tx.admission.findFirst({
-                where: {
-                    OR: [
-                        { encounter_no: encounterNo },
-                        ...(existing.appointment_id ? [{ appointment_id: existing.appointment_id }] : [])
-                    ],
-                    status: "ADMITTED"
-                }
-            });
-
-            if (associatedAdmission) {
-                await tx.admission.update({
-                    where: { admission_id: associatedAdmission.admission_id },
-                    data: {
-                        status: "DISCHARGED",
-                        discharge_date: closedAt,
-                        updated_by: closedBy
-                    }
-                });
-
-                if (associatedAdmission.bed_id) {
-                    await tx.bed_master.update({
-                        where: { bed_id: associatedAdmission.bed_id },
-                        data: {
-                            status: "AVAILABLE",
-                            updated_by: closedBy,
-                            updated_at: closedAt
-                        }
-                    });
-                }
             }
 
             return encounter;

@@ -20,6 +20,7 @@ const permission_routes_1 = __importDefault(require("./modules/permission/permis
 const role_routes_1 = __importDefault(require("./modules/role/role.routes"));
 const prescription_routes_1 = __importDefault(require("./modules/prescription/prescription.routes"));
 const chemotherapy_routes_1 = __importDefault(require("./modules/chemotherapy/chemotherapy.routes"));
+const pharmacy_routes_1 = __importDefault(require("./modules/pharmacy/pharmacy.routes"));
 const oncology_routes_1 = __importDefault(require("./modules/oncology/oncology.routes"));
 const audit_routes_1 = __importDefault(require("./modules/audit/audit.routes"));
 const export_routes_1 = __importDefault(require("./modules/export/export.routes"));
@@ -41,7 +42,6 @@ const priorityFlags_routes_1 = __importDefault(require("./modules/priority-flags
 const ai_chat_routes_1 = __importDefault(require("./modules/ai/ai-chat.routes"));
 const patientDocument_routes_1 = __importDefault(require("./modules/patient-document/patientDocument.routes"));
 const bcrypt_1 = require("./utils/bcrypt");
-const appointment_status_job_1 = require("./jobs/appointment-status.job");
 // Fix BigInt serialization - Prisma returns BigInt types
 // that JSON.stringify can't handle
 BigInt.prototype.toJSON = function () {
@@ -123,6 +123,7 @@ app.use("/api/lab-test-master", lab_test_master_routes_1.default);
 app.use("/api/lab-order", lab_order_routes_1.default);
 app.use("/api/prescriptions", prescription_routes_1.default);
 app.use("/api/chemotherapy", chemotherapy_routes_1.default);
+app.use("/api/pharmacy", pharmacy_routes_1.default);
 app.use("/api/lab-order-item", lab_order_item_routes_1.default);
 app.use("/api/lab-report", lab_report_routes_1.default);
 app.use("/api/encounters", encounter_routes_1.default);
@@ -153,10 +154,9 @@ app.use("/api/hashpassword", async (req, res) => {
     res.json({ hashedPassword });
 });
 const PORT = process.env.PORT || 5000;
-// Background sweep: cancels SCHEDULED/RESCHEDULED appointments whose day
-// has fully passed (IST). Scoped strictly to those two statuses -- terminal
-// and in-flight states are never touched.
-(0, appointment_status_job_1.startAppointmentStatusJob)();
+// Daily day-boundary sweeps (appointment NO_SHOW, IPD bed reservations and
+// planned-admission NO_SHOW) run inside Postgres via pg_cron -- see
+// prisma/sql/20261007_daily_sweeps_pg_cron.sql. Nothing is polled from here.
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
