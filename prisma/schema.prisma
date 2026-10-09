@@ -2184,6 +2184,7 @@ model oncology_staging_detail {
   score                               String?
   score_system                        String?                               @db.VarChar(255)
   histopathology                      String?                               @db.VarChar(100)
+  form_state                          Json?
   encounter_no                        String?                               @unique(map: "uq_staging_detail_encounter", where: raw("(encounter_no IS NOT NULL)")) @db.VarChar(100)
   suggested_molecular_test            String?                               @db.VarChar(255)
   suggested_molecular_test_date       DateTime?                             @db.Date
