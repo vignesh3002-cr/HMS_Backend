@@ -282,4 +282,34 @@ export class ConsultationController {
         }
     }
 
+    // ---------------- Encounter immunizations ----------------
+
+    async getEncounterImmunizations(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.listEncounterImmunizations(req.params.encounterNo as string);
+            return res.json({ success: true, message: "Immunizations fetched successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
+    async syncEncounterImmunizations(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.syncEncounterImmunizations(
+                req.params.encounterNo as string,
+                req.body,
+                actingUserId(req)
+            );
+            return res.json({ success: true, message: "Immunizations saved successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
 }

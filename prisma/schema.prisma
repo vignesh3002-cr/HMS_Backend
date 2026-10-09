@@ -1586,6 +1586,7 @@ model encounter {
   patient_bio_data                    patient_bio_data               @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_patient")
   doctor_schedule                     doctor_schedule?               @relation(fields: [schedule_id], references: [schedule_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_schedule")
   user_table                          user_table?                    @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_user")
+  encounter_immunization              encounter_immunization[]
   encounter_molecular_test            encounter_molecular_test[]
   encounter_performance_status        encounter_performance_status?
   encounter_report                    encounter_report[]
@@ -1599,6 +1600,24 @@ model encounter {
   pharmacy_slip                       pharmacy_slip[]
 
   @@index([patient_id], map: "idx_encounter_patient")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model encounter_immunization {
+  id                        BigInt    @id @default(autoincrement())
+  encounter_immunization_id String    @unique(map: "uq_encounter_immunization_id") @db.VarChar(100)
+  encounter_no              String    @db.VarChar(100)
+  immunization_code         String?   @db.VarChar(100)
+  immunization_name         String    @db.VarChar(100)
+  immunization_date         DateTime? @db.Date
+  response                  String?
+  created_at                DateTime? @default(now()) @db.Timestamp(6)
+  updated_at                DateTime? @default(now()) @db.Timestamp(6)
+  created_by                String?   @db.VarChar(100)
+  encounter                 encounter @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_immunization_encounter")
+
+  @@index([encounter_no], map: "idx_encounter_immunization_encounter")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

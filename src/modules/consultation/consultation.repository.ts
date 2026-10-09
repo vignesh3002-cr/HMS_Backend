@@ -259,6 +259,37 @@ export class ConsultationRepository {
 
     }
 
+    // ---------------- Encounter immunizations ----------------
+
+    async findEncounterImmunizations(encounterNo: string) {
+
+        return prisma.encounter_immunization.findMany({
+            where: { encounter_no: encounterNo },
+            orderBy: { created_at: "asc" }
+        });
+
+    }
+
+    async createEncounterImmunization(data: Prisma.encounter_immunizationUncheckedCreateInput) {
+
+        return prisma.encounter_immunization.create({ data });
+
+    }
+
+    async updateEncounterImmunization(id: bigint, data: Prisma.encounter_immunizationUncheckedUpdateInput) {
+
+        return prisma.encounter_immunization.update({ where: { id }, data });
+
+    }
+
+    async deleteEncounterImmunizations(ids: bigint[]) {
+
+        if (ids.length === 0) return { count: 0 };
+
+        return prisma.encounter_immunization.deleteMany({ where: { id: { in: ids } } });
+
+    }
+
     // ---------------- Existence checks ----------------
 
     async findEncounterByNumber(encounterNo: string) {

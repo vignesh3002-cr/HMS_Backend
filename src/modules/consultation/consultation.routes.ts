@@ -12,7 +12,8 @@ import {
     reportIdValidation,
     addMolecularTestValidation,
     updateMolecularTestValidation,
-    molecularTestIdValidation
+    molecularTestIdValidation,
+    syncEncounterImmunizationsValidation
 } from "./consultation.validation";
 
 const router = Router();
@@ -182,6 +183,24 @@ router.delete(
     authorize("encounter.update"),
     molecularTestIdValidation,
     controller.removeMolecularTest.bind(controller)
+);
+
+// ---------------- Encounter immunizations ----------------
+
+router.get(
+    "/encounters/:encounterNo/immunizations",
+    authenticate,
+    authorize("encounter.read"),
+    getPersonalHistoryValidation,
+    controller.getEncounterImmunizations.bind(controller)
+);
+
+router.put(
+    "/encounters/:encounterNo/immunizations",
+    authenticate,
+    authorize("encounter.update"),
+    syncEncounterImmunizationsValidation,
+    controller.syncEncounterImmunizations.bind(controller)
 );
 
 export default router;

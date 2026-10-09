@@ -30,6 +30,25 @@ export interface EncounterMolecularTestDTO {
 
 }
 
+export interface EncounterImmunizationDTO {
+
+    // The selected value as shown in the form (master name or typed text).
+    immunization_name: string;
+    // immunization_master code when it is a master entry; null for "Others".
+    immunization_code?: string | null;
+    immunization_date?: string | null; // YYYY-MM-DD
+    response?: string | null;
+
+}
+
+export interface EncounterImmunizationSyncDTO {
+
+    // Full set of selected immunizations for the encounter; rows missing from
+    // this list are removed on sync.
+    rows: EncounterImmunizationDTO[];
+
+}
+
 export interface EncounterReportDTO {
 
     // One of the two: a lab_test_master test, or a test typed by hand.
