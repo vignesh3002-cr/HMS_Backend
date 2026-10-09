@@ -65,6 +65,12 @@ exports.dischargeAdmissionValidation = [
     (0, express_validator_1.body)("discharge_type").optional().isIn(ipd_constants_1.DISCHARGE_TYPE_VALUES),
     (0, express_validator_1.body)("discharge_summary").optional().isString(),
     (0, express_validator_1.body)("discharge_date").optional().isISO8601(),
+    (0, express_validator_1.body)("discharge_advice").optional().isString(),
+    (0, express_validator_1.body)("review_date").optional().isISO8601(),
+    // Free text, same denormalized pattern as oncology_staging_detail's --
+    // not validated against disease_status_master (see ipd.service.ts).
+    (0, express_validator_1.body)("discharge_disease_status").optional().isString(),
+    (0, express_validator_1.body)("patient_status_at_discharge").optional().isIn(ipd_constants_1.PATIENT_STATUS_AT_DISCHARGE_VALUES),
 ];
 exports.transferAdmissionValidation = [
     (0, express_validator_1.param)("id")

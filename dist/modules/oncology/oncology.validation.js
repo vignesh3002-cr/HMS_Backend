@@ -67,6 +67,7 @@ exports.createStagingDetailValidation = [
     (0, express_validator_1.body)("disease_status").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Disease Status must be 100 characters or fewer"),
     (0, express_validator_1.body)("notes").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("performance_status").optional({ nullable: true }).isInt({ min: 0, max: 4 }).withMessage("performance_status must be an ECOG score between 0 and 4"),
+    (0, express_validator_1.body)("form_state").optional({ nullable: true }).isObject().withMessage("form_state must be an object"),
     ...ihcBodyValidation,
     ...molecularBodyValidation
 ];
@@ -105,6 +106,7 @@ exports.updateStagingDetailValidation = [
     (0, express_validator_1.body)("disease_status").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Disease Status must be 100 characters or fewer"),
     (0, express_validator_1.body)("notes").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("performance_status").optional({ nullable: true }).isInt({ min: 0, max: 4 }).withMessage("performance_status must be an ECOG score between 0 and 4"),
+    (0, express_validator_1.body)("form_state").optional({ nullable: true }).isObject().withMessage("form_state must be an object"),
     ...ihcBodyValidation,
     ...molecularBodyValidation
 ];

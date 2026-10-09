@@ -21,6 +21,18 @@ exports.createLabOrderItemValidation = [
         .optional()
         .isString()
         .withMessage("Remarks must be a string"),
+    (0, express_validator_1.body)("clinical_notes")
+        .optional()
+        .isString()
+        .withMessage("Clinical notes must be a string"),
+    (0, express_validator_1.body)("priority")
+        .optional()
+        .isIn(["Normal", "Urgent", "Stat"])
+        .withMessage("Priority must be Normal, Urgent or Stat"),
+    (0, express_validator_1.body)("target_date")
+        .optional({ nullable: true })
+        .isISO8601()
+        .withMessage("Target date must be a valid date"),
     (0, express_validator_1.body)("branch_id")
         .optional()
         .isString(),
@@ -49,6 +61,18 @@ exports.updateLabOrderItemValidation = [
         .optional()
         .isString()
         .withMessage("Remarks must be a string"),
+    (0, express_validator_1.body)("clinical_notes")
+        .optional()
+        .isString()
+        .withMessage("Clinical notes must be a string"),
+    (0, express_validator_1.body)("priority")
+        .optional()
+        .isIn(["Normal", "Urgent", "Stat"])
+        .withMessage("Priority must be Normal, Urgent or Stat"),
+    (0, express_validator_1.body)("target_date")
+        .optional({ nullable: true })
+        .isISO8601()
+        .withMessage("Target date must be a valid date"),
     (0, express_validator_1.body)("item_status")
         .optional()
         .isString()

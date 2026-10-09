@@ -118,58 +118,6 @@ model admission_transfer_log {
   @@index([admission_id], map: "idx_transfer_admission")
 }
 
-/// * A due-date tracker for admission.review_date -- not yet a booked
-///  * appointment, just a "the patient needs to be contacted for a follow-up by
-///  * this date" record. Modeled on appointment_reschedule_queue /
-///  * appointment_reschedule_action_log (same shape, same problem: track
-///  * progress toward getting a patient onto a slot).
-///  *
-///  * status: PENDING -> CONTACTED -> CONFIRMED / NO_RESPONSE / CANCELLED
-///  *         -> CONVERTED_TO_APPOINTMENT (converted_appointment_id set, once a
-///  *         real appointment_history row is booked for the follow-up).
-model discharge_review_reminder {
-  id                       BigInt                 @id @default(autoincrement())
-  reminder_id              String                 @unique @db.VarChar(100)
-  admission_id             String                 @db.VarChar(100)
-  patient_id               String                 @db.VarChar(100)
-  due_date                 DateTime               @db.Date
-  status                   String                 @default("PENDING") @db.VarChar(100)
-  converted_appointment_id String?                @db.VarChar(100)
-  created_by               String?                @db.VarChar(100)
-  created_at               DateTime               @default(now()) @db.Timestamp(6)
-  updated_at               DateTime               @default(now()) @db.Timestamp(6)
-  admission                admission              @relation(fields: [admission_id], references: [admission_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_review_reminder_admission")
-  appointment_history      appointment_history?   @relation(fields: [converted_appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_review_reminder_appointment")
-  patient_bio_data         patient_bio_data       @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_review_reminder_patient")
-  followup_contact_log     followup_contact_log[]
-
-  @@index([admission_id], map: "idx_review_reminder_admission")
-  @@index([status, due_date], map: "idx_review_reminder_status_due")
-}
-
-/// * Append-only audit trail of every contact attempt against one reminder --
-///  * an automated SMS/email send once a provider exists, or a manual call
-///  * logged by staff. Mirrors appointment_reschedule_action_log's shape
-///  * exactly: one row per action, never updated.
-///  *
-///  * action: SMS_SENT / EMAIL_SENT / CALL_MADE / PATIENT_CONFIRMED /
-///  *         PATIENT_DECLINED / NO_ANSWER / RESCHEDULE_REQUESTED
-///  * performed_by: a staff user_id for a manual call, or "SYSTEM" for an
-///  * automated send -- same convention admission.updated_by uses for the
-///  * nightly sweep.
-model followup_contact_log {
-  id                        BigInt                    @id @default(autoincrement())
-  log_id                    String                    @unique @db.VarChar(100)
-  reminder_id               String                    @db.VarChar(100)
-  action                    String                    @db.VarChar(100)
-  performed_by              String                    @db.VarChar(100)
-  notes                     String?
-  created_at                DateTime                  @default(now()) @db.Timestamp(6)
-  discharge_review_reminder discharge_review_reminder @relation(fields: [reminder_id], references: [reminder_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_followup_log_reminder")
-
-  @@index([reminder_id], map: "idx_followup_log_reminder")
-}
-
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model allergy_master {
   id              BigInt            @id @default(autoincrement())
@@ -2433,7 +2381,6 @@ model patient_document {
 
   @@index([encounter_no], map: "idx_patient_document_encounter", where: raw("(encounter_no IS NOT NULL)"))
   @@index([patient_id], map: "idx_patient_document_patient")
-  @@index([encounter_no], map: "idx_patient_document_encounter", where: raw("(encounter_no IS NOT NULL)"))
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

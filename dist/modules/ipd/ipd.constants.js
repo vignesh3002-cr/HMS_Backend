@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.IDGeneratorGated = exports.WARD_TYPE_VALUES = exports.BED_TYPE_VALUES = exports.PAYMENT_MODE_VALUES = exports.IST_OFFSET_MS = exports.RESERVATION_MAX_DAYS_AHEAD = exports.MANUAL_BED_STATUSES = exports.BED_STATUS_DEFAULT = exports.BED_TYPE_DEFAULT = exports.WARD_TYPE_DEFAULT = exports.ADMISSION_DEFAULT_STATUS = exports.DISCHARGE_TYPE_VALUES = exports.DISCHARGE_TYPE = exports.ADMISSION_TYPE_VALUES = exports.ADMISSION_TYPE = exports.WARD_STATUS_VALUES = exports.BED_STATUS_VALUES = exports.IPD_STATUS_VALUES = void 0;
+exports.IDGeneratorGated = exports.WARD_TYPE_VALUES = exports.BED_TYPE_VALUES = exports.PAYMENT_MODE_VALUES = exports.IST_OFFSET_MS = exports.RESERVATION_MAX_DAYS_AHEAD = exports.MANUAL_BED_STATUSES = exports.BED_STATUS_DEFAULT = exports.BED_TYPE_DEFAULT = exports.WARD_TYPE_DEFAULT = exports.ADMISSION_DEFAULT_STATUS = exports.PATIENT_STATUS_AT_DISCHARGE_VALUES = exports.PATIENT_STATUS_AT_DISCHARGE = exports.DISCHARGE_TYPE_VALUES = exports.DISCHARGE_TYPE = exports.ADMISSION_TYPE_VALUES = exports.ADMISSION_TYPE = exports.WARD_STATUS_VALUES = exports.BED_STATUS_VALUES = exports.IPD_STATUS_VALUES = void 0;
 const ipd_types_1 = require("./ipd.types");
 exports.IPD_STATUS_VALUES = Object.values(ipd_types_1.IPD_STATUS);
 exports.BED_STATUS_VALUES = Object.values(ipd_types_1.BED_STATUS);
@@ -24,6 +24,19 @@ exports.DISCHARGE_TYPE = {
     DAYCARE_RELEASED: "DAYCARE_RELEASED",
 };
 exports.DISCHARGE_TYPE_VALUES = Object.values(exports.DISCHARGE_TYPE);
+// The patient's clinical condition at the moment of discharge -- distinct
+// from discharge_type (why they're leaving). DECEASED is never picked
+// manually: it's forced automatically when discharge_type is DECEASED (see
+// IpdService.dischargeAdmission).
+exports.PATIENT_STATUS_AT_DISCHARGE = {
+    STABLE: "STABLE",
+    IMPROVED: "IMPROVED",
+    UNCHANGED: "UNCHANGED",
+    DETERIORATED: "DETERIORATED",
+    CRITICAL: "CRITICAL",
+    DECEASED: "DECEASED",
+};
+exports.PATIENT_STATUS_AT_DISCHARGE_VALUES = Object.values(exports.PATIENT_STATUS_AT_DISCHARGE);
 exports.ADMISSION_DEFAULT_STATUS = ipd_types_1.IPD_STATUS.ADMITTED;
 exports.WARD_TYPE_DEFAULT = "GENERAL";
 exports.BED_TYPE_DEFAULT = "GENERAL";
