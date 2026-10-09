@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { generateId } from "../../utils/idGenerator";
-import { DRUG_ROLE, ID_ENTITY, OPEN_PLAN_STATUSES, PLAN_ORDER_STATUS } from "./chemotherapy.constants";
+import { ADMINISTRATION_STATUS, DRUG_ROLE, ID_ENTITY, OPEN_PLAN_STATUSES, PLAN_ORDER_STATUS } from "./chemotherapy.constants";
 import { PlanFilterQuery, RegimenProtocolFilterQuery } from "./chemotherapy.types";
 
 export class ChemotherapyRepository {
@@ -1469,6 +1469,155 @@ export class ChemotherapyRepository {
         return prisma.chemotherapy_administration.findMany({
             where: { chemotherapy_cycle_id: cycleId, active_status: 1 },
             orderBy: { administration_date: "asc" }
+        });
+
+    }
+
+    // One row per tracked medicine of a cycle day order. The partial unique
+    // index uq_chemo_admin_order_item makes a repeated release a no-op
+    // (upsert / findUnique would ignore the index's WHERE clause).
+    async createAdministrations(tx: Prisma.TransactionClient, data: Prisma.chemotherapy_administrationCreateManyInput[]) {
+
+        return tx.chemotherapy_administration.createMany({ data, skipDuplicates: true });
+
+    }
+
+    async findAdministrationById(tx: Prisma.TransactionClient, administrationId: string) {
+
+        return tx.chemotherapy_administration.findUnique({
+            where: { administration_id: administrationId },
+            include: { chemotherapy_plan_order: true }
+        });
+
+    }
+
+    // A cycle day order's administration rows with what the sheet shows of
+    // each drug and who gave it.
+    async listAdministrationsForOrders(planOrderIds: string[]) {
+
+        return prisma.chemotherapy_administration.findMany({
+            where: { plan_order_id: { in: planOrderIds }, active_status: 1 },
+            include: {
+                chemotherapy_plan_items: { include: { medicine_master: true } },
+                employees_chemotherapy_administration_administered_byToemployees: {
+                    select: { employee_id: true, first_name: true, last_name: true }
+                }
+            }
+        });
+
+    }
+
+    async updateAdministration(
+        tx: Prisma.TransactionClient,
+        administrationId: string,
+        data: Prisma.chemotherapy_administrationUncheckedUpdateInput
+    ) {
+
+        return tx.chemotherapy_administration.update({
+            where: { administration_id: administrationId },
+            data: { ...data, updated_at: new Date() }
+        });
+
+    }
+
+    // Medicines still PENDING on a cycle day order (drugs removed from the
+    // plan since don't hold the day open).
+    async countPendingAdministrations(tx: Prisma.TransactionClient, planOrderId: string) {
+
+        return tx.chemotherapy_administration.count({
+            where: {
+                plan_order_id: planOrderId,
+                active_status: 1,
+                administration_status: ADMINISTRATION_STATUS.PENDING,
+                chemotherapy_plan_items: { active_status: 1 }
+            }
+        });
+
+    }
+
+    async countAdministrationsForOrder(tx: Prisma.TransactionClient, planOrderId: string) {
+
+        return tx.chemotherapy_administration.count({
+            where: { plan_order_id: planOrderId, active_status: 1 }
+        });
+
+    }
+
+    // Closing a cycle / plan by status change: its still-PENDING medicines
+    // are recorded CANCELLED with the closing reason.
+    async cancelPendingAdministrations(
+        tx: Prisma.TransactionClient,
+        planOrderIds: string[],
+        reason: string,
+        actingUserId: string
+    ) {
+
+        if (planOrderIds.length === 0) {
+            return { count: 0 };
+        }
+
+        return tx.chemotherapy_administration.updateMany({
+            where: {
+                plan_order_id: { in: planOrderIds },
+                active_status: 1,
+                administration_status: ADMINISTRATION_STATUS.PENDING
+            },
+            data: {
+                administration_status: ADMINISTRATION_STATUS.CANCELLED,
+                status_reason: reason,
+                updated_by: actingUserId,
+                updated_at: new Date()
+            }
+        });
+
+    }
+
+    // A plan's cycle day orders (optionally one cycle's) in a given status.
+    async findPlanOrdersByStatus(
+        tx: Prisma.TransactionClient,
+        planId: string,
+        status: string,
+        cycleId?: string
+    ) {
+
+        return tx.chemotherapy_plan_order.findMany({
+            where: {
+                chemotherapy_plan_id: planId,
+                order_status: status,
+                ...(cycleId ? { chemotherapy_cycle_id: cycleId } : {})
+            },
+            orderBy: [{ cycle_number: "asc" }, { cycle_day: "asc" }]
+        });
+
+    }
+
+    async findPlanOrdersForCycle(tx: Prisma.TransactionClient, cycleId: string) {
+
+        return tx.chemotherapy_plan_order.findMany({
+            where: { chemotherapy_cycle_id: cycleId },
+            orderBy: { cycle_day: "asc" }
+        });
+
+    }
+
+    // The tracked drugs of a cycle day order (active rows only).
+    async findOrderItemsForAdministration(tx: Prisma.TransactionClient, planOrderId: string, roles: string[]) {
+
+        return tx.chemotherapy_plan_items.findMany({
+            where: { plan_order_id: planOrderId, active_status: 1, drug_role: { in: roles } },
+            orderBy: { drug_sequence: "asc" }
+        });
+
+    }
+
+    // A cycle day order with its active drugs, for an order that has no
+    // administration rows yet (a draft, or a day completed before tracking).
+    async findPlanOrderItems(planOrderId: string) {
+
+        return prisma.chemotherapy_plan_items.findMany({
+            where: { plan_order_id: planOrderId, active_status: 1 },
+            include: { medicine_master: true },
+            orderBy: { drug_sequence: "asc" }
         });
 
     }

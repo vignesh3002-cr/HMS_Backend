@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { ChemotherapyController } from "./chemotherapy.controller";
 import { authenticate } from "../auth/auth.middleware";
-import { authorize } from "../../middleware/authorize";
+import { authorize, authorizeAny } from "../../middleware/authorize";
 import {
     previewPlanValidation,
     createPlanValidation,
@@ -49,7 +49,10 @@ import {
     addPersonalizedProtocolDilutionValidation,
     updatePersonalizedProtocolDilutionValidation,
     removePersonalizedProtocolDilutionValidation,
-    createPersonalizedProtocolVersionValidation
+    createPersonalizedProtocolVersionValidation,
+    administrationSheetValidation,
+    administrationStatusValidation,
+    completeAdministrationDayValidation
 } from "./chemotherapy.validation";
 
 const router = Router();
@@ -567,6 +570,34 @@ router.get(
     authorize("chemo.plan.read"),
     cycleIdParamValidation,
     controller.listAdministrations.bind(controller)
+);
+
+// ---------------- Administration sheet (per cycle day) ----------------
+// Nurses record administration (chemo.administration.record); doctors may
+// too through chemo.cycle.manage.
+
+router.get(
+    "/plans/:planId/administration",
+    authenticate,
+    authorize("chemo.plan.read"),
+    administrationSheetValidation,
+    controller.getAdministrationSheet.bind(controller)
+);
+
+router.patch(
+    "/administration/:administrationId/status",
+    authenticate,
+    authorizeAny("chemo.administration.record", "chemo.cycle.manage"),
+    administrationStatusValidation,
+    controller.updateAdministrationStatus.bind(controller)
+);
+
+router.post(
+    "/plans/:planId/orders/:cycleNumber/:cycleDay/administration/complete",
+    authenticate,
+    authorizeAny("chemo.administration.record", "chemo.cycle.manage"),
+    completeAdministrationDayValidation,
+    controller.completeAdministrationDay.bind(controller)
 );
 
 // ---------------- Vitals ----------------

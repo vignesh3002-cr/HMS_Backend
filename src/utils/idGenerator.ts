@@ -29,6 +29,7 @@ const ENTITY_TARGET: Record<string, { table: string; column: string; padTo?: num
     ENCOUNTER_MOLECULAR_TEST: { table: "encounter_molecular_test", column: "encounter_molecular_test_id", padTo: 7 },
     CHEMOTHERAPY_PLAN_HYDRATION: { table: "chemotherapy_plan_hydration", column: "plan_hydration_id", padTo: 7 },
     CHEMOTHERAPY_PLAN_ORDER: { table: "chemotherapy_plan_order", column: "plan_order_id", padTo: 7 },
+    CHEMOTHERAPY_ADMINISTRATION: { table: "chemotherapy_administration", column: "administration_id" },
     PERSONAL_HISTORY: { table: "patient_personal_history", column: "personal_history_id", padTo: 7 },
     ANATOMICAL_SITE: { table: "anatomical_site_master", column: "site_id", padTo: 4 },
     CANCER_GRADE: { table: "cancer_grade_master", column: "grade_id", padTo: 4 },
