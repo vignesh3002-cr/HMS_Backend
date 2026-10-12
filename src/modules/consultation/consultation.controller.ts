@@ -172,6 +172,15 @@ export class ConsultationController {
 
     // ---------------- Encounter reports ----------------
 
+    async getReportsByPatient(req: Request, res: Response) {
+        try {
+            const data = await service.listReportsByPatient(req.params.patientId as string);
+            return res.json({ success: true, message: "Reports fetched successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
     async getReports(req: Request, res: Response) {
         try {
             const error = firstError(req);

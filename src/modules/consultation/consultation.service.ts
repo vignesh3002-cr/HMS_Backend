@@ -216,6 +216,12 @@ export class ConsultationService {
 
     }
 
+    async listReportsByPatient(patientId: string) {
+
+        return repository.findReportsByPatient(patientId);
+
+    }
+
     async addReport(encounterNo: string, dto: EncounterReportDTO, actingUserId: string) {
 
         const encounter = await repository.findEncounterByNumber(encounterNo);

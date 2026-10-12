@@ -185,6 +185,15 @@ export class ConsultationRepository {
 
     }
 
+    async findReportsByPatient(_patientId: string) {
+
+        return prisma.encounter_report.findMany({
+            include: { lab_test_master: true },
+            orderBy: { report_completed_date: { sort: "desc", nulls: "last" } }
+        });
+
+    }
+
     async findReportById(encounterReportId: string) {
 
         return prisma.encounter_report.findUnique({ where: { encounter_report_id: encounterReportId } });
