@@ -226,6 +226,9 @@ export interface CreateStagingDetailDto {
     branch_id?: string | null;
     ihc?: IhcUpsertDto | null;
     molecular?: MolecularUpsertDto | null;
+    // The Diagnosis step's exact selections behind this row, read back to
+    // prefill the form (the text columns join them across cancer types).
+    form_state?: Record<string, unknown> | null;
 
 }
 
@@ -265,6 +268,8 @@ export interface UpdateStagingDetailDto {
     branch_id?: string | null;
     ihc?: IhcUpsertDto | null;
     molecular?: MolecularUpsertDto | null;
+    // Replaces the stored Diagnosis form selections when present.
+    form_state?: Record<string, unknown> | null;
 
 }
 

@@ -1,7 +1,12 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.patientDocumentService = exports.PatientDocumentService = void 0;
+const prisma_1 = __importDefault(require("../../config/prisma"));
 const patientDocument_repository_1 = require("./patientDocument.repository");
+const patientDocument_constants_1 = require("./patientDocument.constants");
 class PatientDocumentService {
     repo;
     constructor(repo = patientDocument_repository_1.patientDocumentRepository) {
@@ -16,6 +21,24 @@ class PatientDocumentService {
         }
         if (!dto.file_data) {
             throw new Error("file_data is required");
+        }
+        if (dto.document_type && !patientDocument_constants_1.DOCUMENT_TYPE_VALUES.includes(dto.document_type)) {
+            throw new Error(`document_type must be one of: ${patientDocument_constants_1.DOCUMENT_TYPE_VALUES.join(", ")}`);
+        }
+        // A document can only be scoped to an encounter that exists, and to
+        // *this* patient's encounter -- otherwise it'd be filed under the wrong
+        // visit/stay and never show up where it's expected.
+        if (dto.encounter_no) {
+            const encounter = await prisma_1.default.encounter.findUnique({
+                where: { encounter_no: dto.encounter_no },
+                select: { patient_id: true },
+            });
+            if (!encounter) {
+                throw new Error("Encounter not found");
+            }
+            if (encounter.patient_id !== dto.patient_id) {
+                throw new Error("Encounter does not belong to this patient");
+            }
         }
         // Strip base64 data prefix if present (e.g. data:image/png;base64,....)
         let rawBase64 = dto.file_data;
@@ -36,12 +59,20 @@ class PatientDocumentService {
             file_data: rawBase64,
             category: dto.category || "Clinical",
             uploaded_by: dto.uploaded_by || "Doctor",
+            encounter_no: dto.encounter_no,
+            document_type: dto.document_type,
         });
     }
     async getDocumentsByPatient(patientId) {
         if (!patientId)
             return [];
         return this.repo.findByPatientId(patientId);
+    }
+    /** Documents attached to one OPD visit or IPD stay. */
+    async getDocumentsByEncounter(encounterNo) {
+        if (!encounterNo)
+            return [];
+        return this.repo.findByEncounterNo(encounterNo);
     }
     async getDocumentById(documentId) {
         if (!documentId)

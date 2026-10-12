@@ -39,6 +39,7 @@ class LabOrderRepository {
                 department_id: true,
                 order_datetime: true,
                 priority: true,
+                clinical_notes: true,
                 order_status: true,
                 patient_history: {
                     select: {

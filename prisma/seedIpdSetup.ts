@@ -1,6 +1,7 @@
 import "dotenv/config";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { generateId } from "../src/utils/idGenerator";
 
 const prisma = new PrismaClient({
     adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -19,6 +20,8 @@ const prisma = new PrismaClient({
 //                     admission_id is autoincrement-backed string? NO - see
 //                     idGenerator: admission_id uses the sequence below).
 //        ADMISSION_TRANSFER -> prefix TRF
+//        REVIEW_REMINDER    -> prefix RVW (discharge_review_reminder.reminder_id)
+//        FOLLOWUP_LOG       -> prefix FUP (followup_contact_log.log_id)
 //
 // NOTE: admission_id / ip_number / ward_id / bed_id / transfer_log_id are
 // all generated via idGenerator.ts generateId() inside a transaction, so the
@@ -31,7 +34,9 @@ async function main() {
         { entity_name: "ADMISSION", prefix: "IP" },
         { entity_name: "WARD", prefix: "WRD" },
         { entity_name: "BED", prefix: "BED" },
-        { entity_name: "ADMISSION_TRANSFER", prefix: "TRF" }
+        { entity_name: "ADMISSION_TRANSFER", prefix: "TRF" },
+        { entity_name: "REVIEW_REMINDER", prefix: "RVW" },
+        { entity_name: "FOLLOWUP_LOG", prefix: "FUP" }
     ];
 
     for (const seq of sequenceSetup) {
@@ -58,7 +63,7 @@ async function main() {
     }
 
     const branches = await prisma.branch.findMany({
-        where: { active_status: { not: 0 } },
+        where: { branch_status: "Active" },
         select: { branch_id: true, branch_name: true }
     });
 
@@ -130,10 +135,8 @@ async function main() {
 }
 
 async function generateIdFor(tx: Prisma.TransactionClient, entity: string) {
-    return idGenerator.generateId(tx, entity);
+    return generateId(tx, entity);
 }
-
-import { generateId } from "../src/utils/idGenerator";
 
 main()
     .catch((error) => {

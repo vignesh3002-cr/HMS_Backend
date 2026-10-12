@@ -80,6 +80,7 @@ export const createStagingDetailValidation = [
     body("disease_status").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Disease Status must be 100 characters or fewer"),
     body("notes").optional({ nullable: true }).isString(),
     body("performance_status").optional({ nullable: true }).isInt({ min: 0, max: 4 }).withMessage("performance_status must be an ECOG score between 0 and 4"),
+    body("form_state").optional({ nullable: true }).isObject().withMessage("form_state must be an object"),
     ...ihcBodyValidation,
     ...molecularBodyValidation
 
@@ -121,6 +122,7 @@ export const updateStagingDetailValidation = [
     body("disease_status").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Disease Status must be 100 characters or fewer"),
     body("notes").optional({ nullable: true }).isString(),
     body("performance_status").optional({ nullable: true }).isInt({ min: 0, max: 4 }).withMessage("performance_status must be an ECOG score between 0 and 4"),
+    body("form_state").optional({ nullable: true }).isObject().withMessage("form_state must be an object"),
     ...ihcBodyValidation,
     ...molecularBodyValidation
 

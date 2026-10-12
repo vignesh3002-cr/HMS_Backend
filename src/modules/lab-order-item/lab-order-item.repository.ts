@@ -6,7 +6,8 @@ import {
 
 export class LabOrderItemRepository {
 
-    async create(data: CreateLabOrderItemDto & {
+    async create(data: Omit<CreateLabOrderItemDto, "target_date"> & {
+        target_date?: Date | null;
         lab_order_item_id: string;
         price: number;
         net_amount: number;
@@ -124,7 +125,9 @@ export class LabOrderItemRepository {
     async update(
 
         lab_order_item_id: string,
-        data: UpdateLabOrderItemDto
+        data: Omit<UpdateLabOrderItemDto, "target_date"> & {
+            target_date?: Date | null;
+        }
 
     ) {
 

@@ -45,6 +45,8 @@ const ENTITY_TARGET = {
     WARD: { table: "ward_master", column: "ward_id" },
     BED: { table: "bed_master", column: "bed_id" },
     ADMISSION_TRANSFER: { table: "admission_transfer_log", column: "transfer_log_id" },
+    REVIEW_REMINDER: { table: "discharge_review_reminder", column: "reminder_id", padTo: 6 },
+    FOLLOWUP_LOG: { table: "followup_contact_log", column: "log_id", padTo: 7 },
     PHARMACY_SLIP: { table: "pharmacy_slip", column: "pharmacy_slip_id", padTo: 7 },
     PHARMACY_SLIP_ITEM: { table: "pharmacy_slip_item", column: "pharmacy_slip_item_id", padTo: 7 },
 };

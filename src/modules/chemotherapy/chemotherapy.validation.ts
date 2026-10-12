@@ -581,7 +581,9 @@ export const savePlanOrderValidation = [
     body("dosing.serum_creatinine").optional({ nullable: true }).isFloat({ min: 0 }),
     body("dosing.crcl").optional({ nullable: true }).isFloat({ min: 0 }),
     body("encounter_no").optional({ nullable: true }).isString().isLength({ max: 100 }),
-    body("copied_from_order_id").optional({ nullable: true }).isString().isLength({ max: 100 })
+    body("copied_from_order_id").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("chemo_instructions").optional({ nullable: true }).isString().withMessage("chemo_instructions must be text"),
+    body("additional_notes").optional({ nullable: true }).isString().withMessage("additional_notes must be text")
 
 ];
 

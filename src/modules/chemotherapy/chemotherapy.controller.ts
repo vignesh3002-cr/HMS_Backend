@@ -762,6 +762,39 @@ export class ChemotherapyController {
 
     }
 
+    async getPharmacySlips(req: Request, res: Response) {
+
+        try {
+
+            const encounterNo = String(req.query.encounter_no ?? "").trim();
+
+            if (!encounterNo) {
+                return res.status(400).json({
+                    success: false,
+                    message: "encounter_no is required"
+                });
+            }
+
+            const user = (req as any).user;
+
+            const slips = await service.getPharmacySlipsForEncounter(
+                encounterNo,
+                user?.user_id,
+                user?.role
+            );
+
+            return res.json({
+                success: true,
+                message: "Pharmacy slips fetched successfully",
+                data: slips
+            });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
     async updatePlan(req: Request, res: Response) {
 
         try {

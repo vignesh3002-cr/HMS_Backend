@@ -474,7 +474,9 @@ exports.savePlanOrderValidation = [
     (0, express_validator_1.body)("dosing.serum_creatinine").optional({ nullable: true }).isFloat({ min: 0 }),
     (0, express_validator_1.body)("dosing.crcl").optional({ nullable: true }).isFloat({ min: 0 }),
     (0, express_validator_1.body)("encounter_no").optional({ nullable: true }).isString().isLength({ max: 100 }),
-    (0, express_validator_1.body)("copied_from_order_id").optional({ nullable: true }).isString().isLength({ max: 100 })
+    (0, express_validator_1.body)("copied_from_order_id").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)("chemo_instructions").optional({ nullable: true }).isString().withMessage("chemo_instructions must be text"),
+    (0, express_validator_1.body)("additional_notes").optional({ nullable: true }).isString().withMessage("additional_notes must be text")
 ];
 exports.completePlanOrdersValidation = [
     (0, express_validator_1.param)("planId").notEmpty(),

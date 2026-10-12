@@ -3108,6 +3108,55 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
     }
 
+    /**
+     * GET /chemotherapy/pharmacy-slips?encounter_no= - the visit's pharmacy
+     * slips (not CANCELLED) with their items, for the consultation Summary
+     * print. Branch-scoped like latest-for-patient: top-level admins see
+     * every branch, others their ACTIVE mappings (none -> empty list).
+     * One slip per cycle day order: the newest wins if several are open.
+     */
+    async getPharmacySlipsForEncounter(encounterNo: string, userId: string, role: string) {
+
+        const isTopLevelAdmin = TOP_LEVEL_ADMIN_ROLES.some(
+            (r) => r.toLowerCase() === String(role ?? "").toLowerCase()
+        );
+
+        let branchIds: string[] | null = null;
+
+        if (!isTopLevelAdmin) {
+
+            const mappings = await this.repository.findActiveBranchMappingsForUser(userId);
+
+            branchIds = mappings.map((m) => String(m.branch_id));
+
+            if (branchIds.length === 0) {
+                return [];
+            }
+
+        }
+
+        const slips = await this.repository.findPharmacySlipsByEncounter(encounterNo, branchIds);
+
+        // Newest first within a cycle day, so the first slip seen per order wins.
+        const seenOrders = new Set<string>();
+
+        return slips
+            .filter((slip) => {
+                const key = slip.plan_order_id ?? `${slip.cycle_number ?? ""}/${slip.cycle_day ?? ""}`;
+                if (seenOrders.has(key)) return false;
+                seenOrders.add(key);
+                return true;
+            })
+            .map((slip) => ({
+                ...slip,
+                pharmacy_slip_item: slip.pharmacy_slip_item.map((item) => ({
+                    ...item,
+                    quantity: item.quantity != null ? Number(item.quantity) : null
+                }))
+            }));
+
+    }
+
     async updatePlan(planId: string, dto: UpdatePlanDto, actingUserId: string, organizationId?: string | null) {
 
         const plan = await this.repository.findPlanForUpdate(prisma, planId);
@@ -3899,6 +3948,14 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 ...(dto.encounter_no ? { encounter_no: dto.encounter_no } : {}),
                 ...(dto.copied_from_order_id ? { copied_from_order_id: dto.copied_from_order_id } : {}),
                 ...(saveHydration ? { hydration_saved: true } : {}),
+                // Instructions left out (row edits, Discharge Medication
+                // re-save) keep what was saved; empty text clears them.
+                ...(dto.chemo_instructions !== undefined
+                    ? { chemo_instructions: dto.chemo_instructions?.trim() || null }
+                    : {}),
+                ...(dto.additional_notes !== undefined
+                    ? { additional_notes: dto.additional_notes?.trim() || null }
+                    : {}),
                 ...(dto.dosing
                     ? {
                         dosing_height_cm: dto.dosing.height_cm ?? null,

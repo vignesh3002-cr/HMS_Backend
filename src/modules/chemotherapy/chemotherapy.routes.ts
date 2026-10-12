@@ -355,6 +355,14 @@ router.get(
     controller.getLatestPlanForPatient.bind(controller)
 );
 
+// A visit's pharmacy slips (?encounter_no=) for the Summary print.
+router.get(
+    "/pharmacy-slips",
+    authenticate,
+    authorize("chemo.plan.read"),
+    controller.getPharmacySlips.bind(controller)
+);
+
 router.get(
     "/plans/:planId",
     authenticate,
