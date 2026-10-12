@@ -882,6 +882,46 @@ class ChemotherapyRepository {
             orderBy: { created_at: "desc" }
         });
     }
+    // A visit's (encounter's) pharmacy slips that are not CANCELLED, with
+    // their items. The slips are written outside this module; the live
+    // tables lack several columns the Prisma model declares (source_type,
+    // remarks, active_status, item_status, quantity_unit, ...), so only
+    // columns that exist are selected - a plain findMany would fail.
+    async findPharmacySlipsByEncounter(encounterNo, branchIds) {
+        return prisma_1.default.pharmacy_slip.findMany({
+            where: {
+                encounter_no: encounterNo,
+                slip_status: { not: "CANCELLED" },
+                ...(branchIds ? { branch_id: { in: branchIds } } : {})
+            },
+            select: {
+                pharmacy_slip_id: true,
+                plan_order_id: true,
+                cycle_number: true,
+                cycle_day: true,
+                slip_status: true,
+                created_at: true,
+                pharmacy_slip_item: {
+                    select: {
+                        pharmacy_slip_item_id: true,
+                        display_order: true,
+                        medicine_id: true,
+                        drug_name: true,
+                        brand_name: true,
+                        dose: true,
+                        dose_unit: true,
+                        quantity: true,
+                        drug_role: true,
+                        medicine_master: {
+                            select: { medicine_name: true, generic_name: true, brand_name: true }
+                        }
+                    },
+                    orderBy: { display_order: "asc" }
+                }
+            },
+            orderBy: [{ cycle_number: "asc" }, { cycle_day: "asc" }, { created_at: "desc" }]
+        });
+    }
     // The patient's open plan in any branch - one course at a time.
     async findOpenPlanForPatient(patientId) {
         return prisma_1.default.chemotherapy_plan.findFirst({

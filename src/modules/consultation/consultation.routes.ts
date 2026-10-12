@@ -120,6 +120,13 @@ router.put(
 // ---------------- Encounter reports ----------------
 
 router.get(
+    "/patients/:patientId/reports",
+    authenticate,
+    authorize("encounter.read"),
+    controller.getReportsByPatient.bind(controller)
+);
+
+router.get(
     "/encounters/:encounterNo/reports",
     authenticate,
     authorize("encounter.read"),
