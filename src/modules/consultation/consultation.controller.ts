@@ -321,4 +321,34 @@ export class ConsultationController {
         }
     }
 
+    // ---------------- Encounter past history treatments ----------------
+
+    async getEncounterPastTreatments(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.listEncounterPastTreatments(req.params.encounterNo as string);
+            return res.json({ success: true, message: "Past treatments fetched successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
+    async syncEncounterPastTreatments(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.syncEncounterPastTreatments(
+                req.params.encounterNo as string,
+                req.body,
+                actingUserId(req)
+            );
+            return res.json({ success: true, message: "Past treatments saved successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
 }

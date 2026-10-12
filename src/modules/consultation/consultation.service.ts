@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { generateId } from "../../utils/idGenerator";
 import { ConsultationRepository } from "./consultation.repository";
-import { CreateCustomMasterDTO, EncounterImmunizationSyncDTO, EncounterMolecularTestDTO, EncounterReportDTO, MasterListQuery, PersonalHistoryPayload } from "./consultation.types";
+import { CreateCustomMasterDTO, EncounterImmunizationSyncDTO, EncounterPastTreatmentSyncDTO, EncounterMolecularTestDTO, EncounterReportDTO, MasterListQuery, PersonalHistoryPayload } from "./consultation.types";
 import { DIET_TYPES, GENERAL_EXAMINATION_CORE_FINDINGS, MOLECULAR_TESTS } from "./consultation.constants";
 
 const repository = new ConsultationRepository();
@@ -439,6 +439,87 @@ export class ConsultationService {
             }
 
             return tx.encounter_immunization.findMany({
+                where: { encounter_no: encounterNo },
+                orderBy: { created_at: "asc" }
+            });
+
+        });
+
+    }
+
+    // ---------------- Encounter past history treatments ----------------
+    // Consultation > Past History: one row per selected Treatment Type per
+    // visit (date + brief note + treatment response), related to the encounter.
+
+    async listEncounterPastTreatments(encounterNo: string) {
+
+        const encounter = await repository.findEncounterByNumber(encounterNo);
+        if (!encounter) {
+            throw new Error("Encounter not found");
+        }
+
+        return prisma.encounter_past_treatment.findMany({
+            where: { encounter_no: encounterNo },
+            orderBy: { created_at: "asc" }
+        });
+
+    }
+
+    async syncEncounterPastTreatments(encounterNo: string, payload: EncounterPastTreatmentSyncDTO, actingUserId: string) {
+
+        const encounter = await repository.findEncounterByNumber(encounterNo);
+        if (!encounter) {
+            throw new Error("Encounter not found");
+        }
+
+        // Drop blank names and de-duplicate by lowercased name, so a value
+        // can never collide with the (encounter_no, lower(name)) unique index.
+        const incoming = new Map<string, { treatment_type: string; treatment_type_code?: string | null; treatment_date?: string | null; note?: string | null; treatment_response?: string | null }>();
+        for (const row of payload.rows ?? []) {
+            const name = (row.treatment_type ?? "").trim();
+            if (!name) continue;
+            incoming.set(name.toLowerCase(), { ...row, treatment_type: name });
+        }
+
+        return prisma.$transaction(async (tx) => {
+
+            const existing = await tx.encounter_past_treatment.findMany({ where: { encounter_no: encounterNo } });
+
+            const toDelete = existing.filter((row) => !incoming.has(row.treatment_type.toLowerCase()));
+            if (toDelete.length > 0) {
+                await tx.encounter_past_treatment.deleteMany({ where: { id: { in: toDelete.map((row) => row.id) } } });
+            }
+
+            const byName = new Map(existing.map((row) => [row.treatment_type.toLowerCase(), row]));
+
+            for (const [key, row] of incoming) {
+                const match = byName.get(key);
+                const data = {
+                    treatment_type_code: row.treatment_type_code ?? null,
+                    treatment_date: row.treatment_date ? new Date(row.treatment_date) : null,
+                    note: row.note ?? null,
+                    treatment_response: row.treatment_response ?? null
+                };
+
+                if (match) {
+                    await tx.encounter_past_treatment.update({
+                        where: { id: match.id },
+                        data: { ...data, updated_at: new Date() }
+                    });
+                } else {
+                    await tx.encounter_past_treatment.create({
+                        data: {
+                            encounter_past_treatment_id: await generateId(tx, "ENCOUNTER_PAST_TREATMENT"),
+                            encounter_no: encounterNo,
+                            treatment_type: row.treatment_type,
+                            ...data,
+                            created_by: actingUserId
+                        }
+                    });
+                }
+            }
+
+            return tx.encounter_past_treatment.findMany({
                 where: { encounter_no: encounterNo },
                 orderBy: { created_at: "asc" }
             });
