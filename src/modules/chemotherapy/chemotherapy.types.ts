@@ -467,6 +467,9 @@ export interface SavePlanOrderDto {
     // Notes"; left out = left untouched, empty = cleared.
     chemo_instructions?: string | null;
     additional_notes?: string | null;
+    // The cycle day's planned date (YYYY-MM-DD) from the Chemotherapy
+    // Order's Start Date; moves only this day. Left out = unchanged.
+    planned_date?: string | null;
 
 }
 

@@ -583,7 +583,8 @@ export const savePlanOrderValidation = [
     body("encounter_no").optional({ nullable: true }).isString().isLength({ max: 100 }),
     body("copied_from_order_id").optional({ nullable: true }).isString().isLength({ max: 100 }),
     body("chemo_instructions").optional({ nullable: true }).isString().withMessage("chemo_instructions must be text"),
-    body("additional_notes").optional({ nullable: true }).isString().withMessage("additional_notes must be text")
+    body("additional_notes").optional({ nullable: true }).isString().withMessage("additional_notes must be text"),
+    body("planned_date").optional({ nullable: true }).isISO8601().withMessage("planned_date must be a date (YYYY-MM-DD)")
 
 ];
 

@@ -937,6 +937,7 @@ model chemotherapy_plan_order {
   updated_at                    DateTime?                     @default(now()) @db.Timestamp(6)
   chemo_instructions            String?
   additional_notes              String?
+  planned_date                  DateTime?                     @db.Date
   chemotherapy_administration   chemotherapy_administration[]
   chemotherapy_adverse_event    chemotherapy_adverse_event[]
   chemotherapy_plan_hydration   chemotherapy_plan_hydration[]

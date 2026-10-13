@@ -67,6 +67,7 @@ import {
 import { getTodayInIST, parseDateOnly } from "../appointment/appointment.utils";
 import { logAudit, diffFields, summarizeCreate, summarizeStatusChange } from "../audit/audit.service";
 import { AUDIT_ACTION } from "../audit/audit.types";
+import { computePlanSchedule, type PlanScheduleDay } from "./chemotherapy.schedule";
 
 function isPlanStatus(value: string): value is PlanStatus {
     return Object.values(PLAN_STATUS).includes(value as PlanStatus);
@@ -391,6 +392,14 @@ const ADVERSE_EVENT_BOOLEAN_FIELDS = [
     "icu_required", "emergency_medication_given", "dose_modified",
     "dose_reduced", "dose_delayed", "resolved"
 ] as const satisfies readonly (keyof UpdateAdverseEventDto)[];
+
+// A cycle day's planned date from the plan's schedule (null when the plan
+// has none yet).
+const plannedDateOf = (
+    schedule: { cycle_number: number; cycle_day: number; planned_date: Date }[],
+    cycleNumber: number,
+    cycleDay: number
+) => schedule.find((row) => row.cycle_number === cycleNumber && row.cycle_day === cycleDay)?.planned_date ?? null;
 
 export class ChemotherapyService {
 
@@ -3079,7 +3088,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             throw new Error("Chemotherapy plan not found");
         }
 
-        const [withOrders] = await this.withPlanOrders([plan]);
+        const [withOrders] = await this.withPlanOrders([plan], { withSchedule: true });
 
         return withOrders;
 
@@ -3093,6 +3102,17 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
     }
 
+    // The planned date of every cycle day (chemotherapy.schedule.ts). A
+    // failure here must not block reading the plan.
+    private async planSchedule(plan: unknown): Promise<PlanScheduleDay[]> {
+        try {
+            return await computePlanSchedule(prisma, plan as Parameters<typeof computePlanSchedule>[1]);
+        } catch (error: any) {
+            console.error("Failed to calculate the plan's cycle day dates:", error?.message ?? error);
+            return [];
+        }
+    }
+
     /*
      * Adds each plan's saved cycle day orders (headers, in cycle / day
      * order) and its current_order - the first ORDERED day, else the
@@ -3101,7 +3121,10 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
      * (prescription, pharmacy slip, patient details) show current_order's
      * rows, falling back to the baseline chemotherapy_plan_items.
      */
-    private async withPlanOrders<T extends { chemotherapy_plan_id: string; treatment_status: string | null }>(plans: T[]) {
+    private async withPlanOrders<T extends { chemotherapy_plan_id: string; treatment_status: string | null }>(
+        plans: T[],
+        options: { withSchedule?: boolean } = {}
+    ) {
 
         if (plans.length === 0) {
             return [];
@@ -3128,15 +3151,29 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
         const currentOrders = currentIds.length > 0 ? await this.repository.findPlanOrdersWithRows(currentIds) : [];
 
-        return plans.map((plan) => {
+        // Single-plan reads get every cycle day's planned date; lists keep
+        // only the dates stored on the orders (no protocol lookup per plan).
+        const schedules = options.withSchedule
+            ? await Promise.all(plans.map((plan) => this.planSchedule(plan)))
+            : plans.map((): PlanScheduleDay[] => []);
 
-            const orders = ordersByPlan.get(plan.chemotherapy_plan_id) ?? [];
+        return plans.map((plan, index) => {
+
+            const schedule = schedules[index];
+            const withDate = <O extends { cycle_number: number; cycle_day: number; planned_date: Date | null }>(order: O) => ({
+                ...order,
+                planned_date: order.planned_date ?? plannedDateOf(schedule, order.cycle_number, order.cycle_day)
+            });
+            const orders = (ordersByPlan.get(plan.chemotherapy_plan_id) ?? []).map(withDate);
             const currentId = currentIdFor(plan);
+            const current = currentOrders.find((order) => order.plan_order_id === currentId);
 
             return {
                 ...plan,
                 plan_orders: orders,
-                current_order: currentOrders.find((order) => order.plan_order_id === currentId) ?? null
+                current_order: current ? withDate(current) : null,
+                // The planned date of every cycle day (chemotherapy.schedule.ts).
+                chemotherapy_plan_schedule: schedule
             };
 
         });
@@ -3179,7 +3216,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             return null;
         }
 
-        const [withOrders] = await this.withPlanOrders([plan]);
+        const [withOrders] = await this.withPlanOrders([plan], { withSchedule: true });
 
         return withOrders;
 
@@ -3967,7 +4004,16 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
         const header = await this.repository.findPlanOrder(prisma, planId, cycleNumber, cycleDay);
 
-        return header ? this.repository.findPlanOrderWithRows(header.plan_order_id) : null;
+        const order = header ? await this.repository.findPlanOrderWithRows(header.plan_order_id) : null;
+
+        if (!order) {
+            return null;
+        }
+
+        return {
+            ...order,
+            planned_date: order.planned_date ?? plannedDateOf(await this.planSchedule(plan), cycleNumber, cycleDay)
+        };
 
     }
 
@@ -4015,7 +4061,8 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 throw new Error(`This chemotherapy course is already ${lockedPlan?.treatment_status ?? "closed"} - start a new plan from Treatment Plan`);
             }
 
-            const cycles = await this.ensurePlanCycles(tx, lockedPlan, actingUserId);
+            const schedule = await computePlanSchedule(tx, lockedPlan);
+            const cycles = await this.ensurePlanCycles(tx, lockedPlan, actingUserId, schedule);
             const cycle = cycles.find((row) => row.cycle_number === cycleNumber);
 
             if (!cycle) {
@@ -4050,6 +4097,9 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 ...(dto.additional_notes !== undefined
                     ? { additional_notes: dto.additional_notes?.trim() || null }
                     : {}),
+                // The Start Date the doctor set for this cycle day (only this
+                // day moves); left out = the kept / calculated date.
+                ...(dto.planned_date ? { planned_date: new Date(dto.planned_date) } : {}),
                 ...(dto.dosing
                     ? {
                         dosing_height_cm: dto.dosing.height_cm ?? null,
@@ -4453,7 +4503,8 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
     private async ensurePlanCycles(
         tx: Prisma.TransactionClient,
         plan: { chemotherapy_plan_id: string; planned_cycles: number; cycle_interval_days: number | null; treatment_start_date: Date },
-        actingUserId: string
+        actingUserId: string,
+        schedule: { cycle_number: number; cycle_day: number; planned_date: Date }[] = []
     ) {
 
         const existing = await this.repository.findAllCyclesForPlan(tx, plan.chemotherapy_plan_id);
@@ -4465,8 +4516,13 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
             if (!row) {
 
-                const plannedDate = new Date(plan.treatment_start_date);
-                plannedDate.setUTCDate(plannedDate.getUTCDate() + (number - 1) * interval);
+                // The cycle starts on its scheduled Day 1 (older plans
+                // without a schedule: start + (cycle - 1) x interval).
+                const scheduledDayOne = schedule.find((day) => day.cycle_number === number && day.cycle_day === 1);
+                const plannedDate = scheduledDayOne ? new Date(scheduledDayOne.planned_date) : new Date(plan.treatment_start_date);
+                if (!scheduledDayOne) {
+                    plannedDate.setUTCDate(plannedDate.getUTCDate() + (number - 1) * interval);
+                }
 
                 await this.repository.createCycle(tx, {
                     chemotherapy_cycle_id: await this.repository.generateCycleId(tx),
