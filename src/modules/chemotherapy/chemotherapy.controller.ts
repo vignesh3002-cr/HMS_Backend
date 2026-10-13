@@ -1325,6 +1325,36 @@ export class ChemotherapyController {
 
     }
 
+    async updateAdverseEvent(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            const data = await service.updateAdverseEvent(req.params.adverseEventId as string, req.body, actingUserId(req));
+            return res.json({ success: true, message: "Adverse event updated successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async removeAdverseEvent(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            const data = await service.removeAdverseEvent(req.params.adverseEventId as string, req.body.reason, actingUserId(req));
+            return res.json({ success: true, message: "Adverse event removed successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
     // ---------------- Lab review ----------------
 
     async recordLabReview(req: Request, res: Response) {

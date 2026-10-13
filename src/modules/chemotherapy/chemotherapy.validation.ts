@@ -716,16 +716,10 @@ const ADVERSE_EVENT_FLAGS = [
     "dose_reduced", "dose_delayed", "resolved"
 ];
 
-export const recordAdverseEventValidation = [
-
-    param("cycleId").notEmpty(),
-    body("adverse_event_name")
-        .trim()
-        .notEmpty().withMessage("adverse_event_name is required")
-        .isLength({ max: 100 }).withMessage("adverse_event_name must be at most 100 characters"),
+// Field rules shared by recording and editing an adverse event (the name's
+// required-ness differs, so it is added by each list).
+const adverseEventFieldRules = [
     body("adverse_event_category").optional({ nullable: true }).isString().isLength({ max: 100 }),
-    body("plan_order_id").optional({ nullable: true }).isString().isLength({ max: 100 }),
-    body("cycle_day").optional({ nullable: true }).isInt({ min: 1 }),
     body("event_date").optional({ nullable: true }).isISO8601(),
     body("resolution_date").optional({ nullable: true }).isISO8601(),
     body("ctcae_grade").optional({ nullable: true })
@@ -737,6 +731,40 @@ export const recordAdverseEventValidation = [
     ...ADVERSE_EVENT_FLAGS.map((flag) => body(flag).optional({ nullable: true }).isBoolean()),
     body("reduction_percentage").optional({ nullable: true }).isFloat({ min: 0, max: 100 }),
     body("delay_days").optional({ nullable: true }).isInt({ min: 0 })
+];
+
+export const recordAdverseEventValidation = [
+
+    param("cycleId").notEmpty(),
+    body("adverse_event_name")
+        .trim()
+        .notEmpty().withMessage("adverse_event_name is required")
+        .isLength({ max: 100 }).withMessage("adverse_event_name must be at most 100 characters"),
+    body("plan_order_id").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("cycle_day").optional({ nullable: true }).isInt({ min: 1 }),
+    ...adverseEventFieldRules
+
+];
+
+export const updateAdverseEventValidation = [
+
+    param("adverseEventId").notEmpty().withMessage("adverseEventId is required"),
+    body("adverse_event_name")
+        .optional()
+        .trim()
+        .notEmpty().withMessage("adverse_event_name cannot be blank")
+        .isLength({ max: 100 }).withMessage("adverse_event_name must be at most 100 characters"),
+    ...adverseEventFieldRules
+
+];
+
+export const removeAdverseEventValidation = [
+
+    param("adverseEventId").notEmpty().withMessage("adverseEventId is required"),
+    body("reason")
+        .trim()
+        .notEmpty().withMessage("A reason is required to remove an adverse event")
+        .isLength({ max: 500 }).withMessage("reason must be at most 500 characters")
 
 ];
 

@@ -25,6 +25,8 @@ import {
     recordAdministrationValidation,
     recordVitalsValidation,
     recordAdverseEventValidation,
+    updateAdverseEventValidation,
+    removeAdverseEventValidation,
     recordLabReviewValidation,
     recordFollowupValidation,
     cycleIdParamValidation,
@@ -204,10 +206,12 @@ router.get(
     controller.getDischargeMedicinesForProtocol.bind(controller)
 );
 
+// Read-only: anyone who can see a plan (e.g. the nurse administering it)
+// can view the protocol it was built from.
 router.get(
     "/regimen-protocols/:protocolId",
     authenticate,
-    authorize("chemo.protocol.read"),
+    authorizeAny("chemo.protocol.read", "chemo.plan.read"),
     getRegimenProtocolValidation,
     controller.getRegimenProtocol.bind(controller)
 );
@@ -634,6 +638,22 @@ router.get(
     authorize("chemo.plan.read"),
     cycleIdParamValidation,
     controller.listAdverseEvents.bind(controller)
+);
+
+router.put(
+    "/adverse-events/:adverseEventId",
+    authenticate,
+    authorize("chemo.adverse_event.record"),
+    updateAdverseEventValidation,
+    controller.updateAdverseEvent.bind(controller)
+);
+
+router.delete(
+    "/adverse-events/:adverseEventId",
+    authenticate,
+    authorize("chemo.adverse_event.record"),
+    removeAdverseEventValidation,
+    controller.removeAdverseEvent.bind(controller)
 );
 
 // ---------------- Lab review ----------------

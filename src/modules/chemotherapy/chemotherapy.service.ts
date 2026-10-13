@@ -39,6 +39,7 @@ import {
     RecordAdministrationDto,
     RecordVitalsDto,
     RecordAdverseEventDto,
+    UpdateAdverseEventDto,
     RecordLabReviewDto,
     RecordFollowupDto,
     CreateRegimenProtocolDto,
@@ -374,6 +375,22 @@ function openPlanMessage(plan: {
         "A new plan can be started once its last cycle day is completed, or after it is discontinued or cancelled.";
 
 }
+
+// The adverse-event fields an edit may change (updateAdverseEvent).
+const ADVERSE_EVENT_TEXT_FIELDS = [
+    "adverse_event_category", "ctcae_grade", "reaction_grade", "severity",
+    "reaction_description", "medication_given", "doctor_action",
+    "nursing_action", "remarks"
+] as const satisfies readonly (keyof UpdateAdverseEventDto)[];
+
+const ADVERSE_EVENT_BOOLEAN_FIELDS = [
+    "nausea", "vomiting", "diarrhea", "constipation", "mucositis", "fever",
+    "fatigue", "neuropathy", "alopecia", "skin_rash", "anemia", "neutropenia",
+    "thrombocytopenia", "infection", "bleeding", "pain",
+    "treatment_interrupted", "treatment_stopped", "hospitalization_required",
+    "icu_required", "emergency_medication_given", "dose_modified",
+    "dose_reduced", "dose_delayed", "resolved"
+] as const satisfies readonly (keyof UpdateAdverseEventDto)[];
 
 export class ChemotherapyService {
 
@@ -5639,6 +5656,123 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
     async listAdverseEvents(cycleId: string) {
         await this.getCycle(cycleId);
         return this.repository.listAdverseEventsForCycle(cycleId);
+    }
+
+    // An active adverse event and its plan (for audit context).
+    private async getActiveAdverseEvent(adverseEventId: string) {
+
+        const event = await this.repository.findAdverseEventById(adverseEventId);
+
+        if (!event || event.active_status !== 1) {
+            throw new Error("Adverse event not found");
+        }
+
+        const { plan } = await this.getCyclePlanContext(event.chemotherapy_cycle_id);
+
+        return { event, plan };
+
+    }
+
+    // Edits a recorded adverse event (e.g. marking an ongoing event
+    // resolved). Only the fields sent are changed; the cycle day and the
+    // linked physician / reporter stay as recorded.
+    async updateAdverseEvent(adverseEventId: string, dto: UpdateAdverseEventDto, actingUserId: string) {
+
+        const { event, plan } = await this.getActiveAdverseEvent(adverseEventId);
+
+        const changes: Record<string, any> = {};
+
+        if (dto.adverse_event_name !== undefined) {
+            const name = (dto.adverse_event_name ?? "").trim();
+            if (!name) {
+                throw new Error("adverse_event_name cannot be blank");
+            }
+            changes.adverse_event_name = name;
+        }
+
+        for (const field of ADVERSE_EVENT_TEXT_FIELDS) {
+            if (dto[field] !== undefined) changes[field] = dto[field] ?? null;
+        }
+
+        for (const field of ADVERSE_EVENT_BOOLEAN_FIELDS) {
+            if (dto[field] !== undefined) changes[field] = dto[field] ?? false;
+        }
+
+        if (dto.reduction_percentage !== undefined) changes.reduction_percentage = dto.reduction_percentage ?? null;
+        if (dto.delay_days !== undefined) changes.delay_days = dto.delay_days ?? null;
+        if (dto.event_date) changes.event_date = new Date(dto.event_date);
+        if (dto.resolution_date !== undefined) {
+            changes.resolution_date = dto.resolution_date ? new Date(dto.resolution_date) : null;
+        }
+
+        // An event that is not resolved has no resolution date.
+        const resolved = changes.resolved ?? event.resolved;
+        if (!resolved && (changes.resolution_date ?? event.resolution_date)) {
+            changes.resolution_date = null;
+        }
+
+        const eventDate: Date = changes.event_date ?? event.event_date;
+        const resolutionDate: Date | null = changes.resolution_date !== undefined ? changes.resolution_date : event.resolution_date;
+        if (resolutionDate && resolutionDate.toISOString().slice(0, 10) < eventDate.toISOString().slice(0, 10)) {
+            throw new Error("resolution_date cannot be before the event date");
+        }
+
+        const summary = diffFields(event, changes);
+        if (summary === "{}") {
+            return event;
+        }
+
+        return prisma.$transaction(async (tx) => {
+
+            const updated = await this.repository.updateAdverseEvent(tx, adverseEventId, {
+                ...changes,
+                updated_by: actingUserId
+            });
+
+            await logAudit(tx, {
+                entity_type: "chemotherapy_adverse_event",
+                entity_id: adverseEventId,
+                action: AUDIT_ACTION.UPDATE,
+                performed_by: actingUserId,
+                patient_id: plan?.patient_id,
+                branch_id: plan?.branch_id,
+                change_summary: summary
+            });
+
+            return updated;
+
+        });
+
+    }
+
+    // Removes an adverse event entered in error (soft delete, with the
+    // reason kept in the audit log).
+    async removeAdverseEvent(adverseEventId: string, reason: string, actingUserId: string) {
+
+        const { event, plan } = await this.getActiveAdverseEvent(adverseEventId);
+
+        await prisma.$transaction(async (tx) => {
+
+            await this.repository.deactivateAdverseEvent(tx, adverseEventId, actingUserId);
+
+            await logAudit(tx, {
+                entity_type: "chemotherapy_adverse_event",
+                entity_id: adverseEventId,
+                action: AUDIT_ACTION.DEACTIVATE,
+                performed_by: actingUserId,
+                patient_id: plan?.patient_id,
+                branch_id: plan?.branch_id,
+                change_summary: summarizeCreate({
+                    adverse_event_name: event.adverse_event_name,
+                    cycle_day: event.cycle_day,
+                    reason: reason.trim()
+                })
+            });
+
+        });
+
+        return { adverse_event_id: adverseEventId };
+
     }
 
     async recordLabReview(cycleId: string, dto: RecordLabReviewDto, actingUserId: string) {

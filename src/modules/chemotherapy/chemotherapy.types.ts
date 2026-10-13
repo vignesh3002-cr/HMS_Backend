@@ -620,6 +620,12 @@ export interface RecordAdverseEventDto {
 
 }
 
+// Editing an adverse event: any recorded field except the cycle day it
+// belongs to and the people linked when it was recorded.
+export type UpdateAdverseEventDto = Partial<
+    Omit<RecordAdverseEventDto, "plan_order_id" | "cycle_day" | "physician_id" | "reported_by">
+>;
+
 export interface RecordLabReviewDto {
 
     hemoglobin?: number | null;
