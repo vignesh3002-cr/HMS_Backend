@@ -107,6 +107,62 @@ class IpdController {
             });
         }
     }
+    async listDischargeTypes(_req, res) {
+        try {
+            const types = await service.listDischargeTypes();
+            return res.json({ success: true, data: types });
+        }
+        catch (error) {
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+    async addDischargeType(req, res) {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+            const type = await service.addDischargeType(req.body.type_name, req.user?.user_id);
+            return res.status(201).json({ success: true, data: type });
+        }
+        catch (error) {
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+    async saveDischargeDetails(req, res) {
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+            }
+            const admission = await service.saveDischargeDetails(req.params.id, req.user, req.body);
+            return res.json({
+                success: true,
+                message: "Discharge details saved",
+                data: admission
+            });
+        }
+        catch (error) {
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
     async dischargeAdmission(req, res) {
         try {
             const errors = (0, express_validator_1.validationResult)(req);

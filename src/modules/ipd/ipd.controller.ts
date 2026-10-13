@@ -156,6 +156,98 @@ export class IpdController {
 
     }
 
+    async listDischargeTypes(_req: Request, res: Response) {
+
+        try {
+
+            const types = await service.listDischargeTypes();
+
+            return res.json({ success: true, data: types });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async addDischargeType(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const type = await service.addDischargeType(
+                req.body.type_name,
+                (req as any).user?.user_id
+            );
+
+            return res.status(201).json({ success: true, data: type });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async saveDischargeDetails(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const admission = await service.saveDischargeDetails(
+                req.params.id as string,
+                (req as any).user,
+                req.body
+            );
+
+            return res.json({
+                success: true,
+                message: "Discharge details saved",
+                data: admission
+            });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
     async dischargeAdmission(req: Request, res: Response) {
 
         try {

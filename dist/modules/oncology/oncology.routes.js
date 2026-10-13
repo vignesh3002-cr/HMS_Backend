@@ -32,7 +32,8 @@ router.post("/reference/cancer-types/:cancerTypeId/stages", auth_middleware_1.au
 router.post("/reference/cancer-types/:cancerTypeId/grades", auth_middleware_1.authenticate, addReferenceAccess, oncology_validation_1.addGradeValidation, controller.addCancerGrade.bind(controller));
 router.post("/reference/cancer-types/:cancerTypeId/scores", auth_middleware_1.authenticate, addReferenceAccess, oncology_validation_1.addScoreValidation, controller.addCancerScore.bind(controller));
 router.post("/reference/cancer-types/:cancerTypeId/tnm-stages", auth_middleware_1.authenticate, addReferenceAccess, oncology_validation_1.addTnmStageValidation, controller.addTnmStage.bind(controller));
-router.post("/reference/disease-statuses", auth_middleware_1.authenticate, addReferenceAccess, oncology_validation_1.addDiseaseStatusValidation, controller.addDiseaseStatus.bind(controller));
+// Also reachable from the inpatient discharge card / nurse discharge popup.
+router.post("/reference/disease-statuses", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("oncology.diagnosis.create", "oncology.diagnosis.update", "admission.discharge_details", "admission.discharge"), oncology_validation_1.addDiseaseStatusValidation, controller.addDiseaseStatus.bind(controller));
 router.post("/reference/reseed", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.manage"), controller.reseedReference.bind(controller));
 // ---------------- Staging detail workflow ----------------
 router.post("/staging-details", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.diagnosis.create"), oncology_validation_1.createStagingDetailValidation, controller.createStagingDetail.bind(controller));

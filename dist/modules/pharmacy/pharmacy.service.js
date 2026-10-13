@@ -48,7 +48,8 @@ class PharmacyService {
     repository = new pharmacy_repository_1.PharmacyRepository();
     /*
      * A chemotherapy plan's current cycle-day order - the first still-ORDERED
-     * day whose cycle is not terminal, else the latest COMPLETED one - falling
+     * day whose cycle is not terminal, else the latest one being administered,
+     * else the latest COMPLETED one - falling
      * back to the plan's baseline (the protocol copy) when no order has been
      * saved yet. The protocol's take-home discharge medicines are appended
      * when the plan was built from a saved regimen.

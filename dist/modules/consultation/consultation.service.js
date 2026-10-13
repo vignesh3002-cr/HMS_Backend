@@ -170,6 +170,9 @@ class ConsultationService {
         }
         return repository.findReportsByEncounter(encounterNo);
     }
+    async listReportsByPatient(patientId) {
+        return repository.findReportsByPatient(patientId);
+    }
     async addReport(encounterNo, dto, actingUserId) {
         const encounter = await repository.findEncounterByNumber(encounterNo);
         if (!encounter) {
@@ -282,6 +285,68 @@ class ConsultationService {
         }
         await repository.deleteMolecularTest(encounterMolecularTestId);
         return { encounter_molecular_test_id: encounterMolecularTestId };
+    }
+    // ---------------- Encounter immunizations ----------------
+    // Consultation > Personal History > Immunization: one row per selected
+    // immunization per visit (date + response), related to the encounter.
+    async listEncounterImmunizations(encounterNo) {
+        const encounter = await repository.findEncounterByNumber(encounterNo);
+        if (!encounter) {
+            throw new Error("Encounter not found");
+        }
+        return repository.findEncounterImmunizations(encounterNo);
+    }
+    async syncEncounterImmunizations(encounterNo, payload, actingUserId) {
+        const encounter = await repository.findEncounterByNumber(encounterNo);
+        if (!encounter) {
+            throw new Error("Encounter not found");
+        }
+        // Drop blank names and de-duplicate by lowercased name, so a value
+        // can never collide with the (encounter_no, lower(name)) unique index.
+        const incoming = new Map();
+        for (const row of payload.rows ?? []) {
+            const name = (row.immunization_name ?? "").trim();
+            if (!name)
+                continue;
+            incoming.set(name.toLowerCase(), { ...row, immunization_name: name });
+        }
+        return prisma_1.default.$transaction(async (tx) => {
+            const existing = await tx.encounter_immunization.findMany({ where: { encounter_no: encounterNo } });
+            const toDelete = existing.filter((row) => !incoming.has(row.immunization_name.toLowerCase()));
+            if (toDelete.length > 0) {
+                await tx.encounter_immunization.deleteMany({ where: { id: { in: toDelete.map((row) => row.id) } } });
+            }
+            const byName = new Map(existing.map((row) => [row.immunization_name.toLowerCase(), row]));
+            for (const [key, row] of incoming) {
+                const match = byName.get(key);
+                const data = {
+                    immunization_code: row.immunization_code ?? null,
+                    immunization_date: row.immunization_date ? new Date(row.immunization_date) : null,
+                    response: row.response ?? null
+                };
+                if (match) {
+                    await tx.encounter_immunization.update({
+                        where: { id: match.id },
+                        data: { ...data, updated_at: new Date() }
+                    });
+                }
+                else {
+                    await tx.encounter_immunization.create({
+                        data: {
+                            encounter_immunization_id: await (0, idGenerator_1.generateId)(tx, "ENCOUNTER_IMMUNIZATION"),
+                            encounter_no: encounterNo,
+                            immunization_name: row.immunization_name,
+                            ...data,
+                            created_by: actingUserId
+                        }
+                    });
+                }
+            }
+            return tx.encounter_immunization.findMany({
+                where: { encounter_no: encounterNo },
+                orderBy: { created_at: "asc" }
+            });
+        });
     }
     async removeReport(encounterReportId) {
         const existing = await repository.findReportById(encounterReportId);

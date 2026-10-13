@@ -544,6 +544,7 @@ export class IpdService {
         return {
             ...admission,
             updated_by_name: await this.resolveUserName(admission.updated_by),
+            discharge_details_by_name: await this.resolveUserName(admission.discharge_details_by),
         };
 
     }
@@ -590,7 +591,11 @@ export class IpdService {
         if (
             data.discharge_date !== undefined ||
             data.discharge_type !== undefined ||
-            data.discharge_summary !== undefined
+            data.discharge_summary !== undefined ||
+            data.discharge_advice !== undefined ||
+            data.review_date !== undefined ||
+            data.discharge_disease_status !== undefined ||
+            data.patient_status_at_discharge !== undefined
         ) {
             throw new Error("Discharge details can only be recorded through Discharge");
         }
@@ -1253,6 +1258,215 @@ export class IpdService {
 
     }
 
+    /*
+     * Normalizes and validates the clinical discharge fields (shared by the
+     * doctor's save and the nurse's direct discharge). Review date has to
+     * fall on or after `reference` (today for a save, the discharge moment
+     * for a discharge); DECEASED forces the patient status and drops the
+     * review date.
+     */
+    private normalizeClinicalDischarge(
+        data: {
+            discharge_type?: string;
+            discharge_summary?: string;
+            discharge_advice?: string;
+            review_date?: string | Date;
+            discharge_disease_status?: string;
+            patient_status_at_discharge?: string;
+        } | undefined,
+        reference: Date
+    ) {
+
+        const isDeceased = data?.discharge_type === DISCHARGE_TYPE.DECEASED;
+
+        let reviewDate: Date | null = null;
+        if (data?.review_date && !isDeceased) {
+            reviewDate = new Date(data.review_date);
+            if (Number.isNaN(reviewDate.getTime())) {
+                throw new Error("Invalid review date");
+            }
+            // Compare by calendar day (IST) -- a review "today" is fine.
+            if (istDateString(reviewDate) < istDateString(reference)) {
+                throw new Error("Review date must be on or after the discharge date");
+            }
+        }
+
+        const patientStatus = isDeceased
+            ? PATIENT_STATUS_AT_DISCHARGE.DECEASED
+            : data?.patient_status_at_discharge || null;
+
+        if (patientStatus && !PATIENT_STATUS_AT_DISCHARGE_VALUES.includes(patientStatus)) {
+            throw new Error("Invalid patient status at discharge");
+        }
+
+        return {
+            discharge_type: data?.discharge_type || null,
+            discharge_summary: data?.discharge_summary?.trim() || null,
+            discharge_advice: data?.discharge_advice?.trim() || null,
+            discharge_disease_status: data?.discharge_disease_status?.trim() || null,
+            patient_status_at_discharge: patientStatus,
+            review_date: reviewDate,
+        };
+
+    }
+
+    /*
+     * Discharge Type dropdown options (discharge_type_master), shared by the
+     * whole hospital. type_code is what admission.discharge_type stores.
+     */
+    async listDischargeTypes() {
+
+        return prisma.discharge_type_master.findMany({
+            where: { active_status: 1 },
+            orderBy: [{ display_order: "asc" }, { id: "asc" }],
+            select: { discharge_type_id: true, type_code: true, type_name: true },
+        });
+
+    }
+
+    /*
+     * "Others" + free text: adds the value for everyone (id from
+     * id_sequences). Typing an existing one (same name or code, any case)
+     * returns it -- re-activating it if it was switched off.
+     */
+    async addDischargeType(typeName: string, actorId: string) {
+
+        const name = typeName.trim().replace(/\s+/g, " ");
+        const code = name.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+
+        if (!code) {
+            throw new Error("Discharge type must contain letters or numbers");
+        }
+
+        const existing = await prisma.discharge_type_master.findFirst({
+            where: {
+                OR: [
+                    { type_code: code },
+                    { type_name: { equals: name, mode: "insensitive" } },
+                ],
+            },
+        });
+
+        if (existing) {
+            if (existing.active_status !== 1) {
+                await prisma.discharge_type_master.update({
+                    where: { id: existing.id },
+                    data: { active_status: 1, updated_at: new Date() },
+                });
+            }
+            return {
+                discharge_type_id: existing.discharge_type_id,
+                type_code: existing.type_code,
+                type_name: existing.type_name,
+            };
+        }
+
+        return prisma.$transaction(async (tx) => {
+            const last = await tx.discharge_type_master.aggregate({ _max: { display_order: true } });
+            const created = await tx.discharge_type_master.create({
+                data: {
+                    discharge_type_id: await generateId(tx, "DISCHARGE_TYPE"),
+                    type_code: code,
+                    type_name: name,
+                    display_order: (last._max.display_order ?? 0) + 1,
+                    created_by: actorId,
+                },
+            });
+            return {
+                discharge_type_id: created.discharge_type_id,
+                type_code: created.type_code,
+                type_name: created.type_name,
+            };
+        });
+
+    }
+
+    /* The discharge type must be an active option of the master. */
+    private async assertDischargeType(code?: string | null) {
+
+        if (!code) return;
+
+        const found = await prisma.discharge_type_master.findFirst({
+            where: { type_code: code, active_status: 1 },
+            select: { id: true },
+        });
+
+        if (!found) {
+            throw new Error("Invalid discharge type");
+        }
+
+    }
+
+    /*
+     * The doctor's clinical discharge details (Discharge Medication step).
+     * Saved on the admission while it stays ADMITTED -- no bed, status or
+     * encounter change. Only for an inpatient stay: the admission's
+     * encounter must be an IPD one. Editable until the patient is
+     * discharged; an admin can confirm the discharge once these exist.
+     */
+    async saveDischargeDetails(
+        id: string,
+        actor: IpdActor,
+        data: {
+            discharge_type?: string;
+            discharge_summary?: string;
+            discharge_advice?: string;
+            review_date?: string | Date;
+            discharge_disease_status?: string;
+            patient_status_at_discharge?: string;
+        }
+    ) {
+
+        const existing = await this.getAdmissionForActor(id, actor);
+
+        if (existing.status !== IPD_STATUS.ADMITTED) {
+            throw new Error("Discharge details can only be saved for an admitted patient");
+        }
+
+        if (!data?.discharge_type) {
+            throw new Error("Discharge type is required");
+        }
+
+        const encounter = existing.encounter_no
+            ? await prisma.encounter.findUnique({
+                where: { encounter_no: existing.encounter_no },
+                select: { encounter_type: true, follow_up_date: true },
+            })
+            : null;
+        if (encounter?.encounter_type !== ENCOUNTER_TYPE_IPD) {
+            throw new Error("This admission has no inpatient (IPD) encounter");
+        }
+
+        await this.assertDischargeType(data.discharge_type);
+        // The review date is the Follow Up step's Next Visit Date (kept in
+        // sync on the admission by EncounterService) -- not entered here.
+        const fields = this.normalizeClinicalDischarge({ ...data, review_date: undefined }, new Date());
+        const followUp = encounter.follow_up_date ?? existing.review_date ?? null;
+        fields.review_date = fields.discharge_type === DISCHARGE_TYPE.DECEASED || !followUp ? null : new Date(followUp);
+
+        await this.ipdRepository.updateAdmissionTx(prisma as any, existing.admission_id, {
+            ...fields,
+            discharge_details_by: actor.user_id,
+            discharge_details_at: new Date(),
+            updated_by: actor.user_id,
+            updated_at: new Date(),
+        });
+
+        return this.getAdmissionForActor(existing.admission_id, actor);
+
+    }
+
+    /*
+     * Finalizes a discharge: status DISCHARGED, discharge time stamped by
+     * the server (never entered), bed to CLEANING, IPD encounter closed,
+     * and the stay recorded on the patient's history.
+     *
+     * - Admin roles: only after the doctor saved the discharge details;
+     *   those saved values are used and any clinical fields in the request
+     *   are ignored.
+     * - NURSE: may discharge directly (e.g. deceased) -- clinical fields in
+     *   the request are used, falling back to anything already saved.
+     */
     async dischargeAdmission(
         id: string,
         actor: IpdActor,
@@ -1274,51 +1488,33 @@ export class IpdService {
         }
 
         const closedBy = actor.user_id;
+        const dischargeDate = new Date();
+        const isNurse = String(actor.role ?? "").toUpperCase() === "NURSE";
 
-        const dischargeDate = data?.discharge_date
-            ? new Date(data.discharge_date)
-            : new Date();
+        let clinical: Record<string, unknown> = {};
 
-        if (Number.isNaN(dischargeDate.getTime())) {
-            throw new Error("Invalid discharge date");
+        if (isNurse) {
+            const merged = {
+                discharge_type: data?.discharge_type ?? existing.discharge_type ?? undefined,
+                discharge_summary: data?.discharge_summary ?? existing.discharge_summary ?? undefined,
+                discharge_advice: data?.discharge_advice ?? existing.discharge_advice ?? undefined,
+                review_date: data?.review_date ?? existing.review_date ?? undefined,
+                discharge_disease_status:
+                    data?.discharge_disease_status ?? existing.discharge_disease_status ?? undefined,
+                patient_status_at_discharge:
+                    data?.patient_status_at_discharge ?? existing.patient_status_at_discharge ?? undefined,
+            };
+            if (data?.discharge_type) await this.assertDischargeType(data.discharge_type);
+            clinical = this.normalizeClinicalDischarge(merged, dischargeDate);
+        } else if (!existing.discharge_details_at) {
+            throw new Error("Doctor has not completed the discharge details yet");
         }
 
-        // A discharge can't predate the admission it closes, and (barring
-        // clock skew) can't be claimed to happen in the future.
-        if (dischargeDate.getTime() < new Date(existing.admission_date).getTime()) {
-            throw new Error("Discharge date cannot be before the admission date");
-        }
-        if (dischargeDate.getTime() > Date.now() + 60_000) {
-            throw new Error("Discharge date cannot be in the future");
-        }
-
-        // The take-home follow-up date, if given -- it has to fall on or
-        // after discharge, or "review" doesn't mean anything.
-        let reviewDate: Date | undefined;
-        if (data?.review_date) {
-            reviewDate = new Date(data.review_date);
-            if (Number.isNaN(reviewDate.getTime())) {
-                throw new Error("Invalid review date");
-            }
-            if (reviewDate.getTime() < dischargeDate.getTime()) {
-                throw new Error("Review date must be on or after the discharge date");
-            }
-        }
-
-        // DECEASED is a consequence of the discharge type, not a separate
-        // clinical judgement call -- it's forced rather than offered as a
-        // choice, and can't be contradicted by a different status.
-        const patientStatusAtDischarge =
-            data?.discharge_type === DISCHARGE_TYPE.DECEASED
-                ? PATIENT_STATUS_AT_DISCHARGE.DECEASED
-                : data?.patient_status_at_discharge;
-
-        if (
-            patientStatusAtDischarge &&
-            !PATIENT_STATUS_AT_DISCHARGE_VALUES.includes(patientStatusAtDischarge)
-        ) {
-            throw new Error("Invalid patient status at discharge");
-        }
+        const doctorName = [existing.employees?.first_name, existing.employees?.last_name]
+            .filter(Boolean)
+            .join(" ");
+        const summaryForHistory =
+            (clinical.discharge_summary as string | null | undefined) ?? existing.discharge_summary ?? null;
 
         return await prisma.$transaction(async (tx) => {
 
@@ -1326,15 +1522,11 @@ export class IpdService {
                 tx,
                 existing.admission_id,
                 {
+                    ...clinical,
                     status: IPD_STATUS.DISCHARGED,
                     discharge_date: dischargeDate,
-                    discharge_type: data?.discharge_type,
-                    discharge_summary: data?.discharge_summary,
-                    discharge_advice: data?.discharge_advice,
-                    review_date: reviewDate,
-                    discharge_disease_status: data?.discharge_disease_status,
-                    patient_status_at_discharge: patientStatusAtDischarge,
                     updated_by: closedBy,
+                    updated_at: dischargeDate,
                 }
             );
 
@@ -1362,6 +1554,51 @@ export class IpdService {
                     tx,
                     existing.appointment_id
                 );
+            }
+
+            /*
+             * Record the stay on the patient's history: the latest history
+             * row dated within this stay (e.g. the one the inpatient visit's
+             * prescription created), or a new one if there is none.
+             */
+            const historyFields = {
+                admitted: "Yes",
+                admission_date: existing.admission_date,
+                discharge_date: dischargeDate,
+                ward: existing.ward_master?.ward_name ?? null,
+                bed: existing.bed_master?.bed_number ?? null,
+                discharge_summary: summaryForHistory,
+                treating_doctor_name: doctorName || null,
+                visit_status: "DISCHARGED",
+                updated_by: closedBy,
+                updated_at: dischargeDate,
+            };
+
+            const stayStart = startOfIstDay(istDateString(new Date(existing.admission_date)));
+            const historyRow = await tx.patient_history.findFirst({
+                where: { patient_id: existing.patient_id, visit_date: { gte: stayStart } },
+                orderBy: { id: "desc" },
+                select: { patient_history_id: true },
+            });
+
+            if (historyRow) {
+                await tx.patient_history.update({
+                    where: { patient_history_id: historyRow.patient_history_id },
+                    data: historyFields,
+                });
+            } else {
+                await tx.patient_history.create({
+                    data: {
+                        ...historyFields,
+                        patient_history_id: await generateId(tx, "PATIENT_HISTORY"),
+                        patient_id: existing.patient_id,
+                        branch_id: existing.branch_id,
+                        department_id: existing.department_id,
+                        employee_id: existing.employee_id,
+                        visit_type: ENCOUNTER_TYPE_IPD,
+                        visit_date: dischargeDate,
+                    },
+                });
             }
 
             return updated;

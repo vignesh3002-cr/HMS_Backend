@@ -58,7 +58,8 @@ exports.updateEncounterValidation = [
     (0, express_validator_1.body)("respiratory_rate").optional().isInt({ min: 0 }),
     (0, express_validator_1.body)("spo2").optional().isInt({ min: 0, max: 100 }),
     (0, express_validator_1.body)("blood_sugar").optional().isFloat({ min: 0 }),
-    (0, express_validator_1.body)("pain_score").optional().isInt({ min: 0, max: 10 })
+    (0, express_validator_1.body)("pain_score").optional().isInt({ min: 0, max: 10 }),
+    (0, express_validator_1.body)("remarks").optional({ nullable: true }).isString()
 ];
 exports.closeEncounterValidation = [
     (0, express_validator_1.param)("encounterNo")

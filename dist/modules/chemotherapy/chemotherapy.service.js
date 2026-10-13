@@ -10,6 +10,7 @@ const roles_1 = require("../../permissions/roles");
 const chemotherapy_repository_1 = require("./chemotherapy.repository");
 const oncology_repository_1 = require("../oncology/oncology.repository");
 const chemotherapy_constants_1 = require("./chemotherapy.constants");
+const appointment_utils_1 = require("../appointment/appointment.utils");
 const audit_service_1 = require("../audit/audit.service");
 const audit_types_1 = require("../audit/audit.types");
 function isPlanStatus(value) {
@@ -130,18 +131,47 @@ function protocolPlanItems(protocol) {
         remarks: item.remarks
     }));
 }
-// The plan's current cycle day order: on an open plan the first still
-// ORDERED day (by cycle, day) whose cycle isn't closed, else - and always
-// on a closed plan - the latest COMPLETED one. Orders come sorted by cycle,
-// day.
+// The plan's current cycle day order. On an open plan: the first still
+// ORDERED day (the one being ordered) whose cycle isn't closed, else the
+// latest IN_ADMINISTRATION day (being given) on an open cycle. Otherwise -
+// and always on a closed plan - the latest COMPLETED one. Orders come
+// sorted by cycle, day.
 function pickCurrentOrder(orders, planOpen) {
-    const pending = planOpen
-        ? orders.find((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.ORDERED &&
-            !chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(order.chemotherapy_cycle?.cycle_status))
+    const onOpenCycle = (order) => !chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(order.chemotherapy_cycle?.cycle_status);
+    const open = planOpen
+        ? orders.find((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.ORDERED && onOpenCycle(order))
+            ?? [...orders].reverse().find((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.IN_ADMINISTRATION && onOpenCycle(order))
         : undefined;
-    return pending
+    return open
         ?? [...orders].reverse().find((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED)
         ?? null;
+}
+// Today's date in IST (the hospital's timezone) for @db.Date columns.
+function istToday() {
+    return (0, appointment_utils_1.parseDateOnly)((0, appointment_utils_1.getTodayInIST)());
+}
+function addDays(date, days) {
+    const next = new Date(date);
+    next.setUTCDate(next.getUTCDate() + days);
+    return next;
+}
+function toNumber(value) {
+    if (value === null || value === undefined || value === "") {
+        return null;
+    }
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+}
+// The IST calendar date of a timestamp, as YYYY-MM-DD.
+function istDateOf(value) {
+    return new Date(value.getTime() + (5 * 60 + 30) * 60 * 1000).toISOString().slice(0, 10);
+}
+function dateOnly(value) {
+    return value ? value.toISOString().slice(0, 10) : null;
+}
+function personName(person) {
+    const name = [person?.first_name, person?.last_name].filter(Boolean).join(" ").trim();
+    return name || null;
 }
 // The next legal cycle status on the way to target (COMPLETED goes via
 // APPROVED and IN_PROGRESS; DELAYED resumes via APPROVED).
@@ -2139,7 +2169,8 @@ class ChemotherapyService {
     /*
      * Adds each plan's saved cycle day orders (headers, in cycle / day
      * order) and its current_order - the first ORDERED day, else the
-     * latest COMPLETED one - with that day's items and hydration. Readers
+     * latest IN_ADMINISTRATION one, else the latest COMPLETED one (see
+     * pickCurrentOrder) - with that day's items and hydration. Readers
      * (prescription, pharmacy slip, patient details) show current_order's
      * rows, falling back to the baseline chemotherapy_plan_items.
      */
@@ -2379,6 +2410,11 @@ class ChemotherapyService {
             throw new Error(`A reason is required to mark a plan as ${dto.status}`);
         }
         await prisma_1.default.$transaction(async (tx) => {
+            await this.repository.lockPlan(tx, planId);
+            // A closed course leaves no cycle day half administered.
+            if (chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(dto.status)) {
+                await this.closeOpenAdministrationDays(tx, planId, undefined, `Plan ${dto.status.toLowerCase()}${dto.reason?.trim() ? `: ${dto.reason.trim()}` : ""}`, actingUserId);
+            }
             await this.repository.updatePlan(tx, planId, {
                 treatment_status: dto.status,
                 remarks: appendNote(plan.remarks, dto.reason ? `[${dto.status}] ${dto.reason}` : null)
@@ -2791,6 +2827,9 @@ class ChemotherapyService {
             if (existing?.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED) {
                 throw new Error(`Cycle ${cycleNumber} / Day ${cycleDay} is already completed and can no longer be changed`);
             }
+            if (existing?.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.IN_ADMINISTRATION) {
+                throw new Error(`Cycle ${cycleNumber} / Day ${cycleDay} has been sent for administration and can no longer be changed`);
+            }
             const saveHydration = Array.isArray(dto.hydration);
             const header = {
                 ...(dto.encounter_no ? { encounter_no: dto.encounter_no } : {}),
@@ -2876,11 +2915,14 @@ class ChemotherapyService {
         return this.repository.findPlanOrderWithRows(orderId);
     }
     /*
-     * Called when the consultation is submitted: completes the order(s)
-     * saved in this encounter. The plan moves PLANNED -> ACTIVE, the cycle
-     * PLANNED -> APPROVED -> IN_PROGRESS, and on the cycle's last
-     * medication day the cycle becomes COMPLETED; completed_cycles is then
-     * recounted and the plan is COMPLETED once every cycle is closed.
+     * Called when the consultation is submitted: sends the cycle day
+     * order(s) saved in this encounter for administration. Each becomes
+     * IN_ADMINISTRATION (read-only) with one PENDING administration row per
+     * tracked medicine; the plan moves PLANNED -> ACTIVE and the cycle
+     * PLANNED -> APPROVED -> IN_PROGRESS. The day itself is completed from
+     * the Administration tab (completeAdministrationDay) once every medicine
+     * is resolved. A day with no tracked medicine - or ordered on a cycle
+     * that has since closed - is completed right away, as before.
      * Calling it again for the same encounter changes nothing.
      */
     async completePlanOrders(planId, encounterNo, actingUserId) {
@@ -2901,6 +2943,7 @@ class ChemotherapyService {
             const orders = await this.repository.findPlanOrdersForEncounter(tx, planId, encounterNo);
             const pending = orders.filter((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.ORDERED);
             const result = {
+                released_orders: [],
                 completed_orders: [],
                 completed_cycles: [],
                 plan_completed: false,
@@ -2913,6 +2956,7 @@ class ChemotherapyService {
                 throw new Error(`Cannot complete an order on a plan that is already ${lockedPlan.treatment_status}`);
             }
             const now = new Date();
+            const treatmentDate = istToday();
             if (lockedPlan.treatment_status === chemotherapy_constants_1.PLAN_STATUS.PLANNED) {
                 await this.repository.updatePlan(tx, planId, { treatment_status: chemotherapy_constants_1.PLAN_STATUS.ACTIVE, updated_by: actingUserId });
                 await (0, audit_service_1.logAudit)(tx, {
@@ -2922,59 +2966,159 @@ class ChemotherapyService {
                     performed_by: actingUserId,
                     patient_id: lockedPlan.patient_id,
                     branch_id: lockedPlan.branch_id,
-                    change_summary: (0, audit_service_1.summarizeStatusChange)(chemotherapy_constants_1.PLAN_STATUS.PLANNED, chemotherapy_constants_1.PLAN_STATUS.ACTIVE, "First cycle day completed")
+                    change_summary: (0, audit_service_1.summarizeStatusChange)(chemotherapy_constants_1.PLAN_STATUS.PLANNED, chemotherapy_constants_1.PLAN_STATUS.ACTIVE, "First cycle day ordered")
                 });
             }
             for (const order of pending) {
-                await this.repository.updatePlanOrder(tx, order.plan_order_id, {
-                    order_status: chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED,
-                    completed_at: now
-                });
-                result.completed_orders.push({ plan_order_id: order.plan_order_id, cycle_number: order.cycle_number, cycle_day: order.cycle_day });
+                const label = `Cycle ${order.cycle_number} / Day ${order.cycle_day}`;
                 const cycle = await this.repository.findCycleForUpdate(tx, order.chemotherapy_cycle_id);
-                if (!cycle || chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status)) {
-                    continue;
+                const cycleOpen = !!cycle && !chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status);
+                if (cycle && cycleOpen) {
+                    await this.advanceCycle(tx, lockedPlan, cycle, chemotherapy_constants_1.CYCLE_STATUS.IN_PROGRESS, actingUserId, now, `${label} ordered`);
                 }
-                // Walk the cycle forward through its legal transitions only.
-                const target = order.cycle_day >= lastDay ? chemotherapy_constants_1.CYCLE_STATUS.COMPLETED : chemotherapy_constants_1.CYCLE_STATUS.IN_PROGRESS;
-                let status = cycle.cycle_status;
-                const steps = [];
-                while (status !== target) {
-                    const next = nextCycleStepTowards(status, target);
-                    if (!next) {
-                        break;
+                const items = cycleOpen
+                    ? await this.repository.findOrderItemsForAdministration(tx, order.plan_order_id, chemotherapy_constants_1.ADMINISTERED_DRUG_ROLES)
+                    : [];
+                if (items.length === 0) {
+                    await this.repository.updatePlanOrder(tx, order.plan_order_id, {
+                        order_status: chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED,
+                        completed_at: now
+                    });
+                    result.completed_orders.push({ plan_order_id: order.plan_order_id, cycle_number: order.cycle_number, cycle_day: order.cycle_day });
+                    if (cycleOpen && await this.closeCycleIfDone(tx, lockedPlan, order.chemotherapy_cycle_id, lastDay, actingUserId, now)) {
+                        result.completed_cycles.push(order.cycle_number);
                     }
-                    steps.push(next);
-                    status = next;
-                }
-                if (steps.length === 0) {
                     continue;
                 }
-                await this.repository.updateCycle(tx, cycle.chemotherapy_cycle_id, {
-                    cycle_status: status,
-                    updated_by: actingUserId,
-                    ...(steps.includes(chemotherapy_constants_1.CYCLE_STATUS.APPROVED) ? { physician_approved: true, approval_date: now } : {}),
-                    ...(!cycle.actual_date ? { actual_date: now } : {}),
-                    ...(status === chemotherapy_constants_1.CYCLE_STATUS.COMPLETED ? { cycle_completed: true, completion_date: now, completion_status: "COMPLETED" } : {})
+                const administrationIds = await (0, idGenerator_1.generateIdBatch)(tx, chemotherapy_constants_1.ID_ENTITY.ADMINISTRATION, items.length);
+                await this.repository.createAdministrations(tx, items.map((item, index) => ({
+                    administration_id: administrationIds[index],
+                    chemotherapy_cycle_id: order.chemotherapy_cycle_id,
+                    chemotherapy_plan_item_id: item.chemotherapy_plan_item_id,
+                    plan_order_id: order.plan_order_id,
+                    administration_day: order.cycle_day,
+                    administration_date: treatmentDate,
+                    administration_route: item.administration_route,
+                    infusion_rate: item.infusion_rate,
+                    infusion_duration_minutes: item.infusion_duration_minutes,
+                    administration_status: chemotherapy_constants_1.ADMINISTRATION_STATUS.PENDING,
+                    created_by: actingUserId
+                })));
+                await this.repository.updatePlanOrder(tx, order.plan_order_id, {
+                    order_status: chemotherapy_constants_1.PLAN_ORDER_STATUS.IN_ADMINISTRATION
                 });
                 await (0, audit_service_1.logAudit)(tx, {
-                    entity_type: "chemotherapy_cycle",
-                    entity_id: cycle.chemotherapy_cycle_id,
+                    entity_type: "chemotherapy_plan_order",
+                    entity_id: order.plan_order_id,
                     action: audit_types_1.AUDIT_ACTION.STATUS_CHANGE,
                     performed_by: actingUserId,
                     patient_id: lockedPlan.patient_id,
                     branch_id: lockedPlan.branch_id,
-                    change_summary: (0, audit_service_1.summarizeStatusChange)(cycle.cycle_status ?? chemotherapy_constants_1.CYCLE_STATUS.PLANNED, status, `Cycle ${order.cycle_number} / Day ${order.cycle_day} completed`)
+                    change_summary: (0, audit_service_1.summarizeStatusChange)(chemotherapy_constants_1.PLAN_ORDER_STATUS.ORDERED, chemotherapy_constants_1.PLAN_ORDER_STATUS.IN_ADMINISTRATION, `${label} sent for administration (${items.length} medicine${items.length === 1 ? "" : "s"})`)
                 });
-                if (status === chemotherapy_constants_1.CYCLE_STATUS.COMPLETED) {
-                    result.completed_cycles.push(order.cycle_number);
-                }
+                result.released_orders.push({
+                    plan_order_id: order.plan_order_id,
+                    cycle_number: order.cycle_number,
+                    cycle_day: order.cycle_day,
+                    medicine_count: items.length
+                });
             }
             const recount = await this.recountPlanCycles(tx, planId, actingUserId);
             result.plan_completed = recount.planCompleted;
             result.treatment_status = recount.treatmentStatus;
             return result;
         }, { timeout: 30000 });
+    }
+    // Walks a cycle forward to target through its legal transitions only
+    // (PLANNED -> APPROVED -> IN_PROGRESS -> COMPLETED), stamping approval,
+    // start and completion. A completed cycle that has a successor records
+    // the next cycle's due date (start + cycle interval) on both rows.
+    // Returns the status reached.
+    async advanceCycle(tx, plan, cycle, target, actingUserId, now, note) {
+        const from = (cycle.cycle_status ?? chemotherapy_constants_1.CYCLE_STATUS.PLANNED);
+        let status = from;
+        const steps = [];
+        while (status !== target) {
+            const next = nextCycleStepTowards(status, target);
+            if (!next) {
+                break;
+            }
+            steps.push(next);
+            status = next;
+        }
+        if (steps.length === 0) {
+            return status;
+        }
+        const startDate = cycle.actual_date ?? istToday();
+        const interval = cycle.cycle_interval_days ?? plan.cycle_interval_days ?? 0;
+        const nextCycleDate = status === chemotherapy_constants_1.CYCLE_STATUS.COMPLETED && interval > 0 && cycle.cycle_number < plan.planned_cycles
+            ? addDays(startDate, interval)
+            : null;
+        await this.repository.updateCycle(tx, cycle.chemotherapy_cycle_id, {
+            cycle_status: status,
+            updated_by: actingUserId,
+            ...(steps.includes(chemotherapy_constants_1.CYCLE_STATUS.APPROVED) ? { physician_approved: true, approval_date: now } : {}),
+            ...(!cycle.actual_date ? { actual_date: startDate } : {}),
+            ...(status === chemotherapy_constants_1.CYCLE_STATUS.COMPLETED
+                ? {
+                    cycle_completed: true,
+                    completion_date: now,
+                    completion_status: "COMPLETED",
+                    ...(nextCycleDate ? { next_cycle_date: nextCycleDate } : {})
+                }
+                : {})
+        });
+        if (nextCycleDate) {
+            const successor = (await this.repository.findAllCyclesForPlan(tx, plan.chemotherapy_plan_id)).find((row) => row.cycle_number === cycle.cycle_number + 1 &&
+                row.active_status === 1 &&
+                !chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(row.cycle_status));
+            if (successor) {
+                await this.repository.updateCycle(tx, successor.chemotherapy_cycle_id, { next_cycle_date: nextCycleDate, updated_by: actingUserId });
+            }
+        }
+        await (0, audit_service_1.logAudit)(tx, {
+            entity_type: "chemotherapy_cycle",
+            entity_id: cycle.chemotherapy_cycle_id,
+            action: audit_types_1.AUDIT_ACTION.STATUS_CHANGE,
+            performed_by: actingUserId,
+            patient_id: plan.patient_id,
+            branch_id: plan.branch_id,
+            change_summary: (0, audit_service_1.summarizeStatusChange)(from, status, note)
+        });
+        return status;
+    }
+    // A cycle closes once none of its days is still being administered and
+    // a COMPLETED order covers its last medication day - whichever of its
+    // days completes last. Returns true when this call closed it.
+    async closeCycleIfDone(tx, plan, cycleId, lastDay, actingUserId, now) {
+        const cycle = await this.repository.findCycleForUpdate(tx, cycleId);
+        if (!cycle || chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status)) {
+            return false;
+        }
+        const orders = await this.repository.findPlanOrdersForCycle(tx, cycleId);
+        const stillOpen = orders.some((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.IN_ADMINISTRATION);
+        const lastDayDone = orders.some((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED && order.cycle_day >= lastDay);
+        if (stillOpen || !lastDayDone) {
+            return false;
+        }
+        const status = await this.advanceCycle(tx, plan, cycle, chemotherapy_constants_1.CYCLE_STATUS.COMPLETED, actingUserId, now, `Cycle ${cycle.cycle_number} completed`);
+        return status === chemotherapy_constants_1.CYCLE_STATUS.COMPLETED;
+    }
+    // Closing a cycle or the whole plan by status change: its days still in
+    // administration are completed, their PENDING medicines recorded as
+    // CANCELLED with the closing reason.
+    async closeOpenAdministrationDays(tx, planId, cycleId, reason, actingUserId) {
+        const open = await this.repository.findPlanOrdersByStatus(tx, planId, chemotherapy_constants_1.PLAN_ORDER_STATUS.IN_ADMINISTRATION, cycleId);
+        if (open.length === 0) {
+            return;
+        }
+        await this.repository.cancelPendingAdministrations(tx, open.map((order) => order.plan_order_id), reason, actingUserId);
+        for (const order of open) {
+            await this.repository.updatePlanOrder(tx, order.plan_order_id, {
+                order_status: chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED,
+                completed_at: new Date()
+            });
+        }
     }
     // Creates the plan's cycle rows 1..planned_cycles (PLANNED, dated from
     // the start date by the cycle interval) the first time they're needed,
@@ -3026,7 +3170,11 @@ class ChemotherapyService {
         const completed = cycles.filter((cycle) => cycle.cycle_status === chemotherapy_constants_1.CYCLE_STATUS.COMPLETED).length;
         const closed = cycles.filter((cycle) => chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status)).length;
         const isOpen = !chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(plan.treatment_status);
-        const planCompleted = isOpen && closed >= plan.planned_cycles;
+        // A course with a cycle day still being administered stays open.
+        const inAdministration = isOpen && closed >= plan.planned_cycles
+            ? (await this.repository.findPlanOrdersByStatus(tx, planId, chemotherapy_constants_1.PLAN_ORDER_STATUS.IN_ADMINISTRATION)).length
+            : 0;
+        const planCompleted = isOpen && closed >= plan.planned_cycles && inAdministration === 0;
         await this.repository.updatePlan(tx, planId, {
             completed_cycles: completed,
             ...(planCompleted ? { treatment_status: chemotherapy_constants_1.PLAN_STATUS.COMPLETED, updated_by: actingUserId } : {})
@@ -3048,10 +3196,15 @@ class ChemotherapyService {
             treatmentStatus: planCompleted ? chemotherapy_constants_1.PLAN_STATUS.COMPLETED : plan.treatment_status
         };
     }
-    // A cycle's last medication day: the source protocol's highest item
-    // day (administration_day ?? cycle_day ?? 1), as the Chemotherapy
-    // Order tab lists them; else its no_of_days; else the plan's baseline.
+    // A cycle's last medication day: the highest of its medication days.
     async lastMedicationDay(plan) {
+        const days = await this.medicationDays(plan);
+        return days[days.length - 1] ?? 1;
+    }
+    // A cycle's medication days, ascending: the source protocol's item days
+    // (administration_day ?? cycle_day ?? 1), as the Chemotherapy Order tab
+    // lists them; else 1..no_of_days; else the plan's baseline item days.
+    async medicationDays(plan) {
         const protocol = plan.source_protocol_id
             ? await this.repository.findRegimenProtocolById(plan.source_protocol_id)
             : null;
@@ -3059,16 +3212,17 @@ class ChemotherapyService {
             const day = Number(item.administration_day ?? item.cycle_day ?? 1);
             return Number.isFinite(day) && day > 0 ? day : 1;
         };
+        const distinct = (days) => [...new Set(days)].sort((a, b) => a - b);
         const protocolDays = (protocol?.chemotherapy_regimen_protocol_items ?? []).map(itemDay);
         if (protocolDays.length > 0) {
-            return Math.max(...protocolDays);
+            return distinct(protocolDays);
         }
         if (protocol?.no_of_days && protocol.no_of_days > 0) {
-            return protocol.no_of_days;
+            return Array.from({ length: protocol.no_of_days }, (_, index) => index + 1);
         }
         const baseline = await this.repository.findPlanById(plan.chemotherapy_plan_id);
         const baselineDays = (baseline?.chemotherapy_plan_items ?? []).map(itemDay);
-        return baselineDays.length > 0 ? Math.max(...baselineDays) : 1;
+        return baselineDays.length > 0 ? distinct(baselineDays) : [1];
     }
     // ---------------------------------------------------------------
     // Plan item helpers
@@ -3103,6 +3257,9 @@ class ChemotherapyService {
         const order = await this.repository.findPlanOrderById(prisma_1.default, item.plan_order_id);
         if (order?.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED) {
             throw new Error(`Cycle ${order.cycle_number} / Day ${order.cycle_day} is already completed - its drugs can't be ${action}`);
+        }
+        if (order?.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.IN_ADMINISTRATION) {
+            throw new Error(`Cycle ${order.cycle_number} / Day ${order.cycle_day} has been sent for administration - its drugs can't be ${action}`);
         }
     }
     // ---------------------------------------------------------------
@@ -3209,7 +3366,17 @@ class ChemotherapyService {
         }
         const planForContext = await this.repository.findPlanForUpdate(prisma_1.default, cycle.chemotherapy_plan_id);
         await prisma_1.default.$transaction(async (tx) => {
+            await this.repository.lockPlan(tx, cycle.chemotherapy_plan_id);
+            // Re-read under the plan lock: the cycle may have closed since.
+            const lockedCycle = await this.repository.findCycleForUpdate(tx, cycleId);
+            if (!lockedCycle || lockedCycle.cycle_status !== cycle.cycle_status) {
+                throw new Error(`Cycle ${cycle.cycle_number} changed to ${lockedCycle?.cycle_status ?? "another status"} meanwhile - reload and try again`);
+            }
             const now = new Date();
+            // A closed cycle leaves none of its days half administered.
+            if (dto.status === chemotherapy_constants_1.CYCLE_STATUS.COMPLETED || dto.status === chemotherapy_constants_1.CYCLE_STATUS.CANCELLED) {
+                await this.closeOpenAdministrationDays(tx, cycle.chemotherapy_plan_id, cycleId, `Cycle ${dto.status.toLowerCase()}${dto.reason?.trim() ? `: ${dto.reason.trim()}` : ""}`, actingUserId);
+            }
             await this.repository.updateCycle(tx, cycleId, {
                 cycle_status: dto.status,
                 ...(dto.status === chemotherapy_constants_1.CYCLE_STATUS.APPROVED ? { physician_approved: true, approval_date: now } : {}),
@@ -3260,6 +3427,10 @@ class ChemotherapyService {
             const order = await this.repository.findPlanOrderById(prisma_1.default, planItem.plan_order_id);
             if (order && order.chemotherapy_cycle_id !== cycleId) {
                 throw new Error(`This drug was ordered for Cycle ${order.cycle_number} / Day ${order.cycle_day}, not this cycle`);
+            }
+            // Submitted days are tracked on the Administration sheet.
+            if (order && await this.repository.countAdministrationsForOrder(prisma_1.default, order.plan_order_id) > 0) {
+                throw new Error(`Cycle ${order.cycle_number} / Day ${order.cycle_day} is tracked on the administration sheet - update the drug's status there`);
             }
         }
         const administrationId = await prisma_1.default.$transaction(async (tx) => {
@@ -3330,6 +3501,379 @@ class ChemotherapyService {
     async listAdministrations(cycleId) {
         await this.getCycle(cycleId);
         return this.repository.listAdministrationsForCycle(cycleId);
+    }
+    // ---------------------------------------------------------------
+    // Administration sheet - a cycle day's medicines and their status
+    // (PENDING -> GIVEN / SKIPPED / CANCELLED). Once none is PENDING the
+    // day is completed from the patient's Administration tab, which closes
+    // its order, then its cycle on the last medication day, then the course.
+    // ---------------------------------------------------------------
+    /*
+     * The sheet for one cycle day: the requested one, else the day being
+     * administered (oldest first), else the day being ordered, else the
+     * latest completed one. Also carries the cycle progress, completed
+     * cycles and the plan's post-treatment medicines the tab shows.
+     */
+    async getAdministrationSheet(planId, selection = {}) {
+        const plan = await this.repository.findPlanById(planId);
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+        const [orders, medicationDays, dischargeItems] = await Promise.all([
+            this.repository.listPlanOrders([planId]),
+            this.medicationDays(plan),
+            this.repository.findPlanDischargeItems(planId)
+        ]);
+        const lastDay = medicationDays[medicationDays.length - 1] ?? 1;
+        const planOpen = !chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(plan.treatment_status);
+        const cycles = plan.chemotherapy_cycle.filter((cycle) => cycle.cycle_number <= plan.planned_cycles);
+        const cycleClosed = (cycleId) => chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(cycles.find((cycle) => cycle.chemotherapy_cycle_id === cycleId)?.cycle_status);
+        const wantsDay = Boolean(selection.cycle_number && selection.cycle_day);
+        const requested = wantsDay
+            ? orders.find((order) => order.cycle_number === selection.cycle_number && order.cycle_day === selection.cycle_day)
+            : undefined;
+        if (wantsDay && !requested) {
+            throw new Error(`No order has been saved for Cycle ${selection.cycle_number} / Day ${selection.cycle_day}`);
+        }
+        const day = requested
+            ?? orders.find((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.IN_ADMINISTRATION)
+            ?? (planOpen
+                ? orders.find((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.ORDERED && !cycleClosed(order.chemotherapy_cycle_id))
+                : undefined)
+            ?? [...orders].reverse().find((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED)
+            ?? null;
+        const roleRank = (role) => {
+            const rank = chemotherapy_constants_1.ADMINISTERED_DRUG_ROLES.indexOf(role ?? "");
+            return rank === -1 ? chemotherapy_constants_1.ADMINISTERED_DRUG_ROLES.length : rank;
+        };
+        const drugFields = (item) => ({
+            chemotherapy_plan_item_id: item.chemotherapy_plan_item_id,
+            drug_role: item.drug_role,
+            drug_sequence: item.drug_sequence,
+            drug_name: item.medicine_master?.medicine_name || item.medicine_master?.generic_name || item.drug_name || "Unnamed drug",
+            brand_name: item.medicine_master?.brand_name ?? null,
+            generic_name: item.medicine_master?.generic_name ?? null,
+            protocol_dose: toNumber(item.protocol_dose),
+            protocol_dose_unit: item.protocol_dose_unit,
+            calculated_dose: toNumber(item.calculated_dose),
+            calculated_dose_unit: item.calculated_dose_unit,
+            administration_route: item.administration_route,
+            dilution_solution: item.dilution_solution,
+            dilution_volume: item.dilution_volume,
+            infusion_rate: item.infusion_rate,
+            infusion_type: item.infusion_type,
+            infusion_duration_minutes: item.infusion_duration_minutes,
+            frequency: item.frequency,
+            timing_relative_to_primary: item.timing_relative_to_primary,
+            administration_detail: item.administration_detail,
+            item_remarks: item.remarks
+        });
+        const rows = day ? await this.repository.listAdministrationsForOrders([day.plan_order_id]) : [];
+        // A day without rows is a draft (its medicines will start PENDING)
+        // or a day completed before administration was tracked.
+        const items = rows.length > 0
+            ? rows.map((row) => ({
+                ...drugFields(row.chemotherapy_plan_items),
+                administration_id: row.administration_id,
+                status: (row.administration_status ?? chemotherapy_constants_1.ADMINISTRATION_STATUS.PENDING),
+                status_reason: row.status_reason,
+                remarks: row.remarks,
+                administered_by: row.administered_by,
+                administered_by_name: personName(row.employees_chemotherapy_administration_administered_byToemployees),
+                given_at: row.administration_end_time,
+                updated_at: row.updated_at
+            }))
+            : day
+                ? (await this.repository.findPlanOrderItems(day.plan_order_id))
+                    .filter((item) => chemotherapy_constants_1.ADMINISTERED_DRUG_ROLES.includes(item.drug_role))
+                    .map((item) => ({
+                    ...drugFields(item),
+                    administration_id: null,
+                    status: day.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED ? "NOT_RECORDED" : chemotherapy_constants_1.ADMINISTRATION_STATUS.PENDING,
+                    status_reason: null,
+                    remarks: null,
+                    administered_by: null,
+                    administered_by_name: null,
+                    given_at: null,
+                    updated_at: null
+                }))
+                : [];
+        items.sort((a, b) => roleRank(a.drug_role) - roleRank(b.drug_role) || a.drug_sequence - b.drug_sequence);
+        const count = (status) => items.filter((item) => item.status === status).length;
+        const summary = {
+            total: items.length,
+            pending: count(chemotherapy_constants_1.ADMINISTRATION_STATUS.PENDING),
+            given: count(chemotherapy_constants_1.ADMINISTRATION_STATUS.GIVEN),
+            skipped: count(chemotherapy_constants_1.ADMINISTRATION_STATUS.SKIPPED),
+            cancelled: count(chemotherapy_constants_1.ADMINISTRATION_STATUS.CANCELLED)
+        };
+        const today = (0, appointment_utils_1.getTodayInIST)();
+        const inAdministration = day?.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.IN_ADMINISTRATION;
+        const treatmentStatus = !day
+            ? null
+            : day.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.ORDERED
+                ? "AWAITING_ORDER"
+                : day.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED
+                    ? "COMPLETED"
+                    : summary.pending === summary.total
+                        ? "NOT_STARTED"
+                        : "IN_PROGRESS";
+        const treatmentDate = rows.length > 0
+            ? dateOnly(rows[0].administration_date)
+            : day?.completed_at ?? day?.created_at
+                ? istDateOf((day.completed_at ?? day.created_at))
+                : null;
+        // What completing this day would close, for the confirmation.
+        const cycleOrders = day ? orders.filter((order) => order.chemotherapy_cycle_id === day.chemotherapy_cycle_id) : [];
+        const othersOpen = cycleOrders.some((order) => order.plan_order_id !== day?.plan_order_id && order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.IN_ADMINISTRATION);
+        const isLastDay = !!day && day.cycle_day >= lastDay;
+        const closesCycle = inAdministration && !othersOpen && (isLastDay || cycleOrders.some((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED && order.cycle_day >= lastDay));
+        const closedCycleCount = cycles.filter((cycle) => chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status)).length;
+        const otherDaysOpen = orders.some((order) => order.plan_order_id !== day?.plan_order_id && order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.IN_ADMINISTRATION);
+        const closesCourse = closesCycle && !otherDaysOpen && closedCycleCount + 1 >= plan.planned_cycles;
+        const dayCycle = day ? cycles.find((cycle) => cycle.chemotherapy_cycle_id === day.chemotherapy_cycle_id) ?? null : null;
+        // The cycle being treated: the shown day's while it is open, else
+        // the next one still to be treated.
+        const currentCycle = dayCycle && !chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(dayCycle.cycle_status)
+            ? dayCycle
+            : cycles.find((cycle) => !chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status)) ?? null;
+        const currentCycleOrders = currentCycle
+            ? orders.filter((order) => order.chemotherapy_cycle_id === currentCycle.chemotherapy_cycle_id)
+            : [];
+        const completedDays = currentCycleOrders.filter((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED);
+        const lastCompletedDay = Math.max(0, ...completedDays.map((order) => order.cycle_day));
+        const openDay = day && currentCycle && day.chemotherapy_cycle_id === currentCycle.chemotherapy_cycle_id && day.order_status !== chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED
+            ? day.cycle_day
+            : null;
+        const currentDay = openDay
+            ?? medicationDays.find((medicationDay) => medicationDay > lastCompletedDay)
+            ?? medicationDays[medicationDays.length - 1]
+            ?? 1;
+        const successor = currentCycle
+            ? cycles.find((cycle) => cycle.cycle_number === currentCycle.cycle_number + 1) ?? null
+            : null;
+        const started = currentCycleOrders.some((order) => order.order_status !== chemotherapy_constants_1.PLAN_ORDER_STATUS.ORDERED);
+        const interval = currentCycle?.cycle_interval_days ?? plan.cycle_interval_days ?? 0;
+        // An upcoming cycle shows when it is due; a running one when the next is.
+        const nextCycleDate = !currentCycle || !planOpen
+            ? null
+            : !started
+                ? currentCycle.next_cycle_date ?? currentCycle.rescheduled_date ?? currentCycle.planned_date
+                : successor
+                    ? successor.next_cycle_date
+                        ?? (currentCycle.actual_date && interval > 0 ? addDays(currentCycle.actual_date, interval) : null)
+                        ?? successor.rescheduled_date
+                        ?? successor.planned_date
+                    : null;
+        const protocolName = plan.chemotherapy_regimen_protocol?.regimen_name ?? plan.protocol_name ?? plan.regimen_name;
+        const administeredBy = [...new Set(items
+                .filter((item) => item.status === chemotherapy_constants_1.ADMINISTRATION_STATUS.GIVEN && item.administered_by_name)
+                .map((item) => item.administered_by_name))];
+        return {
+            today,
+            plan: {
+                chemotherapy_plan_id: plan.chemotherapy_plan_id,
+                regimen_name: plan.regimen_name,
+                protocol_name: protocolName,
+                treatment_status: plan.treatment_status,
+                planned_cycles: plan.planned_cycles,
+                completed_cycles: plan.completed_cycles ?? 0,
+                cycle_interval_days: plan.cycle_interval_days,
+                doctor_name: personName(plan.employees)
+            },
+            medication_days: medicationDays,
+            day: day
+                ? {
+                    plan_order_id: day.plan_order_id,
+                    chemotherapy_cycle_id: day.chemotherapy_cycle_id,
+                    cycle_number: day.cycle_number,
+                    cycle_day: day.cycle_day,
+                    order_status: day.order_status,
+                    cycle_status: dayCycle?.cycle_status ?? null,
+                    physician_approved: dayCycle?.physician_approved ?? false,
+                    treatment_date: treatmentDate,
+                    completed_at: day.completed_at,
+                    chemo_instructions: day.chemo_instructions,
+                    additional_notes: day.additional_notes,
+                    is_last_day: isLastDay,
+                    closes_cycle: closesCycle,
+                    closes_course: closesCourse,
+                    can_update: inAdministration && planOpen && !cycleClosed(day.chemotherapy_cycle_id),
+                    can_complete: inAdministration && summary.total > 0 && summary.pending === 0,
+                    treatment_status: treatmentStatus,
+                    administered_by: administeredBy,
+                    summary,
+                    items
+                }
+                : null,
+            pending_alert: inAdministration && summary.pending > 0 && treatmentDate && today >= treatmentDate
+                ? { level: today === treatmentDate ? "TODAY" : "OVERDUE", pending: summary.pending, treatment_date: treatmentDate }
+                : null,
+            cycle_days: (day ? cycleOrders : currentCycleOrders).map((order) => ({
+                plan_order_id: order.plan_order_id,
+                cycle_number: order.cycle_number,
+                cycle_day: order.cycle_day,
+                order_status: order.order_status
+            })),
+            current_cycle: currentCycle
+                ? {
+                    chemotherapy_cycle_id: currentCycle.chemotherapy_cycle_id,
+                    cycle_number: currentCycle.cycle_number,
+                    cycle_status: currentCycle.cycle_status,
+                    current_day: currentDay,
+                    completed_days: completedDays.length,
+                    total_days: medicationDays.length,
+                    started,
+                    next_cycle_number: started ? successor?.cycle_number ?? null : currentCycle.cycle_number,
+                    next_cycle_date: dateOnly(nextCycleDate)
+                }
+                : null,
+            previous_cycles: cycles
+                .filter((cycle) => chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status))
+                .sort((a, b) => b.cycle_number - a.cycle_number)
+                .map((cycle) => ({
+                chemotherapy_cycle_id: cycle.chemotherapy_cycle_id,
+                cycle_number: cycle.cycle_number,
+                cycle_status: cycle.cycle_status,
+                completion_date: cycle.completion_date ? istDateOf(cycle.completion_date) : dateOnly(cycle.actual_date),
+                protocol_name: protocolName
+            })),
+            post_medications: dischargeItems.map((item) => ({
+                chemotherapy_plan_item_id: item.chemotherapy_plan_item_id,
+                drug_name: item.medicine_master?.medicine_name || item.medicine_master?.generic_name || item.drug_name || "Unnamed drug",
+                brand_name: item.medicine_master?.brand_name ?? null,
+                protocol_dose: toNumber(item.protocol_dose),
+                protocol_dose_unit: item.protocol_dose_unit,
+                administration_route: item.administration_route,
+                frequency: item.frequency,
+                duration: item.duration,
+                remarks: item.remarks
+            }))
+        };
+    }
+    // One medicine's status on a day that is being administered. Statuses
+    // stay correctable (back to PENDING too) until the day is completed.
+    async updateAdministrationStatus(administrationId, dto, actingUserId, actingEmployeeId) {
+        const status = String(dto.status ?? "").trim().toUpperCase();
+        if (!chemotherapy_constants_1.ADMINISTRATION_STATUSES.includes(status)) {
+            throw new Error(`status must be one of: ${chemotherapy_constants_1.ADMINISTRATION_STATUSES.join(", ")}`);
+        }
+        const needsReason = chemotherapy_constants_1.ADMINISTRATION_REASON_REQUIRED.includes(status);
+        const reason = dto.reason?.trim() || null;
+        const remarks = dto.remarks?.trim() || null;
+        if (needsReason && !reason) {
+            throw new Error(`A reason is required to mark a medicine ${status.toLowerCase()}`);
+        }
+        const existing = await this.repository.findAdministrationById(prisma_1.default, administrationId);
+        if (!existing || existing.active_status !== 1) {
+            throw new Error("Administration record not found");
+        }
+        if (!existing.chemotherapy_plan_order) {
+            throw new Error("This administration record is not part of a cycle day's administration sheet");
+        }
+        const planId = existing.chemotherapy_plan_order.chemotherapy_plan_id;
+        const { cycle_number: cycleNumber, cycle_day: cycleDay } = existing.chemotherapy_plan_order;
+        const label = `Cycle ${cycleNumber} / Day ${cycleDay}`;
+        await prisma_1.default.$transaction(async (tx) => {
+            await this.repository.lockPlan(tx, planId);
+            // Re-read under the plan lock: the day may have been completed meanwhile.
+            const row = await this.repository.findAdministrationById(tx, administrationId);
+            const order = row?.chemotherapy_plan_order;
+            if (!row || !order) {
+                throw new Error("Administration record not found");
+            }
+            if (order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED) {
+                throw new Error(`${label} is already completed - its administration record is locked`);
+            }
+            if (order.order_status !== chemotherapy_constants_1.PLAN_ORDER_STATUS.IN_ADMINISTRATION) {
+                throw new Error(`${label} has not been sent for administration yet`);
+            }
+            const plan = await this.repository.findPlanForUpdate(tx, planId);
+            if (!plan || chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(plan.treatment_status)) {
+                throw new Error(`This chemotherapy course is already ${plan?.treatment_status ?? "closed"}`);
+            }
+            const cycle = await this.repository.findCycleForUpdate(tx, order.chemotherapy_cycle_id);
+            if (!cycle || chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status)) {
+                throw new Error(`Cycle ${cycleNumber} is already ${cycle?.cycle_status ?? "closed"}`);
+            }
+            const item = await this.repository.findPlanItemById(row.chemotherapy_plan_item_id);
+            const given = status === chemotherapy_constants_1.ADMINISTRATION_STATUS.GIVEN;
+            await this.repository.updateAdministration(tx, administrationId, {
+                administration_status: status,
+                status_reason: needsReason ? reason : null,
+                remarks: needsReason ? remarks : null,
+                administered_by: given ? actingEmployeeId : null,
+                administration_end_time: given ? new Date() : null,
+                administered_dose: given ? (item?.calculated_dose ?? item?.protocol_dose ?? null) : null,
+                administered_dose_unit: given ? (item?.calculated_dose_unit ?? item?.protocol_dose_unit ?? null) : null,
+                infusion_completed: given,
+                updated_by: actingUserId
+            });
+            await (0, audit_service_1.logAudit)(tx, {
+                entity_type: "chemotherapy_administration",
+                entity_id: administrationId,
+                action: audit_types_1.AUDIT_ACTION.STATUS_CHANGE,
+                performed_by: actingUserId,
+                patient_id: plan.patient_id,
+                branch_id: plan.branch_id,
+                change_summary: (0, audit_service_1.summarizeStatusChange)(row.administration_status ?? chemotherapy_constants_1.ADMINISTRATION_STATUS.PENDING, status, reason)
+            });
+        }, { timeout: 30000 });
+        return this.getAdministrationSheet(planId, { cycle_number: cycleNumber, cycle_day: cycleDay });
+    }
+    // Completes a cycle day once none of its medicines is PENDING: the order
+    // becomes COMPLETED, the cycle closes when this settles its last
+    // medication day, and the course when that was its last open cycle.
+    // Repeating it for a completed day changes nothing.
+    async completeAdministrationDay(planId, cycleNumber, cycleDay, actingUserId) {
+        const plan = await this.repository.findPlanForUpdate(prisma_1.default, planId);
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+        const lastDay = await this.lastMedicationDay(plan);
+        const label = `Cycle ${cycleNumber} / Day ${cycleDay}`;
+        const outcome = await prisma_1.default.$transaction(async (tx) => {
+            await this.repository.lockPlan(tx, planId);
+            const lockedPlan = await this.repository.findPlanForUpdate(tx, planId);
+            const order = await this.repository.findPlanOrder(tx, planId, cycleNumber, cycleDay);
+            if (!lockedPlan || !order) {
+                throw new Error(`No order has been saved for ${label}`);
+            }
+            const result = { day_completed: false, cycle_completed: false, plan_completed: false };
+            if (order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED) {
+                return result;
+            }
+            if (order.order_status !== chemotherapy_constants_1.PLAN_ORDER_STATUS.IN_ADMINISTRATION) {
+                throw new Error(`${label} has not been sent for administration yet - submit its consultation first`);
+            }
+            if (chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(lockedPlan.treatment_status)) {
+                throw new Error(`This chemotherapy course is already ${lockedPlan.treatment_status}`);
+            }
+            const pending = await this.repository.countPendingAdministrations(tx, order.plan_order_id);
+            if (pending > 0) {
+                throw new Error(`${pending} medicine${pending === 1 ? " is" : "s are"} still pending - mark each as Given, Skipped or Cancelled first`);
+            }
+            const now = new Date();
+            await this.repository.updatePlanOrder(tx, order.plan_order_id, {
+                order_status: chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED,
+                completed_at: now
+            });
+            await (0, audit_service_1.logAudit)(tx, {
+                entity_type: "chemotherapy_plan_order",
+                entity_id: order.plan_order_id,
+                action: audit_types_1.AUDIT_ACTION.STATUS_CHANGE,
+                performed_by: actingUserId,
+                patient_id: lockedPlan.patient_id,
+                branch_id: lockedPlan.branch_id,
+                change_summary: (0, audit_service_1.summarizeStatusChange)(chemotherapy_constants_1.PLAN_ORDER_STATUS.IN_ADMINISTRATION, chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED, `${label} administration completed`)
+            });
+            result.day_completed = true;
+            result.cycle_completed = await this.closeCycleIfDone(tx, lockedPlan, order.chemotherapy_cycle_id, lastDay, actingUserId, now);
+            const recount = await this.recountPlanCycles(tx, planId, actingUserId);
+            result.plan_completed = recount.planCompleted;
+            return result;
+        }, { timeout: 30000 });
+        return { ...outcome, sheet: await this.getAdministrationSheet(planId) };
     }
     // ---------------------------------------------------------------
     // Vitals / adverse events / lab reviews / followups - append-only,

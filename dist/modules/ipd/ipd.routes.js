@@ -10,6 +10,10 @@ const router = (0, express_1.Router)();
 const controller = new ipd_controller_1.IpdController();
 router.post("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.create"), ipd_validation_1.createAdmissionValidation, controller.createAdmission.bind(controller));
 router.get("/", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.read"), branchScope_1.branchScope, ipd_validation_1.getAdmissionsValidation, controller.listAdmissions.bind(controller));
+// Discharge Type dropdown (discharge_type_master). Anyone who can record
+// discharge details can add a value through "Others".
+router.get("/reference/discharge-types", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("admission.read", "admission.discharge_details", "admission.discharge"), controller.listDischargeTypes.bind(controller));
+router.post("/reference/discharge-types", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("admission.discharge_details", "admission.discharge"), ipd_validation_1.addDischargeTypeValidation, controller.addDischargeType.bind(controller));
 router.get("/stats/patients-today", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.read"), branchScope_1.branchScope, controller.getAdmittedPatientsToday.bind(controller));
 router.get("/stats/overview", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.read"), branchScope_1.branchScope, controller.getIpdOverview.bind(controller));
 // Daycare booking (doctor slot + planned daycare admission) and the ward
@@ -33,6 +37,9 @@ router.post("/:id/cancel", auth_middleware_1.authenticate, (0, authorize_1.autho
 router.post("/:id/no-show", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.update"), ipd_validation_1.closePlannedValidation, controller.markNoShow.bind(controller));
 router.post("/:id/reserve", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.update"), ipd_validation_1.reserveBedValidation, controller.reserveBed.bind(controller));
 router.post("/:id/release-reservation", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.update"), controller.releaseReservation.bind(controller));
+// Doctor's clinical discharge details -- saved while the patient stays
+// admitted; the discharge itself is confirmed separately (POST /discharge).
+router.put("/:id/discharge-details", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.discharge_details"), ipd_validation_1.saveDischargeDetailsValidation, controller.saveDischargeDetails.bind(controller));
 router.post("/:id/discharge", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.discharge"), ipd_validation_1.dischargeAdmissionValidation, controller.dischargeAdmission.bind(controller));
 router.post("/:id/transfer", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.transfer"), ipd_validation_1.transferAdmissionValidation, controller.transferAdmission.bind(controller));
 exports.default = router;

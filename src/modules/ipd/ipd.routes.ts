@@ -7,6 +7,8 @@ import {
     createAdmissionValidation,
     updateAdmissionValidation,
     dischargeAdmissionValidation,
+    saveDischargeDetailsValidation,
+    addDischargeTypeValidation,
     transferAdmissionValidation,
     admitAdmissionValidation,
     reserveBedValidation,
@@ -41,6 +43,23 @@ router.get(
     branchScope,
     getAdmissionsValidation,
     controller.listAdmissions.bind(controller)
+);
+
+// Discharge Type dropdown (discharge_type_master). Anyone who can record
+// discharge details can add a value through "Others".
+router.get(
+    "/reference/discharge-types",
+    authenticate,
+    authorizeAny("admission.read", "admission.discharge_details", "admission.discharge"),
+    controller.listDischargeTypes.bind(controller)
+);
+
+router.post(
+    "/reference/discharge-types",
+    authenticate,
+    authorizeAny("admission.discharge_details", "admission.discharge"),
+    addDischargeTypeValidation,
+    controller.addDischargeType.bind(controller)
 );
 
 router.get(
@@ -208,6 +227,16 @@ router.post(
     authenticate,
     authorize("admission.update"),
     controller.releaseReservation.bind(controller)
+);
+
+// Doctor's clinical discharge details -- saved while the patient stays
+// admitted; the discharge itself is confirmed separately (POST /discharge).
+router.put(
+    "/:id/discharge-details",
+    authenticate,
+    authorize("admission.discharge_details"),
+    saveDischargeDetailsValidation,
+    controller.saveDischargeDetails.bind(controller)
 );
 
 router.post(

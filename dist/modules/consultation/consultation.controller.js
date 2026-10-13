@@ -162,6 +162,15 @@ class ConsultationController {
         }
     }
     // ---------------- Encounter reports ----------------
+    async getReportsByPatient(req, res) {
+        try {
+            const data = await service.listReportsByPatient(req.params.patientId);
+            return res.json({ success: true, message: "Reports fetched successfully", data });
+        }
+        catch (err) {
+            return handleError(res, err);
+        }
+    }
     async getReports(req, res) {
         try {
             const error = firstError(req);
@@ -266,6 +275,31 @@ class ConsultationController {
                 return res.status(400).json({ success: false, message: error });
             const data = await service.removeMolecularTest(req.params.encounterMolecularTestId);
             return res.json({ success: true, message: "Molecular test removed successfully", data });
+        }
+        catch (err) {
+            return handleError(res, err);
+        }
+    }
+    // ---------------- Encounter immunizations ----------------
+    async getEncounterImmunizations(req, res) {
+        try {
+            const error = firstError(req);
+            if (error)
+                return res.status(400).json({ success: false, message: error });
+            const data = await service.listEncounterImmunizations(req.params.encounterNo);
+            return res.json({ success: true, message: "Immunizations fetched successfully", data });
+        }
+        catch (err) {
+            return handleError(res, err);
+        }
+    }
+    async syncEncounterImmunizations(req, res) {
+        try {
+            const error = firstError(req);
+            if (error)
+                return res.status(400).json({ success: false, message: error });
+            const data = await service.syncEncounterImmunizations(req.params.encounterNo, req.body, actingUserId(req));
+            return res.json({ success: true, message: "Immunizations saved successfully", data });
         }
         catch (err) {
             return handleError(res, err);

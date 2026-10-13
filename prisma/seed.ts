@@ -105,6 +105,7 @@ const PERMISSIONS = [
   { key: "admission.read", name: "View Admissions", description: "View inpatient admissions and bed occupancy", category: "admission" },
   { key: "admission.update", name: "Edit Admission", description: "Update admission details and cancel admissions", category: "admission" },
   { key: "admission.discharge", name: "Discharge Patient", description: "Discharge an admitted inpatient", category: "admission" },
+  { key: "admission.discharge_details", name: "Save Discharge Details", description: "Record clinical discharge details for an admitted inpatient", category: "admission" },
   { key: "admission.transfer", name: "Transfer Bed", description: "Transfer an admitted patient to another bed", category: "admission" },
   { key: "ward.manage", name: "Manage Wards", description: "Create/edit wards in ward master", category: "admission" },
   { key: "bed.manage", name: "Manage Beds", description: "Create/edit beds and bed status in bed master", category: "admission" },
@@ -247,6 +248,10 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 
     "admission.read",
     "admission.transfer",
+    // The doctor records the clinical discharge details (Discharge
+    // Medication step) but does not perform the discharge -- an admin
+    // confirms it afterwards.
+    "admission.discharge_details",
 
   ],
 
