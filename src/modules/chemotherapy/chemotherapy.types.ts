@@ -535,6 +535,16 @@ export interface RecordAdministrationDto {
 
 }
 
+// One medicine's status on an IN_ADMINISTRATION cycle day. reason is
+// required for SKIPPED / CANCELLED.
+export interface UpdateAdministrationStatusDto {
+
+    status: string;
+    reason?: string | null;
+    remarks?: string | null;
+
+}
+
 export interface RecordVitalsDto {
 
     vital_stage?: string | null;

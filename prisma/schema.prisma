@@ -507,7 +507,7 @@ model chemotherapy_administration {
   interruption_reason                                              String?
   doctor_informed                                                  Boolean?                @default(false)
   nursing_notes                                                    String?
-  administration_status                                            String?                 @default("Completed") @db.VarChar(100)
+  administration_status                                            String?                 @default("PENDING") @db.VarChar(100)
   remarks                                                          String?
   active_status                                                    Int?                    @default(1) @db.SmallInt
   deleted_flag                                                     Boolean?                @default(false)
@@ -519,6 +519,13 @@ model chemotherapy_administration {
   employees_chemotherapy_administration_verified_byToemployees     employees?              @relation("chemotherapy_administration_verified_byToemployees", fields: [verified_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_admin_doctor")
   employees_chemotherapy_administration_administered_byToemployees employees?              @relation("chemotherapy_administration_administered_byToemployees", fields: [administered_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_admin_nurse")
   chemotherapy_plan_items                                          chemotherapy_plan_items @relation(fields: [chemotherapy_plan_item_id], references: [chemotherapy_plan_item_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_admin_plan_item")
+  plan_order_id                                                    String?                 @db.VarChar(100)
+  administration_day                                               Int?
+  status_reason                                                    String?
+  chemotherapy_plan_order                                          chemotherapy_plan_order? @relation(fields: [plan_order_id], references: [plan_order_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_admin_plan_order")
+
+  @@unique([plan_order_id, chemotherapy_plan_item_id], map: "uq_chemo_admin_order_item", where: raw("((active_status = 1) AND (plan_order_id IS NOT NULL))"))
+  @@index([plan_order_id], map: "idx_chemo_admin_plan_order")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -925,6 +932,7 @@ model chemotherapy_plan_order {
   updated_at                    DateTime?                     @default(now()) @db.Timestamp(6)
   chemo_instructions            String?
   additional_notes              String?
+  chemotherapy_administration   chemotherapy_administration[]
   chemotherapy_plan_hydration   chemotherapy_plan_hydration[]
   chemotherapy_plan_items       chemotherapy_plan_items[]
   chemotherapy_plan_order       chemotherapy_plan_order?      @relation("chemotherapy_plan_orderTochemotherapy_plan_order", fields: [copied_from_order_id], references: [plan_order_id], onUpdate: NoAction, map: "fk_plan_order_copied_from")
@@ -1595,6 +1603,7 @@ model encounter {
   patient_bio_data                    patient_bio_data               @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_patient")
   doctor_schedule                     doctor_schedule?               @relation(fields: [schedule_id], references: [schedule_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_schedule")
   user_table                          user_table?                    @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_user")
+  encounter_immunization              encounter_immunization[]
   encounter_molecular_test            encounter_molecular_test[]
   encounter_performance_status        encounter_performance_status?
   encounter_report                    encounter_report[]
@@ -1608,6 +1617,24 @@ model encounter {
   pharmacy_slip                       pharmacy_slip[]
 
   @@index([patient_id], map: "idx_encounter_patient")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model encounter_immunization {
+  id                        BigInt    @id @default(autoincrement())
+  encounter_immunization_id String    @unique(map: "uq_encounter_immunization_id") @db.VarChar(100)
+  encounter_no              String    @db.VarChar(100)
+  immunization_code         String?   @db.VarChar(100)
+  immunization_name         String    @db.VarChar(100)
+  immunization_date         DateTime? @db.Date
+  response                  String?
+  created_at                DateTime? @default(now()) @db.Timestamp(6)
+  updated_at                DateTime? @default(now()) @db.Timestamp(6)
+  created_by                String?   @db.VarChar(100)
+  encounter                 encounter @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_immunization_encounter")
+
+  @@index([encounter_no], map: "idx_encounter_immunization_encounter")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

@@ -663,6 +663,39 @@ export const recordAdministrationValidation = [
 
 ];
 
+export const administrationSheetValidation = [
+
+    param("planId").notEmpty(),
+    query("cycle_number").optional().isInt({ min: 1 }).withMessage("cycle_number must be at least 1"),
+    query("cycle_day").optional().isInt({ min: 1 }).withMessage("cycle_day must be at least 1")
+
+];
+
+export const administrationStatusValidation = [
+
+    param("administrationId").notEmpty(),
+    body("status")
+        .isString()
+        .customSanitizer((value: string) => value.trim().toUpperCase())
+        .isIn(["PENDING", "GIVEN", "SKIPPED", "CANCELLED"])
+        .withMessage("status must be one of: PENDING, GIVEN, SKIPPED, CANCELLED"),
+    body("reason")
+        .if(body("status").isIn(["SKIPPED", "CANCELLED"]))
+        .isString()
+        .trim()
+        .notEmpty()
+        .withMessage("A reason is required to skip or cancel a medicine"),
+    body("reason").optional({ nullable: true }).isString().isLength({ max: 500 }).withMessage("Reason must be at most 500 characters"),
+    body("remarks").optional({ nullable: true }).isString().isLength({ max: 500 }).withMessage("Remarks must be at most 500 characters")
+
+];
+
+export const completeAdministrationDayValidation = [
+
+    ...planOrderParamValidation
+
+];
+
 export const recordVitalsValidation = [
 
     param("cycleId").notEmpty(),

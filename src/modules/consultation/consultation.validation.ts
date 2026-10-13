@@ -94,6 +94,17 @@ export const molecularTestIdValidation = [
 
 ];
 
+export const syncEncounterImmunizationsValidation = [
+
+    param("encounterNo").notEmpty().withMessage("encounterNo is required"),
+    body("rows").optional({ nullable: true }).isArray(),
+    body("rows.*.immunization_name").notEmpty().withMessage("immunization_name is required").isString().isLength({ max: 100 }),
+    body("rows.*.immunization_code").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("rows.*.immunization_date").optional({ nullable: true }).isISO8601(),
+    body("rows.*.response").optional({ nullable: true }).isString()
+
+];
+
 export const reportIdValidation = [
 
     param("encounterReportId").notEmpty().withMessage("encounterReportId is required")
