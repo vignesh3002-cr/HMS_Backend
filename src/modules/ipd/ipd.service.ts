@@ -137,16 +137,47 @@ export class IpdService {
     }
 
     /*
-     * Opens the IPD encounter inside the caller's admit transaction, so a
-     * patient can never end up ADMITTED (bed occupied) without an encounter.
+     * The IPD encounter of an admission, inside the caller's admit
+     * transaction, so a patient can never end up ADMITTED (bed occupied)
+     * without an encounter. One visit keeps one encounter: an admission
+     * made for an appointment (e.g. a Daycare booking) reuses the
+     * appointment's open encounter when the doctor's consultation already
+     * opened it; otherwise the new encounter is linked to the appointment so
+     * the doctor's check-in reuses it instead of opening a second one.
      */
     private async openIpEncounter(
         tx: Prisma.TransactionClient,
-        admission: { admission_id: string; patient_id: string; branch_id: string; department_id: string | null },
+        admission: {
+            admission_id: string;
+            patient_id: string;
+            branch_id: string;
+            department_id: string | null;
+            appointment_id?: string | null;
+        },
         // null for an emergency admitted before a doctor is assigned.
         employeeId: string | null,
         createdBy: string
     ) {
+
+        const appointmentEncounter = admission.appointment_id
+            ? await tx.encounter.findFirst({
+                where: { appointment_id: admission.appointment_id, patient_id: admission.patient_id },
+                select: { encounter_no: true, status: true, encounter_type: true },
+            })
+            : null;
+
+        if (appointmentEncounter?.status === ENCOUNTER_STATUS.OPEN) {
+
+            if (appointmentEncounter.encounter_type !== ENCOUNTER_TYPE_IPD) {
+                await tx.encounter.update({
+                    where: { encounter_no: appointmentEncounter.encounter_no },
+                    data: { encounter_type: ENCOUNTER_TYPE_IPD },
+                });
+            }
+
+            return appointmentEncounter.encounter_no;
+
+        }
 
         const encounterNo = await encounterRepository.generateEncounterNumber(tx);
 
@@ -157,6 +188,11 @@ export class IpdService {
             branch_id: admission.branch_id,
             department_id: admission.department_id,
             employee_id: employeeId,
+            // A closed encounter already holds this appointment (the column
+            // is unique), so only an appointment without one is linked.
+            ...(admission.appointment_id && !appointmentEncounter
+                ? { appointment_id: admission.appointment_id }
+                : {}),
             encounter_type: ENCOUNTER_TYPE_IPD,
             status: ENCOUNTER_STATUS.OPEN,
         });

@@ -118,6 +118,9 @@ async function scheduleInputs(
 export interface PlanScheduleDay extends PlanScheduleRow {
     /* true when the doctor moved this day's date (kept on its order row). */
     edited: boolean;
+    /* The day's date by the rule, before any edit - the gap between two
+       days' calculated dates is how far apart they are scheduled. */
+    calculated_date: Date;
 }
 
 /*
@@ -182,7 +185,7 @@ export async function computePlanSchedule(
             const edited = orders.find(
                 (order) => order.cycle_number === number && order.cycle_day === day.cycle_day && order.planned_date
             )?.planned_date;
-            days.push({ ...day, planned_date: edited ?? day.planned_date, edited: !!edited });
+            days.push({ ...day, planned_date: edited ?? day.planned_date, edited: !!edited, calculated_date: day.planned_date });
         }
 
     }
