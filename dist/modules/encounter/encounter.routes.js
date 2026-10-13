@@ -16,5 +16,7 @@ router.get("/by-appointment/:appointmentId", auth_middleware_1.authenticate, (0,
 router.get("/latest", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), encounter_validation_1.getLatestEncountersValidation, controller.getLatestPatientEncounters.bind(controller));
 router.get("/:encounterNo", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), controller.getEncounterByNumber.bind(controller));
 router.put("/:encounterNo/close", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), encounter_validation_1.closeEncounterValidation, controller.closeEncounter.bind(controller));
+router.put("/:encounterNo/vitals-log/:entryId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), controller.updateVitalsLogEntry.bind(controller));
+router.delete("/:encounterNo/vitals-log/:entryId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), controller.deleteVitalsLogEntry.bind(controller));
 router.put("/:encounterNo", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), encounter_validation_1.updateEncounterValidation, controller.updateEncounter.bind(controller));
 exports.default = router;

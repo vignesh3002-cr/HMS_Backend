@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.planIdParamValidation = exports.cycleIdParamValidation = exports.recordFollowupValidation = exports.recordLabReviewValidation = exports.recordAdverseEventValidation = exports.recordVitalsValidation = exports.recordAdministrationValidation = exports.updateCycleValidation = exports.cycleStatusValidation = exports.createCycleValidation = exports.updatePlanItemValidation = exports.addPlanItemValidation = exports.planHydrationValidation = exports.completePlanOrdersValidation = exports.savePlanOrderValidation = exports.planOrderParamValidation = exports.replacePlanItemsValidation = exports.planDischargeItemParamValidation = exports.planDischargeParamValidation = exports.updatePlanDischargeMedicineValidation = exports.addPlanDischargeMedicineValidation = exports.listPlansValidation = exports.planStatusValidation = exports.updatePlanValidation = exports.createPlanValidation = exports.updateRegimenProtocolItemValidation = exports.removeDischargeInstructionValidation = exports.updateDischargeInstructionValidation = exports.addDischargeInstructionValidation = exports.addRegimenProtocolItemValidation = exports.createPersonalizedProtocolVersionValidation = exports.removePersonalizedProtocolDilutionValidation = exports.updatePersonalizedProtocolDilutionValidation = exports.addPersonalizedProtocolDilutionValidation = exports.removePersonalizedProtocolDayValidation = exports.updatePersonalizedProtocolDayValidation = exports.addPersonalizedProtocolDayValidation = exports.removePersonalizedProtocolItemValidation = exports.updatePersonalizedProtocolItemValidation = exports.addPersonalizedProtocolItemValidation = exports.updatePersonalizedProtocolValidation = exports.personalizeRegimenProtocolValidation = exports.protocolIdParamValidation = exports.updateRegimenProtocolValidation = exports.createRegimenProtocolValidation = exports.getRegimenProtocolValidation = exports.listRegimenProtocolsValidation = exports.previewPlanValidation = void 0;
+exports.cycleIdParamValidation = exports.recordFollowupValidation = exports.recordLabReviewValidation = exports.recordAdverseEventValidation = exports.recordVitalsValidation = exports.completeAdministrationDayValidation = exports.administrationStatusValidation = exports.administrationSheetValidation = exports.recordAdministrationValidation = exports.updateCycleValidation = exports.cycleStatusValidation = exports.createCycleValidation = exports.updatePlanItemValidation = exports.addPlanItemValidation = exports.planHydrationValidation = exports.completePlanOrdersValidation = exports.savePlanOrderValidation = exports.planOrderParamValidation = exports.replacePlanItemsValidation = exports.planDischargeItemParamValidation = exports.planDischargeParamValidation = exports.updatePlanDischargeMedicineValidation = exports.addPlanDischargeMedicineValidation = exports.listPlansValidation = exports.planStatusValidation = exports.updatePlanValidation = exports.createPlanValidation = exports.updateRegimenProtocolItemValidation = exports.removeDischargeInstructionValidation = exports.updateDischargeInstructionValidation = exports.addDischargeInstructionValidation = exports.addRegimenProtocolItemValidation = exports.createPersonalizedProtocolVersionValidation = exports.removePersonalizedProtocolDilutionValidation = exports.updatePersonalizedProtocolDilutionValidation = exports.addPersonalizedProtocolDilutionValidation = exports.removePersonalizedProtocolDayValidation = exports.updatePersonalizedProtocolDayValidation = exports.addPersonalizedProtocolDayValidation = exports.removePersonalizedProtocolItemValidation = exports.updatePersonalizedProtocolItemValidation = exports.addPersonalizedProtocolItemValidation = exports.updatePersonalizedProtocolValidation = exports.personalizeRegimenProtocolValidation = exports.protocolIdParamValidation = exports.updateRegimenProtocolValidation = exports.createRegimenProtocolValidation = exports.getRegimenProtocolValidation = exports.listRegimenProtocolsValidation = exports.previewPlanValidation = void 0;
+exports.planIdParamValidation = void 0;
 const express_validator_1 = require("express-validator");
 const chemotherapy_constants_1 = require("./chemotherapy.constants");
 exports.previewPlanValidation = [
@@ -529,6 +530,30 @@ exports.recordAdministrationValidation = [
     (0, express_validator_1.body)("administration_date").notEmpty().isISO8601().withMessage("administration_date must be a valid date"),
     (0, express_validator_1.body)("administered_dose").optional({ nullable: true }).isFloat({ min: 0 }),
     (0, express_validator_1.body)("infusion_duration_minutes").optional({ nullable: true }).isInt({ min: 0 })
+];
+exports.administrationSheetValidation = [
+    (0, express_validator_1.param)("planId").notEmpty(),
+    (0, express_validator_1.query)("cycle_number").optional().isInt({ min: 1 }).withMessage("cycle_number must be at least 1"),
+    (0, express_validator_1.query)("cycle_day").optional().isInt({ min: 1 }).withMessage("cycle_day must be at least 1")
+];
+exports.administrationStatusValidation = [
+    (0, express_validator_1.param)("administrationId").notEmpty(),
+    (0, express_validator_1.body)("status")
+        .isString()
+        .customSanitizer((value) => value.trim().toUpperCase())
+        .isIn(["PENDING", "GIVEN", "SKIPPED", "CANCELLED"])
+        .withMessage("status must be one of: PENDING, GIVEN, SKIPPED, CANCELLED"),
+    (0, express_validator_1.body)("reason")
+        .if((0, express_validator_1.body)("status").isIn(["SKIPPED", "CANCELLED"]))
+        .isString()
+        .trim()
+        .notEmpty()
+        .withMessage("A reason is required to skip or cancel a medicine"),
+    (0, express_validator_1.body)("reason").optional({ nullable: true }).isString().isLength({ max: 500 }).withMessage("Reason must be at most 500 characters"),
+    (0, express_validator_1.body)("remarks").optional({ nullable: true }).isString().isLength({ max: 500 }).withMessage("Remarks must be at most 500 characters")
+];
+exports.completeAdministrationDayValidation = [
+    ...exports.planOrderParamValidation
 ];
 exports.recordVitalsValidation = [
     (0, express_validator_1.param)("cycleId").notEmpty(),

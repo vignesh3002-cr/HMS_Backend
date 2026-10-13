@@ -206,16 +206,18 @@ class PharmacyRepository {
     /*
      * Mirrors pickCurrentOrder in chemotherapy.service.ts, reusing that
      * module's own constants so the two cannot drift: on an open plan the
-     * first still-ORDERED day whose cycle is not terminal, else - and always
-     * on a closed plan - the latest COMPLETED one.
+     * first still-ORDERED day whose cycle is not terminal, else the latest
+     * IN_ADMINISTRATION day on an open cycle, else - and always on a closed
+     * plan - the latest COMPLETED one.
      */
     pickCurrentOrderHeader(planStatus, orders) {
         const planOpen = !chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(planStatus);
-        const pending = planOpen
-            ? orders.find((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.ORDERED
-                && !chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(order.chemotherapy_cycle?.cycle_status))
+        const onOpenCycle = (order) => !chemotherapy_constants_1.CYCLE_TERMINAL_STATUSES.includes(order.chemotherapy_cycle?.cycle_status);
+        const open = planOpen
+            ? orders.find((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.ORDERED && onOpenCycle(order))
+                ?? [...orders].reverse().find((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.IN_ADMINISTRATION && onOpenCycle(order))
             : undefined;
-        return pending
+        return open
             ?? [...orders].reverse().find((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED)
             ?? null;
     }

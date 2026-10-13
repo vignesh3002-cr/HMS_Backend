@@ -1159,6 +1159,107 @@ class ChemotherapyRepository {
             orderBy: { administration_date: "asc" }
         });
     }
+    // One row per tracked medicine of a cycle day order. The partial unique
+    // index uq_chemo_admin_order_item makes a repeated release a no-op
+    // (upsert / findUnique would ignore the index's WHERE clause).
+    async createAdministrations(tx, data) {
+        return tx.chemotherapy_administration.createMany({ data, skipDuplicates: true });
+    }
+    async findAdministrationById(tx, administrationId) {
+        return tx.chemotherapy_administration.findUnique({
+            where: { administration_id: administrationId },
+            include: { chemotherapy_plan_order: true }
+        });
+    }
+    // A cycle day order's administration rows with what the sheet shows of
+    // each drug and who gave it.
+    async listAdministrationsForOrders(planOrderIds) {
+        return prisma_1.default.chemotherapy_administration.findMany({
+            where: { plan_order_id: { in: planOrderIds }, active_status: 1 },
+            include: {
+                chemotherapy_plan_items: { include: { medicine_master: true } },
+                employees_chemotherapy_administration_administered_byToemployees: {
+                    select: { employee_id: true, first_name: true, last_name: true }
+                }
+            }
+        });
+    }
+    async updateAdministration(tx, administrationId, data) {
+        return tx.chemotherapy_administration.update({
+            where: { administration_id: administrationId },
+            data: { ...data, updated_at: new Date() }
+        });
+    }
+    // Medicines still PENDING on a cycle day order (drugs removed from the
+    // plan since don't hold the day open).
+    async countPendingAdministrations(tx, planOrderId) {
+        return tx.chemotherapy_administration.count({
+            where: {
+                plan_order_id: planOrderId,
+                active_status: 1,
+                administration_status: chemotherapy_constants_1.ADMINISTRATION_STATUS.PENDING,
+                chemotherapy_plan_items: { active_status: 1 }
+            }
+        });
+    }
+    async countAdministrationsForOrder(tx, planOrderId) {
+        return tx.chemotherapy_administration.count({
+            where: { plan_order_id: planOrderId, active_status: 1 }
+        });
+    }
+    // Closing a cycle / plan by status change: its still-PENDING medicines
+    // are recorded CANCELLED with the closing reason.
+    async cancelPendingAdministrations(tx, planOrderIds, reason, actingUserId) {
+        if (planOrderIds.length === 0) {
+            return { count: 0 };
+        }
+        return tx.chemotherapy_administration.updateMany({
+            where: {
+                plan_order_id: { in: planOrderIds },
+                active_status: 1,
+                administration_status: chemotherapy_constants_1.ADMINISTRATION_STATUS.PENDING
+            },
+            data: {
+                administration_status: chemotherapy_constants_1.ADMINISTRATION_STATUS.CANCELLED,
+                status_reason: reason,
+                updated_by: actingUserId,
+                updated_at: new Date()
+            }
+        });
+    }
+    // A plan's cycle day orders (optionally one cycle's) in a given status.
+    async findPlanOrdersByStatus(tx, planId, status, cycleId) {
+        return tx.chemotherapy_plan_order.findMany({
+            where: {
+                chemotherapy_plan_id: planId,
+                order_status: status,
+                ...(cycleId ? { chemotherapy_cycle_id: cycleId } : {})
+            },
+            orderBy: [{ cycle_number: "asc" }, { cycle_day: "asc" }]
+        });
+    }
+    async findPlanOrdersForCycle(tx, cycleId) {
+        return tx.chemotherapy_plan_order.findMany({
+            where: { chemotherapy_cycle_id: cycleId },
+            orderBy: { cycle_day: "asc" }
+        });
+    }
+    // The tracked drugs of a cycle day order (active rows only).
+    async findOrderItemsForAdministration(tx, planOrderId, roles) {
+        return tx.chemotherapy_plan_items.findMany({
+            where: { plan_order_id: planOrderId, active_status: 1, drug_role: { in: roles } },
+            orderBy: { drug_sequence: "asc" }
+        });
+    }
+    // A cycle day order with its active drugs, for an order that has no
+    // administration rows yet (a draft, or a day completed before tracking).
+    async findPlanOrderItems(planOrderId) {
+        return prisma_1.default.chemotherapy_plan_items.findMany({
+            where: { plan_order_id: planOrderId, active_status: 1 },
+            include: { medicine_master: true },
+            orderBy: { drug_sequence: "asc" }
+        });
+    }
     // -----------------------------------------------------------------
     // chemotherapy_vitals / chemotherapy_adverse_event /
     // chemotherapy_lab_review / chemotherapy_followup - all append-only,

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateBedStatusValidation = exports.updateBedValidation = exports.updateWardValidation = exports.createBedValidation = exports.createWardValidation = exports.getAdmissionByIpNumberValidation = exports.getAdmissionsValidation = exports.IPD_SORT_FIELDS = exports.daycareOccupancyValidation = exports.createDaycareValidation = exports.closePlannedValidation = exports.reserveBedValidation = exports.admitAdmissionValidation = exports.transferAdmissionValidation = exports.dischargeAdmissionValidation = exports.updateAdmissionValidation = exports.createAdmissionValidation = void 0;
+exports.addDischargeTypeValidation = exports.updateBedStatusValidation = exports.updateBedValidation = exports.updateWardValidation = exports.createBedValidation = exports.createWardValidation = exports.getAdmissionByIpNumberValidation = exports.getAdmissionsValidation = exports.IPD_SORT_FIELDS = exports.daycareOccupancyValidation = exports.createDaycareValidation = exports.closePlannedValidation = exports.reserveBedValidation = exports.admitAdmissionValidation = exports.transferAdmissionValidation = exports.saveDischargeDetailsValidation = exports.dischargeAdmissionValidation = exports.updateAdmissionValidation = exports.createAdmissionValidation = void 0;
 const express_validator_1 = require("express-validator");
 const ipd_constants_1 = require("./ipd.constants");
 const ipd_constants_2 = require("./ipd.constants");
@@ -54,7 +54,9 @@ exports.updateAdmissionValidation = [
         .optional()
         .isISO8601()
         .withMessage("Discharge date must be a valid date"),
-    (0, express_validator_1.body)("discharge_type").optional().isIn(ipd_constants_1.DISCHARGE_TYPE_VALUES),
+    // Any active row of discharge_type_master (checked in the service) --
+    // the built-ins plus values added through "Others".
+    (0, express_validator_1.body)("discharge_type").optional().isString().isLength({ max: 100 }),
     (0, express_validator_1.body)("discharge_summary").optional().isString(),
     (0, express_validator_1.body)("status").optional().isIn(ipd_constants_1.IPD_STATUS_VALUES),
 ];
@@ -62,7 +64,9 @@ exports.dischargeAdmissionValidation = [
     (0, express_validator_1.param)("id")
         .notEmpty()
         .withMessage("Admission ID or IP number is required"),
-    (0, express_validator_1.body)("discharge_type").optional().isIn(ipd_constants_1.DISCHARGE_TYPE_VALUES),
+    // Any active row of discharge_type_master (checked in the service) --
+    // the built-ins plus values added through "Others".
+    (0, express_validator_1.body)("discharge_type").optional().isString().isLength({ max: 100 }),
     (0, express_validator_1.body)("discharge_summary").optional().isString(),
     (0, express_validator_1.body)("discharge_date").optional().isISO8601(),
     (0, express_validator_1.body)("discharge_advice").optional().isString(),
@@ -71,6 +75,24 @@ exports.dischargeAdmissionValidation = [
     // not validated against disease_status_master (see ipd.service.ts).
     (0, express_validator_1.body)("discharge_disease_status").optional().isString(),
     (0, express_validator_1.body)("patient_status_at_discharge").optional().isIn(ipd_constants_1.PATIENT_STATUS_AT_DISCHARGE_VALUES),
+];
+exports.saveDischargeDetailsValidation = [
+    (0, express_validator_1.param)("id")
+        .notEmpty()
+        .withMessage("Admission ID or IP number is required"),
+    (0, express_validator_1.body)("discharge_type")
+        .notEmpty()
+        .withMessage("Discharge type is required")
+        .bail()
+        .isString()
+        .isLength({ max: 100 }),
+    (0, express_validator_1.body)("discharge_summary").optional({ values: "falsy" }).isString(),
+    (0, express_validator_1.body)("discharge_advice").optional({ values: "falsy" }).isString(),
+    (0, express_validator_1.body)("review_date").optional({ values: "falsy" }).isISO8601(),
+    (0, express_validator_1.body)("discharge_disease_status").optional({ values: "falsy" }).isString(),
+    (0, express_validator_1.body)("patient_status_at_discharge")
+        .optional({ values: "falsy" })
+        .isIn(ipd_constants_1.PATIENT_STATUS_AT_DISCHARGE_VALUES),
 ];
 exports.transferAdmissionValidation = [
     (0, express_validator_1.param)("id")
@@ -205,4 +227,13 @@ exports.updateBedStatusValidation = [
         .isIn([...ipd_constants_2.MANUAL_BED_STATUSES])
         .withMessage(`Status must be one of: ${ipd_constants_2.MANUAL_BED_STATUSES.join(", ")}`),
     (0, express_validator_1.body)("remarks").optional().trim().isString(),
+];
+exports.addDischargeTypeValidation = [
+    (0, express_validator_1.body)("type_name")
+        .trim()
+        .notEmpty()
+        .withMessage("Discharge type is required")
+        .bail()
+        .isLength({ max: 100 })
+        .withMessage("Discharge type must be at most 100 characters"),
 ];

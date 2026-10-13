@@ -88,6 +88,12 @@ router.patch("/cycles/:cycleId/status", auth_middleware_1.authenticate, (0, auth
 // ---------------- Administration ----------------
 router.post("/cycles/:cycleId/administration", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.administration.record"), chemotherapy_validation_1.recordAdministrationValidation, controller.recordAdministration.bind(controller));
 router.get("/cycles/:cycleId/administration", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.cycleIdParamValidation, controller.listAdministrations.bind(controller));
+// ---------------- Administration sheet (per cycle day) ----------------
+// Nurses record administration (chemo.administration.record); doctors may
+// too through chemo.cycle.manage.
+router.get("/plans/:planId/administration", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.administrationSheetValidation, controller.getAdministrationSheet.bind(controller));
+router.patch("/administration/:administrationId/status", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("chemo.administration.record", "chemo.cycle.manage"), chemotherapy_validation_1.administrationStatusValidation, controller.updateAdministrationStatus.bind(controller));
+router.post("/plans/:planId/orders/:cycleNumber/:cycleDay/administration/complete", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("chemo.administration.record", "chemo.cycle.manage"), chemotherapy_validation_1.completeAdministrationDayValidation, controller.completeAdministrationDay.bind(controller));
 // ---------------- Vitals ----------------
 router.post("/cycles/:cycleId/vitals", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.vitals.record"), chemotherapy_validation_1.recordVitalsValidation, controller.recordVitals.bind(controller));
 router.get("/cycles/:cycleId/vitals", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.cycleIdParamValidation, controller.listVitals.bind(controller));

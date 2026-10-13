@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EncounterService = void 0;
 const client_1 = require("@prisma/client");
+const crypto_1 = require("crypto");
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const encounter_repository_1 = require("./encounter.repository");
 const encounter_constants_1 = require("./encounter.constants");
@@ -259,7 +260,46 @@ class EncounterService {
                 ? Math.round((finalWeight / Math.pow(finalHeight / 100, 2)) * 10) / 10
                 : null;
         }
-        return repository.updateEncounter(encounterNo, {
+        // ── Inpatient (IPD) vitals history logging ──
+        let vitalsLogUpdate = undefined;
+        if (existing.encounter_type === encounter_constants_1.ENCOUNTER_TYPE_IPD) {
+            const hasAnyVital = [
+                data.systolic_bp,
+                data.diastolic_bp,
+                data.pulse,
+                data.respiratory_rate,
+                data.spo2,
+                data.temperature,
+                data.height,
+                data.weight,
+                data.blood_sugar,
+                data.pain_score,
+            ].some((v) => v !== undefined && v !== null);
+            if (hasAnyVital) {
+                const entry = {
+                    entry_id: (0, crypto_1.randomUUID)(),
+                    recorded_at: new Date().toISOString(),
+                    recorded_by: data.updatedBy ?? null,
+                    systolic_bp: data.systolic_bp ?? null,
+                    diastolic_bp: data.diastolic_bp ?? null,
+                    pulse: data.pulse ?? null,
+                    respiratory_rate: data.respiratory_rate ?? null,
+                    spo2: data.spo2 ?? null,
+                    temperature: data.temperature ?? null,
+                    height: data.height ?? null,
+                    weight: data.weight ?? null,
+                    bmi: bmi ?? null,
+                    blood_sugar: data.blood_sugar ?? null,
+                    pain_score: data.pain_score ?? null,
+                    remarks: data.remarks ?? null,
+                };
+                const existingLog = Array.isArray(existing.vitals_log)
+                    ? existing.vitals_log
+                    : [];
+                vitalsLogUpdate = [...existingLog, entry];
+            }
+        }
+        const updated = await repository.updateEncounter(encounterNo, {
             chief_complaint: data.chief_complaint,
             symptoms: data.symptoms,
             diagnosis_id: data.diagnosis_id,
@@ -303,8 +343,19 @@ class EncounterService {
             spo2: data.spo2,
             blood_sugar: data.blood_sugar,
             pain_score: data.pain_score,
-            ...(bmi !== undefined ? { BMI: bmi } : {})
+            ...(bmi !== undefined ? { BMI: bmi } : {}),
+            ...(vitalsLogUpdate !== undefined ? { vitals_log: vitalsLogUpdate } : {})
         });
+        // An inpatient encounter's Next Visit Date (Follow Up step) is the
+        // stay's review date -- one source, so the discharge details,
+        // admin popup and History tab always show the same date.
+        if (data.follow_up_date) {
+            await prisma_1.default.admission.updateMany({
+                where: { encounter_no: encounterNo, status: "ADMITTED" },
+                data: { review_date: new Date(data.follow_up_date), updated_at: new Date() },
+            });
+        }
+        return updated;
     }
     async closeEncounter(encounterNo, closedBy) {
         const existing = await repository.getEncounterByNumber(encounterNo);
@@ -339,6 +390,81 @@ class EncounterService {
                 await repository.updateAppointmentStatus(tx, existing.appointment_id, appointment_constants_1.APPOINTMENT_STATUS.COMPLETED);
             }
             return encounter;
+        });
+    }
+    async updateVitalsLogEntry(encounterNo, entryId, data) {
+        const existing = await repository.getEncounterByNumber(encounterNo);
+        if (!existing) {
+            throw new Error("Encounter not found");
+        }
+        const logs = Array.isArray(existing.vitals_log) ? existing.vitals_log : [];
+        const idx = logs.findIndex((e) => (e.entry_id ?? e.recorded_at) === entryId);
+        if (idx === -1) {
+            throw new Error("Vitals entry not found");
+        }
+        const finalHeight = data.height !== undefined ? data.height : logs[idx].height;
+        const finalWeight = data.weight !== undefined ? data.weight : logs[idx].weight;
+        const bmi = finalHeight && finalWeight && Number(finalHeight) > 0
+            ? Math.round((Number(finalWeight) / Math.pow(Number(finalHeight) / 100, 2)) * 10) / 10
+            : null;
+        logs[idx] = {
+            ...logs[idx],
+            ...(data.systolic_bp !== undefined ? { systolic_bp: data.systolic_bp } : {}),
+            ...(data.diastolic_bp !== undefined ? { diastolic_bp: data.diastolic_bp } : {}),
+            ...(data.pulse !== undefined ? { pulse: data.pulse } : {}),
+            ...(data.respiratory_rate !== undefined ? { respiratory_rate: data.respiratory_rate } : {}),
+            ...(data.spo2 !== undefined ? { spo2: data.spo2 } : {}),
+            ...(data.temperature !== undefined ? { temperature: data.temperature } : {}),
+            ...(data.height !== undefined ? { height: data.height } : {}),
+            ...(data.weight !== undefined ? { weight: data.weight } : {}),
+            ...(data.blood_sugar !== undefined ? { blood_sugar: data.blood_sugar } : {}),
+            ...(data.pain_score !== undefined ? { pain_score: data.pain_score } : {}),
+            ...(data.remarks !== undefined ? { remarks: data.remarks } : {}),
+            bmi,
+            updated_at: new Date().toISOString(),
+            updated_by: data.updatedBy ?? null,
+        };
+        // Sort to find newest entry and sync flat columns
+        const sorted = [...logs].sort((a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime());
+        const latest = sorted[0];
+        return repository.updateEncounter(encounterNo, {
+            vitals_log: logs,
+            systolic_bp: latest.systolic_bp ?? null,
+            diastolic_bp: latest.diastolic_bp ?? null,
+            pulse: latest.pulse ?? null,
+            temperature: latest.temperature ?? null,
+            spo2: latest.spo2 ?? null,
+            respiratory_rate: latest.respiratory_rate ?? null,
+            height: latest.height ?? null,
+            weight: latest.weight ?? null,
+            blood_sugar: latest.blood_sugar ?? null,
+            pain_score: latest.pain_score ?? null,
+            BMI: latest.bmi ?? null,
+        });
+    }
+    async deleteVitalsLogEntry(encounterNo, entryId) {
+        const existing = await repository.getEncounterByNumber(encounterNo);
+        if (!existing) {
+            throw new Error("Encounter not found");
+        }
+        const logs = Array.isArray(existing.vitals_log) ? existing.vitals_log : [];
+        const filtered = logs.filter((e) => (e.entry_id ?? e.recorded_at) !== entryId);
+        // Sort remaining entries to find newest (or empty)
+        const sorted = [...filtered].sort((a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime());
+        const latest = sorted[0] || {};
+        return repository.updateEncounter(encounterNo, {
+            vitals_log: filtered,
+            systolic_bp: latest.systolic_bp ?? null,
+            diastolic_bp: latest.diastolic_bp ?? null,
+            pulse: latest.pulse ?? null,
+            temperature: latest.temperature ?? null,
+            spo2: latest.spo2 ?? null,
+            respiratory_rate: latest.respiratory_rate ?? null,
+            height: latest.height ?? null,
+            weight: latest.weight ?? null,
+            blood_sugar: latest.blood_sugar ?? null,
+            pain_score: latest.pain_score ?? null,
+            BMI: latest.bmi ?? null,
         });
     }
 }

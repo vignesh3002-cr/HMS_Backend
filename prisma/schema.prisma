@@ -473,55 +473,55 @@ model cancer_types {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_administration {
-  id                                                               BigInt                  @id @default(autoincrement())
-  administration_id                                                String                  @unique(map: "uq_chemo_administration") @db.VarChar(100)
-  chemotherapy_cycle_id                                            String                  @db.VarChar(100)
-  chemotherapy_plan_item_id                                        String                  @db.VarChar(100)
-  administration_date                                              DateTime                @db.Date
-  administration_start_time                                        DateTime?               @db.Timestamp(6)
-  administration_end_time                                          DateTime?               @db.Timestamp(6)
-  administered_dose                                                Decimal?                @db.Decimal(10, 2)
-  administered_dose_unit                                           String?                 @db.VarChar(100)
-  administration_route                                             String?                 @db.VarChar(100)
-  infusion_rate                                                    String?                 @db.VarChar(100)
+  id                                                               BigInt                   @id @default(autoincrement())
+  administration_id                                                String                   @unique(map: "uq_chemo_administration") @db.VarChar(100)
+  chemotherapy_cycle_id                                            String                   @db.VarChar(100)
+  chemotherapy_plan_item_id                                        String                   @db.VarChar(100)
+  administration_date                                              DateTime                 @db.Date
+  administration_start_time                                        DateTime?                @db.Timestamp(6)
+  administration_end_time                                          DateTime?                @db.Timestamp(6)
+  administered_dose                                                Decimal?                 @db.Decimal(10, 2)
+  administered_dose_unit                                           String?                  @db.VarChar(100)
+  administration_route                                             String?                  @db.VarChar(100)
+  infusion_rate                                                    String?                  @db.VarChar(100)
   infusion_duration_minutes                                        Int?
-  infusion_completed                                               Boolean?                @default(false)
-  administered_by                                                  String?                 @db.VarChar(100)
-  verified_by                                                      String?                 @db.VarChar(100)
-  iv_site                                                          String?                 @db.VarChar(100)
-  iv_access_type                                                   String?                 @db.VarChar(100)
-  cannula_size                                                     String?                 @db.VarChar(100)
-  peripheral_line                                                  Boolean?                @default(false)
-  central_line                                                     Boolean?                @default(false)
-  picc_line                                                        Boolean?                @default(false)
-  port_used                                                        Boolean?                @default(false)
-  pump_used                                                        Boolean?                @default(false)
-  pump_serial_no                                                   String?                 @db.VarChar(100)
-  oxygen_support                                                   Boolean?                @default(false)
-  steroid_given                                                    Boolean?                @default(false)
-  antihistamine_given                                              Boolean?                @default(false)
-  antiemetic_given                                                 Boolean?                @default(false)
-  hydration_given                                                  Boolean?                @default(false)
-  emergency_medication_given                                       Boolean?                @default(false)
-  treatment_stopped                                                Boolean?                @default(false)
+  infusion_completed                                               Boolean?                 @default(false)
+  administered_by                                                  String?                  @db.VarChar(100)
+  verified_by                                                      String?                  @db.VarChar(100)
+  iv_site                                                          String?                  @db.VarChar(100)
+  iv_access_type                                                   String?                  @db.VarChar(100)
+  cannula_size                                                     String?                  @db.VarChar(100)
+  peripheral_line                                                  Boolean?                 @default(false)
+  central_line                                                     Boolean?                 @default(false)
+  picc_line                                                        Boolean?                 @default(false)
+  port_used                                                        Boolean?                 @default(false)
+  pump_used                                                        Boolean?                 @default(false)
+  pump_serial_no                                                   String?                  @db.VarChar(100)
+  oxygen_support                                                   Boolean?                 @default(false)
+  steroid_given                                                    Boolean?                 @default(false)
+  antihistamine_given                                              Boolean?                 @default(false)
+  antiemetic_given                                                 Boolean?                 @default(false)
+  hydration_given                                                  Boolean?                 @default(false)
+  emergency_medication_given                                       Boolean?                 @default(false)
+  treatment_stopped                                                Boolean?                 @default(false)
   interruption_reason                                              String?
-  doctor_informed                                                  Boolean?                @default(false)
+  doctor_informed                                                  Boolean?                 @default(false)
   nursing_notes                                                    String?
-  administration_status                                            String?                 @default("PENDING") @db.VarChar(100)
+  administration_status                                            String?                  @default("PENDING") @db.VarChar(100)
   remarks                                                          String?
-  active_status                                                    Int?                    @default(1) @db.SmallInt
-  deleted_flag                                                     Boolean?                @default(false)
-  created_by                                                       String?                 @db.VarChar(100)
-  created_at                                                       DateTime?               @default(now()) @db.Timestamp(6)
-  updated_by                                                       String?                 @db.VarChar(100)
-  updated_at                                                       DateTime?               @default(now()) @db.Timestamp(6)
-  chemotherapy_cycle                                               chemotherapy_cycle      @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_admin_cycle")
-  employees_chemotherapy_administration_verified_byToemployees     employees?              @relation("chemotherapy_administration_verified_byToemployees", fields: [verified_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_admin_doctor")
-  employees_chemotherapy_administration_administered_byToemployees employees?              @relation("chemotherapy_administration_administered_byToemployees", fields: [administered_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_admin_nurse")
-  chemotherapy_plan_items                                          chemotherapy_plan_items @relation(fields: [chemotherapy_plan_item_id], references: [chemotherapy_plan_item_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_admin_plan_item")
-  plan_order_id                                                    String?                 @db.VarChar(100)
+  active_status                                                    Int?                     @default(1) @db.SmallInt
+  deleted_flag                                                     Boolean?                 @default(false)
+  created_by                                                       String?                  @db.VarChar(100)
+  created_at                                                       DateTime?                @default(now()) @db.Timestamp(6)
+  updated_by                                                       String?                  @db.VarChar(100)
+  updated_at                                                       DateTime?                @default(now()) @db.Timestamp(6)
+  plan_order_id                                                    String?                  @db.VarChar(100)
   administration_day                                               Int?
   status_reason                                                    String?
+  chemotherapy_cycle                                               chemotherapy_cycle       @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_admin_cycle")
+  employees_chemotherapy_administration_verified_byToemployees     employees?               @relation("chemotherapy_administration_verified_byToemployees", fields: [verified_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_admin_doctor")
+  employees_chemotherapy_administration_administered_byToemployees employees?               @relation("chemotherapy_administration_administered_byToemployees", fields: [administered_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_admin_nurse")
+  chemotherapy_plan_items                                          chemotherapy_plan_items  @relation(fields: [chemotherapy_plan_item_id], references: [chemotherapy_plan_item_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_admin_plan_item")
   chemotherapy_plan_order                                          chemotherapy_plan_order? @relation(fields: [plan_order_id], references: [plan_order_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_admin_plan_order")
 
   @@unique([plan_order_id, chemotherapy_plan_item_id], map: "uq_chemo_admin_order_item", where: raw("((active_status = 1) AND (plan_order_id IS NOT NULL))"))
@@ -530,59 +530,65 @@ model chemotherapy_administration {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model chemotherapy_adverse_event {
-  id                                                           BigInt             @id @default(autoincrement())
-  adverse_event_id                                             String             @unique(map: "uq_chemo_adverse_event") @db.VarChar(100)
-  chemotherapy_cycle_id                                        String             @db.VarChar(100)
-  event_date                                                   DateTime           @default(now()) @db.Timestamp(6)
-  adverse_event_name                                           String             @db.VarChar(100)
-  adverse_event_category                                       String?            @db.VarChar(100)
-  nausea                                                       Boolean?           @default(false)
-  vomiting                                                     Boolean?           @default(false)
-  diarrhea                                                     Boolean?           @default(false)
-  constipation                                                 Boolean?           @default(false)
-  mucositis                                                    Boolean?           @default(false)
-  fever                                                        Boolean?           @default(false)
-  fatigue                                                      Boolean?           @default(false)
-  neuropathy                                                   Boolean?           @default(false)
-  alopecia                                                     Boolean?           @default(false)
-  skin_rash                                                    Boolean?           @default(false)
-  anemia                                                       Boolean?           @default(false)
-  neutropenia                                                  Boolean?           @default(false)
-  thrombocytopenia                                             Boolean?           @default(false)
-  infection                                                    Boolean?           @default(false)
-  bleeding                                                     Boolean?           @default(false)
-  pain                                                         Boolean?           @default(false)
-  reaction_grade                                               String?            @db.VarChar(100)
-  ctcae_grade                                                  String?            @db.VarChar(100)
-  severity                                                     String?            @db.VarChar(100)
+  id                                                           BigInt                   @id @default(autoincrement())
+  adverse_event_id                                             String                   @unique(map: "uq_chemo_adverse_event") @db.VarChar(100)
+  chemotherapy_cycle_id                                        String                   @db.VarChar(100)
+  event_date                                                   DateTime                 @default(now()) @db.Timestamp(6)
+  adverse_event_name                                           String                   @db.VarChar(100)
+  adverse_event_category                                       String?                  @db.VarChar(100)
+  nausea                                                       Boolean?                 @default(false)
+  vomiting                                                     Boolean?                 @default(false)
+  diarrhea                                                     Boolean?                 @default(false)
+  constipation                                                 Boolean?                 @default(false)
+  mucositis                                                    Boolean?                 @default(false)
+  fever                                                        Boolean?                 @default(false)
+  fatigue                                                      Boolean?                 @default(false)
+  neuropathy                                                   Boolean?                 @default(false)
+  alopecia                                                     Boolean?                 @default(false)
+  skin_rash                                                    Boolean?                 @default(false)
+  anemia                                                       Boolean?                 @default(false)
+  neutropenia                                                  Boolean?                 @default(false)
+  thrombocytopenia                                             Boolean?                 @default(false)
+  infection                                                    Boolean?                 @default(false)
+  bleeding                                                     Boolean?                 @default(false)
+  pain                                                         Boolean?                 @default(false)
+  reaction_grade                                               String?                  @db.VarChar(100)
+  ctcae_grade                                                  String?                  @db.VarChar(100)
+  severity                                                     String?                  @db.VarChar(100)
   reaction_description                                         String?
-  treatment_interrupted                                        Boolean?           @default(false)
-  treatment_stopped                                            Boolean?           @default(false)
-  hospitalization_required                                     Boolean?           @default(false)
-  icu_required                                                 Boolean?           @default(false)
-  emergency_medication_given                                   Boolean?           @default(false)
+  treatment_interrupted                                        Boolean?                 @default(false)
+  treatment_stopped                                            Boolean?                 @default(false)
+  hospitalization_required                                     Boolean?                 @default(false)
+  icu_required                                                 Boolean?                 @default(false)
+  emergency_medication_given                                   Boolean?                 @default(false)
   medication_given                                             String?
-  dose_modified                                                Boolean?           @default(false)
-  dose_reduced                                                 Boolean?           @default(false)
-  reduction_percentage                                         Decimal?           @db.Decimal(5, 2)
-  dose_delayed                                                 Boolean?           @default(false)
+  dose_modified                                                Boolean?                 @default(false)
+  dose_reduced                                                 Boolean?                 @default(false)
+  reduction_percentage                                         Decimal?                 @db.Decimal(5, 2)
+  dose_delayed                                                 Boolean?                 @default(false)
   delay_days                                                   Int?
   doctor_action                                                String?
   nursing_action                                               String?
-  physician_id                                                 String?            @db.VarChar(100)
-  reported_by                                                  String?            @db.VarChar(100)
-  resolved                                                     Boolean?           @default(false)
-  resolution_date                                              DateTime?          @db.Date
+  physician_id                                                 String?                  @db.VarChar(100)
+  reported_by                                                  String?                  @db.VarChar(100)
+  resolved                                                     Boolean?                 @default(false)
+  resolution_date                                              DateTime?                @db.Date
   remarks                                                      String?
-  active_status                                                Int?               @default(1) @db.SmallInt
-  deleted_flag                                                 Boolean?           @default(false)
-  created_by                                                   String?            @db.VarChar(100)
-  created_at                                                   DateTime?          @default(now()) @db.Timestamp(6)
-  updated_by                                                   String?            @db.VarChar(100)
-  updated_at                                                   DateTime?          @default(now()) @db.Timestamp(6)
-  chemotherapy_cycle                                           chemotherapy_cycle @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_adverse_cycle")
-  employees_chemotherapy_adverse_event_physician_idToemployees employees?         @relation("chemotherapy_adverse_event_physician_idToemployees", fields: [physician_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_adverse_doctor")
-  employees_chemotherapy_adverse_event_reported_byToemployees  employees?         @relation("chemotherapy_adverse_event_reported_byToemployees", fields: [reported_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_adverse_reported_by")
+  active_status                                                Int?                     @default(1) @db.SmallInt
+  deleted_flag                                                 Boolean?                 @default(false)
+  created_by                                                   String?                  @db.VarChar(100)
+  created_at                                                   DateTime?                @default(now()) @db.Timestamp(6)
+  updated_by                                                   String?                  @db.VarChar(100)
+  updated_at                                                   DateTime?                @default(now()) @db.Timestamp(6)
+  plan_order_id                                                String?                  @db.VarChar(100)
+  cycle_day                                                    Int?
+  chemotherapy_cycle                                           chemotherapy_cycle       @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_adverse_cycle")
+  employees_chemotherapy_adverse_event_physician_idToemployees employees?               @relation("chemotherapy_adverse_event_physician_idToemployees", fields: [physician_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_adverse_doctor")
+  chemotherapy_plan_order                                      chemotherapy_plan_order? @relation(fields: [plan_order_id], references: [plan_order_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_adverse_plan_order")
+  employees_chemotherapy_adverse_event_reported_byToemployees  employees?               @relation("chemotherapy_adverse_event_reported_byToemployees", fields: [reported_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_adverse_reported_by")
+
+  @@index([chemotherapy_cycle_id], map: "idx_chemo_adverse_cycle")
+  @@index([plan_order_id], map: "idx_chemo_adverse_plan_order")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -933,6 +939,7 @@ model chemotherapy_plan_order {
   chemo_instructions            String?
   additional_notes              String?
   chemotherapy_administration   chemotherapy_administration[]
+  chemotherapy_adverse_event    chemotherapy_adverse_event[]
   chemotherapy_plan_hydration   chemotherapy_plan_hydration[]
   chemotherapy_plan_items       chemotherapy_plan_items[]
   chemotherapy_plan_order       chemotherapy_plan_order?      @relation("chemotherapy_plan_orderTochemotherapy_plan_order", fields: [copied_from_order_id], references: [plan_order_id], onUpdate: NoAction, map: "fk_plan_order_copied_from")
@@ -1297,6 +1304,7 @@ model discharge_type_master {
   updated_at        DateTime? @default(now()) @db.Timestamp(6)
 }
 
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model disease_status_master {
   id                BigInt    @id @default(autoincrement())
   disease_status_id String    @unique(map: "uq_disease_status_id") @db.VarChar(100)
@@ -1605,6 +1613,7 @@ model encounter {
   user_table                          user_table?                    @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_user")
   encounter_immunization              encounter_immunization[]
   encounter_molecular_test            encounter_molecular_test[]
+  encounter_past_treatment            encounter_past_treatment[]
   encounter_performance_status        encounter_performance_status?
   encounter_report                    encounter_report[]
   encounter_symptom                   encounter_symptom[]
@@ -2896,6 +2905,25 @@ model ward_master {
   branch        branch       @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ward_branch")
 
   @@index([branch_id], map: "idx_ward_branch")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model encounter_past_treatment {
+  id                          BigInt    @id @default(autoincrement())
+  encounter_past_treatment_id String    @unique(map: "uq_encounter_past_treatment_id") @db.VarChar(100)
+  encounter_no                String    @db.VarChar(100)
+  treatment_type_code         String?   @db.VarChar(100)
+  treatment_type              String    @db.VarChar(100)
+  treatment_date              DateTime? @db.Date
+  note                        String?
+  treatment_response          String?
+  created_at                  DateTime? @default(now()) @db.Timestamp(6)
+  updated_at                  DateTime? @default(now()) @db.Timestamp(6)
+  created_by                  String?   @db.VarChar(100)
+  encounter                   encounter @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_past_treatment_encounter")
+
+  @@index([encounter_no], map: "idx_encounter_past_treatment_encounter")
 }
 
 enum DoctorScheduleChangeMode {

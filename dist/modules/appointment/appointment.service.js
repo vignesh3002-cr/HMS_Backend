@@ -535,9 +535,9 @@ class AppointmentService {
             });
             return appointment;
         }));
-        const isIpd = String(data.reason_for_visit ?? "").trim().toUpperCase() === "IPD" ||
-            String(data.patient_visit_type ?? "").trim().toUpperCase() === "IPD" ||
-            String(data.patient_type ?? "").trim().toUpperCase() === "IPD";
+        const isIpd = String(data.reason_for_visit ?? "").trim().toUpperCase().includes("IPD") ||
+            String(data.patient_visit_type ?? "").trim().toUpperCase().includes("IPD") ||
+            String(data.patient_type ?? "").trim().toUpperCase().includes("IPD");
         if (isIpd && bookedAppointment?.appointment_id) {
             try {
                 const ipdService = new ipd_service_1.IpdService();
