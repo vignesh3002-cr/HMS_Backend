@@ -80,6 +80,20 @@ router.put(
 );
 
 router.put(
+    "/:encounterNo/vitals-log/:entryId",
+    authenticate,
+    authorize("encounter.update"),
+    controller.updateVitalsLogEntry.bind(controller)
+);
+
+router.delete(
+    "/:encounterNo/vitals-log/:entryId",
+    authenticate,
+    authorize("encounter.update"),
+    controller.deleteVitalsLogEntry.bind(controller)
+);
+
+router.put(
     "/:encounterNo",
     authenticate,
     authorize("encounter.update"),

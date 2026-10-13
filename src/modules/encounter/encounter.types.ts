@@ -55,6 +55,8 @@ export interface UpdateEncounterDTO {
     spo2?: number;
     blood_sugar?: number;
     pain_score?: number;
+    remarks?: string;
+    updatedBy?: string;
 
 }
 

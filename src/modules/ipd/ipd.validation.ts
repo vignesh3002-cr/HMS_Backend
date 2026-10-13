@@ -2,7 +2,6 @@ import { body, param, query } from "express-validator";
 import {
     IPD_STATUS_VALUES,
     ADMISSION_TYPE_VALUES,
-    DISCHARGE_TYPE_VALUES,
     PAYMENT_MODE_VALUES,
     PATIENT_STATUS_AT_DISCHARGE_VALUES
 } from "./ipd.constants";
@@ -66,7 +65,9 @@ export const updateAdmissionValidation = [
         .optional()
         .isISO8601()
         .withMessage("Discharge date must be a valid date"),
-    body("discharge_type").optional().isIn(DISCHARGE_TYPE_VALUES),
+    // Any active row of discharge_type_master (checked in the service) --
+    // the built-ins plus values added through "Others".
+    body("discharge_type").optional().isString().isLength({ max: 100 }),
     body("discharge_summary").optional().isString(),
     body("status").optional().isIn(IPD_STATUS_VALUES),
 
@@ -78,7 +79,9 @@ export const dischargeAdmissionValidation = [
         .notEmpty()
         .withMessage("Admission ID or IP number is required"),
 
-    body("discharge_type").optional().isIn(DISCHARGE_TYPE_VALUES),
+    // Any active row of discharge_type_master (checked in the service) --
+    // the built-ins plus values added through "Others".
+    body("discharge_type").optional().isString().isLength({ max: 100 }),
     body("discharge_summary").optional().isString(),
     body("discharge_date").optional().isISO8601(),
     body("discharge_advice").optional().isString(),
@@ -87,6 +90,28 @@ export const dischargeAdmissionValidation = [
     // not validated against disease_status_master (see ipd.service.ts).
     body("discharge_disease_status").optional().isString(),
     body("patient_status_at_discharge").optional().isIn(PATIENT_STATUS_AT_DISCHARGE_VALUES),
+
+];
+
+export const saveDischargeDetailsValidation = [
+
+    param("id")
+        .notEmpty()
+        .withMessage("Admission ID or IP number is required"),
+
+    body("discharge_type")
+        .notEmpty()
+        .withMessage("Discharge type is required")
+        .bail()
+        .isString()
+        .isLength({ max: 100 }),
+    body("discharge_summary").optional({ values: "falsy" }).isString(),
+    body("discharge_advice").optional({ values: "falsy" }).isString(),
+    body("review_date").optional({ values: "falsy" }).isISO8601(),
+    body("discharge_disease_status").optional({ values: "falsy" }).isString(),
+    body("patient_status_at_discharge")
+        .optional({ values: "falsy" })
+        .isIn(PATIENT_STATUS_AT_DISCHARGE_VALUES),
 
 ];
 
@@ -267,3 +292,15 @@ export const updateBedStatusValidation = [
 
 ];
 
+
+export const addDischargeTypeValidation = [
+
+    body("type_name")
+        .trim()
+        .notEmpty()
+        .withMessage("Discharge type is required")
+        .bail()
+        .isLength({ max: 100 })
+        .withMessage("Discharge type must be at most 100 characters"),
+
+];

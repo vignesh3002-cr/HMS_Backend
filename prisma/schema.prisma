@@ -85,6 +85,10 @@ model admission {
   review_date                 DateTime?                   @db.Date
   discharge_disease_status    String?                     @db.VarChar(100)
   patient_status_at_discharge String?                     @db.VarChar(100)
+  /// Who saved the clinical discharge details (doctor) and when. An admin
+  /// can only confirm the discharge once these are set.
+  discharge_details_by        String?                     @db.VarChar(100)
+  discharge_details_at        DateTime?                   @db.Timestamp(6)
   bed_master                  bed_master?                 @relation(fields: [bed_id], references: [bed_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_bed")
   branch                      branch                      @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_branch")
   department_master           department_master?          @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_department")
@@ -1273,6 +1277,18 @@ model discharge_review_reminder {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model discharge_type_master {
+  id                BigInt    @id @default(autoincrement())
+  discharge_type_id String    @unique(map: "uq_discharge_type_id") @db.VarChar(100)
+  type_code         String    @unique(map: "uq_discharge_type_code") @db.VarChar(100)
+  type_name         String    @db.VarChar(100)
+  display_order     Int?      @default(1)
+  active_status     Int?      @default(1) @db.SmallInt
+  created_by        String?   @db.VarChar(100)
+  created_at        DateTime? @default(now()) @db.Timestamp(6)
+  updated_at        DateTime? @default(now()) @db.Timestamp(6)
+}
+
 model disease_status_master {
   id                BigInt    @id @default(autoincrement())
   disease_status_id String    @unique(map: "uq_disease_status_id") @db.VarChar(100)
@@ -1569,6 +1585,7 @@ model encounter {
   past_history_treatment_type         String?
   previous_reports                    String?
   general_examination_others          Json?
+  vitals_log                          Json?
   admission                           admission[]
   chemotherapy_plan                   chemotherapy_plan[]
   appointment_history                 appointment_history?           @relation(fields: [appointment_id], references: [appointment_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_appointment")

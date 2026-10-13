@@ -130,6 +130,10 @@ export interface UpdateAdmissionDTO {
     discharge_date?: Date;
     discharge_type?: string;
     discharge_summary?: string;
+    discharge_advice?: string;
+    review_date?: string | Date;
+    discharge_disease_status?: string;
+    patient_status_at_discharge?: string;
     status?: string;
     updated_by?: string;
 }

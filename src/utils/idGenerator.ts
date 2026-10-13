@@ -37,6 +37,7 @@ const ENTITY_TARGET: Record<string, { table: string; column: string; padTo?: num
     INVESTIGATION_RESULT: { table: "patient_investigation_result", column: "investigation_result_id", padTo: 7 },
     CANCER_SUBTYPE: { table: "cancer_subtypes", column: "subtype_id" },
     STAGING_REFERENCE: { table: "staging_reference", column: "stage_ref_id" },
+    DISCHARGE_TYPE: { table: "discharge_type_master", column: "discharge_type_id", padTo: 4 },
     DISEASE_STATUS: { table: "disease_status_master", column: "disease_status_id", padTo: 4 },
     TNM_STAGE: { table: "tnm_stage_master", column: "tnm_id", padTo: 4 },
     ADMISSION: { table: "admission", column: "ip_number" },
