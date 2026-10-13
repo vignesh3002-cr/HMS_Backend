@@ -576,9 +576,15 @@ model chemotherapy_adverse_event {
   created_at                                                   DateTime?          @default(now()) @db.Timestamp(6)
   updated_by                                                   String?            @db.VarChar(100)
   updated_at                                                   DateTime?          @default(now()) @db.Timestamp(6)
+  plan_order_id                                                String?            @db.VarChar(100)
+  cycle_day                                                    Int?
   chemotherapy_cycle                                           chemotherapy_cycle @relation(fields: [chemotherapy_cycle_id], references: [chemotherapy_cycle_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_adverse_cycle")
+  chemotherapy_plan_order                                      chemotherapy_plan_order? @relation(fields: [plan_order_id], references: [plan_order_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_adverse_plan_order")
   employees_chemotherapy_adverse_event_physician_idToemployees employees?         @relation("chemotherapy_adverse_event_physician_idToemployees", fields: [physician_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_adverse_doctor")
   employees_chemotherapy_adverse_event_reported_byToemployees  employees?         @relation("chemotherapy_adverse_event_reported_byToemployees", fields: [reported_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_chemo_adverse_reported_by")
+
+  @@index([chemotherapy_cycle_id], map: "idx_chemo_adverse_cycle")
+  @@index([plan_order_id], map: "idx_chemo_adverse_plan_order")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -929,6 +935,7 @@ model chemotherapy_plan_order {
   chemo_instructions            String?
   additional_notes              String?
   chemotherapy_administration   chemotherapy_administration[]
+  chemotherapy_adverse_event    chemotherapy_adverse_event[]
   chemotherapy_plan_hydration   chemotherapy_plan_hydration[]
   chemotherapy_plan_items       chemotherapy_plan_items[]
   chemotherapy_plan_order       chemotherapy_plan_order?      @relation("chemotherapy_plan_orderTochemotherapy_plan_order", fields: [copied_from_order_id], references: [plan_order_id], onUpdate: NoAction, map: "fk_plan_order_copied_from")

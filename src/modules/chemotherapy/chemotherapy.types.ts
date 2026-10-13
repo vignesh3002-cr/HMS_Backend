@@ -572,6 +572,10 @@ export interface RecordVitalsDto {
 
 export interface RecordAdverseEventDto {
 
+    // The cycle day the event belongs to (its chemotherapy_plan_order row);
+    // cycle_day is taken from that order, not trusted from the client.
+    plan_order_id?: string | null;
+    cycle_day?: number | null;
     event_date?: string | null;
     adverse_event_name: string;
     adverse_event_category?: string | null;

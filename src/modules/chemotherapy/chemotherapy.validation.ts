@@ -1,5 +1,5 @@
 import { body, param, query } from "express-validator";
-import { PLAN_STATUS, CYCLE_STATUS, DRUG_ROLE } from "./chemotherapy.constants";
+import { PLAN_STATUS, CYCLE_STATUS, DRUG_ROLE, ADVERSE_EVENT_GRADES, ADVERSE_EVENT_SEVERITIES } from "./chemotherapy.constants";
 
 export const previewPlanValidation = [
 
@@ -707,13 +707,36 @@ export const recordVitalsValidation = [
 
 ];
 
+const ADVERSE_EVENT_FLAGS = [
+    "nausea", "vomiting", "diarrhea", "constipation", "mucositis", "fever",
+    "fatigue", "neuropathy", "alopecia", "skin_rash", "anemia", "neutropenia",
+    "thrombocytopenia", "infection", "bleeding", "pain",
+    "treatment_interrupted", "treatment_stopped", "hospitalization_required",
+    "icu_required", "emergency_medication_given", "dose_modified",
+    "dose_reduced", "dose_delayed", "resolved"
+];
+
 export const recordAdverseEventValidation = [
 
     param("cycleId").notEmpty(),
-    body("adverse_event_name").notEmpty().withMessage("adverse_event_name is required"),
+    body("adverse_event_name")
+        .trim()
+        .notEmpty().withMessage("adverse_event_name is required")
+        .isLength({ max: 100 }).withMessage("adverse_event_name must be at most 100 characters"),
+    body("adverse_event_category").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("plan_order_id").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("cycle_day").optional({ nullable: true }).isInt({ min: 1 }),
     body("event_date").optional({ nullable: true }).isISO8601(),
     body("resolution_date").optional({ nullable: true }).isISO8601(),
-    body("reduction_percentage").optional({ nullable: true }).isFloat({ min: 0, max: 100 })
+    body("ctcae_grade").optional({ nullable: true })
+        .isIn(ADVERSE_EVENT_GRADES).withMessage("ctcae_grade must be 1 to 5"),
+    body("reaction_grade").optional({ nullable: true })
+        .isIn(ADVERSE_EVENT_GRADES).withMessage("reaction_grade must be 1 to 5"),
+    body("severity").optional({ nullable: true })
+        .isIn(ADVERSE_EVENT_SEVERITIES).withMessage(`severity must be one of: ${ADVERSE_EVENT_SEVERITIES.join(", ")}`),
+    ...ADVERSE_EVENT_FLAGS.map((flag) => body(flag).optional({ nullable: true }).isBoolean()),
+    body("reduction_percentage").optional({ nullable: true }).isFloat({ min: 0, max: 100 }),
+    body("delay_days").optional({ nullable: true }).isInt({ min: 0 })
 
 ];
 

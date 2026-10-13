@@ -1298,7 +1298,12 @@ export class ChemotherapyController {
 
             if (!checkValidation(req, res)) return;
 
-            const data = await service.recordAdverseEvent(req.params.cycleId as string, req.body, actingUserId(req));
+            const data = await service.recordAdverseEvent(
+                req.params.cycleId as string,
+                req.body,
+                actingUserId(req),
+                actingEmployeeId(req)
+            );
             return res.status(201).json({ success: true, message: "Adverse event recorded successfully", data });
 
         } catch (error: any) {

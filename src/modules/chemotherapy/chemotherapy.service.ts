@@ -5539,12 +5539,29 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
         return this.repository.listVitalsForCycle(cycleId);
     }
 
-    async recordAdverseEvent(cycleId: string, dto: RecordAdverseEventDto, actingUserId: string) {
+    async recordAdverseEvent(cycleId: string, dto: RecordAdverseEventDto, actingUserId: string, actingEmployeeId: string | null = null) {
 
         const { plan } = await this.getCyclePlanContext(cycleId);
 
         if (!dto.adverse_event_name?.trim()) {
             throw new Error("adverse_event_name is required");
+        }
+
+        // The cycle day the event belongs to must be a day of this cycle;
+        // its day number comes from the order itself.
+        let cycleDay: number | null = null;
+        if (dto.plan_order_id) {
+            const order = await this.repository.findPlanOrderById(prisma, dto.plan_order_id);
+            if (!order || order.chemotherapy_cycle_id !== cycleId) {
+                throw new Error("Cycle day order not found");
+            }
+            cycleDay = order.cycle_day;
+        }
+
+        const eventDate = dto.event_date ? new Date(dto.event_date) : new Date();
+        const resolutionDate = dto.resolution_date ? new Date(dto.resolution_date) : null;
+        if (resolutionDate && resolutionDate.toISOString().slice(0, 10) < eventDate.toISOString().slice(0, 10)) {
+            throw new Error("resolution_date cannot be before the event date");
         }
 
         return prisma.$transaction(async (tx) => {
@@ -5554,7 +5571,9 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             const created = await this.repository.createAdverseEvent(tx, {
                 adverse_event_id: id,
                 chemotherapy_cycle_id: cycleId,
-                event_date: dto.event_date ? new Date(dto.event_date) : new Date(),
+                plan_order_id: dto.plan_order_id ?? null,
+                cycle_day: cycleDay,
+                event_date: eventDate,
                 adverse_event_name: dto.adverse_event_name,
                 adverse_event_category: dto.adverse_event_category ?? null,
                 nausea: dto.nausea ?? false,
@@ -5590,11 +5609,13 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 delay_days: dto.delay_days ?? null,
                 doctor_action: dto.doctor_action ?? null,
                 nursing_action: dto.nursing_action ?? null,
-                physician_id: dto.physician_id ?? null,
-                // reported_by FKs to employees.employee_id - see recordVitals' note.
-                reported_by: dto.reported_by ?? null,
+                // Defaults: the plan's treating doctor, and the signed-in
+                // employee as the reporter (both FK employees.employee_id -
+                // see recordVitals' note on actingUserId).
+                physician_id: dto.physician_id ?? plan?.employee_id ?? null,
+                reported_by: dto.reported_by ?? actingEmployeeId ?? null,
                 resolved: dto.resolved ?? false,
-                resolution_date: dto.resolution_date ? new Date(dto.resolution_date) : null,
+                resolution_date: resolutionDate,
                 remarks: dto.remarks ?? null,
                 created_by: actingUserId
             });
@@ -5606,7 +5627,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 performed_by: actingUserId,
                 patient_id: plan?.patient_id,
                 branch_id: plan?.branch_id,
-                change_summary: summarizeCreate({ chemotherapy_cycle_id: cycleId, adverse_event_name: dto.adverse_event_name, ctcae_grade: dto.ctcae_grade ?? null })
+                change_summary: summarizeCreate({ chemotherapy_cycle_id: cycleId, cycle_day: cycleDay, adverse_event_name: dto.adverse_event_name, ctcae_grade: dto.ctcae_grade ?? null })
             });
 
             return created;
