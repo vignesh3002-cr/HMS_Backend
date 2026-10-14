@@ -52,55 +52,62 @@ model RolePermission {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model admission {
-  id                          BigInt                      @id @default(autoincrement())
-  admission_id                String                      @unique @db.VarChar(100)
-  ip_number                   String                      @unique @db.VarChar(100)
-  patient_id                  String                      @unique(map: "uq_admission_patient_admitted", where: raw("((status)::text = 'ADMITTED'::text)")) @db.VarChar(100)
-  appointment_id              String?                     @db.VarChar(100)
-  encounter_no                String?                     @db.VarChar(100)
-  branch_id                   String                      @db.VarChar(100)
-  department_id               String?                     @db.VarChar(100)
-  employee_id                 String?                     @db.VarChar(100)
-  admission_type              String                      @db.VarChar(100)
-  provisional_diagnosis       String?
-  ward_id                     String?                     @db.VarChar(100)
-  bed_id                      String?                     @unique(map: "uq_admission_bed_admitted", where: raw("(((status)::text = 'ADMITTED'::text) AND (bed_id IS NOT NULL))")) @db.VarChar(100)
-  is_daycare                  Boolean                     @default(false)
-  payment_mode                String?                     @db.VarChar(100)
-  insurance_provider          String?                     @db.VarChar(100)
-  insurance_policy_no         String?                     @db.VarChar(100)
-  admission_date              DateTime                    @default(now()) @db.Timestamp(6)
-  expected_stay_days          Decimal?                    @db.Decimal(4, 2)
-  discharge_date              DateTime?                   @db.Timestamp(6)
-  discharge_type              String?                     @db.VarChar(100)
-  discharge_summary           String?
-  advance_amount              Decimal?                    @db.Decimal(10, 2)
-  status                      String                      @default("ADMITTED") @db.VarChar(100)
-  created_by                  String?                     @db.VarChar(100)
-  created_at                  DateTime?                   @default(now()) @db.Timestamp(6)
-  updated_by                  String?                     @db.VarChar(100)
-  updated_at                  DateTime?                   @default(now()) @db.Timestamp(6)
-  cancellation_reason         String?
-  discharge_advice            String?
-  review_date                 DateTime?                   @db.Date
-  discharge_disease_status    String?                     @db.VarChar(100)
-  patient_status_at_discharge String?                     @db.VarChar(100)
-  discharge_details_by        String?                     @db.VarChar(100)
-  discharge_details_at        DateTime?                   @db.Timestamp(6)
-  bed_master                  bed_master?                 @relation(fields: [bed_id], references: [bed_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_bed")
-  branch                      branch                      @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_branch")
-  department_master           department_master?          @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_department")
-  employees                   employees?                  @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_employee")
-  encounter                   encounter?                  @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_encounter")
-  patient_bio_data            patient_bio_data            @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_patient")
-  ward_master                 ward_master?                @relation(fields: [ward_id], references: [ward_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_ward")
-  admission_transfer_log      admission_transfer_log[]
-  discharge_review_reminder   discharge_review_reminder[]
+  id                                                        BigInt                      @id @default(autoincrement())
+  admission_id                                              String                      @unique @db.VarChar(100)
+  ip_number                                                 String                      @unique @db.VarChar(100)
+  patient_id                                                String                      @unique(map: "uq_admission_patient_admitted", where: raw("((status)::text = 'ADMITTED'::text)")) @db.VarChar(100)
+  appointment_id                                            String?                     @db.VarChar(100)
+  encounter_no                                              String?                     @db.VarChar(100)
+  branch_id                                                 String                      @db.VarChar(100)
+  department_id                                             String?                     @db.VarChar(100)
+  employee_id                                               String?                     @db.VarChar(100)
+  admission_type                                            String                      @db.VarChar(100)
+  provisional_diagnosis                                     String?
+  ward_id                                                   String?                     @db.VarChar(100)
+  bed_id                                                    String?                     @unique(map: "uq_admission_bed_admitted", where: raw("(((status)::text = 'ADMITTED'::text) AND (bed_id IS NOT NULL))")) @db.VarChar(100)
+  is_daycare                                                Boolean                     @default(false)
+  payment_mode                                              String?                     @db.VarChar(100)
+  insurance_provider                                        String?                     @db.VarChar(100)
+  insurance_policy_no                                       String?                     @db.VarChar(100)
+  admission_date                                            DateTime                    @default(now()) @db.Timestamp(6)
+  expected_stay_days                                        Decimal?                    @db.Decimal(4, 2)
+  discharge_date                                            DateTime?                   @db.Timestamp(6)
+  discharge_type                                            String?                     @db.VarChar(100)
+  discharge_summary                                         String?
+  advance_amount                                            Decimal?                    @db.Decimal(10, 2)
+  status                                                    String                      @default("ADMITTED") @db.VarChar(100)
+  created_by                                                String?                     @db.VarChar(100)
+  created_at                                                DateTime?                   @default(now()) @db.Timestamp(6)
+  updated_by                                                String?                     @db.VarChar(100)
+  updated_at                                                DateTime?                   @default(now()) @db.Timestamp(6)
+  cancellation_reason                                       String?
+  discharge_advice                                          String?
+  review_date                                               DateTime?                   @db.Date
+  discharge_disease_status                                  String?                     @db.VarChar(100)
+  patient_status_at_discharge                               String?                     @db.VarChar(100)
+  discharge_details_by                                      String?                     @db.VarChar(100)
+  discharge_details_at                                      DateTime?                   @db.Timestamp(6)
+  current_assigned_doctor_id                                String?                     @db.VarChar(100)
+  current_nurse_id                                          String?                     @db.VarChar(100)
+  employees_admission_current_assigned_doctor_idToemployees employees?                  @relation("admission_current_assigned_doctor_idToemployees", fields: [current_assigned_doctor_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_assigned_doctor")
+  employees_admission_current_nurse_idToemployees           employees?                  @relation("admission_current_nurse_idToemployees", fields: [current_nurse_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_assigned_nurse")
+  bed_master                                                bed_master?                 @relation(fields: [bed_id], references: [bed_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_bed")
+  branch                                                    branch                      @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_branch")
+  department_master                                         department_master?          @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_department")
+  employees                                                 employees?                  @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_employee")
+  encounter                                                 encounter?                  @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_encounter")
+  patient_bio_data                                          patient_bio_data            @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_patient")
+  ward_master                                               ward_master?                @relation(fields: [ward_id], references: [ward_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_ward")
+  admission_care_team                                       admission_care_team[]
+  admission_transfer_log                                    admission_transfer_log[]
+  discharge_review_reminder                                 discharge_review_reminder[]
 
   @@index([appointment_id], map: "idx_admission_appointment")
   @@index([bed_id, status], map: "idx_admission_bed_status")
   @@index([branch_id], map: "idx_admission_branch")
   @@index([patient_id], map: "idx_admission_patient")
+  @@index([current_assigned_doctor_id], map: "idx_admission_assigned_doctor")
+  @@index([current_nurse_id], map: "idx_admission_assigned_nurse")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1508,7 +1515,10 @@ model employees {
   permanent_employee_pincode                                                         BigInt?
   qualification_id                                                                   String?                        @db.VarChar(100)
   deleted_at                                                                         DateTime?                      @db.Timestamp(6)
+  admission_admission_current_assigned_doctor_idToemployees                          admission[]                    @relation("admission_current_assigned_doctor_idToemployees")
+  admission_admission_current_nurse_idToemployees                                    admission[]                    @relation("admission_current_nurse_idToemployees")
   admission                                                                          admission[]
+  admission_care_team                                                                admission_care_team[]
   appointment_history                                                                appointment_history[]
   chemotherapy_administration_chemotherapy_administration_verified_byToemployees     chemotherapy_administration[]  @relation("chemotherapy_administration_verified_byToemployees")
   chemotherapy_administration_chemotherapy_administration_administered_byToemployees chemotherapy_administration[]  @relation("chemotherapy_administration_administered_byToemployees")
@@ -1627,6 +1637,7 @@ model encounter {
   pharmacy_slip                       pharmacy_slip[]
 
   @@index([patient_id], map: "idx_encounter_patient")
+  @@index([follow_up_date], map: "idx_encounter_follow_up_date", where: raw("(follow_up_date IS NOT NULL)"))
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -2940,6 +2951,32 @@ model ward_master {
   branch        branch       @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ward_branch")
 
   @@index([branch_id], map: "idx_ward_branch")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model admission_care_team {
+  id             BigInt    @id @default(autoincrement())
+  assignment_id  String    @unique(map: "uq_care_team_assignment_id") @db.VarChar(100)
+  admission_id   String    @db.VarChar(100)
+  employee_id    String    @db.VarChar(100)
+  role_in_team   String    @db.VarChar(50)
+  shift          String?   @db.VarChar(50)
+  shift_date     DateTime? @db.Date
+  start_time     DateTime  @default(now()) @db.Timestamp(6)
+  end_time       DateTime? @db.Timestamp(6)
+  is_active      Boolean   @default(true)
+  end_reason     String?   @db.VarChar(50)
+  handover_notes String?
+  assigned_by    String?   @db.VarChar(100)
+  created_at     DateTime  @default(now()) @db.Timestamp(6)
+  admission      admission @relation(fields: [admission_id], references: [admission_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_care_team_admission")
+  employees      employees @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_care_team_employee")
+
+  @@unique([admission_id, role_in_team], map: "uq_care_team_active_role", where: raw("is_active"))
+  @@index([admission_id, is_active], map: "idx_care_team_admission_active")
+  @@index([employee_id, is_active], map: "idx_care_team_employee_active")
+  @@index([shift_date, shift], map: "idx_care_team_shift")
 }
 
 enum DoctorScheduleChangeMode {
