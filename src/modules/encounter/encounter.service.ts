@@ -442,9 +442,12 @@ export class EncounterService {
             diagnosis_id: data.diagnosis_id,
             clinical_notes: data.clinical_notes,
             advice: data.advice,
-            follow_up_date: data.follow_up_date
-                ? new Date(data.follow_up_date)
-                : undefined,
+            // null clears the date; left out keeps it.
+            follow_up_date: data.follow_up_date === null
+                ? null
+                : data.follow_up_date
+                    ? new Date(data.follow_up_date)
+                    : undefined,
 
             history_of_present_illness: data.history_of_present_illness,
             cns_examination: data.cns_examination,

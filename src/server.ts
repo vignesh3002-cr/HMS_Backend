@@ -34,6 +34,7 @@ import diagnosisRoutes from "./modules/diagnosis/diagnosis.routes";
 import clinicalDetailsRoutes from "./modules/clinical-details/clinical-details.routes";
 import consultationRoutes from "./modules/consultation/consultation.routes";
 import notificationRoutes from "./modules/notification/notification.routes";
+import followupRoutes from "./modules/followup/followup.routes";
 import referralRoutes from "./modules/referral/referral.routes";
 import priorityFlagsRoutes from "./modules/priority-flags/priorityFlags.routes";
 import aiChatRoutes from "./modules/ai/ai-chat.routes";
@@ -160,6 +161,7 @@ app.use("/api/doctor-leave", doctorLeaveRoutes);
 
 // In-app notifications (doctor dashboard bell)
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/follow-ups", followupRoutes);
 
 app.use("/api/qualification-master", qualificationMasterRoutes);
 app.use("/api/diagnosis", diagnosisRoutes);

@@ -1617,6 +1617,7 @@ model encounter {
   encounter_performance_status        encounter_performance_status?
   encounter_report                    encounter_report[]
   encounter_symptom                   encounter_symptom[]
+  followup_alert_state                followup_alert_state[]
   oncology_staging_detail             oncology_staging_detail?
   patient_allergy                     patient_allergy[]
   patient_comorbidity                 patient_comorbidity[]
@@ -1626,6 +1627,21 @@ model encounter {
   pharmacy_slip                       pharmacy_slip[]
 
   @@index([patient_id], map: "idx_encounter_patient")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model followup_alert_state {
+  id             BigInt    @id @default(autoincrement())
+  user_id        String    @db.VarChar(100)
+  encounter_no   String    @db.VarChar(100)
+  follow_up_date DateTime  @db.Date
+  read_at        DateTime? @db.Timestamp(6)
+  dismissed_at   DateTime? @db.Timestamp(6)
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
+  encounter      encounter @relation(fields: [encounter_no], references: [encounter_no], onDelete: Cascade, onUpdate: NoAction, map: "fk_followup_alert_state_encounter")
+
+  @@unique([user_id, encounter_no, follow_up_date], map: "uq_followup_alert_state")
+  @@index([user_id], map: "idx_followup_alert_state_user")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
