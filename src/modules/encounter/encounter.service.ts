@@ -93,6 +93,47 @@ export class EncounterService {
         );
 
         if (existingEncounter) {
+
+            /*
+             * Recording vitals before the doctor's check-in already opens
+             * the visit's encounter. Checking in then only moves the
+             * appointment into consultation - left SCHEDULED it is never
+             * counted as checked in, and the nightly sweep turns it into
+             * NO_SHOW.
+             */
+            const awaitingConsultation: string[] = [
+                APPOINTMENT_STATUS.SCHEDULED,
+                APPOINTMENT_STATUS.RESCHEDULED,
+                APPOINTMENT_STATUS.CHECKED_IN
+            ];
+
+            if (awaitingConsultation.includes(appointment.status ?? "")) {
+
+                return prisma.$transaction(async (tx) => {
+
+                    await repository.updateAppointmentStatus(
+                        tx,
+                        appointment.appointment_id,
+                        APPOINTMENT_STATUS.IN_CONSULTATION
+                    );
+
+                    await tx.appointment_notification.create({
+                        data: {
+                            notification_id: await generateId(tx, "NOTIFICATION"),
+                            appointment_id: appointment.appointment_id,
+                            channel: "IN_APP",
+                            notification_type: "CHECKIN",
+                            recipient: doctor.employee_id!,
+                            status: "UNREAD"
+                        }
+                    });
+
+                    return existingEncounter;
+
+                });
+
+            }
+
             throw new Error("Encounter already exists for this appointment");
         }
 
