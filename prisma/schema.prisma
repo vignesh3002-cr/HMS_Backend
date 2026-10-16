@@ -1994,6 +1994,8 @@ model lab_order_item {
   clinical_notes    String?
   priority          String?             @default("Normal") @db.VarChar(100)
   target_date       DateTime?           @db.Date
+  /* Testing Method for Molecular-category tests (Consultation > Investigations). */
+  method            String?             @db.VarChar(100)
   lab_history       lab_history[]
   branch            branch?             @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_order_item_branch")
   lab_order         lab_order           @relation(fields: [lab_order_id], references: [lab_order_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_order_item_order")
