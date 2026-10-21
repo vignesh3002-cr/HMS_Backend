@@ -13,7 +13,8 @@ import {
     addMolecularTestValidation,
     updateMolecularTestValidation,
     molecularTestIdValidation,
-    syncEncounterImmunizationsValidation
+    syncEncounterImmunizationsValidation,
+    syncEncounterPastTreatmentsValidation
 } from "./consultation.validation";
 
 const router = Router();
@@ -208,6 +209,24 @@ router.put(
     authorize("encounter.update"),
     syncEncounterImmunizationsValidation,
     controller.syncEncounterImmunizations.bind(controller)
+);
+
+// ---------------- Encounter past history treatments ----------------
+
+router.get(
+    "/encounters/:encounterNo/past-treatments",
+    authenticate,
+    authorize("encounter.read"),
+    getPersonalHistoryValidation,
+    controller.getEncounterPastTreatments.bind(controller)
+);
+
+router.put(
+    "/encounters/:encounterNo/past-treatments",
+    authenticate,
+    authorize("encounter.update"),
+    syncEncounterPastTreatmentsValidation,
+    controller.syncEncounterPastTreatments.bind(controller)
 );
 
 export default router;

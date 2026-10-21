@@ -39,6 +39,7 @@ import {
     RecordAdministrationDto,
     RecordVitalsDto,
     RecordAdverseEventDto,
+    UpdateAdverseEventDto,
     RecordLabReviewDto,
     RecordFollowupDto,
     CreateRegimenProtocolDto,
@@ -66,6 +67,7 @@ import {
 import { getTodayInIST, parseDateOnly } from "../appointment/appointment.utils";
 import { logAudit, diffFields, summarizeCreate, summarizeStatusChange } from "../audit/audit.service";
 import { AUDIT_ACTION } from "../audit/audit.types";
+import { computePlanSchedule, type PlanScheduleDay } from "./chemotherapy.schedule";
 
 function isPlanStatus(value: string): value is PlanStatus {
     return Object.values(PLAN_STATUS).includes(value as PlanStatus);
@@ -374,6 +376,30 @@ function openPlanMessage(plan: {
         "A new plan can be started once its last cycle day is completed, or after it is discontinued or cancelled.";
 
 }
+
+// The adverse-event fields an edit may change (updateAdverseEvent).
+const ADVERSE_EVENT_TEXT_FIELDS = [
+    "adverse_event_category", "ctcae_grade", "reaction_grade", "severity",
+    "reaction_description", "medication_given", "doctor_action",
+    "nursing_action", "remarks"
+] as const satisfies readonly (keyof UpdateAdverseEventDto)[];
+
+const ADVERSE_EVENT_BOOLEAN_FIELDS = [
+    "nausea", "vomiting", "diarrhea", "constipation", "mucositis", "fever",
+    "fatigue", "neuropathy", "alopecia", "skin_rash", "anemia", "neutropenia",
+    "thrombocytopenia", "infection", "bleeding", "pain",
+    "treatment_interrupted", "treatment_stopped", "hospitalization_required",
+    "icu_required", "emergency_medication_given", "dose_modified",
+    "dose_reduced", "dose_delayed", "resolved"
+] as const satisfies readonly (keyof UpdateAdverseEventDto)[];
+
+// A cycle day's planned date from the plan's schedule (null when the plan
+// has none yet).
+const plannedDateOf = (
+    schedule: { cycle_number: number; cycle_day: number; planned_date: Date }[],
+    cycleNumber: number,
+    cycleDay: number
+) => schedule.find((row) => row.cycle_number === cycleNumber && row.cycle_day === cycleDay)?.planned_date ?? null;
 
 export class ChemotherapyService {
 
@@ -3062,7 +3088,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             throw new Error("Chemotherapy plan not found");
         }
 
-        const [withOrders] = await this.withPlanOrders([plan]);
+        const [withOrders] = await this.withPlanOrders([plan], { withSchedule: true });
 
         return withOrders;
 
@@ -3076,6 +3102,17 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
     }
 
+    // The planned date of every cycle day (chemotherapy.schedule.ts). A
+    // failure here must not block reading the plan.
+    private async planSchedule(plan: unknown): Promise<PlanScheduleDay[]> {
+        try {
+            return await computePlanSchedule(prisma, plan as Parameters<typeof computePlanSchedule>[1]);
+        } catch (error: any) {
+            console.error("Failed to calculate the plan's cycle day dates:", error?.message ?? error);
+            return [];
+        }
+    }
+
     /*
      * Adds each plan's saved cycle day orders (headers, in cycle / day
      * order) and its current_order - the first ORDERED day, else the
@@ -3084,7 +3121,10 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
      * (prescription, pharmacy slip, patient details) show current_order's
      * rows, falling back to the baseline chemotherapy_plan_items.
      */
-    private async withPlanOrders<T extends { chemotherapy_plan_id: string; treatment_status: string | null }>(plans: T[]) {
+    private async withPlanOrders<T extends { chemotherapy_plan_id: string; treatment_status: string | null }>(
+        plans: T[],
+        options: { withSchedule?: boolean } = {}
+    ) {
 
         if (plans.length === 0) {
             return [];
@@ -3111,15 +3151,29 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
         const currentOrders = currentIds.length > 0 ? await this.repository.findPlanOrdersWithRows(currentIds) : [];
 
-        return plans.map((plan) => {
+        // Single-plan reads get every cycle day's planned date; lists keep
+        // only the dates stored on the orders (no protocol lookup per plan).
+        const schedules = options.withSchedule
+            ? await Promise.all(plans.map((plan) => this.planSchedule(plan)))
+            : plans.map((): PlanScheduleDay[] => []);
 
-            const orders = ordersByPlan.get(plan.chemotherapy_plan_id) ?? [];
+        return plans.map((plan, index) => {
+
+            const schedule = schedules[index];
+            const withDate = <O extends { cycle_number: number; cycle_day: number; planned_date: Date | null }>(order: O) => ({
+                ...order,
+                planned_date: order.planned_date ?? plannedDateOf(schedule, order.cycle_number, order.cycle_day)
+            });
+            const orders = (ordersByPlan.get(plan.chemotherapy_plan_id) ?? []).map(withDate);
             const currentId = currentIdFor(plan);
+            const current = currentOrders.find((order) => order.plan_order_id === currentId);
 
             return {
                 ...plan,
                 plan_orders: orders,
-                current_order: currentOrders.find((order) => order.plan_order_id === currentId) ?? null
+                current_order: current ? withDate(current) : null,
+                // The planned date of every cycle day (chemotherapy.schedule.ts).
+                chemotherapy_plan_schedule: schedule
             };
 
         });
@@ -3162,7 +3216,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             return null;
         }
 
-        const [withOrders] = await this.withPlanOrders([plan]);
+        const [withOrders] = await this.withPlanOrders([plan], { withSchedule: true });
 
         return withOrders;
 
@@ -3950,7 +4004,16 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
         const header = await this.repository.findPlanOrder(prisma, planId, cycleNumber, cycleDay);
 
-        return header ? this.repository.findPlanOrderWithRows(header.plan_order_id) : null;
+        const order = header ? await this.repository.findPlanOrderWithRows(header.plan_order_id) : null;
+
+        if (!order) {
+            return null;
+        }
+
+        return {
+            ...order,
+            planned_date: order.planned_date ?? plannedDateOf(await this.planSchedule(plan), cycleNumber, cycleDay)
+        };
 
     }
 
@@ -3998,7 +4061,8 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 throw new Error(`This chemotherapy course is already ${lockedPlan?.treatment_status ?? "closed"} - start a new plan from Treatment Plan`);
             }
 
-            const cycles = await this.ensurePlanCycles(tx, lockedPlan, actingUserId);
+            const schedule = await computePlanSchedule(tx, lockedPlan);
+            const cycles = await this.ensurePlanCycles(tx, lockedPlan, actingUserId, schedule);
             const cycle = cycles.find((row) => row.cycle_number === cycleNumber);
 
             if (!cycle) {
@@ -4033,6 +4097,9 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 ...(dto.additional_notes !== undefined
                     ? { additional_notes: dto.additional_notes?.trim() || null }
                     : {}),
+                // The Start Date the doctor set for this cycle day (only this
+                // day moves); left out = the kept / calculated date.
+                ...(dto.planned_date ? { planned_date: new Date(dto.planned_date) } : {}),
                 ...(dto.dosing
                     ? {
                         dosing_height_cm: dto.dosing.height_cm ?? null,
@@ -4436,7 +4503,8 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
     private async ensurePlanCycles(
         tx: Prisma.TransactionClient,
         plan: { chemotherapy_plan_id: string; planned_cycles: number; cycle_interval_days: number | null; treatment_start_date: Date },
-        actingUserId: string
+        actingUserId: string,
+        schedule: { cycle_number: number; cycle_day: number; planned_date: Date }[] = []
     ) {
 
         const existing = await this.repository.findAllCyclesForPlan(tx, plan.chemotherapy_plan_id);
@@ -4448,8 +4516,13 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
             if (!row) {
 
-                const plannedDate = new Date(plan.treatment_start_date);
-                plannedDate.setUTCDate(plannedDate.getUTCDate() + (number - 1) * interval);
+                // The cycle starts on its scheduled Day 1 (older plans
+                // without a schedule: start + (cycle - 1) x interval).
+                const scheduledDayOne = schedule.find((day) => day.cycle_number === number && day.cycle_day === 1);
+                const plannedDate = scheduledDayOne ? new Date(scheduledDayOne.planned_date) : new Date(plan.treatment_start_date);
+                if (!scheduledDayOne) {
+                    plannedDate.setUTCDate(plannedDate.getUTCDate() + (number - 1) * interval);
+                }
 
                 await this.repository.createCycle(tx, {
                     chemotherapy_cycle_id: await this.repository.generateCycleId(tx),
@@ -5539,12 +5612,29 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
         return this.repository.listVitalsForCycle(cycleId);
     }
 
-    async recordAdverseEvent(cycleId: string, dto: RecordAdverseEventDto, actingUserId: string) {
+    async recordAdverseEvent(cycleId: string, dto: RecordAdverseEventDto, actingUserId: string, actingEmployeeId: string | null = null) {
 
         const { plan } = await this.getCyclePlanContext(cycleId);
 
         if (!dto.adverse_event_name?.trim()) {
             throw new Error("adverse_event_name is required");
+        }
+
+        // The cycle day the event belongs to must be a day of this cycle;
+        // its day number comes from the order itself.
+        let cycleDay: number | null = null;
+        if (dto.plan_order_id) {
+            const order = await this.repository.findPlanOrderById(prisma, dto.plan_order_id);
+            if (!order || order.chemotherapy_cycle_id !== cycleId) {
+                throw new Error("Cycle day order not found");
+            }
+            cycleDay = order.cycle_day;
+        }
+
+        const eventDate = dto.event_date ? new Date(dto.event_date) : new Date();
+        const resolutionDate = dto.resolution_date ? new Date(dto.resolution_date) : null;
+        if (resolutionDate && resolutionDate.toISOString().slice(0, 10) < eventDate.toISOString().slice(0, 10)) {
+            throw new Error("resolution_date cannot be before the event date");
         }
 
         return prisma.$transaction(async (tx) => {
@@ -5554,7 +5644,9 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             const created = await this.repository.createAdverseEvent(tx, {
                 adverse_event_id: id,
                 chemotherapy_cycle_id: cycleId,
-                event_date: dto.event_date ? new Date(dto.event_date) : new Date(),
+                plan_order_id: dto.plan_order_id ?? null,
+                cycle_day: cycleDay,
+                event_date: eventDate,
                 adverse_event_name: dto.adverse_event_name,
                 adverse_event_category: dto.adverse_event_category ?? null,
                 nausea: dto.nausea ?? false,
@@ -5590,11 +5682,13 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 delay_days: dto.delay_days ?? null,
                 doctor_action: dto.doctor_action ?? null,
                 nursing_action: dto.nursing_action ?? null,
-                physician_id: dto.physician_id ?? null,
-                // reported_by FKs to employees.employee_id - see recordVitals' note.
-                reported_by: dto.reported_by ?? null,
+                // Defaults: the plan's treating doctor, and the signed-in
+                // employee as the reporter (both FK employees.employee_id -
+                // see recordVitals' note on actingUserId).
+                physician_id: dto.physician_id ?? plan?.employee_id ?? null,
+                reported_by: dto.reported_by ?? actingEmployeeId ?? null,
                 resolved: dto.resolved ?? false,
-                resolution_date: dto.resolution_date ? new Date(dto.resolution_date) : null,
+                resolution_date: resolutionDate,
                 remarks: dto.remarks ?? null,
                 created_by: actingUserId
             });
@@ -5606,7 +5700,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 performed_by: actingUserId,
                 patient_id: plan?.patient_id,
                 branch_id: plan?.branch_id,
-                change_summary: summarizeCreate({ chemotherapy_cycle_id: cycleId, adverse_event_name: dto.adverse_event_name, ctcae_grade: dto.ctcae_grade ?? null })
+                change_summary: summarizeCreate({ chemotherapy_cycle_id: cycleId, cycle_day: cycleDay, adverse_event_name: dto.adverse_event_name, ctcae_grade: dto.ctcae_grade ?? null })
             });
 
             return created;
@@ -5618,6 +5712,123 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
     async listAdverseEvents(cycleId: string) {
         await this.getCycle(cycleId);
         return this.repository.listAdverseEventsForCycle(cycleId);
+    }
+
+    // An active adverse event and its plan (for audit context).
+    private async getActiveAdverseEvent(adverseEventId: string) {
+
+        const event = await this.repository.findAdverseEventById(adverseEventId);
+
+        if (!event || event.active_status !== 1) {
+            throw new Error("Adverse event not found");
+        }
+
+        const { plan } = await this.getCyclePlanContext(event.chemotherapy_cycle_id);
+
+        return { event, plan };
+
+    }
+
+    // Edits a recorded adverse event (e.g. marking an ongoing event
+    // resolved). Only the fields sent are changed; the cycle day and the
+    // linked physician / reporter stay as recorded.
+    async updateAdverseEvent(adverseEventId: string, dto: UpdateAdverseEventDto, actingUserId: string) {
+
+        const { event, plan } = await this.getActiveAdverseEvent(adverseEventId);
+
+        const changes: Record<string, any> = {};
+
+        if (dto.adverse_event_name !== undefined) {
+            const name = (dto.adverse_event_name ?? "").trim();
+            if (!name) {
+                throw new Error("adverse_event_name cannot be blank");
+            }
+            changes.adverse_event_name = name;
+        }
+
+        for (const field of ADVERSE_EVENT_TEXT_FIELDS) {
+            if (dto[field] !== undefined) changes[field] = dto[field] ?? null;
+        }
+
+        for (const field of ADVERSE_EVENT_BOOLEAN_FIELDS) {
+            if (dto[field] !== undefined) changes[field] = dto[field] ?? false;
+        }
+
+        if (dto.reduction_percentage !== undefined) changes.reduction_percentage = dto.reduction_percentage ?? null;
+        if (dto.delay_days !== undefined) changes.delay_days = dto.delay_days ?? null;
+        if (dto.event_date) changes.event_date = new Date(dto.event_date);
+        if (dto.resolution_date !== undefined) {
+            changes.resolution_date = dto.resolution_date ? new Date(dto.resolution_date) : null;
+        }
+
+        // An event that is not resolved has no resolution date.
+        const resolved = changes.resolved ?? event.resolved;
+        if (!resolved && (changes.resolution_date ?? event.resolution_date)) {
+            changes.resolution_date = null;
+        }
+
+        const eventDate: Date = changes.event_date ?? event.event_date;
+        const resolutionDate: Date | null = changes.resolution_date !== undefined ? changes.resolution_date : event.resolution_date;
+        if (resolutionDate && resolutionDate.toISOString().slice(0, 10) < eventDate.toISOString().slice(0, 10)) {
+            throw new Error("resolution_date cannot be before the event date");
+        }
+
+        const summary = diffFields(event, changes);
+        if (summary === "{}") {
+            return event;
+        }
+
+        return prisma.$transaction(async (tx) => {
+
+            const updated = await this.repository.updateAdverseEvent(tx, adverseEventId, {
+                ...changes,
+                updated_by: actingUserId
+            });
+
+            await logAudit(tx, {
+                entity_type: "chemotherapy_adverse_event",
+                entity_id: adverseEventId,
+                action: AUDIT_ACTION.UPDATE,
+                performed_by: actingUserId,
+                patient_id: plan?.patient_id,
+                branch_id: plan?.branch_id,
+                change_summary: summary
+            });
+
+            return updated;
+
+        });
+
+    }
+
+    // Removes an adverse event entered in error (soft delete, with the
+    // reason kept in the audit log).
+    async removeAdverseEvent(adverseEventId: string, reason: string, actingUserId: string) {
+
+        const { event, plan } = await this.getActiveAdverseEvent(adverseEventId);
+
+        await prisma.$transaction(async (tx) => {
+
+            await this.repository.deactivateAdverseEvent(tx, adverseEventId, actingUserId);
+
+            await logAudit(tx, {
+                entity_type: "chemotherapy_adverse_event",
+                entity_id: adverseEventId,
+                action: AUDIT_ACTION.DEACTIVATE,
+                performed_by: actingUserId,
+                patient_id: plan?.patient_id,
+                branch_id: plan?.branch_id,
+                change_summary: summarizeCreate({
+                    adverse_event_name: event.adverse_event_name,
+                    cycle_day: event.cycle_day,
+                    reason: reason.trim()
+                })
+            });
+
+        });
+
+        return { adverse_event_id: adverseEventId };
+
     }
 
     async recordLabReview(cycleId: string, dto: RecordLabReviewDto, actingUserId: string) {

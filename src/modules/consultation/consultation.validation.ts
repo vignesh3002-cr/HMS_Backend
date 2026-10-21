@@ -105,6 +105,18 @@ export const syncEncounterImmunizationsValidation = [
 
 ];
 
+export const syncEncounterPastTreatmentsValidation = [
+
+    param("encounterNo").notEmpty().withMessage("encounterNo is required"),
+    body("rows").optional({ nullable: true }).isArray(),
+    body("rows.*.treatment_type").notEmpty().withMessage("treatment_type is required").isString().isLength({ max: 100 }),
+    body("rows.*.treatment_type_code").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("rows.*.treatment_date").optional({ nullable: true }).isISO8601(),
+    body("rows.*.note").optional({ nullable: true }).isString(),
+    body("rows.*.treatment_response").optional({ nullable: true }).isString()
+
+];
+
 export const reportIdValidation = [
 
     param("encounterReportId").notEmpty().withMessage("encounterReportId is required")

@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { generateId } from "../../utils/idGenerator";
 import { GetEncountersQuery } from "./encounter.types";
+import { getTodayInIST } from "../appointment/appointment.utils";
 
 const encounterDetailInclude = {
 
@@ -357,20 +358,23 @@ export class EncounterRepository {
 
     async getCheckedInPatientsToday(employeeId?: string, branchId?: string) {
 
-        const today = new Date().toISOString().slice(0, 10);
-        const todayDate = new Date(`${today}T00:00:00.000Z`);
+        // Today is the IST calendar day (appointment_date is a DATE).
+        const todayDate = new Date(`${getTodayInIST()}T00:00:00.000Z`);
 
-        // Count distinct patients with appointments today that are checked in.
-        // Using appointment status IN_CONSULTATION or CHECKED_IN ensures the
-        // metric is consistent with total appointments and scoped to the same
-        // employee/branch/date.
+        // Distinct patients of today's appointments who came in: checked in,
+        // in consultation or already checked out - or whose visit encounter
+        // is open (e.g. vitals recorded before the doctor's check-in).
+        // Scoped to the same employee/branch/date as total appointments.
         const groups = await prisma.appointment_history.groupBy({
             by: ["patient_id"],
             where: {
                 ...(employeeId ? { employee_id: employeeId } : {}),
                 ...(branchId ? { branch_id: branchId } : {}),
                 appointment_date: todayDate,
-                status: { in: ["IN_CONSULTATION", "CHECKED_IN"] }
+                OR: [
+                    { status: { in: ["CHECKED_IN", "IN_CONSULTATION", "COMPLETED"] } },
+                    { status: { notIn: ["CANCELLED", "NO_SHOW"] }, encounter: { isNot: null } }
+                ]
             }
         });
 

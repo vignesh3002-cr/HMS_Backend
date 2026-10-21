@@ -8,6 +8,7 @@ const prisma_1 = __importDefault(require("../../config/prisma"));
 const idGenerator_1 = require("../../utils/idGenerator");
 const roles_1 = require("../../permissions/roles");
 const ipd_service_1 = require("./ipd.service");
+const dutyRoster_service_1 = require("./duty-roster/dutyRoster.service");
 const ipd_types_1 = require("./ipd.types");
 const ipd_constants_1 = require("./ipd.constants");
 const employee_repository_1 = require("../employee/employee.repository");
@@ -40,9 +41,11 @@ const fullName = (e) => [e?.first_name, e?.middle_name, e?.last_name].filter(Boo
 class CareTeamService {
     ipd;
     employees;
-    constructor(ipd = new ipd_service_1.IpdService(), employees = new employee_repository_1.EmployeeRepository()) {
+    dutyRoster;
+    constructor(ipd = new ipd_service_1.IpdService(), employees = new employee_repository_1.EmployeeRepository(), dutyRoster = new dutyRoster_service_1.DutyRosterService()) {
         this.ipd = ipd;
         this.employees = employees;
+        this.dutyRoster = dutyRoster;
     }
     /* The doctor/nurse must exist, hold the right role, be active, and work at the branch. */
     async assertStaff(employeeId, role, branchId, checkAvailability = false) {
@@ -75,8 +78,10 @@ class CareTeamService {
         // A duty doctor or nurse being allocated to a care team must not be on
         // approved leave today. (Duty schedule is managed via staff_duty_roster,
         // independent of OPD clinic consultation slots in doctor_schedule).
-        if (role === "DOCTOR" && checkAvailability) {
-            const today = new Date();
+        if (checkAvailability) {
+            // DATE columns: compare against today's IST calendar day at UTC midnight,
+            // not the current UTC instant (which is yesterday before 05:30 IST).
+            const today = new Date(`${istDate(new Date())}T00:00:00.000Z`);
             const onLeave = await prisma_1.default.doctor_leave.findFirst({
                 where: {
                     employee_id: employeeId,
@@ -86,7 +91,7 @@ class CareTeamService {
                 },
             });
             if (onLeave) {
-                throw httpError("Doctor is on approved leave today", 400);
+                throw httpError(`${label} is on approved leave today`, 400);
             }
         }
     }
@@ -95,20 +100,43 @@ class CareTeamService {
      * have: keeping the same doctor is never blocked by today's availability,
      * only putting a different one on duty is.
      */
-    async buildPlan(dto, branchId, currentDoctorIds) {
+    async buildPlan(dto, branchId, currentDoctorIds, currentNurseIds = []) {
         if (dto.assigned_doctor_id === undefined && dto.nurse_id === undefined) {
             throw httpError("Select a duty doctor or a nurse", 400);
         }
-        if (dto.assigned_doctor_id) {
-            const unchangedEverywhere = currentDoctorIds.every((id) => id === dto.assigned_doctor_id);
-            await this.assertStaff(dto.assigned_doctor_id, "DOCTOR", branchId, !unchangedEverywhere);
-        }
+        const notes = dto.handover_notes?.trim() || null;
+        let overridden = false;
+        /*
+         * Putting someone NEW on duty is checked against the roster (when the
+         * branch keeps one for that role) as well as leave. An emergency
+         * override is allowed, but only with a written reason, and it is
+         * recorded in the handover note so the history shows who was off-roster.
+         */
+        const guard = async (employeeId, role, currentIds) => {
+            const unchangedEverywhere = currentIds.every((id) => id === employeeId);
+            await this.assertStaff(employeeId, role, branchId, !unchangedEverywhere);
+            if (unchangedEverywhere)
+                return;
+            const { enforced, onDuty } = await this.dutyRoster.checkOnDuty(branchId, employeeId, role === "DOCTOR" ? "DUTY_DOCTOR" : "DUTY_NURSE");
+            if (!enforced || onDuty)
+                return;
+            if (!dto.roster_override) {
+                throw httpError(`${role === "DOCTOR" ? "Doctor" : "Nurse"} is not on the duty roster for the current shift. ` +
+                    `Pick rostered staff, or use Emergency Override with a reason.`, 409);
+            }
+            if (!notes) {
+                throw httpError("A reason in the handover notes is required for an emergency override", 400);
+            }
+            overridden = true;
+        };
+        if (dto.assigned_doctor_id)
+            await guard(dto.assigned_doctor_id, "DOCTOR", currentDoctorIds);
         if (dto.nurse_id)
-            await this.assertStaff(dto.nurse_id, "NURSE", branchId);
+            await guard(dto.nurse_id, "NURSE", currentNurseIds);
         return {
             doctor: dto.assigned_doctor_id,
             nurse: dto.nurse_id,
-            notes: dto.handover_notes?.trim() || null,
+            notes: overridden ? `[ROSTER OVERRIDE] ${notes}` : notes,
         };
     }
     /*
@@ -201,7 +229,7 @@ class CareTeamService {
         if (admission.status !== ipd_types_1.IPD_STATUS.ADMITTED) {
             throw httpError("Care team can only be assigned to an admitted patient", 400);
         }
-        const plan = await this.buildPlan(dto, admission.branch_id, [admission.current_assigned_doctor_id]);
+        const plan = await this.buildPlan(dto, admission.branch_id, [admission.current_assigned_doctor_id], [admission.current_nurse_id]);
         await prisma_1.default.$transaction((tx) => this.applyAllocation(tx, [admission.admission_id], plan, actor), BULK_TX_OPTIONS);
         return this.getCareTeam(admission.admission_id, actor);
     }
@@ -234,6 +262,7 @@ class CareTeamService {
                 ward_id: true,
                 branch_id: true,
                 current_assigned_doctor_id: true,
+                current_nurse_id: true,
             },
         });
         const byId = new Map(admissions.map((a) => [a.admission_id, a]));
@@ -244,7 +273,7 @@ class CareTeamService {
         if (problems.length > 0) {
             throw httpError(`These admissions are not admitted patients of the selected ward: ${problems.join(", ")}`, 400);
         }
-        const plan = await this.buildPlan(dto, dto.branch_id, admissions.map((a) => a.current_assigned_doctor_id));
+        const plan = await this.buildPlan(dto, dto.branch_id, admissions.map((a) => a.current_assigned_doctor_id), admissions.map((a) => a.current_nurse_id));
         const changed = await prisma_1.default.$transaction((tx) => this.applyAllocation(tx, admissionIds, plan, actor), BULK_TX_OPTIONS);
         return {
             ward_id: dto.ward_id,

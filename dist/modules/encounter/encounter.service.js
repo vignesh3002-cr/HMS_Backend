@@ -67,6 +67,34 @@ class EncounterService {
          */
         const existingEncounter = await repository.findEncounterByAppointmentId(data.appointment_id);
         if (existingEncounter) {
+            /*
+             * Recording vitals before the doctor's check-in already opens
+             * the visit's encounter. Checking in then only moves the
+             * appointment into consultation - left SCHEDULED it is never
+             * counted as checked in, and the nightly sweep turns it into
+             * NO_SHOW.
+             */
+            const awaitingConsultation = [
+                appointment_constants_1.APPOINTMENT_STATUS.SCHEDULED,
+                appointment_constants_1.APPOINTMENT_STATUS.RESCHEDULED,
+                appointment_constants_1.APPOINTMENT_STATUS.CHECKED_IN
+            ];
+            if (awaitingConsultation.includes(appointment.status ?? "")) {
+                return prisma_1.default.$transaction(async (tx) => {
+                    await repository.updateAppointmentStatus(tx, appointment.appointment_id, appointment_constants_1.APPOINTMENT_STATUS.IN_CONSULTATION);
+                    await tx.appointment_notification.create({
+                        data: {
+                            notification_id: await (0, idGenerator_1.generateId)(tx, "NOTIFICATION"),
+                            appointment_id: appointment.appointment_id,
+                            channel: "IN_APP",
+                            notification_type: "CHECKIN",
+                            recipient: doctor.employee_id,
+                            status: "UNREAD"
+                        }
+                    });
+                    return existingEncounter;
+                });
+            }
             throw new Error("Encounter already exists for this appointment");
         }
         try {
@@ -305,9 +333,12 @@ class EncounterService {
             diagnosis_id: data.diagnosis_id,
             clinical_notes: data.clinical_notes,
             advice: data.advice,
-            follow_up_date: data.follow_up_date
-                ? new Date(data.follow_up_date)
-                : undefined,
+            // null clears the date; left out keeps it.
+            follow_up_date: data.follow_up_date === null
+                ? null
+                : data.follow_up_date
+                    ? new Date(data.follow_up_date)
+                    : undefined,
             history_of_present_illness: data.history_of_present_illness,
             cns_examination: data.cns_examination,
             cvs_examination: data.cvs_examination,

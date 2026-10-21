@@ -17,7 +17,7 @@ export interface UpdateEncounterDTO {
     diagnosis_id?: string;
     clinical_notes?: string;
     advice?: string;
-    follow_up_date?: string; // YYYY-MM-DD
+    follow_up_date?: string | null; // YYYY-MM-DD; null clears it
 
     // Consultation Summary clinical findings (added per EMR master spec).
     history_of_present_illness?: string;

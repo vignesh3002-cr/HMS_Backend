@@ -30,6 +30,7 @@ const ENTITY_TARGET = {
     ENCOUNTER_REPORT: { table: "encounter_report", column: "encounter_report_id", padTo: 7 },
     ENCOUNTER_MOLECULAR_TEST: { table: "encounter_molecular_test", column: "encounter_molecular_test_id", padTo: 7 },
     ENCOUNTER_IMMUNIZATION: { table: "encounter_immunization", column: "encounter_immunization_id", padTo: 7 },
+    ENCOUNTER_PAST_TREATMENT: { table: "encounter_past_treatment", column: "encounter_past_treatment_id", padTo: 7 },
     CHEMOTHERAPY_PLAN_HYDRATION: { table: "chemotherapy_plan_hydration", column: "plan_hydration_id", padTo: 7 },
     CHEMOTHERAPY_PLAN_ORDER: { table: "chemotherapy_plan_order", column: "plan_order_id", padTo: 7 },
     CHEMOTHERAPY_ADMINISTRATION: { table: "chemotherapy_administration", column: "administration_id" },

@@ -8,6 +8,7 @@ const careTeamFields = [
     // null clears the role; an omitted field leaves it unchanged.
     (0, express_validator_1.body)("assigned_doctor_id").optional({ values: "null" }).isString().notEmpty(),
     (0, express_validator_1.body)("nurse_id").optional({ values: "null" }).isString().notEmpty(),
+    (0, express_validator_1.body)("roster_override").optional().isBoolean().withMessage("roster_override must be true or false"),
     (0, express_validator_1.body)("handover_notes")
         .optional({ values: "falsy" })
         .isString()

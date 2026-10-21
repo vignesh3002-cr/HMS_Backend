@@ -1298,7 +1298,12 @@ export class ChemotherapyController {
 
             if (!checkValidation(req, res)) return;
 
-            const data = await service.recordAdverseEvent(req.params.cycleId as string, req.body, actingUserId(req));
+            const data = await service.recordAdverseEvent(
+                req.params.cycleId as string,
+                req.body,
+                actingUserId(req),
+                actingEmployeeId(req)
+            );
             return res.status(201).json({ success: true, message: "Adverse event recorded successfully", data });
 
         } catch (error: any) {
@@ -1313,6 +1318,36 @@ export class ChemotherapyController {
 
             const data = await service.listAdverseEvents(req.params.cycleId as string);
             return res.json({ success: true, message: "Adverse events fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async updateAdverseEvent(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            const data = await service.updateAdverseEvent(req.params.adverseEventId as string, req.body, actingUserId(req));
+            return res.json({ success: true, message: "Adverse event updated successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async removeAdverseEvent(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            const data = await service.removeAdverseEvent(req.params.adverseEventId as string, req.body.reason, actingUserId(req));
+            return res.json({ success: true, message: "Adverse event removed successfully", data });
 
         } catch (error: any) {
             return handleError(res, error);

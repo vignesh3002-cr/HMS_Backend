@@ -1658,6 +1658,26 @@ export class ChemotherapyRepository {
         });
     }
 
+    async findAdverseEventById(adverseEventId: string) {
+        return prisma.chemotherapy_adverse_event.findUnique({ where: { adverse_event_id: adverseEventId } });
+    }
+
+    async updateAdverseEvent(tx: Prisma.TransactionClient, adverseEventId: string, data: Prisma.chemotherapy_adverse_eventUncheckedUpdateInput) {
+        return tx.chemotherapy_adverse_event.update({
+            where: { adverse_event_id: adverseEventId },
+            data: { ...data, updated_at: new Date() }
+        });
+    }
+
+    // Soft delete - adverse events are never hard-deleted; reads filter
+    // active_status = 1, so the row drops out of every list.
+    async deactivateAdverseEvent(tx: Prisma.TransactionClient, adverseEventId: string, actingUserId: string) {
+        return tx.chemotherapy_adverse_event.update({
+            where: { adverse_event_id: adverseEventId },
+            data: { active_status: 0, deleted_flag: true, updated_by: actingUserId, updated_at: new Date() }
+        });
+    }
+
     async generateLabReviewId(tx: Prisma.TransactionClient) {
         return generateId(tx, ID_ENTITY.LAB_REVIEW);
     }

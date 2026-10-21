@@ -49,6 +49,26 @@ export interface EncounterImmunizationSyncDTO {
 
 }
 
+export interface EncounterPastTreatmentDTO {
+
+    // The selected Treatment Type as shown in the form (master name).
+    treatment_type: string;
+    // treatment_type_master code when it is a master entry.
+    treatment_type_code?: string | null;
+    treatment_date?: string | null; // YYYY-MM-DD
+    note?: string | null;
+    treatment_response?: string | null;
+
+}
+
+export interface EncounterPastTreatmentSyncDTO {
+
+    // Full set of selected treatment types for the encounter; rows missing
+    // from this list are removed on sync.
+    rows: EncounterPastTreatmentDTO[];
+
+}
+
 export interface EncounterReportDTO {
 
     // One of the two: a lab_test_master test, or a test typed by hand.

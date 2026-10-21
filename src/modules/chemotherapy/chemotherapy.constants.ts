@@ -122,6 +122,11 @@ export const ADMINISTERED_DRUG_ROLES: string[] = [
     DRUG_ROLE.PREMEDICATION, DRUG_ROLE.PRIMARY, DRUG_ROLE.SUPPORTIVE
 ];
 
+// Adverse events are graded on the CTCAE 1-5 scale (also used for an
+// infusion reaction's grade); severity is the matching plain-language label.
+export const ADVERSE_EVENT_GRADES = ["1", "2", "3", "4", "5"];
+export const ADVERSE_EVENT_SEVERITIES = ["Mild", "Moderate", "Severe", "Life-threatening", "Fatal"];
+
 export const ID_ENTITY = {
     PLAN: "CHEMOTHERAPY_PLAN",
     PLAN_ITEM: "CHEMOTHERAPY_PLAN_ITEM",

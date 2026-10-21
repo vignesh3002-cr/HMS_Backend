@@ -39,8 +39,41 @@ class DutyRosterRepository {
             where: {
                 branch_id_shift_code: {
                     branch_id: branchId,
-                    shift_code: shiftCode,
+                    shift_code: shiftCode.toUpperCase(),
                 },
+            },
+        });
+    }
+    async getEmployeeForRoster(employeeId) {
+        return prisma_1.default.employees.findUnique({
+            where: { employee_id: employeeId },
+            select: {
+                employee_id: true,
+                emp_status: true,
+                deleted_at: true,
+                user_table: { select: { role_type: true } },
+                user_branch_mapping: {
+                    where: { status: 1 },
+                    select: { branch_id: true },
+                },
+            },
+        });
+    }
+    /** Active roster rows of one employee (any branch) within [from, to]. */
+    async getEmployeeRosterBetween(employeeId, from, to) {
+        return prisma_1.default.staff_duty_roster.findMany({
+            where: {
+                employee_id: employeeId,
+                is_active: true,
+                duty_date: { gte: from, lte: to },
+            },
+            select: {
+                branch_id: true,
+                duty_date: true,
+                shift_code: true,
+                role_in_duty: true,
+                start_time: true,
+                end_time: true,
             },
         });
     }
@@ -102,12 +135,23 @@ class DutyRosterRepository {
             orderBy: [{ day_of_week: "asc" }, { shift_code: "asc" }],
         });
     }
-    async getTemplatesForDayAndShift(branchId, dayOfWeek, shiftCode, roleInDuty) {
+    async getTemplatesForDayAndShift(branchId, dayOfWeek, shiftCode, roleInDuty, onDate) {
         return prisma_1.default.staff_duty_roster_template.findMany({
             where: {
                 branch_id: branchId,
                 day_of_week: dayOfWeek.toUpperCase(),
                 is_active: true,
+                // Only active, non-deleted staff can be offered.
+                employees: { emp_status: true, deleted_at: null },
+                // Honour the template's effective window (null = open-ended).
+                ...(onDate
+                    ? {
+                        AND: [
+                            { OR: [{ effective_from: null }, { effective_from: { lte: onDate } }] },
+                            { OR: [{ effective_to: null }, { effective_to: { gte: onDate } }] },
+                        ],
+                    }
+                    : {}),
                 ...(shiftCode ? { shift_code: shiftCode.toUpperCase() } : {}),
                 ...(roleInDuty ? { role_in_duty: roleInDuty } : {}),
             },
@@ -222,6 +266,7 @@ class DutyRosterRepository {
                 branch_id: branchId,
                 duty_date: dutyDate,
                 is_active: true,
+                employees: { emp_status: true, deleted_at: null },
                 ...(shiftCode ? { shift_code: shiftCode.toUpperCase() } : {}),
                 ...(roleInDuty ? { role_in_duty: roleInDuty } : {}),
             },

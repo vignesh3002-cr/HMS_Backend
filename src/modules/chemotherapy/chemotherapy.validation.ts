@@ -1,5 +1,5 @@
 import { body, param, query } from "express-validator";
-import { PLAN_STATUS, CYCLE_STATUS, DRUG_ROLE } from "./chemotherapy.constants";
+import { PLAN_STATUS, CYCLE_STATUS, DRUG_ROLE, ADVERSE_EVENT_GRADES, ADVERSE_EVENT_SEVERITIES } from "./chemotherapy.constants";
 
 export const previewPlanValidation = [
 
@@ -583,7 +583,8 @@ export const savePlanOrderValidation = [
     body("encounter_no").optional({ nullable: true }).isString().isLength({ max: 100 }),
     body("copied_from_order_id").optional({ nullable: true }).isString().isLength({ max: 100 }),
     body("chemo_instructions").optional({ nullable: true }).isString().withMessage("chemo_instructions must be text"),
-    body("additional_notes").optional({ nullable: true }).isString().withMessage("additional_notes must be text")
+    body("additional_notes").optional({ nullable: true }).isString().withMessage("additional_notes must be text"),
+    body("planned_date").optional({ nullable: true }).isISO8601().withMessage("planned_date must be a date (YYYY-MM-DD)")
 
 ];
 
@@ -707,13 +708,64 @@ export const recordVitalsValidation = [
 
 ];
 
+const ADVERSE_EVENT_FLAGS = [
+    "nausea", "vomiting", "diarrhea", "constipation", "mucositis", "fever",
+    "fatigue", "neuropathy", "alopecia", "skin_rash", "anemia", "neutropenia",
+    "thrombocytopenia", "infection", "bleeding", "pain",
+    "treatment_interrupted", "treatment_stopped", "hospitalization_required",
+    "icu_required", "emergency_medication_given", "dose_modified",
+    "dose_reduced", "dose_delayed", "resolved"
+];
+
+// Field rules shared by recording and editing an adverse event (the name's
+// required-ness differs, so it is added by each list).
+const adverseEventFieldRules = [
+    body("adverse_event_category").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("event_date").optional({ nullable: true }).isISO8601(),
+    body("resolution_date").optional({ nullable: true }).isISO8601(),
+    body("ctcae_grade").optional({ nullable: true })
+        .isIn(ADVERSE_EVENT_GRADES).withMessage("ctcae_grade must be 1 to 5"),
+    body("reaction_grade").optional({ nullable: true })
+        .isIn(ADVERSE_EVENT_GRADES).withMessage("reaction_grade must be 1 to 5"),
+    body("severity").optional({ nullable: true })
+        .isIn(ADVERSE_EVENT_SEVERITIES).withMessage(`severity must be one of: ${ADVERSE_EVENT_SEVERITIES.join(", ")}`),
+    ...ADVERSE_EVENT_FLAGS.map((flag) => body(flag).optional({ nullable: true }).isBoolean()),
+    body("reduction_percentage").optional({ nullable: true }).isFloat({ min: 0, max: 100 }),
+    body("delay_days").optional({ nullable: true }).isInt({ min: 0 })
+];
+
 export const recordAdverseEventValidation = [
 
     param("cycleId").notEmpty(),
-    body("adverse_event_name").notEmpty().withMessage("adverse_event_name is required"),
-    body("event_date").optional({ nullable: true }).isISO8601(),
-    body("resolution_date").optional({ nullable: true }).isISO8601(),
-    body("reduction_percentage").optional({ nullable: true }).isFloat({ min: 0, max: 100 })
+    body("adverse_event_name")
+        .trim()
+        .notEmpty().withMessage("adverse_event_name is required")
+        .isLength({ max: 100 }).withMessage("adverse_event_name must be at most 100 characters"),
+    body("plan_order_id").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("cycle_day").optional({ nullable: true }).isInt({ min: 1 }),
+    ...adverseEventFieldRules
+
+];
+
+export const updateAdverseEventValidation = [
+
+    param("adverseEventId").notEmpty().withMessage("adverseEventId is required"),
+    body("adverse_event_name")
+        .optional()
+        .trim()
+        .notEmpty().withMessage("adverse_event_name cannot be blank")
+        .isLength({ max: 100 }).withMessage("adverse_event_name must be at most 100 characters"),
+    ...adverseEventFieldRules
+
+];
+
+export const removeAdverseEventValidation = [
+
+    param("adverseEventId").notEmpty().withMessage("adverseEventId is required"),
+    body("reason")
+        .trim()
+        .notEmpty().withMessage("A reason is required to remove an adverse event")
+        .isLength({ max: 500 }).withMessage("reason must be at most 500 characters")
 
 ];
 

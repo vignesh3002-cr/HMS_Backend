@@ -89,12 +89,32 @@ class IpdService {
         throw error;
     }
     /*
-     * Opens the IPD encounter inside the caller's admit transaction, so a
-     * patient can never end up ADMITTED (bed occupied) without an encounter.
+     * The IPD encounter of an admission, inside the caller's admit
+     * transaction, so a patient can never end up ADMITTED (bed occupied)
+     * without an encounter. One visit keeps one encounter: an admission
+     * made for an appointment (e.g. a Daycare booking) reuses the
+     * appointment's open encounter when the doctor's consultation already
+     * opened it; otherwise the new encounter is linked to the appointment so
+     * the doctor's check-in reuses it instead of opening a second one.
      */
     async openIpEncounter(tx, admission, 
     // null for an emergency admitted before a doctor is assigned.
     employeeId, createdBy) {
+        const appointmentEncounter = admission.appointment_id
+            ? await tx.encounter.findFirst({
+                where: { appointment_id: admission.appointment_id, patient_id: admission.patient_id },
+                select: { encounter_no: true, status: true, encounter_type: true },
+            })
+            : null;
+        if (appointmentEncounter?.status === encounter_constants_1.ENCOUNTER_STATUS.OPEN) {
+            if (appointmentEncounter.encounter_type !== encounter_constants_1.ENCOUNTER_TYPE_IPD) {
+                await tx.encounter.update({
+                    where: { encounter_no: appointmentEncounter.encounter_no },
+                    data: { encounter_type: encounter_constants_1.ENCOUNTER_TYPE_IPD },
+                });
+            }
+            return appointmentEncounter.encounter_no;
+        }
         const encounterNo = await encounterRepository.generateEncounterNumber(tx);
         await encounterRepository.createEncounter(tx, {
             createdBy,
@@ -103,6 +123,11 @@ class IpdService {
             branch_id: admission.branch_id,
             department_id: admission.department_id,
             employee_id: employeeId,
+            // A closed encounter already holds this appointment (the column
+            // is unique), so only an appointment without one is linked.
+            ...(admission.appointment_id && !appointmentEncounter
+                ? { appointment_id: admission.appointment_id }
+                : {}),
             encounter_type: encounter_constants_1.ENCOUNTER_TYPE_IPD,
             status: encounter_constants_1.ENCOUNTER_STATUS.OPEN,
         });

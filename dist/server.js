@@ -38,6 +38,7 @@ const diagnosis_routes_1 = __importDefault(require("./modules/diagnosis/diagnosi
 const clinical_details_routes_1 = __importDefault(require("./modules/clinical-details/clinical-details.routes"));
 const consultation_routes_1 = __importDefault(require("./modules/consultation/consultation.routes"));
 const notification_routes_1 = __importDefault(require("./modules/notification/notification.routes"));
+const followup_routes_1 = __importDefault(require("./modules/followup/followup.routes"));
 const referral_routes_1 = __importDefault(require("./modules/referral/referral.routes"));
 const priorityFlags_routes_1 = __importDefault(require("./modules/priority-flags/priorityFlags.routes"));
 const ai_chat_routes_1 = __importDefault(require("./modules/ai/ai-chat.routes"));
@@ -144,6 +145,7 @@ app.use("/api/doctor-schedule", doctorSchedule_routes_1.default);
 app.use("/api/doctor-leave", doctorLeave_routes_1.default);
 // In-app notifications (doctor dashboard bell)
 app.use("/api/notifications", notification_routes_1.default);
+app.use("/api/follow-ups", followup_routes_1.default);
 app.use("/api/qualification-master", qualification_master_routes_1.default);
 app.use("/api/diagnosis", diagnosis_routes_1.default);
 app.use("/api/referral", referral_routes_1.default);

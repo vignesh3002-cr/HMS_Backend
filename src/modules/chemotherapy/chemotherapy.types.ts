@@ -467,6 +467,9 @@ export interface SavePlanOrderDto {
     // Notes"; left out = left untouched, empty = cleared.
     chemo_instructions?: string | null;
     additional_notes?: string | null;
+    // The cycle day's planned date (YYYY-MM-DD) from the Chemotherapy
+    // Order's Start Date; moves only this day. Left out = unchanged.
+    planned_date?: string | null;
 
 }
 
@@ -572,6 +575,10 @@ export interface RecordVitalsDto {
 
 export interface RecordAdverseEventDto {
 
+    // The cycle day the event belongs to (its chemotherapy_plan_order row);
+    // cycle_day is taken from that order, not trusted from the client.
+    plan_order_id?: string | null;
+    cycle_day?: number | null;
     event_date?: string | null;
     adverse_event_name: string;
     adverse_event_category?: string | null;
@@ -615,6 +622,12 @@ export interface RecordAdverseEventDto {
     remarks?: string | null;
 
 }
+
+// Editing an adverse event: any recorded field except the cycle day it
+// belongs to and the people linked when it was recorded.
+export type UpdateAdverseEventDto = Partial<
+    Omit<RecordAdverseEventDto, "plan_order_id" | "cycle_day" | "physician_id" | "reported_by">
+>;
 
 export interface RecordLabReviewDto {
 
