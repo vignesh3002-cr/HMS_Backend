@@ -105,7 +105,7 @@ model admission {
   bed_master                                                bed_master?                 @relation(fields: [bed_id], references: [bed_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_bed")
   branch                                                    branch                      @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_branch")
   department_master                                         department_master?          @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_department")
-  employees                                                 employees?                  @relation("admission_employee_idToemployees", fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_employee")
+  employees_admission_employee_idToemployees                employees?                  @relation("admission_employee_idToemployees", fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_employee")
   encounter                                                 encounter?                  @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_encounter")
   patient_bio_data                                          patient_bio_data            @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_patient")
   ward_master                                               ward_master?                @relation(fields: [ward_id], references: [ward_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_ward")
@@ -119,8 +119,6 @@ model admission {
   @@index([bed_id, status], map: "idx_admission_bed_status")
   @@index([branch_id], map: "idx_admission_branch")
   @@index([patient_id], map: "idx_admission_patient")
-  @@index([current_assigned_doctor_id], map: "idx_admission_assigned_doctor")
-  @@index([current_nurse_id], map: "idx_admission_assigned_nurse")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -1730,7 +1728,6 @@ model encounter {
 
   @@index([follow_up_date], map: "idx_encounter_follow_up_date", where: raw("(follow_up_date IS NOT NULL)"))
   @@index([patient_id], map: "idx_encounter_patient")
-  @@index([follow_up_date], map: "idx_encounter_follow_up_date", where: raw("(follow_up_date IS NOT NULL)"))
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -3152,108 +3149,6 @@ model ward_master {
   branch        branch       @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ward_branch")
 
   @@index([branch_id], map: "idx_ward_branch")
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model backup_appointment_status_20261007 {
-  appointment_id      String?   @db.VarChar(100)
-  status              String?   @db.VarChar(100)
-  notification_status String?   @db.VarChar(100)
-  backed_up_at        DateTime? @db.Timestamptz(6)
-
-  @@map("_backup_appointment_status_20261007")
-  @@ignore
-}
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model admission_care_team {
-  id             BigInt    @id @default(autoincrement())
-  assignment_id  String    @unique(map: "uq_care_team_assignment_id") @db.VarChar(100)
-  admission_id   String    @db.VarChar(100)
-  employee_id    String    @db.VarChar(100)
-  role_in_team   String    @db.VarChar(50)
-  start_time     DateTime  @default(now()) @db.Timestamp(6)
-  end_time       DateTime? @db.Timestamp(6)
-  is_active      Boolean   @default(true)
-  end_reason     String?   @db.VarChar(50)
-  handover_notes String?
-  assigned_by    String?   @db.VarChar(100)
-  created_at     DateTime  @default(now()) @db.Timestamp(6)
-  admission      admission @relation(fields: [admission_id], references: [admission_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_care_team_admission")
-  employees      employees @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_care_team_employee")
-
-  @@unique([admission_id, role_in_team], map: "uq_care_team_active_role", where: raw("is_active"))
-  @@index([admission_id, is_active], map: "idx_care_team_admission_active")
-  @@index([employee_id, is_active], map: "idx_care_team_employee_active")
-}
-
-model branch_shift_master {
-  id            BigInt   @id @default(autoincrement())
-  shift_id      String   @unique(map: "uq_branch_shift_id") @db.VarChar(100)
-  branch_id     String   @db.VarChar(100)
-  shift_code    String   @db.VarChar(50)
-  shift_name    String   @db.VarChar(100)
-  start_time    DateTime @db.Time(6)
-  end_time      DateTime @db.Time(6)
-  is_overnight  Boolean  @default(false)
-  display_order Int      @default(1)
-  is_active     Boolean  @default(true)
-  created_at    DateTime @default(now()) @db.Timestamp(6)
-  updated_at    DateTime @default(now()) @db.Timestamp(6)
-  branch        branch   @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_branch_shift_branch")
-
-  @@unique([branch_id, shift_code], map: "uq_branch_shift_code")
-  @@index([branch_id, is_active], map: "idx_branch_shift_branch_active")
-}
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model staff_duty_roster {
-  id           BigInt    @id @default(autoincrement())
-  roster_id    String    @unique(map: "uq_duty_roster_id") @db.VarChar(100)
-  employee_id  String    @db.VarChar(100)
-  branch_id    String    @db.VarChar(100)
-  duty_date    DateTime  @db.Date
-  shift_code   String    @db.VarChar(50)
-  start_time   DateTime  @db.Time(6)
-  end_time     DateTime  @db.Time(6)
-  role_in_duty String    @db.VarChar(50)
-  notes        String?
-  is_active    Boolean   @default(true)
-  created_by   String?   @db.VarChar(100)
-  created_at   DateTime  @default(now()) @db.Timestamp(6)
-  updated_by   String?   @db.VarChar(100)
-  updated_at   DateTime  @default(now()) @db.Timestamp(6)
-  branch       branch    @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_duty_roster_branch")
-  employees    employees @relation(fields: [employee_id], references: [employee_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_duty_roster_employee")
-
-  @@unique([employee_id, branch_id, duty_date, shift_code, role_in_duty], map: "uq_duty_roster_slot")
-  @@index([branch_id, duty_date, shift_code], map: "idx_duty_roster_branch_date")
-  @@index([employee_id, duty_date], map: "idx_duty_roster_employee_date")
-}
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model staff_duty_roster_template {
-  id             BigInt    @id @default(autoincrement())
-  template_id    String    @unique(map: "uq_duty_template_id") @db.VarChar(100)
-  employee_id    String    @db.VarChar(100)
-  branch_id      String    @db.VarChar(100)
-  day_of_week    String    @db.VarChar(20)
-  shift_code     String    @db.VarChar(50)
-  start_time     DateTime  @db.Time(6)
-  end_time       DateTime  @db.Time(6)
-  role_in_duty   String    @db.VarChar(50)
-  is_active      Boolean   @default(true)
-  effective_from DateTime? @db.Date
-  effective_to   DateTime? @db.Date
-  created_by     String?   @db.VarChar(100)
-  created_at     DateTime  @default(now()) @db.Timestamp(6)
-  branch         branch    @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_duty_template_branch")
-  employees      employees @relation(fields: [employee_id], references: [employee_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_duty_template_employee")
-
-  @@unique([employee_id, branch_id, day_of_week, shift_code, role_in_duty], map: "uq_duty_template_slot")
-  @@index([branch_id, day_of_week], map: "idx_duty_template_branch_day")
-  @@index([employee_id], map: "idx_duty_template_employee")
 }
 
 enum DoctorScheduleChangeMode {
