@@ -367,6 +367,7 @@ class IpdService {
         const limit = filter.limit ? parseInt(String(filter.limit), 10) : 10;
         return this.ipdRepository.listAdmissions({
             branchId: filter.branchId,
+            assignedTo: filter.assignedTo,
             status: filter.status,
             wardId: filter.wardId,
             patientId: filter.patientId,
@@ -377,6 +378,20 @@ class IpdService {
             sortField: filter.sortField,
             sortDirection: filter.sortDirection,
         });
+    }
+    /*
+     * The caller's employee_id for "my patients": the token carries it, but
+     * fall back to the user's employee row for older tokens. A user with no
+     * employee record matches nothing (never everything).
+     */
+    async resolveActorEmployeeId(actor) {
+        if (actor.employee_id)
+            return actor.employee_id;
+        const employee = await prisma_1.default.employees.findUnique({
+            where: { user_id: actor.user_id },
+            select: { employee_id: true },
+        });
+        return employee?.employee_id ?? "__none__";
     }
     async getAdmissionByIpNumber(ipNumber) {
         let admission = await this.ipdRepository.getAdmissionByIpNumber(ipNumber);
@@ -1098,9 +1113,13 @@ class IpdService {
                 ...clinical,
                 status: ipd_types_1.IPD_STATUS.DISCHARGED,
                 discharge_date: dischargeDate,
+                // The stay is over: nobody is on duty for this admission any more.
+                current_assigned_doctor_id: null,
+                current_nurse_id: null,
                 updated_by: closedBy,
                 updated_at: dischargeDate,
             });
+            await this.ipdRepository.closeActiveCareTeam(tx, existing.admission_id, dischargeDate, ipd_constants_1.CARE_TEAM_END_REASON.DISCHARGE);
             // The vacated bed needs turning over before the next patient.
             if (existing.bed_id) {
                 await this.ipdRepository.markBedStatus(tx, existing.bed_id, ipd_types_1.BED_STATUS.CLEANING, closedBy);

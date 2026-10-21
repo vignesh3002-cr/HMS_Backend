@@ -251,4 +251,55 @@ export class AuthController {
         }
     }
 
+    async getKpiUsage(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user?.user_id || (req as any).user?.id || (req as any).user?.sub;
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    message: "User not authenticated",
+                });
+            }
+            const usage = await authService.getKpiUsage(userId);
+            return res.status(200).json({
+                success: true,
+                data: { usage },
+            });
+        } catch (error: any) {
+            return res.status(400).json({
+                success: false,
+                message: error.message,
+            });
+        }
+    }
+
+    async saveKpiUsage(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user?.user_id || (req as any).user?.id || (req as any).user?.sub;
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    message: "User not authenticated",
+                });
+            }
+            const { usage } = req.body;
+            if (!usage || typeof usage !== "object" || Array.isArray(usage)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "usage must be an object of kpiId:count pairs",
+                });
+            }
+            const saved = await authService.saveKpiUsage(userId, usage);
+            return res.status(200).json({
+                success: true,
+                data: { usage: saved },
+            });
+        } catch (error: any) {
+            return res.status(400).json({
+                success: false,
+                message: error.message,
+            });
+        }
+    }
+
 }

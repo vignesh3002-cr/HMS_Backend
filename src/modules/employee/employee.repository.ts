@@ -871,6 +871,25 @@ break;
 return response;
   }
 
+  /**
+   * One doctor's availability on a date at a branch: ACTIVE (scheduled that
+   * day and not on leave), LEAVE, or INACTIVE. Same rule the employee list's
+   * doctor_status uses, for callers that validate a single doctor.
+   */
+  async getDoctorStatusForDate(
+    employeeId: string,
+    branchId: string,
+    dateString: string
+  ): Promise<"ACTIVE" | "LEAVE" | "INACTIVE"> {
+    const statuses = await this.computeDoctorStatuses(
+      [employeeId],
+      branchId,
+      dateString,
+      new Map([[employeeId, [branchId]]])
+    );
+    return statuses.get(employeeId) ?? "LEAVE";
+  }
+
   private async computeDoctorStatuses(
     doctorIds: string[],
     branchId: string | undefined,

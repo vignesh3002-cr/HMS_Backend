@@ -1,9 +1,39 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addDischargeTypeValidation = exports.updateBedStatusValidation = exports.updateBedValidation = exports.updateWardValidation = exports.createBedValidation = exports.createWardValidation = exports.getAdmissionByIpNumberValidation = exports.getAdmissionsValidation = exports.IPD_SORT_FIELDS = exports.daycareOccupancyValidation = exports.createDaycareValidation = exports.closePlannedValidation = exports.reserveBedValidation = exports.admitAdmissionValidation = exports.transferAdmissionValidation = exports.saveDischargeDetailsValidation = exports.dischargeAdmissionValidation = exports.updateAdmissionValidation = exports.createAdmissionValidation = void 0;
+exports.addDischargeTypeValidation = exports.updateBedStatusValidation = exports.updateBedValidation = exports.updateWardValidation = exports.createBedValidation = exports.createWardValidation = exports.getAdmissionByIpNumberValidation = exports.getAdmissionsValidation = exports.IPD_SORT_FIELDS = exports.daycareOccupancyValidation = exports.createDaycareValidation = exports.closePlannedValidation = exports.reserveBedValidation = exports.admitAdmissionValidation = exports.transferAdmissionValidation = exports.saveDischargeDetailsValidation = exports.dischargeAdmissionValidation = exports.updateAdmissionValidation = exports.createAdmissionValidation = exports.getCareTeamValidation = exports.bulkAllocateCareTeamValidation = exports.allocateCareTeamValidation = void 0;
 const express_validator_1 = require("express-validator");
 const ipd_constants_1 = require("./ipd.constants");
 const ipd_constants_2 = require("./ipd.constants");
+const careTeamFields = [
+    // null clears the role; an omitted field leaves it unchanged.
+    (0, express_validator_1.body)("assigned_doctor_id").optional({ values: "null" }).isString().notEmpty(),
+    (0, express_validator_1.body)("nurse_id").optional({ values: "null" }).isString().notEmpty(),
+    (0, express_validator_1.body)("handover_notes")
+        .optional({ values: "falsy" })
+        .isString()
+        .isLength({ max: 2000 })
+        .withMessage("Handover notes must be at most 2000 characters"),
+];
+exports.allocateCareTeamValidation = [
+    (0, express_validator_1.param)("id")
+        .notEmpty()
+        .withMessage("Admission ID or IP number is required"),
+    ...careTeamFields,
+];
+exports.bulkAllocateCareTeamValidation = [
+    (0, express_validator_1.body)("ward_id").notEmpty().withMessage("Ward is required"),
+    (0, express_validator_1.body)("branch_id").notEmpty().withMessage("Branch is required"),
+    (0, express_validator_1.body)("admission_ids")
+        .isArray({ min: 1, max: ipd_constants_2.CARE_TEAM_BULK_MAX })
+        .withMessage(`Select between 1 and ${ipd_constants_2.CARE_TEAM_BULK_MAX} admissions`),
+    (0, express_validator_1.body)("admission_ids.*").isString().notEmpty(),
+    ...careTeamFields,
+];
+exports.getCareTeamValidation = [
+    (0, express_validator_1.param)("id")
+        .notEmpty()
+        .withMessage("Admission ID or IP number is required"),
+];
 exports.createAdmissionValidation = [
     (0, express_validator_1.body)("patient_id")
         .notEmpty()
@@ -173,6 +203,8 @@ exports.getAdmissionsValidation = [
     (0, express_validator_1.query)("patientId").optional().isString(),
     (0, express_validator_1.query)("date").optional().isISO8601().withMessage("Date must be a valid date (yyyy-MM-dd)"),
     (0, express_validator_1.query)("search").optional().isString(),
+    // Only admissions the caller is the consultant / duty doctor / nurse of.
+    (0, express_validator_1.query)("assignedToMe").optional().isBoolean(),
     (0, express_validator_1.query)("sortField").optional().isIn(exports.IPD_SORT_FIELDS),
     (0, express_validator_1.query)("sortDirection").optional().isIn(["asc", "desc"]),
 ];

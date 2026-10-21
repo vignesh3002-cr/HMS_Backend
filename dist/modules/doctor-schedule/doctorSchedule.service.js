@@ -127,9 +127,9 @@ class DoctorScheduleService {
             }
             this.validateTimeString(start_time, "start_time");
             this.validateTimeString(end_time, "end_time");
-            if (this.timeToMinutes(start_time) >=
+            if (this.timeToMinutes(start_time) ===
                 this.timeToMinutes(end_time)) {
-                throw new Error("start_time must be earlier than end_time");
+                throw new Error("start_time and end_time cannot be identical");
             }
         }
         // --------------------------------------------------
@@ -358,9 +358,9 @@ class DoctorScheduleService {
             }
             this.validateTimeString(finalStartTime, "start_time");
             this.validateTimeString(finalEndTime, "end_time");
-            if (this.timeToMinutes(finalStartTime) >=
+            if (this.timeToMinutes(finalStartTime) ===
                 this.timeToMinutes(finalEndTime)) {
-                throw new Error("start_time must be earlier than end_time");
+                throw new Error("start_time and end_time cannot be identical");
             }
         }
         // --------------------------------------------------
@@ -683,6 +683,27 @@ class DoctorScheduleService {
         return `${hours}:${minutes}`;
     }
     /**
+     * Checks whether two time intervals overlap.
+     * Supports cross-midnight intervals where end <= start.
+     * An overnight interval [s, e) occupies [s, 1440) on Day 1 and [0, e) on Day 2.
+     */
+    timeIntervalsOverlap(s1, e1, s2, e2) {
+        const intervals1 = e1 <= s1
+            ? [[s1, 1440], [0, e1]]
+            : [[s1, e1]];
+        const intervals2 = e2 <= s2
+            ? [[s2, 1440], [0, e2]]
+            : [[s2, e2]];
+        for (const [startA, endA] of intervals1) {
+            for (const [startB, endB] of intervals2) {
+                if (startA < endB && endA > startB) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    /**
      * Get all recurring weekly schedules for a doctor.
      *
      * Includes inactive rows so the frontend can tell
@@ -894,9 +915,9 @@ class DoctorScheduleService {
         // Validate times
         this.validateTimeString(start_time, "start_time");
         this.validateTimeString(end_time, "end_time");
-        if (this.timeToMinutes(start_time) >=
+        if (this.timeToMinutes(start_time) ===
             this.timeToMinutes(end_time)) {
-            throw new Error("start_time must be earlier than end_time");
+            throw new Error("start_time and end_time cannot be identical");
         }
         // Reject overlap with existing active slots on the same day.
         // Scoped to the DOCTOR across ALL branches - a doctor cannot be
@@ -925,8 +946,7 @@ class DoctorScheduleService {
             }
             const existingStart = this.dateToMinutes(existing.start_time);
             const existingEnd = this.dateToMinutes(existing.end_time);
-            const overlaps = newStart < existingEnd &&
-                newEnd > existingStart;
+            const overlaps = this.timeIntervalsOverlap(newStart, newEnd, existingStart, existingEnd);
             if (overlaps) {
                 throw new Error(`The new slot overlaps with an existing active slot on the same day (${existing.branch_id})`);
             }
@@ -1029,9 +1049,9 @@ class DoctorScheduleService {
         // Validate times
         this.validateTimeString(start_time, "start_time");
         this.validateTimeString(end_time, "end_time");
-        if (this.timeToMinutes(start_time) >=
+        if (this.timeToMinutes(start_time) ===
             this.timeToMinutes(end_time)) {
-            throw new Error("start_time must be earlier than end_time");
+            throw new Error("start_time and end_time cannot be identical");
         }
         // Load the slot being updated and make sure it
         // belongs to the doctor and is still active.
@@ -1081,8 +1101,7 @@ class DoctorScheduleService {
             }
             const existingStart = this.dateToMinutes(existing.start_time);
             const existingEnd = this.dateToMinutes(existing.end_time);
-            const overlaps = newStart < existingEnd &&
-                newEnd > existingStart;
+            const overlaps = this.timeIntervalsOverlap(newStart, newEnd, existingStart, existingEnd);
             if (overlaps) {
                 throw new Error("The updated slot overlaps with an existing active slot on the same day");
             }

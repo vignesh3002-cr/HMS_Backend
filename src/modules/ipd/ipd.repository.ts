@@ -21,6 +21,16 @@ const admissionBedSelect = {
     reserved_until: true,
 } as const;
 
+// Name fields shown for the duty doctor / nurse on the roster and timeline.
+const careTeamEmployeeSelect = {
+    employee_id: true,
+    first_name: true,
+    middle_name: true,
+    last_name: true,
+    specialization: true,
+    designation: true,
+} as const;
+
 export class IpdRepository {
 
     // ------------------------------------------------------------------ wards
@@ -391,6 +401,8 @@ export class IpdRepository {
                         specialization: true,
                     },
                 },
+                assigned_doctor: { select: careTeamEmployeeSelect },
+                assigned_nurse: { select: careTeamEmployeeSelect },
                 ward_master: {
                     select: { ward_id: true, ward_name: true },
                 },
@@ -432,6 +444,7 @@ export class IpdRepository {
 
     async listAdmissions(filter: {
         branchId?: string;
+        assignedTo?: string;
         status?: string;
         wardId?: string;
         patientId?: string;
@@ -443,7 +456,7 @@ export class IpdRepository {
         sortDirection?: string;
     }) {
 
-        const { branchId, status, wardId, patientId, date, search, page = 1, limit = 10 } = filter;
+        const { branchId, assignedTo, status, wardId, patientId, date, search, page = 1, limit = 10 } = filter;
 
         // Status arrives as a single value or a comma-separated list (the IPD
         // filter panel's Status field is a multiselect, same as OPD's).
@@ -482,6 +495,21 @@ export class IpdRepository {
             ...(wardId ? { ward_id: wardId } : {}),
             ...(patientId ? { patient_id: patientId } : {}),
             ...(dateStart && dateEnd ? { admission_date: { gte: dateStart, lt: dateEnd } } : {}),
+            // Consultant, duty doctor or nurse. Its own AND entry so it can't
+            // collide with the search OR below.
+            ...(assignedTo
+                ? {
+                      AND: [
+                          {
+                              OR: [
+                                  { employee_id: assignedTo },
+                                  { current_assigned_doctor_id: assignedTo },
+                                  { current_nurse_id: assignedTo },
+                              ],
+                          },
+                      ],
+                  }
+                : {}),
             ...(search
                 ? {
                       OR: [
@@ -525,6 +553,8 @@ export class IpdRepository {
                             last_name: true,
                         },
                     },
+                    assigned_doctor: { select: careTeamEmployeeSelect },
+                    assigned_nurse: { select: careTeamEmployeeSelect },
                     ward_master: { select: { ward_id: true, ward_name: true } },
                     bed_master: { select: admissionBedSelect },
                 },
@@ -667,6 +697,25 @@ export class IpdRepository {
 
     }
 
+    /*
+     * Closes the admission's active care-team rows (end of stay). The roster
+     * pointers on the admission are cleared by the caller's own admission
+     * update, in the same transaction.
+     */
+    async closeActiveCareTeam(
+        tx: Prisma.TransactionClient,
+        admissionId: string,
+        endedAt: Date,
+        endReason: string
+    ) {
+
+        return tx.admission_care_team.updateMany({
+            where: { admission_id: admissionId, is_active: true },
+            data: { is_active: false, end_time: endedAt, end_reason: endReason },
+        });
+
+    }
+
     async generateAdmissionId<T extends Prisma.TransactionClient>(tx: T) {
 
         return generateId(tx, "ADMISSION");
@@ -709,6 +758,8 @@ export class IpdRepository {
                         specialization: true,
                     },
                 },
+                assigned_doctor: { select: careTeamEmployeeSelect },
+                assigned_nurse: { select: careTeamEmployeeSelect },
                 ward_master: {
                     select: { ward_id: true, ward_name: true },
                 },

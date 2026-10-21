@@ -5,7 +5,52 @@ import {
     PAYMENT_MODE_VALUES,
     PATIENT_STATUS_AT_DISCHARGE_VALUES
 } from "./ipd.constants";
-import { MANUAL_BED_STATUSES } from "./ipd.constants";
+import { MANUAL_BED_STATUSES, CARE_TEAM_BULK_MAX } from "./ipd.constants";
+
+const careTeamFields = [
+
+    // null clears the role; an omitted field leaves it unchanged.
+    body("assigned_doctor_id").optional({ values: "null" }).isString().notEmpty(),
+    body("nurse_id").optional({ values: "null" }).isString().notEmpty(),
+    body("roster_override").optional().isBoolean().withMessage("roster_override must be true or false"),
+    body("handover_notes")
+        .optional({ values: "falsy" })
+        .isString()
+        .isLength({ max: 2000 })
+        .withMessage("Handover notes must be at most 2000 characters"),
+
+];
+
+export const allocateCareTeamValidation = [
+
+    param("id")
+        .notEmpty()
+        .withMessage("Admission ID or IP number is required"),
+
+    ...careTeamFields,
+
+];
+
+export const bulkAllocateCareTeamValidation = [
+
+    body("ward_id").notEmpty().withMessage("Ward is required"),
+    body("branch_id").notEmpty().withMessage("Branch is required"),
+    body("admission_ids")
+        .isArray({ min: 1, max: CARE_TEAM_BULK_MAX })
+        .withMessage(`Select between 1 and ${CARE_TEAM_BULK_MAX} admissions`),
+    body("admission_ids.*").isString().notEmpty(),
+
+    ...careTeamFields,
+
+];
+
+export const getCareTeamValidation = [
+
+    param("id")
+        .notEmpty()
+        .withMessage("Admission ID or IP number is required"),
+
+];
 
 export const createAdmissionValidation = [
 
@@ -217,6 +262,8 @@ export const getAdmissionsValidation = [
     query("patientId").optional().isString(),
     query("date").optional().isISO8601().withMessage("Date must be a valid date (yyyy-MM-dd)"),
     query("search").optional().isString(),
+    // Only admissions the caller is the consultant / duty doctor / nurse of.
+    query("assignedToMe").optional().isBoolean(),
     query("sortField").optional().isIn(IPD_SORT_FIELDS),
     query("sortDirection").optional().isIn(["asc", "desc"]),
 

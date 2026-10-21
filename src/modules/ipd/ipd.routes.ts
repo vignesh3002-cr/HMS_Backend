@@ -22,6 +22,9 @@ import {
     updateWardValidation,
     updateBedValidation,
     updateBedStatusValidation,
+    allocateCareTeamValidation,
+    bulkAllocateCareTeamValidation,
+    getCareTeamValidation,
 } from "./ipd.validation";
 
 const router = Router();
@@ -171,6 +174,32 @@ router.patch(
     branchScope,
     updateBedStatusValidation,
     controller.updateBedStatus.bind(controller)
+);
+
+// Duty doctor / nurse allocation and shift handover. The bulk route is
+// declared before the /:id routes so "care-team" is never read as an id.
+router.post(
+    "/care-team/bulk-allocate-ward",
+    authenticate,
+    authorize("admission.care_team"),
+    bulkAllocateCareTeamValidation,
+    controller.bulkAllocateCareTeam.bind(controller)
+);
+
+router.get(
+    "/:id/care-team",
+    authenticate,
+    authorize("admission.read"),
+    getCareTeamValidation,
+    controller.getCareTeam.bind(controller)
+);
+
+router.post(
+    "/:id/care-team/allocate",
+    authenticate,
+    authorize("admission.care_team"),
+    allocateCareTeamValidation,
+    controller.allocateCareTeam.bind(controller)
 );
 
 router.get(

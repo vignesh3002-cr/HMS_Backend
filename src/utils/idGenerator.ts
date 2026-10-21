@@ -46,10 +46,14 @@ const ENTITY_TARGET: Record<string, { table: string; column: string; padTo?: num
     WARD: { table: "ward_master", column: "ward_id" },
     BED: { table: "bed_master", column: "bed_id" },
     ADMISSION_TRANSFER: { table: "admission_transfer_log", column: "transfer_log_id" },
+    CARE_TEAM: { table: "admission_care_team", column: "assignment_id", padTo: 6 },
     REVIEW_REMINDER: { table: "discharge_review_reminder", column: "reminder_id", padTo: 6 },
     FOLLOWUP_LOG: { table: "followup_contact_log", column: "log_id", padTo: 7 },
     PHARMACY_SLIP: { table: "pharmacy_slip", column: "pharmacy_slip_id", padTo: 7 },
     PHARMACY_SLIP_ITEM: { table: "pharmacy_slip_item", column: "pharmacy_slip_item_id", padTo: 7 },
+    BRANCH_SHIFT: { table: "branch_shift_master", column: "shift_id", padTo: 4 },
+    DUTY_TEMPLATE: { table: "staff_duty_roster_template", column: "template_id", padTo: 6 },
+    DUTY_ROSTER: { table: "staff_duty_roster", column: "roster_id", padTo: 6 },
 };
 
 // Generates `count` consecutive ids for one entity while holding the
