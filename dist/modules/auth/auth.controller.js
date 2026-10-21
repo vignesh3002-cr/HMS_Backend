@@ -195,5 +195,56 @@ class AuthController {
             });
         }
     }
+    async getKpiUsage(req, res) {
+        try {
+            const userId = req.user?.user_id || req.user?.id || req.user?.sub;
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    message: "User not authenticated",
+                });
+            }
+            const usage = await authService.getKpiUsage(userId);
+            return res.status(200).json({
+                success: true,
+                data: { usage },
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message,
+            });
+        }
+    }
+    async saveKpiUsage(req, res) {
+        try {
+            const userId = req.user?.user_id || req.user?.id || req.user?.sub;
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    message: "User not authenticated",
+                });
+            }
+            const { usage } = req.body;
+            if (!usage || typeof usage !== "object" || Array.isArray(usage)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "usage must be an object of kpiId:count pairs",
+                });
+            }
+            const saved = await authService.saveKpiUsage(userId, usage);
+            return res.status(200).json({
+                success: true,
+                data: { usage: saved },
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message,
+            });
+        }
+    }
 }
 exports.AuthController = AuthController;

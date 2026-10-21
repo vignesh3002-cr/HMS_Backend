@@ -23,6 +23,15 @@ const admissionBedSelect = {
     reserved_admission_id: true,
     reserved_until: true,
 };
+// Name fields shown for the duty doctor / nurse on the roster and timeline.
+const careTeamEmployeeSelect = {
+    employee_id: true,
+    first_name: true,
+    middle_name: true,
+    last_name: true,
+    specialization: true,
+    designation: true,
+};
 class IpdRepository {
     // ------------------------------------------------------------------ wards
     async findWardById(wardId) {
@@ -291,6 +300,8 @@ class IpdRepository {
                         specialization: true,
                     },
                 },
+                assigned_doctor: { select: careTeamEmployeeSelect },
+                assigned_nurse: { select: careTeamEmployeeSelect },
                 ward_master: {
                     select: { ward_id: true, ward_name: true },
                 },
@@ -326,7 +337,7 @@ class IpdRepository {
         });
     }
     async listAdmissions(filter) {
-        const { branchId, status, wardId, patientId, date, search, page = 1, limit = 10 } = filter;
+        const { branchId, assignedTo, status, wardId, patientId, date, search, page = 1, limit = 10 } = filter;
         // Status arrives as a single value or a comma-separated list (the IPD
         // filter panel's Status field is a multiselect, same as OPD's).
         const statusList = status
@@ -359,6 +370,21 @@ class IpdRepository {
             ...(wardId ? { ward_id: wardId } : {}),
             ...(patientId ? { patient_id: patientId } : {}),
             ...(dateStart && dateEnd ? { admission_date: { gte: dateStart, lt: dateEnd } } : {}),
+            // Consultant, duty doctor or nurse. Its own AND entry so it can't
+            // collide with the search OR below.
+            ...(assignedTo
+                ? {
+                    AND: [
+                        {
+                            OR: [
+                                { employee_id: assignedTo },
+                                { current_assigned_doctor_id: assignedTo },
+                                { current_nurse_id: assignedTo },
+                            ],
+                        },
+                    ],
+                }
+                : {}),
             ...(search
                 ? {
                     OR: [
@@ -401,6 +427,8 @@ class IpdRepository {
                             last_name: true,
                         },
                     },
+                    assigned_doctor: { select: careTeamEmployeeSelect },
+                    assigned_nurse: { select: careTeamEmployeeSelect },
                     ward_master: { select: { ward_id: true, ward_name: true } },
                     bed_master: { select: admissionBedSelect },
                 },
@@ -461,6 +489,17 @@ class IpdRepository {
             data: { status: "COMPLETED" },
         });
     }
+    /*
+     * Closes the admission's active care-team rows (end of stay). The roster
+     * pointers on the admission are cleared by the caller's own admission
+     * update, in the same transaction.
+     */
+    async closeActiveCareTeam(tx, admissionId, endedAt, endReason) {
+        return tx.admission_care_team.updateMany({
+            where: { admission_id: admissionId, is_active: true },
+            data: { is_active: false, end_time: endedAt, end_reason: endReason },
+        });
+    }
     async generateAdmissionId(tx) {
         return (0, idGenerator_1.generateId)(tx, "ADMISSION");
     }
@@ -499,6 +538,8 @@ class IpdRepository {
                         specialization: true,
                     },
                 },
+                assigned_doctor: { select: careTeamEmployeeSelect },
+                assigned_nurse: { select: careTeamEmployeeSelect },
                 ward_master: {
                     select: { ward_id: true, ward_name: true },
                 },

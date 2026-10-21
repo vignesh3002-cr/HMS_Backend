@@ -159,12 +159,15 @@ export class DoctorLeaveRepository {
         tx: Prisma.TransactionClient | typeof prisma,
         employeeId: string,
         dateFrom: string,
-        dateTo: string
+        dateTo: string,
+        branchId?: string
     ) {
 
         return (tx as Prisma.TransactionClient).appointment_history.findMany({
             where: {
                 employee_id: employeeId,
+                // Leave is branch-agnostic; a schedule CANCEL only affects its own branch.
+                ...(branchId ? { branch_id: branchId } : {}),
                 appointment_date: {
                     gte: new Date(`${dateFrom}T00:00:00.000Z`),
                     lte: new Date(`${dateTo}T23:59:59.999Z`)

@@ -6,6 +6,29 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.doctorScheduleService = exports.DoctorScheduleService = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const doctorTransfer_repository_1 = require("../doctor-transfer/doctorTransfer.repository");
+const doctorLeave_service_1 = require("../doctorLeave/doctorLeave.service");
+/*
+ * Schedule writes validate (overlap, duplicates) and then insert as separate
+ * statements, so two simultaneous requests for the same doctor could both
+ * pass the check. Serialize writes per doctor within this process. (A
+ * multi-instance deployment would additionally need a database-level guard.)
+ */
+const employeeLocks = new Map();
+async function withEmployeeLock(employeeId, work) {
+    if (!employeeId)
+        return work();
+    const previous = employeeLocks.get(employeeId) ?? Promise.resolve();
+    const run = previous.catch(() => undefined).then(work);
+    const tail = run.catch(() => undefined);
+    employeeLocks.set(employeeId, tail);
+    try {
+        return await run;
+    }
+    finally {
+        if (employeeLocks.get(employeeId) === tail)
+            employeeLocks.delete(employeeId);
+    }
+}
 class DoctorScheduleService {
     /**
      * Create ADD / OVERRIDE / CANCEL schedule change.
@@ -27,6 +50,9 @@ class DoctorScheduleService {
      *     doctor + branch + date
      */
     async createScheduleChange(payload, bypassPending = false) {
+        return withEmployeeLock(payload?.employee_id, () => this.createScheduleChangeUnlocked(payload, bypassPending));
+    }
+    async createScheduleChangeUnlocked(payload, bypassPending = false) {
         const { employee_id, branch_id, change_date, mode, start_time, end_time, reason, created_by, } = payload;
         // --------------------------------------------------
         // 1. Validate required fields
@@ -116,6 +142,13 @@ class DoctorScheduleService {
         // 6. Validate date
         // --------------------------------------------------
         const parsedDate = this.parseDateOnly(change_date);
+        // Compare against today's calendar date in IST (hospital time).
+        const todayIst = new Date(Date.now() + 5.5 * 60 * 60 * 1000)
+            .toISOString()
+            .slice(0, 10);
+        if (parsedDate.toISOString().slice(0, 10) < todayIst) {
+            throw new Error("Schedule changes cannot be created for a past date");
+        }
         // --------------------------------------------------
         // 7. Validate ADD / OVERRIDE
         // --------------------------------------------------
@@ -127,9 +160,9 @@ class DoctorScheduleService {
             }
             this.validateTimeString(start_time, "start_time");
             this.validateTimeString(end_time, "end_time");
-            if (this.timeToMinutes(start_time) >=
+            if (this.timeToMinutes(start_time) ===
                 this.timeToMinutes(end_time)) {
-                throw new Error("start_time must be earlier than end_time");
+                throw new Error("start_time and end_time cannot be identical");
             }
         }
         // --------------------------------------------------
@@ -281,24 +314,33 @@ class DoctorScheduleService {
         // --------------------------------------------------
         // 12. Create schedule change
         // --------------------------------------------------
-        return prisma_1.default.doctor_schedule_change.create({
-            data: {
-                employee_id: employee_id,
-                branch_id: branch_id,
-                change_date: parsedDate,
-                mode: mode,
-                start_time: startTimeDate,
-                end_time: endTimeDate,
-                reason: reason?.trim() ||
-                    null,
-                is_active: true,
-                created_by: created_by?.trim() ||
-                    null,
-                /**
-                 * Prisma schema requires updated_at.
-                 */
-                updated_at: new Date(),
-            },
+        return prisma_1.default.$transaction(async (tx) => {
+            const created = await tx.doctor_schedule_change.create({
+                data: {
+                    employee_id: employee_id,
+                    branch_id: branch_id,
+                    change_date: parsedDate,
+                    mode: mode,
+                    start_time: startTimeDate,
+                    end_time: endTimeDate,
+                    reason: reason?.trim() ||
+                        null,
+                    is_active: true,
+                    created_by: created_by?.trim() ||
+                        null,
+                    /**
+                     * Prisma schema requires updated_at.
+                     */
+                    updated_at: new Date(),
+                },
+            });
+            // A CANCEL removes the doctor's whole day at this branch: patients
+            // already booked for it must not be left on a cancelled session, so
+            // they are queued for reschedule in the same transaction.
+            if (mode === "CANCEL") {
+                await new doctorLeave_service_1.DoctorLeaveService().queueAppointmentsTx(tx, employee_id, parsedDate.toISOString().slice(0, 10), parsedDate.toISOString().slice(0, 10), created_by?.trim() || employee_id, "NORMAL", reason?.trim() || undefined, branch_id, "SCHEDULE_CANCEL");
+            }
+            return created;
         });
     }
     /**
@@ -358,9 +400,9 @@ class DoctorScheduleService {
             }
             this.validateTimeString(finalStartTime, "start_time");
             this.validateTimeString(finalEndTime, "end_time");
-            if (this.timeToMinutes(finalStartTime) >=
+            if (this.timeToMinutes(finalStartTime) ===
                 this.timeToMinutes(finalEndTime)) {
-                throw new Error("start_time must be earlier than end_time");
+                throw new Error("start_time and end_time cannot be identical");
             }
         }
         // --------------------------------------------------
@@ -683,6 +725,27 @@ class DoctorScheduleService {
         return `${hours}:${minutes}`;
     }
     /**
+     * Checks whether two time intervals overlap.
+     * Supports cross-midnight intervals where end <= start.
+     * An overnight interval [s, e) occupies [s, 1440) on Day 1 and [0, e) on Day 2.
+     */
+    timeIntervalsOverlap(s1, e1, s2, e2) {
+        const intervals1 = e1 <= s1
+            ? [[s1, 1440], [0, e1]]
+            : [[s1, e1]];
+        const intervals2 = e2 <= s2
+            ? [[s2, 1440], [0, e2]]
+            : [[s2, e2]];
+        for (const [startA, endA] of intervals1) {
+            for (const [startB, endB] of intervals2) {
+                if (startA < endB && endA > startB) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    /**
      * Get all recurring weekly schedules for a doctor.
      *
      * Includes inactive rows so the frontend can tell
@@ -798,6 +861,9 @@ class DoctorScheduleService {
                     equals: normalizedDay,
                     mode: "insensitive",
                 },
+                // Slots that were deleted (soft-closed) must stay closed:
+                // toggling a day back on must not resurrect them.
+                deleted_by: null,
             },
             data: {
                 is_active,
@@ -817,6 +883,9 @@ class DoctorScheduleService {
      * weekday -- NOT a date-specific doctor_schedule_change.
      */
     async createRecurringSlot(payload) {
+        return withEmployeeLock(payload?.employee_id, () => this.createRecurringSlotUnlocked(payload));
+    }
+    async createRecurringSlotUnlocked(payload) {
         const { employee_id, branch_id, day_of_week, shift_name, start_time, end_time, consultation_minutes, } = payload;
         if (!employee_id) {
             throw new Error("employee_id is required");
@@ -894,9 +963,9 @@ class DoctorScheduleService {
         // Validate times
         this.validateTimeString(start_time, "start_time");
         this.validateTimeString(end_time, "end_time");
-        if (this.timeToMinutes(start_time) >=
+        if (this.timeToMinutes(start_time) ===
             this.timeToMinutes(end_time)) {
-            throw new Error("start_time must be earlier than end_time");
+            throw new Error("start_time and end_time cannot be identical");
         }
         // Reject overlap with existing active slots on the same day.
         // Scoped to the DOCTOR across ALL branches - a doctor cannot be
@@ -925,8 +994,7 @@ class DoctorScheduleService {
             }
             const existingStart = this.dateToMinutes(existing.start_time);
             const existingEnd = this.dateToMinutes(existing.end_time);
-            const overlaps = newStart < existingEnd &&
-                newEnd > existingStart;
+            const overlaps = this.timeIntervalsOverlap(newStart, newEnd, existingStart, existingEnd);
             if (overlaps) {
                 throw new Error(`The new slot overlaps with an existing active slot on the same day (${existing.branch_id})`);
             }
@@ -952,6 +1020,9 @@ class DoctorScheduleService {
      * doctor_schedule template.
      */
     async updateRecurringSlot(schedule_id, employee_id, payload) {
+        return withEmployeeLock(employee_id, () => this.updateRecurringSlotUnlocked(schedule_id, employee_id, payload));
+    }
+    async updateRecurringSlotUnlocked(schedule_id, employee_id, payload) {
         const { branch_id, day_of_week, shift_name, start_time, end_time, consultation_minutes, } = payload;
         if (!employee_id) {
             throw new Error("employee_id is required");
@@ -1029,9 +1100,9 @@ class DoctorScheduleService {
         // Validate times
         this.validateTimeString(start_time, "start_time");
         this.validateTimeString(end_time, "end_time");
-        if (this.timeToMinutes(start_time) >=
+        if (this.timeToMinutes(start_time) ===
             this.timeToMinutes(end_time)) {
-            throw new Error("start_time must be earlier than end_time");
+            throw new Error("start_time and end_time cannot be identical");
         }
         // Load the slot being updated and make sure it
         // belongs to the doctor and is still active.
@@ -1081,8 +1152,7 @@ class DoctorScheduleService {
             }
             const existingStart = this.dateToMinutes(existing.start_time);
             const existingEnd = this.dateToMinutes(existing.end_time);
-            const overlaps = newStart < existingEnd &&
-                newEnd > existingStart;
+            const overlaps = this.timeIntervalsOverlap(newStart, newEnd, existingStart, existingEnd);
             if (overlaps) {
                 throw new Error("The updated slot overlaps with an existing active slot on the same day");
             }

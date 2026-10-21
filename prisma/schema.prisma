@@ -50,6 +50,17 @@ model RolePermission {
   @@index([role_type])
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model backup_appointment_status_20261007 {
+  appointment_id      String?   @db.VarChar(100)
+  status              String?   @db.VarChar(100)
+  notification_status String?   @db.VarChar(100)
+  backed_up_at        DateTime? @db.Timestamptz(6)
+
+  @@map("_backup_appointment_status_20261007")
+  @@ignore
+}
+
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model admission {
   id                                                        BigInt                      @id @default(autoincrement())
@@ -94,7 +105,7 @@ model admission {
   bed_master                                                bed_master?                 @relation(fields: [bed_id], references: [bed_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_bed")
   branch                                                    branch                      @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_branch")
   department_master                                         department_master?          @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_department")
-  employees                                                 employees?                  @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_employee")
+  employees                                                 employees?                  @relation("admission_employee_idToemployees", fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_employee")
   encounter                                                 encounter?                  @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_encounter")
   patient_bio_data                                          patient_bio_data            @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_patient")
   ward_master                                               ward_master?                @relation(fields: [ward_id], references: [ward_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admission_ward")
@@ -103,11 +114,36 @@ model admission {
   discharge_review_reminder                                 discharge_review_reminder[]
 
   @@index([appointment_id], map: "idx_admission_appointment")
+  @@index([current_assigned_doctor_id], map: "idx_admission_assigned_doctor")
+  @@index([current_nurse_id], map: "idx_admission_assigned_nurse")
   @@index([bed_id, status], map: "idx_admission_bed_status")
   @@index([branch_id], map: "idx_admission_branch")
   @@index([patient_id], map: "idx_admission_patient")
   @@index([current_assigned_doctor_id], map: "idx_admission_assigned_doctor")
   @@index([current_nurse_id], map: "idx_admission_assigned_nurse")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model admission_care_team {
+  id             BigInt    @id @default(autoincrement())
+  assignment_id  String    @unique(map: "uq_care_team_assignment_id") @db.VarChar(100)
+  admission_id   String    @db.VarChar(100)
+  employee_id    String    @db.VarChar(100)
+  role_in_team   String    @db.VarChar(50)
+  start_time     DateTime  @default(now()) @db.Timestamp(6)
+  end_time       DateTime? @db.Timestamp(6)
+  is_active      Boolean   @default(true)
+  end_reason     String?   @db.VarChar(50)
+  handover_notes String?
+  assigned_by    String?   @db.VarChar(100)
+  created_at     DateTime  @default(now()) @db.Timestamp(6)
+  admission      admission @relation(fields: [admission_id], references: [admission_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_care_team_admission")
+  employees      employees @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_care_team_employee")
+
+  @@unique([admission_id, role_in_team], map: "uq_care_team_active_role", where: raw("is_active"))
+  @@index([admission_id, is_active], map: "idx_care_team_admission_active")
+  @@index([employee_id, is_active], map: "idx_care_team_employee_active")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -380,6 +416,7 @@ model branch {
   oncology_staging_detail      oncology_staging_detail[]
   patient_bio_data             patient_bio_data[]
   patient_history              patient_history[]
+  pharmacy_master              pharmacy_master[]
   pharmacy_slip                pharmacy_slip[]
   prescription                 prescription[]
   sample_collection            sample_collection[]
@@ -389,6 +426,25 @@ model branch {
   user_log                     user_log[]
   user_table                   user_table[]
   ward_master                  ward_master[]
+}
+
+model branch_shift_master {
+  id            BigInt   @id @default(autoincrement())
+  shift_id      String   @unique(map: "uq_branch_shift_id") @db.VarChar(100)
+  branch_id     String   @db.VarChar(100)
+  shift_code    String   @db.VarChar(50)
+  shift_name    String   @db.VarChar(100)
+  start_time    DateTime @db.Time(6)
+  end_time      DateTime @db.Time(6)
+  is_overnight  Boolean  @default(false)
+  display_order Int      @default(1)
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now()) @db.Timestamp(6)
+  updated_at    DateTime @default(now()) @db.Timestamp(6)
+  branch        branch   @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_branch_shift_branch")
+
+  @@unique([branch_id, shift_code], map: "uq_branch_shift_code")
+  @@index([branch_id, is_active], map: "idx_branch_shift_branch_active")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1476,6 +1532,37 @@ model drug_consumption_master {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model drug_lab_monitoring {
+  id               BigInt          @id @default(autoincrement())
+  monitoring_id    String          @unique @db.VarChar(100)
+  medicine_id      String          @db.VarChar(100)
+  lab_test_id      String          @db.VarChar(100)
+  source_test_text String?         @db.VarChar(300)
+  monitoring_phase String?         @default("BASELINE") @db.VarChar(50)
+  remarks          String?
+  active_status    Int?            @default(1) @db.SmallInt
+  created_at       DateTime?       @default(now()) @db.Timestamp(6)
+  lab_test_master  lab_test_master @relation(fields: [lab_test_id], references: [lab_test_id], onDelete: NoAction, onUpdate: NoAction)
+  medicine_master  medicine_master @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([medicine_id, lab_test_id, monitoring_phase])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model drug_non_lab_investigation {
+  id                 BigInt          @id @default(autoincrement())
+  investigation_id   String          @unique @db.VarChar(100)
+  medicine_id        String          @db.VarChar(100)
+  investigation_name String          @db.VarChar(200)
+  investigation_type String?         @db.VarChar(50)
+  active_status      Int?            @default(1) @db.SmallInt
+  created_at         DateTime?       @default(now()) @db.Timestamp(6)
+  medicine_master    medicine_master @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([medicine_id, investigation_name])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model employees {
   id                                                                                 BigInt                         @id @default(autoincrement())
   user_id                                                                            String?                        @unique(map: "uq_employees_user_id") @db.VarChar(100)
@@ -1520,7 +1607,7 @@ model employees {
   deleted_at                                                                         DateTime?                      @db.Timestamp(6)
   admission_admission_current_assigned_doctor_idToemployees                          admission[]                    @relation("admission_current_assigned_doctor_idToemployees")
   admission_admission_current_nurse_idToemployees                                    admission[]                    @relation("admission_current_nurse_idToemployees")
-  admission                                                                          admission[]
+  admission_admission_employee_idToemployees                                         admission[]                    @relation("admission_employee_idToemployees")
   admission_care_team                                                                admission_care_team[]
   appointment_history                                                                appointment_history[]
   chemotherapy_administration_chemotherapy_administration_verified_byToemployees     chemotherapy_administration[]  @relation("chemotherapy_administration_verified_byToemployees")
@@ -1641,23 +1728,9 @@ model encounter {
   patient_personal_history            patient_personal_history?
   pharmacy_slip                       pharmacy_slip[]
 
+  @@index([follow_up_date], map: "idx_encounter_follow_up_date", where: raw("(follow_up_date IS NOT NULL)"))
   @@index([patient_id], map: "idx_encounter_patient")
   @@index([follow_up_date], map: "idx_encounter_follow_up_date", where: raw("(follow_up_date IS NOT NULL)"))
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model followup_alert_state {
-  id             BigInt    @id @default(autoincrement())
-  user_id        String    @db.VarChar(100)
-  encounter_no   String    @db.VarChar(100)
-  follow_up_date DateTime  @db.Date
-  read_at        DateTime? @db.Timestamp(6)
-  dismissed_at   DateTime? @db.Timestamp(6)
-  created_at     DateTime? @default(now()) @db.Timestamp(6)
-  encounter      encounter @relation(fields: [encounter_no], references: [encounter_no], onDelete: Cascade, onUpdate: NoAction, map: "fk_followup_alert_state_encounter")
-
-  @@unique([user_id, encounter_no, follow_up_date], map: "uq_followup_alert_state")
-  @@index([user_id], map: "idx_followup_alert_state_user")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1774,6 +1847,21 @@ model encounter_symptom {
   @@index([encounter_no], map: "idx_encounter_symptom_encounter")
   @@index([status], map: "idx_encounter_symptom_status")
   @@index([symptom_id], map: "idx_encounter_symptom_symptom")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model followup_alert_state {
+  id             BigInt    @id @default(autoincrement())
+  user_id        String    @db.VarChar(100)
+  encounter_no   String    @db.VarChar(100)
+  follow_up_date DateTime  @db.Date
+  read_at        DateTime? @db.Timestamp(6)
+  dismissed_at   DateTime? @db.Timestamp(6)
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
+  encounter      encounter @relation(fields: [encounter_no], references: [encounter_no], onDelete: Cascade, onUpdate: NoAction, map: "fk_followup_alert_state_encounter")
+
+  @@unique([user_id, encounter_no, follow_up_date], map: "uq_followup_alert_state")
+  @@index([user_id], map: "idx_followup_alert_state_user")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -2010,7 +2098,6 @@ model lab_order_item {
   clinical_notes    String?
   priority          String?             @default("Normal") @db.VarChar(100)
   target_date       DateTime?           @db.Date
-  /// Testing Method for Molecular-category tests (Consultation > Investigations).
   method            String?             @db.VarChar(100)
   lab_history       lab_history[]
   branch            branch?             @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_order_item_branch")
@@ -2097,29 +2184,36 @@ model lab_test_category {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model lab_test_master {
-  id                   BigInt               @id @default(autoincrement())
-  lab_test_id          String               @unique @db.VarChar(100)
-  lab_test_category_id String               @db.VarChar(100)
-  test_name            String               @db.VarChar(100)
-  test_code            String               @unique @db.VarChar(100)
-  sample_type          String?              @db.VarChar(100)
-  required_volume      String?              @db.VarChar(100)
-  unit                 String?              @db.VarChar(100)
-  reference_range      String?              @db.VarChar(100)
-  price                Decimal?             @db.Decimal(10, 2)
+  id                   BigInt                @id @default(autoincrement())
+  lab_test_id          String                @unique @db.VarChar(100)
+  lab_test_category_id String                @db.VarChar(100)
+  test_name            String                @db.VarChar(100)
+  test_code            String                @unique @db.VarChar(100)
+  sample_type          String?               @db.VarChar(100)
+  required_volume      String?               @db.VarChar(100)
+  unit                 String?               @db.VarChar(100)
+  reference_range      String?
+  price                Decimal?              @db.Decimal(10, 2)
   tat_hours            Int?
-  test_status          Int?                 @default(1) @db.SmallInt
-  branch_id            String?              @db.VarChar(100)
-  user_id              String?              @db.VarChar(100)
-  created_at           DateTime?            @default(now()) @db.Timestamp(6)
-  updated_at           DateTime?            @default(now()) @db.Timestamp(6)
-  outsource_lab        String?              @db.VarChar(100)
-  is_outsourced        Boolean?             @default(false)
+  test_status          Int?                  @default(1) @db.SmallInt
+  branch_id            String?               @db.VarChar(100)
+  user_id              String?               @db.VarChar(100)
+  created_at           DateTime?             @default(now()) @db.Timestamp(6)
+  updated_at           DateTime?             @default(now()) @db.Timestamp(6)
+  outsource_lab        String?               @db.VarChar(100)
+  is_outsourced        Boolean?              @default(false)
+  result_type          String?               @db.VarChar(50)
+  walkin_price         Decimal?              @db.Decimal(10, 2)
+  is_panel             Boolean?              @default(false)
+  includes_details     String?
+  tat_text             String?               @db.VarChar(100)
+  needs_review         Boolean?              @default(false)
+  drug_lab_monitoring  drug_lab_monitoring[]
   encounter_report     encounter_report[]
   lab_order_item       lab_order_item[]
-  branch               branch?              @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_branch")
-  lab_test_category    lab_test_category    @relation(fields: [lab_test_category_id], references: [lab_test_category_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_category")
-  user_table           user_table?          @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_user")
+  branch               branch?               @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_branch")
+  lab_test_category    lab_test_category     @relation(fields: [lab_test_category_id], references: [lab_test_category_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_category")
+  user_table           user_table?           @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_user")
   lab_test_parameter   lab_test_parameter[]
 }
 
@@ -2140,6 +2234,10 @@ model lab_test_parameter {
   user_id               String?         @db.VarChar(100)
   created_at            DateTime?       @default(now()) @db.Timestamp(6)
   updated_at            DateTime?       @default(now()) @db.Timestamp(6)
+  critical_low          Decimal?        @db.Decimal(14, 2)
+  critical_high         Decimal?        @db.Decimal(14, 2)
+  remarks               String?
+  value_type            String?         @db.VarChar(30)
   lab_result            lab_result[]
   branch                branch?         @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_parameter_branch")
   lab_test_master       lab_test_master @relation(fields: [lab_test_id], references: [lab_test_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lab_test_parameter_test")
@@ -2197,11 +2295,15 @@ model medicine_master {
   is_active                           Boolean?                              @default(true)
   brand_name                          String?                               @db.VarChar(255)
   source_note                         String?
+  drug_class                          String?                               @db.VarChar(100)
   chemotherapy_discharge_instructions chemotherapy_discharge_instructions[]
   chemotherapy_plan_items             chemotherapy_plan_items[]
   chemotherapy_protocol_dilutions     chemotherapy_protocol_dilutions[]
   chemotherapy_regimen_protocol_items chemotherapy_regimen_protocol_items[]
   diagnosis_medicine_mapping          diagnosis_medicine_mapping[]
+  drug_lab_monitoring                 drug_lab_monitoring[]
+  drug_non_lab_investigation          drug_non_lab_investigation[]
+  pharmacy_master                     pharmacy_master[]
   pharmacy_slip_item                  pharmacy_slip_item[]
   prescription_items                  prescription_items[]
 }
@@ -2621,6 +2723,46 @@ model performance_status_master {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pharmacy_master {
+  id                    BigInt               @id @default(autoincrement())
+  pharmacy_item_id      String               @unique(map: "uq_pharmacy_master_item_id") @db.VarChar(100)
+  medicine_id           String?              @db.VarChar(100)
+  item_name             String               @db.VarChar(255)
+  generic_name          String?              @db.VarChar(255)
+  brand_name            String?              @db.VarChar(255)
+  dosage_form           String?              @db.VarChar(100)
+  strength_text         String?              @db.VarChar(100)
+  strength_value        Decimal?             @db.Decimal(14, 4)
+  strength_unit         String?              @db.VarChar(20)
+  strength_note         String?              @db.VarChar(100)
+  manufacturer_name     String?              @db.VarChar(100)
+  hsn_code              String?              @db.VarChar(100)
+  gst_percent           Decimal?             @db.Decimal(5, 2)
+  mrp                   Decimal?             @db.Decimal(10, 2)
+  purchase_rate         Decimal?             @db.Decimal(10, 2)
+  storage_condition     String?              @db.VarChar(100)
+  min_stock             Int?                 @default(0)
+  max_stock             Int?                 @default(0)
+  reorder_level         Int?                 @default(0)
+  prescription_required Boolean?             @default(true)
+  is_high_risk          Boolean?             @default(false)
+  branch_id             String?              @db.VarChar(100)
+  source_name_raw       String?              @db.VarChar(255)
+  source_period         String?              @db.VarChar(50)
+  needs_review          Boolean?             @default(false)
+  import_note           String?
+  is_active             Boolean              @default(true)
+  created_by            String?              @db.VarChar(100)
+  created_at            DateTime?            @default(now()) @db.Timestamp(6)
+  updated_by            String?              @db.VarChar(100)
+  updated_at            DateTime?            @default(now()) @db.Timestamp(6)
+  branch                branch?              @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_master_branch")
+  medicine_master       medicine_master?     @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_master_medicine")
+  pharmacy_slip_item    pharmacy_slip_item[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model pharmacy_slip {
   id                  BigInt               @id @default(autoincrement())
   pharmacy_slip_id    String               @unique(map: "uq_pharmacy_slip_id") @db.VarChar(100)
@@ -2676,7 +2818,9 @@ model pharmacy_slip_item {
   instructions          String?          @db.VarChar(255)
   created_at            DateTime?        @default(now()) @db.Timestamp(6)
   updated_at            DateTime?        @default(now()) @db.Timestamp(6)
+  pharmacy_item_id      String?          @db.VarChar(100)
   medicine_master       medicine_master? @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_item_medicine")
+  pharmacy_master       pharmacy_master? @relation(fields: [pharmacy_item_id], references: [pharmacy_item_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_item_pharmacy_master")
   pharmacy_slip         pharmacy_slip    @relation(fields: [pharmacy_slip_id], references: [pharmacy_slip_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pharmacy_slip_item_slip")
 
   @@index([medicine_id], map: "idx_pharmacy_slip_item_medicine")
@@ -2796,6 +2940,55 @@ model sample_collection {
   user_table           user_table?    @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_sample_collection_user")
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model staff_duty_roster {
+  id           BigInt    @id @default(autoincrement())
+  roster_id    String    @unique(map: "uq_duty_roster_id") @db.VarChar(100)
+  employee_id  String    @db.VarChar(100)
+  branch_id    String    @db.VarChar(100)
+  duty_date    DateTime  @db.Date
+  shift_code   String    @db.VarChar(50)
+  start_time   DateTime  @db.Time(6)
+  end_time     DateTime  @db.Time(6)
+  role_in_duty String    @db.VarChar(50)
+  notes        String?
+  is_active    Boolean   @default(true)
+  created_by   String?   @db.VarChar(100)
+  created_at   DateTime  @default(now()) @db.Timestamp(6)
+  updated_by   String?   @db.VarChar(100)
+  updated_at   DateTime  @default(now()) @db.Timestamp(6)
+  branch       branch    @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_duty_roster_branch")
+  employees    employees @relation(fields: [employee_id], references: [employee_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_duty_roster_employee")
+
+  @@unique([employee_id, branch_id, duty_date, shift_code, role_in_duty], map: "uq_duty_roster_slot")
+  @@index([branch_id, duty_date, shift_code], map: "idx_duty_roster_branch_date")
+  @@index([employee_id, duty_date], map: "idx_duty_roster_employee_date")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model staff_duty_roster_template {
+  id             BigInt    @id @default(autoincrement())
+  template_id    String    @unique(map: "uq_duty_template_id") @db.VarChar(100)
+  employee_id    String    @db.VarChar(100)
+  branch_id      String    @db.VarChar(100)
+  day_of_week    String    @db.VarChar(20)
+  shift_code     String    @db.VarChar(50)
+  start_time     DateTime  @db.Time(6)
+  end_time       DateTime  @db.Time(6)
+  role_in_duty   String    @db.VarChar(50)
+  is_active      Boolean   @default(true)
+  effective_from DateTime? @db.Date
+  effective_to   DateTime? @db.Date
+  created_by     String?   @db.VarChar(100)
+  created_at     DateTime  @default(now()) @db.Timestamp(6)
+  branch         branch    @relation(fields: [branch_id], references: [branch_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_duty_template_branch")
+  employees      employees @relation(fields: [employee_id], references: [employee_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_duty_template_employee")
+
+  @@unique([employee_id, branch_id, day_of_week, shift_code, role_in_duty], map: "uq_duty_template_slot")
+  @@index([branch_id, day_of_week], map: "idx_duty_template_branch_day")
+  @@index([employee_id], map: "idx_duty_template_employee")
+}
+
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model staging_reference {
   id               BigInt       @id @default(autoincrement())
@@ -2912,6 +3105,7 @@ model user_table {
   id                                                 BigInt                    @id @default(autoincrement())
   branch_id                                          String?                   @db.VarChar(100)
   kpi_preferences                                    String?                   @db.VarChar(500)
+  kpi_usage                                          String?                   @db.VarChar(1000)
   appointment_history                                appointment_history[]
   chemotherapy_master                                chemotherapy_master[]
   chemotherapy_plan                                  chemotherapy_plan[]

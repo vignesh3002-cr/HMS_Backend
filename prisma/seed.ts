@@ -107,6 +107,7 @@ const PERMISSIONS = [
   { key: "admission.discharge", name: "Discharge Patient", description: "Discharge an admitted inpatient", category: "admission" },
   { key: "admission.discharge_details", name: "Save Discharge Details", description: "Record clinical discharge details for an admitted inpatient", category: "admission" },
   { key: "admission.transfer", name: "Transfer Bed", description: "Transfer an admitted patient to another bed", category: "admission" },
+  { key: "admission.care_team", name: "Manage Care Team", description: "Assign the duty doctor and nurse for an admitted inpatient and record shift handover", category: "admission" },
   { key: "ward.manage", name: "Manage Wards", description: "Create/edit wards in ward master", category: "admission" },
   { key: "bed.manage", name: "Manage Beds", description: "Create/edit beds and bed status in bed master", category: "admission" },
 
@@ -162,6 +163,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "admission.update",
     "admission.discharge",
     "admission.transfer",
+    "admission.care_team",
     "ward.manage",
     "bed.manage",
 
@@ -197,6 +199,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "admission.read",
     "admission.update",
     "admission.transfer",
+    "admission.care_team",
     "ward.manage",
     "bed.manage",
 
@@ -248,6 +251,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 
     "admission.read",
     "admission.transfer",
+    "admission.care_team",
     // The doctor records the clinical discharge details (Discharge
     // Medication step) but does not perform the discharge -- an admin
     // confirms it afterwards.
@@ -280,6 +284,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "admission.read",
     "admission.update",
     "admission.discharge",
+    "admission.care_team",
 
   ],
 

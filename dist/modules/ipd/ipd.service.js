@@ -89,12 +89,32 @@ class IpdService {
         throw error;
     }
     /*
-     * Opens the IPD encounter inside the caller's admit transaction, so a
-     * patient can never end up ADMITTED (bed occupied) without an encounter.
+     * The IPD encounter of an admission, inside the caller's admit
+     * transaction, so a patient can never end up ADMITTED (bed occupied)
+     * without an encounter. One visit keeps one encounter: an admission
+     * made for an appointment (e.g. a Daycare booking) reuses the
+     * appointment's open encounter when the doctor's consultation already
+     * opened it; otherwise the new encounter is linked to the appointment so
+     * the doctor's check-in reuses it instead of opening a second one.
      */
     async openIpEncounter(tx, admission, 
     // null for an emergency admitted before a doctor is assigned.
     employeeId, createdBy) {
+        const appointmentEncounter = admission.appointment_id
+            ? await tx.encounter.findFirst({
+                where: { appointment_id: admission.appointment_id, patient_id: admission.patient_id },
+                select: { encounter_no: true, status: true, encounter_type: true },
+            })
+            : null;
+        if (appointmentEncounter?.status === encounter_constants_1.ENCOUNTER_STATUS.OPEN) {
+            if (appointmentEncounter.encounter_type !== encounter_constants_1.ENCOUNTER_TYPE_IPD) {
+                await tx.encounter.update({
+                    where: { encounter_no: appointmentEncounter.encounter_no },
+                    data: { encounter_type: encounter_constants_1.ENCOUNTER_TYPE_IPD },
+                });
+            }
+            return appointmentEncounter.encounter_no;
+        }
         const encounterNo = await encounterRepository.generateEncounterNumber(tx);
         await encounterRepository.createEncounter(tx, {
             createdBy,
@@ -103,6 +123,11 @@ class IpdService {
             branch_id: admission.branch_id,
             department_id: admission.department_id,
             employee_id: employeeId,
+            // A closed encounter already holds this appointment (the column
+            // is unique), so only an appointment without one is linked.
+            ...(admission.appointment_id && !appointmentEncounter
+                ? { appointment_id: admission.appointment_id }
+                : {}),
             encounter_type: encounter_constants_1.ENCOUNTER_TYPE_IPD,
             status: encounter_constants_1.ENCOUNTER_STATUS.OPEN,
         });
@@ -367,6 +392,7 @@ class IpdService {
         const limit = filter.limit ? parseInt(String(filter.limit), 10) : 10;
         return this.ipdRepository.listAdmissions({
             branchId: filter.branchId,
+            assignedTo: filter.assignedTo,
             status: filter.status,
             wardId: filter.wardId,
             patientId: filter.patientId,
@@ -377,6 +403,20 @@ class IpdService {
             sortField: filter.sortField,
             sortDirection: filter.sortDirection,
         });
+    }
+    /*
+     * The caller's employee_id for "my patients": the token carries it, but
+     * fall back to the user's employee row for older tokens. A user with no
+     * employee record matches nothing (never everything).
+     */
+    async resolveActorEmployeeId(actor) {
+        if (actor.employee_id)
+            return actor.employee_id;
+        const employee = await prisma_1.default.employees.findUnique({
+            where: { user_id: actor.user_id },
+            select: { employee_id: true },
+        });
+        return employee?.employee_id ?? "__none__";
     }
     async getAdmissionByIpNumber(ipNumber) {
         let admission = await this.ipdRepository.getAdmissionByIpNumber(ipNumber);
@@ -1098,9 +1138,13 @@ class IpdService {
                 ...clinical,
                 status: ipd_types_1.IPD_STATUS.DISCHARGED,
                 discharge_date: dischargeDate,
+                // The stay is over: nobody is on duty for this admission any more.
+                current_assigned_doctor_id: null,
+                current_nurse_id: null,
                 updated_by: closedBy,
                 updated_at: dischargeDate,
             });
+            await this.ipdRepository.closeActiveCareTeam(tx, existing.admission_id, dischargeDate, ipd_constants_1.CARE_TEAM_END_REASON.DISCHARGE);
             // The vacated bed needs turning over before the next patient.
             if (existing.bed_id) {
                 await this.ipdRepository.markBedStatus(tx, existing.bed_id, ipd_types_1.BED_STATUS.CLEANING, closedBy);

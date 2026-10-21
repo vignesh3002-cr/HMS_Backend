@@ -29,6 +29,11 @@ router.post("/beds", auth_middleware_1.authenticate, (0, authorize_1.authorizeAn
 router.patch("/beds/:bedId", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("bed.manage", "admission.create"), branchScope_1.branchScope, ipd_validation_1.updateBedValidation, controller.updateBed.bind(controller));
 router.delete("/beds/:bedId", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("bed.manage", "admission.create"), branchScope_1.branchScope, controller.deleteBed.bind(controller));
 router.patch("/beds/:id/status", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("bed.manage", "admission.create"), branchScope_1.branchScope, ipd_validation_1.updateBedStatusValidation, controller.updateBedStatus.bind(controller));
+// Duty doctor / nurse allocation and shift handover. The bulk route is
+// declared before the /:id routes so "care-team" is never read as an id.
+router.post("/care-team/bulk-allocate-ward", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.care_team"), ipd_validation_1.bulkAllocateCareTeamValidation, controller.bulkAllocateCareTeam.bind(controller));
+router.get("/:id/care-team", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.read"), ipd_validation_1.getCareTeamValidation, controller.getCareTeam.bind(controller));
+router.post("/:id/care-team/allocate", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.care_team"), ipd_validation_1.allocateCareTeamValidation, controller.allocateCareTeam.bind(controller));
 router.get("/:ipNumber", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.read"), ipd_validation_1.getAdmissionByIpNumberValidation, controller.getAdmissionByIpNumber.bind(controller));
 router.patch("/:id", auth_middleware_1.authenticate, (0, authorize_1.authorize)("admission.update"), ipd_validation_1.updateAdmissionValidation, controller.updateAdmission.bind(controller));
 // Status transitions have dedicated endpoints -- PATCH /:id only edits details.

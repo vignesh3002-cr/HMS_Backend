@@ -46,7 +46,7 @@ exports.updateEncounterValidation = [
     (0, express_validator_1.body)("previous_reports").optional().isString(),
     (0, express_validator_1.body)("notes").optional().isString(),
     (0, express_validator_1.body)("follow_up_date")
-        .optional()
+        .optional({ nullable: true })
         .isISO8601()
         .withMessage("Follow-up date must be a valid date (YYYY-MM-DD)"),
     (0, express_validator_1.body)("height").optional().isFloat({ min: 0 }),

@@ -32,7 +32,9 @@ router.delete("/regimen-protocols/personalized/:protocolId/items/:protocolItemId
 router.post("/regimen-protocols/personalized/:protocolId/activate", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.manage"), chemotherapy_validation_1.getRegimenProtocolValidation, controller.activatePersonalizedProtocol.bind(controller));
 router.post("/regimen-protocols/personalized/:protocolId/version", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.manage"), chemotherapy_validation_1.createPersonalizedProtocolVersionValidation, controller.createPersonalizedProtocolVersion.bind(controller));
 router.get("/regimen-protocols/:protocolId/discharge-medicines", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), chemotherapy_validation_1.getRegimenProtocolValidation, controller.getDischargeMedicinesForProtocol.bind(controller));
-router.get("/regimen-protocols/:protocolId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), chemotherapy_validation_1.getRegimenProtocolValidation, controller.getRegimenProtocol.bind(controller));
+// Read-only: anyone who can see a plan (e.g. the nurse administering it)
+// can view the protocol it was built from.
+router.get("/regimen-protocols/:protocolId", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("chemo.protocol.read", "chemo.plan.read"), chemotherapy_validation_1.getRegimenProtocolValidation, controller.getRegimenProtocol.bind(controller));
 router.get("/regimen-protocols/:protocolId/discharge-medicines", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), chemotherapy_validation_1.getRegimenProtocolValidation, controller.getDischargeMedicinesForProtocol.bind(controller));
 router.get("/medicines", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), controller.listAllActiveMedicines.bind(controller));
 router.get("/medicines/dilution-medicines", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), controller.listDilutionMedicines.bind(controller));
@@ -100,6 +102,8 @@ router.get("/cycles/:cycleId/vitals", auth_middleware_1.authenticate, (0, author
 // ---------------- Adverse events ----------------
 router.post("/cycles/:cycleId/adverse-events", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.adverse_event.record"), chemotherapy_validation_1.recordAdverseEventValidation, controller.recordAdverseEvent.bind(controller));
 router.get("/cycles/:cycleId/adverse-events", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.cycleIdParamValidation, controller.listAdverseEvents.bind(controller));
+router.put("/adverse-events/:adverseEventId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.adverse_event.record"), chemotherapy_validation_1.updateAdverseEventValidation, controller.updateAdverseEvent.bind(controller));
+router.delete("/adverse-events/:adverseEventId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.adverse_event.record"), chemotherapy_validation_1.removeAdverseEventValidation, controller.removeAdverseEvent.bind(controller));
 // ---------------- Lab review ----------------
 router.post("/cycles/:cycleId/lab-review", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.lab_review.record"), chemotherapy_validation_1.recordLabReviewValidation, controller.recordLabReview.bind(controller));
 router.get("/cycles/:cycleId/lab-review", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.cycleIdParamValidation, controller.listLabReviews.bind(controller));

@@ -41,4 +41,6 @@ router.get("/admin", auth_middleware_1.authenticate, (0, authorize_1.authorizeRo
 });
 router.get("/me/kpi-preferences", auth_middleware_1.authenticate, authController.getKpiPreferences.bind(authController));
 router.put("/me/kpi-preferences", auth_middleware_1.authenticate, authController.saveKpiPreferences.bind(authController));
+router.get("/me/kpi-usage", auth_middleware_1.authenticate, authController.getKpiUsage.bind(authController));
+router.put("/me/kpi-usage", auth_middleware_1.authenticate, authController.saveKpiUsage.bind(authController));
 exports.default = router;

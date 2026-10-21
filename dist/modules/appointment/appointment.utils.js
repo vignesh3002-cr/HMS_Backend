@@ -72,10 +72,14 @@ function generateTimeSlots(startTime, endTime, consultationMinutes) {
     const slots = [];
     const step = consultationMinutes > 0 ? consultationMinutes : 30;
     const startMinutes = timeToMinutes(startTime);
-    const endMinutes = timeToMinutes(endTime);
+    let endMinutes = timeToMinutes(endTime);
+    if (endMinutes <= startMinutes) {
+        endMinutes += 1440; // Spans past midnight into next day
+    }
     for (let minutes = startMinutes; minutes + step <= endMinutes; minutes += step) {
-        const hours = Math.floor(minutes / 60);
-        const mins = minutes % 60;
+        const normalizedMinutes = minutes % 1440;
+        const hours = Math.floor(normalizedMinutes / 60);
+        const mins = normalizedMinutes % 60;
         slots.push(`${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`);
     }
     return slots;

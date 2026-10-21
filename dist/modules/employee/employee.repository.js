@@ -621,6 +621,15 @@ class EmployeeRepository {
         }
         return response;
     }
+    /**
+     * One doctor's availability on a date at a branch: ACTIVE (scheduled that
+     * day and not on leave), LEAVE, or INACTIVE. Same rule the employee list's
+     * doctor_status uses, for callers that validate a single doctor.
+     */
+    async getDoctorStatusForDate(employeeId, branchId, dateString) {
+        const statuses = await this.computeDoctorStatuses([employeeId], branchId, dateString, new Map([[employeeId, [branchId]]]));
+        return statuses.get(employeeId) ?? "LEAVE";
+    }
     async computeDoctorStatuses(doctorIds, branchId, dateString, branchesByDoctor) {
         const dateStart = parseDateOnlyUtc(dateString);
         const dayOfWeek = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"][dateStart.getUTCDay()];

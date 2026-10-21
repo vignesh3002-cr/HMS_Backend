@@ -53,6 +53,7 @@ export interface DaycareBookingDTO {
 export interface IpdActor {
     user_id: string;
     role?: string;
+    employee_id?: string;
 }
 
 export interface CreateWardDTO {
@@ -138,8 +139,29 @@ export interface UpdateAdmissionDTO {
     updated_by?: string;
 }
 
+/*
+ * Duty doctor / primary nurse allocation. Omitted fields are left unchanged;
+ * a handover with the same person but a new note is allowed. Passing
+ * null clears that role.
+ */
+export interface AllocateCareTeamDTO {
+    assigned_doctor_id?: string | null;
+    nurse_id?: string | null;
+    handover_notes?: string;
+    /** Emergency override: allow staff who are not on today's roster (needs a reason in handover_notes). */
+    roster_override?: boolean;
+}
+
+export interface BulkAllocateCareTeamDTO extends AllocateCareTeamDTO {
+    ward_id: string;
+    branch_id: string;
+    admission_ids: string[];
+}
+
 export interface AdmissionSearchQuery {
     branchId?: string;
+    /** employee_id of a doctor / nurse: only admissions they are assigned to. */
+    assignedTo?: string;
     status?: string;
     patientId?: string;
     date?: string;

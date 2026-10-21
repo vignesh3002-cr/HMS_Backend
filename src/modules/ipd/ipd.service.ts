@@ -18,6 +18,7 @@ import {
 } from "./ipd.types";
 import {
     ADMISSION_TYPE,
+    CARE_TEAM_END_REASON,
     DISCHARGE_TYPE,
     IPD_STATUS_VALUES,
     IST_OFFSET_MS,
@@ -537,6 +538,7 @@ export class IpdService {
 
         return this.ipdRepository.listAdmissions({
             branchId: filter.branchId,
+            assignedTo: filter.assignedTo,
             status: filter.status,
             wardId: filter.wardId,
             patientId: filter.patientId,
@@ -547,6 +549,24 @@ export class IpdService {
             sortField: filter.sortField,
             sortDirection: filter.sortDirection,
         });
+
+    }
+
+    /*
+     * The caller's employee_id for "my patients": the token carries it, but
+     * fall back to the user's employee row for older tokens. A user with no
+     * employee record matches nothing (never everything).
+     */
+    async resolveActorEmployeeId(actor: IpdActor): Promise<string> {
+
+        if (actor.employee_id) return actor.employee_id;
+
+        const employee = await prisma.employees.findUnique({
+            where: { user_id: actor.user_id },
+            select: { employee_id: true },
+        });
+
+        return employee?.employee_id ?? "__none__";
 
     }
 
@@ -1561,9 +1581,19 @@ export class IpdService {
                     ...clinical,
                     status: IPD_STATUS.DISCHARGED,
                     discharge_date: dischargeDate,
+                    // The stay is over: nobody is on duty for this admission any more.
+                    current_assigned_doctor_id: null,
+                    current_nurse_id: null,
                     updated_by: closedBy,
                     updated_at: dischargeDate,
                 }
+            );
+
+            await this.ipdRepository.closeActiveCareTeam(
+                tx,
+                existing.admission_id,
+                dischargeDate,
+                CARE_TEAM_END_REASON.DISCHARGE
             );
 
             // The vacated bed needs turning over before the next patient.

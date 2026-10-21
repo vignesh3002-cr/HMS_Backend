@@ -30,6 +30,7 @@ const ENTITY_TARGET = {
     ENCOUNTER_REPORT: { table: "encounter_report", column: "encounter_report_id", padTo: 7 },
     ENCOUNTER_MOLECULAR_TEST: { table: "encounter_molecular_test", column: "encounter_molecular_test_id", padTo: 7 },
     ENCOUNTER_IMMUNIZATION: { table: "encounter_immunization", column: "encounter_immunization_id", padTo: 7 },
+    ENCOUNTER_PAST_TREATMENT: { table: "encounter_past_treatment", column: "encounter_past_treatment_id", padTo: 7 },
     CHEMOTHERAPY_PLAN_HYDRATION: { table: "chemotherapy_plan_hydration", column: "plan_hydration_id", padTo: 7 },
     CHEMOTHERAPY_PLAN_ORDER: { table: "chemotherapy_plan_order", column: "plan_order_id", padTo: 7 },
     CHEMOTHERAPY_ADMINISTRATION: { table: "chemotherapy_administration", column: "administration_id" },
@@ -48,10 +49,14 @@ const ENTITY_TARGET = {
     WARD: { table: "ward_master", column: "ward_id" },
     BED: { table: "bed_master", column: "bed_id" },
     ADMISSION_TRANSFER: { table: "admission_transfer_log", column: "transfer_log_id" },
+    CARE_TEAM: { table: "admission_care_team", column: "assignment_id", padTo: 6 },
     REVIEW_REMINDER: { table: "discharge_review_reminder", column: "reminder_id", padTo: 6 },
     FOLLOWUP_LOG: { table: "followup_contact_log", column: "log_id", padTo: 7 },
     PHARMACY_SLIP: { table: "pharmacy_slip", column: "pharmacy_slip_id", padTo: 7 },
     PHARMACY_SLIP_ITEM: { table: "pharmacy_slip_item", column: "pharmacy_slip_item_id", padTo: 7 },
+    BRANCH_SHIFT: { table: "branch_shift_master", column: "shift_id", padTo: 4 },
+    DUTY_TEMPLATE: { table: "staff_duty_roster_template", column: "template_id", padTo: 6 },
+    DUTY_ROSTER: { table: "staff_duty_roster", column: "roster_id", padTo: 6 },
 };
 // Generates `count` consecutive ids for one entity while holding the
 // sequence row lock exactly once. Batch callers (e.g. prescription items)

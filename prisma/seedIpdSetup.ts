@@ -36,7 +36,8 @@ async function main() {
         { entity_name: "BED", prefix: "BED" },
         { entity_name: "ADMISSION_TRANSFER", prefix: "TRF" },
         { entity_name: "REVIEW_REMINDER", prefix: "RVW" },
-        { entity_name: "FOLLOWUP_LOG", prefix: "FUP" }
+        { entity_name: "FOLLOWUP_LOG", prefix: "FUP" },
+        { entity_name: "CARE_TEAM", prefix: "ACT" }
     ];
 
     for (const seq of sequenceSetup) {
