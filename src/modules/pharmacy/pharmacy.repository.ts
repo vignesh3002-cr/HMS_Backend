@@ -218,6 +218,65 @@ export class PharmacyRepository {
     }
 
     // ---------------------------------------------------------------
+    // Pharmacy Master & Medicine Master helpers
+    // ---------------------------------------------------------------
+
+    async findPharmacyMasterItems(medicineIds?: string[]) {
+
+        const where: Prisma.pharmacy_masterWhereInput = { is_active: true };
+
+        if (medicineIds && medicineIds.length > 0) {
+            where.medicine_id = { in: medicineIds };
+        }
+
+        return prisma.pharmacy_master.findMany({
+            where,
+            select: {
+                pharmacy_item_id: true,
+                medicine_id: true,
+                item_name: true,
+                brand_name: true,
+                manufacturer_name: true,
+                dosage_form: true,
+                strength_text: true,
+                strength_value: true,
+                strength_unit: true
+            },
+            orderBy: [{ item_name: "asc" }, { manufacturer_name: "asc" }]
+        });
+
+    }
+
+    async createMedicineInMaster(data: { medicine_name: string; generic_name?: string | null; dosage_form?: string | null }) {
+
+        const lastRow = await prisma.medicine_master.findFirst({
+            orderBy: { medicine_id: "desc" },
+            select: { medicine_id: true }
+        });
+
+        let nextNum = 1;
+        if (lastRow?.medicine_id) {
+            const match = lastRow.medicine_id.match(/\d+/);
+            if (match) {
+                nextNum = parseInt(match[0], 10) + 1;
+            }
+        }
+
+        const medicineId = "MED" + String(nextNum).padStart(6, "0");
+
+        return prisma.medicine_master.create({
+            data: {
+                medicine_id: medicineId,
+                medicine_name: data.medicine_name.trim(),
+                generic_name: data.generic_name?.trim() || null,
+                dosage_form: data.dosage_form?.trim() || null,
+                is_active: true
+            }
+        });
+
+    }
+
+    // ---------------------------------------------------------------
     // Source readers
     //
     // Read-only. The pharmacy module must never mutate chemotherapy or
@@ -242,14 +301,22 @@ export class PharmacyRepository {
                     include: {
                         chemotherapy_discharge_instructions: {
                             where: { active_status: 1 },
-                            include: { medicine_master: true },
+                            include: {
+                                medicine_master: {
+                                    include: { pharmacy_master: { where: { is_active: true } } }
+                                }
+                            },
                             orderBy: { drug_sequence: "asc" as const }
                         }
                     }
                 },
                 chemotherapy_plan_items: {
                     where: { active_status: 1, plan_order_id: null },
-                    include: { medicine_master: true },
+                    include: {
+                        medicine_master: {
+                            include: { pharmacy_master: { where: { is_active: true } } }
+                        }
+                    },
                     orderBy: { drug_sequence: "asc" as const }
                 }
             }
@@ -271,7 +338,11 @@ export class PharmacyRepository {
                 include: {
                     chemotherapy_plan_items: {
                         where: { active_status: 1 },
-                        include: { medicine_master: true },
+                        include: {
+                            medicine_master: {
+                                include: { pharmacy_master: { where: { is_active: true } } }
+                            }
+                        },
                         orderBy: { drug_sequence: "asc" as const }
                     }
                 }
@@ -355,7 +426,11 @@ export class PharmacyRepository {
             },
             include: {
                 prescription_items: {
-                    include: { medicine_master: true },
+                    include: {
+                        medicine_master: {
+                            include: { pharmacy_master: { where: { is_active: true } } }
+                        }
+                    },
                     orderBy: { prescription_item_id: "asc" as const }
                 }
             },
@@ -391,7 +466,11 @@ export class PharmacyRepository {
                     }
                 },
                 prescription_items: {
-                    include: { medicine_master: true },
+                    include: {
+                        medicine_master: {
+                            include: { pharmacy_master: { where: { is_active: true } } }
+                        }
+                    },
                     orderBy: { prescription_item_id: "asc" as const }
                 }
             }
