@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.printSlipValidation = exports.cancelSlipValidation = exports.updateSlipItemsValidation = exports.getSlipValidation = exports.listSlipsValidation = exports.createSlipValidation = exports.previewSlipValidation = void 0;
+exports.printSlipValidation = exports.cancelSlipValidation = exports.createMedicineValidation = exports.updateSlipItemsValidation = exports.getSlipValidation = exports.listSlipsValidation = exports.createSlipValidation = exports.previewSlipValidation = void 0;
 const express_validator_1 = require("express-validator");
 const pharmacy_constants_1 = require("./pharmacy.constants");
 /*
@@ -39,19 +39,52 @@ exports.listSlipsValidation = [
     (0, express_validator_1.query)("limit").optional().isInt({ min: 1, max: 200 }).withMessage("Limit must be between 1 and 200")
 ];
 exports.getSlipValidation = [slipIdValidation];
-// Quantity is the only editable field on a line and it counts whole packs.
+// Editable fields on a line: quantity, brand_name, dose, dose_unit, etc.
 exports.updateSlipItemsValidation = [
     slipIdValidation,
     (0, express_validator_1.body)("items")
         .isArray({ min: 1 })
         .withMessage("At least one slip item is required"),
     (0, express_validator_1.body)("items.*.pharmacy_slip_item_id")
-        .notEmpty()
-        .withMessage("Each item must identify its slip item"),
+        .optional({ nullable: true })
+        .isString(),
     (0, express_validator_1.body)("items.*.quantity")
         .optional({ nullable: true })
         .isInt({ min: 0 })
-        .withMessage("Quantity must be a whole number of zero or greater")
+        .withMessage("Quantity must be a whole number of zero or greater"),
+    (0, express_validator_1.body)("items.*.brand_name")
+        .optional({ nullable: true })
+        .isString(),
+    (0, express_validator_1.body)("items.*.dose")
+        .optional({ nullable: true })
+        .isString(),
+    (0, express_validator_1.body)("items.*.dose_unit")
+        .optional({ nullable: true })
+        .isString(),
+    (0, express_validator_1.body)("items.*.patient_dose")
+        .optional({ nullable: true })
+        .isString(),
+    (0, express_validator_1.body)("items.*.drug_name")
+        .optional({ nullable: true })
+        .isString(),
+    (0, express_validator_1.body)("items.*.medicine_id")
+        .optional({ nullable: true })
+        .isString()
+];
+exports.createMedicineValidation = [
+    (0, express_validator_1.body)("medicine_name")
+        .notEmpty()
+        .withMessage("Medicine name is required")
+        .isLength({ max: 255 })
+        .withMessage("Medicine name cannot exceed 255 characters"),
+    (0, express_validator_1.body)("generic_name")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 255 }),
+    (0, express_validator_1.body)("dosage_form")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 100 })
 ];
 exports.cancelSlipValidation = [
     slipIdValidation,

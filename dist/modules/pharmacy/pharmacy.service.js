@@ -67,11 +67,19 @@ class PharmacyService {
             : plan.chemotherapy_plan_items;
         const lines = planItems.map((item) => {
             const medicine = item.medicine_master;
+            const protoDoseObj = doseOf(item.calculated_dose, item.calculated_dose_unit ?? item.protocol_dose_unit, item.protocol_dose);
+            const protoDoseText = protoDoseObj.dose ? `${protoDoseObj.dose}${protoDoseObj.dose_unit ? ` ${protoDoseObj.dose_unit}` : ""}` : null;
+            const pharmMaster = medicine?.pharmacy_master?.[0];
+            const brandName = clean(pharmMaster?.manufacturer_name ?? medicine?.brand_name);
+            const dose = pharmMaster?.strength_value ? String(pharmMaster.strength_value) : (pharmMaster?.strength_text ?? protoDoseObj.dose);
+            const doseUnit = pharmMaster?.strength_unit ?? protoDoseObj.dose_unit;
             return {
                 medicine_id: item.medicine_id ?? null,
                 drug_name: drugNameOf(item.medicine_id, item.drug_name, medicine),
-                brand_name: medicine?.brand_name ?? null,
-                ...doseOf(item.calculated_dose, item.calculated_dose_unit ?? item.protocol_dose_unit, item.protocol_dose),
+                brand_name: brandName,
+                patient_dose: protoDoseText,
+                dose,
+                dose_unit: doseUnit,
                 // A chemo order's calculated_dose is the dose to administer,
                 // not a pack quantity, so it is deliberately not copied into
                 // quantity - the pharmacist fills that in.
@@ -85,12 +93,19 @@ class PharmacyService {
         const discharge = plan.chemotherapy_regimen_protocol?.chemotherapy_discharge_instructions ?? [];
         for (const instruction of discharge) {
             const medicine = instruction.medicine_master;
-            const dose = doseOf(instruction.patient_dose, instruction.patient_dose_unit, null);
+            const protoDoseObj = doseOf(instruction.patient_dose, instruction.patient_dose_unit, null);
+            const protoDoseText = protoDoseObj.dose ? `${protoDoseObj.dose}${protoDoseObj.dose_unit ? ` ${protoDoseObj.dose_unit}` : ""}` : null;
+            const pharmMaster = medicine?.pharmacy_master?.[0];
+            const brandName = clean(pharmMaster?.manufacturer_name ?? instruction.drug_brand_name ?? medicine?.brand_name);
+            const dose = pharmMaster?.strength_value ? String(pharmMaster.strength_value) : (pharmMaster?.strength_text ?? protoDoseObj.dose);
+            const doseUnit = pharmMaster?.strength_unit ?? protoDoseObj.dose_unit;
             lines.push({
                 medicine_id: instruction.medicine_id ?? null,
                 drug_name: drugNameOf(instruction.medicine_id, instruction.drug_brand_name, medicine),
-                brand_name: clean(instruction.drug_brand_name ?? medicine?.brand_name),
-                ...dose,
+                brand_name: brandName,
+                patient_dose: protoDoseText,
+                dose,
+                dose_unit: doseUnit,
                 quantity: null,
                 drug_role: pharmacy_constants_1.PHARMACY_DRUG_ROLE.DISCHARGE,
                 frequency: clean(instruction.frequency),
@@ -144,11 +159,19 @@ class PharmacyService {
     prescriptionLines(items) {
         return items.map((item) => {
             const medicine = item.medicine_master;
+            const protoDoseObj = doseOf(item.dosage, item.unit, null);
+            const protoDoseText = protoDoseObj.dose ? `${protoDoseObj.dose}${protoDoseObj.dose_unit ? ` ${protoDoseObj.dose_unit}` : ""}` : null;
+            const pharmMaster = medicine?.pharmacy_master?.[0];
+            const brandName = clean(pharmMaster?.manufacturer_name ?? medicine?.brand_name);
+            const dose = pharmMaster?.strength_value ? String(pharmMaster.strength_value) : (pharmMaster?.strength_text ?? protoDoseObj.dose);
+            const doseUnit = pharmMaster?.strength_unit ?? protoDoseObj.dose_unit;
             return {
                 medicine_id: item.medicine_id ?? null,
                 drug_name: drugNameOf(item.medicine_id, item.drug_name, medicine),
-                brand_name: medicine?.brand_name ?? null,
-                ...doseOf(item.dosage, item.unit, null),
+                brand_name: brandName,
+                patient_dose: protoDoseText,
+                dose,
+                dose_unit: doseUnit,
                 // A prescription dosage is a pack count for advice
                 // medicines, so it round-trips as the slip quantity.
                 quantity: asNumber(item.quantity),
@@ -171,6 +194,17 @@ class PharmacyService {
         const existing = resolved.plan_order_id
             ? await this.repository.findLiveSlipForOrder(resolved.plan_order_id)
             : null;
+        if (existing && existing.pharmacy_slip_item) {
+            const doseMap = new Map();
+            for (const l of resolved.lines) {
+                if (l.medicine_id)
+                    doseMap.set(l.medicine_id, l.patient_dose ?? null);
+            }
+            for (let i = 0; i < existing.pharmacy_slip_item.length; i++) {
+                const item = existing.pharmacy_slip_item[i];
+                item.patient_dose = (item.medicine_id ? doseMap.get(item.medicine_id) : null) ?? resolved.lines[i]?.patient_dose ?? null;
+            }
+        }
         return { ...resolved, existing_slip: existing ?? null };
     }
     async createFromPlan(dto, actingUserId) {
@@ -266,26 +300,81 @@ class PharmacyService {
                     : "has already been printed";
                 throw new Error(`This pharmacy slip can no longer be edited because it ${frozenBecause}. ${existing.slip_status === pharmacy_constants_1.PHARMACY_SLIP_STATUS.CANCELLED ? "Create a new slip instead." : "Cancel it to print a replacement."}`);
             }
-            const owned = await this.assertItemsBelongToSlip(tx, pharmacySlipId, dto.items.map((item) => item.pharmacy_slip_item_id));
+            const existingItemsDto = dto.items.filter((item) => item.pharmacy_slip_item_id && !item.pharmacy_slip_item_id.startsWith("new-") && !item.pharmacy_slip_item_id.startsWith("pending-"));
+            const newItemsDto = dto.items.filter((item) => !item.pharmacy_slip_item_id || item.pharmacy_slip_item_id.startsWith("new-") || item.pharmacy_slip_item_id.startsWith("pending-"));
+            const existingIds = existingItemsDto.map((item) => item.pharmacy_slip_item_id);
+            const owned = await this.assertItemsBelongToSlip(tx, pharmacySlipId, existingIds);
             const changes = {};
-            for (const item of dto.items) {
+            for (let i = 0; i < existingItemsDto.length; i++) {
+                const item = existingItemsDto[i];
                 const before = owned.get(item.pharmacy_slip_item_id);
-                const patch = { updated_at: new Date() };
+                const patch = {
+                    updated_at: new Date(),
+                    display_order: i
+                };
                 if (item.quantity !== undefined)
                     patch.quantity = item.quantity;
+                if (item.brand_name !== undefined)
+                    patch.brand_name = clean(item.brand_name);
+                if (item.dose !== undefined)
+                    patch.dose = clean(item.dose);
+                if (item.dose_unit !== undefined)
+                    patch.dose_unit = clean(item.dose_unit);
+                if (item.drug_role !== undefined)
+                    patch.drug_role = clean(item.drug_role);
+                if (item.pharmacy_item_id !== undefined)
+                    patch.pharmacy_item_id = clean(item.pharmacy_item_id);
                 await tx.pharmacy_slip_item.update({
                     where: { pharmacy_slip_item_id: item.pharmacy_slip_item_id },
                     data: patch
                 });
                 Object.assign(changes, {
                     [`item:${item.pharmacy_slip_item_id}`]: {
-                        quantity: patch.quantity ?? before.quantity
+                        quantity: patch.quantity ?? before.quantity,
+                        dose: patch.dose ?? before.dose,
+                        dose_unit: patch.dose_unit ?? before.dose_unit,
+                        brand_name: patch.brand_name ?? before.brand_name
                     }
                 });
             }
+            if (newItemsDto.length > 0) {
+                const newItemIds = await this.repository.generateSlipItemIds(tx, newItemsDto.length);
+                const startIndex = existingItemsDto.length;
+                for (let i = 0; i < newItemsDto.length; i++) {
+                    const item = newItemsDto[i];
+                    const generatedId = newItemIds[i];
+                    await tx.pharmacy_slip_item.create({
+                        data: {
+                            pharmacy_slip_item_id: generatedId,
+                            pharmacy_slip_id: pharmacySlipId,
+                            display_order: startIndex + i,
+                            medicine_id: clean(item.medicine_id),
+                            drug_name: clean(item.drug_name),
+                            brand_name: clean(item.brand_name),
+                            dose: clean(item.dose),
+                            dose_unit: clean(item.dose_unit),
+                            quantity: item.quantity ?? null,
+                            drug_role: clean(item.drug_role) ?? pharmacy_constants_1.PHARMACY_DRUG_ROLE.PRIMARY,
+                            route: clean(item.route),
+                            frequency: clean(item.frequency),
+                            duration: clean(item.duration),
+                            instructions: clean(item.instructions),
+                            pharmacy_item_id: clean(item.pharmacy_item_id)
+                        }
+                    });
+                    Object.assign(changes, {
+                        [`item:${generatedId}:created`]: {
+                            drug_name: item.drug_name,
+                            brand_name: item.brand_name,
+                            dose: item.dose,
+                            dose_unit: item.dose_unit,
+                            quantity: item.quantity
+                        }
+                    });
+                }
+            }
             // Omitted lines are the ones the user deleted in the UI.
-            const sentIds = dto.items.map((item) => item.pharmacy_slip_item_id);
-            await this.repository.deleteSlipItems(tx, pharmacySlipId, sentIds);
+            await this.repository.deleteSlipItems(tx, pharmacySlipId, existingIds);
             await (0, audit_service_1.logAudit)(tx, {
                 entity_type: AUDIT_ENTITY,
                 entity_id: pharmacySlipId,
@@ -416,6 +505,23 @@ class PharmacyService {
             throw new Error("One or more slip items do not belong to this pharmacy slip");
         }
         return new Map(rows.map((row) => [row.pharmacy_slip_item_id, row]));
+    }
+    // ---------------------------------------------------------------
+    // Pharmacy Master & Medicine Master
+    // ---------------------------------------------------------------
+    async listPharmacyMasterItems(medicineIds) {
+        return this.repository.findPharmacyMasterItems(medicineIds);
+    }
+    async createMedicine(dto, actingUserId) {
+        if (!dto.medicine_name?.trim()) {
+            throw new Error("Medicine name is required");
+        }
+        const med = await this.repository.createMedicineInMaster({
+            medicine_name: dto.medicine_name.trim(),
+            generic_name: dto.generic_name?.trim() || null,
+            dosage_form: dto.dosage_form?.trim() || null
+        });
+        return med;
     }
 }
 exports.PharmacyService = PharmacyService;
