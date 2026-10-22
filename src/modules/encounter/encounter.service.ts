@@ -224,7 +224,7 @@ export class EncounterService {
             throw new Error("Patient is inactive");
         }
 
-        const doctor = admission.employees;
+        const doctor = admission.employees_admission_employee_idToemployees;
 
         if (!doctor || !doctor.employee_id) {
             throw new Error("Doctor not found");

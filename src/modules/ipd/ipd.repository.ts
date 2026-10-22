@@ -31,6 +31,17 @@ const careTeamEmployeeSelect = {
     designation: true,
 } as const;
 
+// The schema names the admitting-doctor relation `employees_admission_employee_idToemployees`.
+// Callers and API consumers read it as `employees`, so re-attach it under that key.
+type AdmissionEmployeeRelation = "employees_admission_employee_idToemployees";
+
+function aliasAdmissionEmployee<T extends Record<AdmissionEmployeeRelation, unknown>>(
+    row: T
+): Omit<T, AdmissionEmployeeRelation> & { employees: T[AdmissionEmployeeRelation] } {
+    const { employees_admission_employee_idToemployees: employees, ...rest } = row;
+    return { ...rest, employees };
+}
+
 export class IpdRepository {
 
     // ------------------------------------------------------------------ wards
@@ -392,7 +403,7 @@ export class IpdRepository {
                 department_master: {
                     select: { department_id: true, department_name: true },
                 },
-                employees: {
+                employees_admission_employee_idToemployees: {
                     select: {
                         employee_id: true,
                         first_name: true,
@@ -413,7 +424,7 @@ export class IpdRepository {
                     orderBy: { transferred_at: "desc" },
                 },
             },
-        });
+        }).then((row) => (row ? aliasAdmissionEmployee(row) : row));
 
     }
 
@@ -546,7 +557,7 @@ export class IpdRepository {
                     department_master: {
                         select: { department_id: true, department_name: true },
                     },
-                    employees: {
+                    employees_admission_employee_idToemployees: {
                         select: {
                             employee_id: true,
                             first_name: true,
@@ -570,7 +581,7 @@ export class IpdRepository {
             page,
             limit,
             totalPages: Math.ceil(total / limit),
-            admissions,
+            admissions: admissions.map(aliasAdmissionEmployee),
         };
 
     }
@@ -749,7 +760,7 @@ export class IpdRepository {
                 department_master: {
                     select: { department_id: true, department_name: true },
                 },
-                employees: {
+                employees_admission_employee_idToemployees: {
                     select: {
                         employee_id: true,
                         first_name: true,
@@ -770,7 +781,7 @@ export class IpdRepository {
                     orderBy: { transferred_at: "desc" },
                 },
             },
-        });
+        }).then((row) => (row ? aliasAdmissionEmployee(row) : row));
 
     }
 
