@@ -29,7 +29,10 @@ class LabOrderItemController {
     }
     async getAll(req, res) {
         try {
-            const items = await service.getAll();
+            const items = await service.getAll({
+                patientId: req.query.patientId || undefined,
+                appointmentId: req.query.appointmentId || undefined
+            });
             return res.json({
                 success: true,
                 data: items

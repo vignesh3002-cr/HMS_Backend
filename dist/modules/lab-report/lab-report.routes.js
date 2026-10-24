@@ -2,8 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const lab_report_controller_1 = require("./lab-report.controller");
+const auth_middleware_1 = require("../auth/auth.middleware");
 const router = (0, express_1.Router)();
 const controller = new lab_report_controller_1.LabReportController();
+// Every lab report route needs a logged-in user.
+router.use(auth_middleware_1.authenticate);
 router.get("/", (req, res) => controller.getAll(req, res));
 router.post("/", (req, res) => controller.create(req, res));
 router.get("/order/:orderId", (req, res) => controller.getByOrderId(req, res));

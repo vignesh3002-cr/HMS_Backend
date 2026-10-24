@@ -592,6 +592,33 @@ class ChemotherapyController {
             return handleError(res, error);
         }
     }
+    async getMedicineInvestigations(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const raw = req.query.medicine_ids;
+            const medicineIds = (Array.isArray(raw) ? raw.join(",") : String(raw ?? ""))
+                .split(",")
+                .map((id) => id.trim())
+                .filter(Boolean);
+            const data = await service.getMedicineInvestigations(medicineIds);
+            return res.json({ success: true, message: "Medicine investigations fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async updatePlanInvestigationStatus(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.updatePlanInvestigationStatus(req.params.planId, Number(req.params.cycleNumber), Number(req.params.cycleDay), req.body, actingUserId(req));
+            return res.json({ success: true, message: "Investigation status updated successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
     async savePlanOrder(req, res) {
         try {
             if (!checkValidation(req, res))

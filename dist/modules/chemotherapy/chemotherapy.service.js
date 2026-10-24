@@ -111,6 +111,62 @@ function planHydrationCreateData(planId, hydrationId, index, row, actingUserId) 
         created_by: actingUserId
     };
 }
+function normalizedMedicineText(value) {
+    return (value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+function scoreMedicineMatch(target, mapping) {
+    if (target.medicine_id === mapping.medicine_id) {
+        return 10000;
+    }
+    const targetName = normalizedMedicineText(target.medicine_name);
+    const mappingName = normalizedMedicineText(mapping.medicine_name);
+    const targetGeneric = normalizedMedicineText(target.generic_name);
+    const mappingGeneric = normalizedMedicineText(mapping.generic_name);
+    if (mappingName && targetName === mappingName) {
+        return 3000 + mappingName.length;
+    }
+    if (mappingName.length >= 4 && targetName.includes(mappingName)) {
+        return 2000 + mappingName.length;
+    }
+    if (mappingGeneric && targetGeneric === mappingGeneric) {
+        return 1000 + mappingGeneric.length;
+    }
+    if (mappingGeneric.length >= 4 && targetName.includes(mappingGeneric)) {
+        return 900 + mappingGeneric.length;
+    }
+    return 0;
+}
+function normalizedInvestigationKey(row) {
+    const name = row.investigation_name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const identity = row.investigation_category === chemotherapy_constants_1.PLAN_INVESTIGATION_CATEGORY.LAB && row.lab_test_id
+        ? row.lab_test_id
+        : name;
+    return `${row.investigation_category}:${identity}`.slice(0, 220);
+}
+function planInvestigationCreateData(planId, investigationId, index, row, actingUserId, planOrderId) {
+    return {
+        investigation_id: investigationId,
+        plan_order_id: planOrderId,
+        chemotherapy_plan_id: planId,
+        lab_test_id: row.investigation_category === chemotherapy_constants_1.PLAN_INVESTIGATION_CATEGORY.LAB ? row.lab_test_id || null : null,
+        investigation_name: row.investigation_name.trim(),
+        investigation_category: row.investigation_category,
+        investigation_type: row.investigation_type?.trim() || null,
+        source_medicine_ids: row.source_medicine_ids?.trim() || null,
+        source_drug_names: row.source_drug_names?.trim() || null,
+        source_test_text: row.source_test_text?.trim() || null,
+        monitoring_phase: row.monitoring_phase?.trim() || "BASELINE",
+        priority: row.priority?.trim() || "Normal",
+        target_date: row.target_date ? new Date(row.target_date) : null,
+        clinical_notes: row.clinical_notes?.trim() || null,
+        item_status: row.item_status ?? chemotherapy_constants_1.PLAN_INVESTIGATION_STATUS.PLANNED,
+        lab_order_id: row.lab_order_id?.trim() || null,
+        lab_order_item_id: row.lab_order_item_id?.trim() || null,
+        display_order: index + 1,
+        normalized_key: normalizedInvestigationKey(row),
+        created_by: actingUserId
+    };
+}
 // A protocol's items as plan items - the plan's one-time baseline copy.
 function protocolPlanItems(protocol) {
     return protocol.chemotherapy_regimen_protocol_items.map((item) => ({
@@ -2836,6 +2892,148 @@ class ChemotherapyService {
             planned_date: order.planned_date ?? plannedDateOf(await this.planSchedule(plan), cycleNumber, cycleDay)
         };
     }
+    // Suggests baseline lab / non-lab / tissue investigations for the medicines
+    // on a cycle-day order. Mappings were imported for curated drug ids, while
+    // existing protocols use legacy medicine ids, so an exact id match, the
+    // medicine name, and the generic name are all considered (longest name wins
+    // - e.g. Trastuzumab deruxtecan over Trastuzumab).
+    async getMedicineInvestigations(medicineIds) {
+        const ids = [...new Set(medicineIds.map((id) => id.trim()).filter(Boolean))];
+        if (ids.length === 0) {
+            return { lab: [], nonLab: [] };
+        }
+        const [medicines, labMappings, nonLabMappings] = await Promise.all([
+            this.repository.findActiveMedicinesByIds(ids),
+            this.repository.listDrugLabMonitoringMappings(),
+            this.repository.listDrugNonLabMappings()
+        ]);
+        const mappingMedicines = new Map();
+        for (const row of [...labMappings, ...nonLabMappings]) {
+            mappingMedicines.set(row.medicine_master.medicine_id, row.medicine_master);
+        }
+        const matchedByMedicine = new Map();
+        for (const medicine of medicines) {
+            let best = null;
+            let bestScore = 0;
+            for (const mappingMedicine of mappingMedicines.values()) {
+                const score = scoreMedicineMatch(medicine, mappingMedicine);
+                if (score > bestScore) {
+                    best = mappingMedicine;
+                    bestScore = score;
+                }
+            }
+            if (best) {
+                matchedByMedicine.set(medicine.medicine_id, best);
+            }
+        }
+        const matchedMappingIds = new Set([...matchedByMedicine.values()].map((medicine) => medicine.medicine_id));
+        if (matchedMappingIds.size === 0) {
+            return { lab: [], nonLab: [] };
+        }
+        const lab = new Map();
+        for (const row of labMappings) {
+            if (!matchedMappingIds.has(row.medicine_id)) {
+                continue;
+            }
+            const key = `${row.lab_test_id}:${row.monitoring_phase ?? "BASELINE"}`;
+            const current = lab.get(key) ?? {
+                lab_test_id: row.lab_test_id,
+                investigation_name: row.lab_test_master.test_name,
+                investigation_category: chemotherapy_constants_1.PLAN_INVESTIGATION_CATEGORY.LAB,
+                investigation_type: row.lab_test_master.sample_type ?? row.lab_test_master.lab_test_category?.category_name ?? null,
+                test_code: row.lab_test_master.test_code ?? null,
+                sample_type: row.lab_test_master.sample_type ?? null,
+                category_name: row.lab_test_master.lab_test_category?.category_name ?? null,
+                source_test_text: row.source_test_text ?? null,
+                monitoring_phase: row.monitoring_phase ?? "BASELINE",
+                priority: "Normal",
+                item_status: chemotherapy_constants_1.PLAN_INVESTIGATION_STATUS.PLANNED,
+                source_medicine_ids: new Set(),
+                source_drug_names: new Set()
+            };
+            current.source_medicine_ids.add(row.medicine_id);
+            for (const [targetId, mappingMedicine] of matchedByMedicine.entries()) {
+                if (mappingMedicine.medicine_id === row.medicine_id) {
+                    const target = medicines.find((medicine) => medicine.medicine_id === targetId);
+                    if (target)
+                        current.source_drug_names.add(target.medicine_name);
+                }
+            }
+            if (row.source_test_text)
+                current.source_test_text = row.source_test_text;
+            lab.set(key, current);
+        }
+        const nonLab = new Map();
+        for (const row of nonLabMappings) {
+            if (!matchedMappingIds.has(row.medicine_id)) {
+                continue;
+            }
+            const type = (row.investigation_type ?? "").toLowerCase();
+            const category = type.includes("tissue") || type.includes("molecular")
+                ? chemotherapy_constants_1.PLAN_INVESTIGATION_CATEGORY.TISSUE
+                : chemotherapy_constants_1.PLAN_INVESTIGATION_CATEGORY.NON_LAB;
+            const key = `${category}:${normalizedMedicineText(row.investigation_name)}`;
+            const current = nonLab.get(key) ?? {
+                investigation_name: row.investigation_name,
+                investigation_category: category,
+                investigation_type: row.investigation_type ?? null,
+                source_test_text: null,
+                monitoring_phase: "BASELINE",
+                priority: "Normal",
+                item_status: chemotherapy_constants_1.PLAN_INVESTIGATION_STATUS.PLANNED,
+                source_medicine_ids: new Set(),
+                source_drug_names: new Set()
+            };
+            current.source_medicine_ids.add(row.medicine_id);
+            for (const [targetId, mappingMedicine] of matchedByMedicine.entries()) {
+                if (mappingMedicine.medicine_id === row.medicine_id) {
+                    const target = medicines.find((medicine) => medicine.medicine_id === targetId);
+                    if (target)
+                        current.source_drug_names.add(target.medicine_name);
+                }
+            }
+            nonLab.set(key, current);
+        }
+        const serialize = (row) => ({
+            ...row,
+            source_medicine_ids: [...row.source_medicine_ids].join(","),
+            source_drug_names: [...row.source_drug_names].join(", "),
+            lab_test_id: row.lab_test_id ?? null
+        });
+        return {
+            lab: [...lab.values()]
+                .map(serialize)
+                .sort((a, b) => a.investigation_name.localeCompare(b.investigation_name)),
+            nonLab: [...nonLab.values()]
+                .map(serialize)
+                .sort((a, b) => a.investigation_name.localeCompare(b.investigation_name))
+        };
+    }
+    async updatePlanInvestigationStatus(planId, cycleNumber, cycleDay, dto, actingUserId) {
+        const plan = await this.repository.findPlanForUpdate(prisma_1.default, planId);
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+        const order = await this.repository.findPlanOrder(prisma_1.default, planId, cycleNumber, cycleDay);
+        if (!order) {
+            throw new Error("Cycle day order not found");
+        }
+        if (order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED) {
+            throw new Error("This cycle day is already completed and can no longer be changed");
+        }
+        const updates = dto.updates ?? [];
+        if (updates.length === 0) {
+            return { updated: 0 };
+        }
+        if (updates.length > 100) {
+            throw new Error("Too many investigation updates (maximum 100)");
+        }
+        if (updates.some((update) => !update.investigation_id && !update.lab_test_id)) {
+            throw new Error("Each investigation update requires investigation_id or lab_test_id");
+        }
+        const updated = await this.repository.updatePlanOrderInvestigationStatus(prisma_1.default, order.plan_order_id, updates, actingUserId);
+        return { updated };
+    }
     async savePlanOrder(planId, cycleNumber, cycleDay, dto, actingUserId) {
         const plan = await this.repository.findPlanForUpdate(prisma_1.default, planId);
         if (!plan) {
@@ -2851,7 +3049,21 @@ class ChemotherapyService {
             throw new Error("Day must be at least 1");
         }
         const items = dto.items ?? [];
+        const saveInvestigations = Array.isArray(dto.investigations);
         await this.assertPlanItemDrugs(items);
+        if (saveInvestigations) {
+            const keys = new Set();
+            for (const row of dto.investigations) {
+                if (!row.investigation_name?.trim()) {
+                    throw new Error("Each investigation requires a name");
+                }
+                const key = normalizedInvestigationKey(row);
+                if (keys.has(key)) {
+                    throw new Error(`Duplicate investigation: ${row.investigation_name}`);
+                }
+                keys.add(key);
+            }
+        }
         if (dto.copied_from_order_id) {
             const source = await this.repository.findPlanOrderById(prisma_1.default, dto.copied_from_order_id);
             if (!source || source.chemotherapy_plan_id !== planId) {
@@ -2885,6 +3097,7 @@ class ChemotherapyService {
                 ...(dto.encounter_no ? { encounter_no: dto.encounter_no } : {}),
                 ...(dto.copied_from_order_id ? { copied_from_order_id: dto.copied_from_order_id } : {}),
                 ...(saveHydration ? { hydration_saved: true } : {}),
+                ...(saveInvestigations ? { investigations_saved: true } : {}),
                 // Instructions left out (row edits, Discharge Medication
                 // re-save) keep what was saved; empty text clears them.
                 ...(dto.chemo_instructions !== undefined
@@ -2947,6 +3160,14 @@ class ChemotherapyService {
                     });
                 }
             }
+            if (saveInvestigations) {
+                const rows = dto.investigations;
+                await this.repository.deletePlanOrderInvestigations(tx, planOrderId);
+                const investigationIds = await (0, idGenerator_1.generateIdBatch)(tx, chemotherapy_constants_1.ID_ENTITY.PLAN_INVESTIGATION, rows.length);
+                for (const [index, row] of rows.entries()) {
+                    await this.repository.createPlanOrderInvestigation(tx, planInvestigationCreateData(planId, investigationIds[index], index, row, actingUserId, planOrderId));
+                }
+            }
             await (0, audit_service_1.logAudit)(tx, {
                 entity_type: "chemotherapy_plan_order",
                 entity_id: planOrderId,
@@ -2959,6 +3180,7 @@ class ChemotherapyService {
                     cycle_day: cycleDay,
                     item_count: items.length,
                     hydration_count: saveHydration ? dto.hydration.length : null,
+                    investigation_count: saveInvestigations ? dto.investigations.length : null,
                     copied_from_order_id: dto.copied_from_order_id ?? null,
                     encounter_no: dto.encounter_no ?? null
                 })

@@ -18,6 +18,8 @@ import {
     replacePlanItemsValidation,
     planOrderParamValidation,
     savePlanOrderValidation,
+    medicineInvestigationsValidation,
+    planInvestigationStatusValidation,
     completePlanOrdersValidation,
     createCycleValidation,
     cycleStatusValidation,
@@ -250,6 +252,14 @@ router.get(
     authenticate,
     authorize("chemo.protocol.read"),
     controller.listMedicinesByDrugRole.bind(controller)
+);
+
+router.get(
+    "/medicine-investigations",
+    authenticate,
+    authorizeAny("chemo.plan.read", "chemo.plan.update"),
+    medicineInvestigationsValidation,
+    controller.getMedicineInvestigations.bind(controller)
 );
 
 router.get(
@@ -514,6 +524,14 @@ router.put(
     authorize("chemo.plan.update"),
     savePlanOrderValidation,
     controller.savePlanOrder.bind(controller)
+);
+
+router.patch(
+    "/plans/:planId/orders/:cycleNumber/:cycleDay/investigations/status",
+    authenticate,
+    authorize("chemo.plan.update"),
+    planInvestigationStatusValidation,
+    controller.updatePlanInvestigationStatus.bind(controller)
 );
 
 // ---------------- Cycles ----------------

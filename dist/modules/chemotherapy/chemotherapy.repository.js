@@ -397,6 +397,37 @@ class ChemotherapyRepository {
             orderBy: { medicine_name: "asc" }
         });
     }
+    async findActiveMedicinesByIds(medicineIds) {
+        if (medicineIds.length === 0) {
+            return [];
+        }
+        return prisma_1.default.medicine_master.findMany({
+            where: { medicine_id: { in: medicineIds }, is_active: true },
+            select: { medicine_id: true, medicine_name: true, generic_name: true }
+        });
+    }
+    // The drug-monitoring mappings are small reference tables. Load them with
+    // their medicine/test names so the service can match legacy plan medicine
+    // ids by name as well as by id.
+    async listDrugLabMonitoringMappings() {
+        return prisma_1.default.drug_lab_monitoring.findMany({
+            where: { active_status: 1 },
+            include: {
+                medicine_master: { select: { medicine_id: true, medicine_name: true, generic_name: true } },
+                lab_test_master: {
+                    include: { lab_test_category: { select: { lab_test_category_id: true, category_name: true } } }
+                }
+            }
+        });
+    }
+    async listDrugNonLabMappings() {
+        return prisma_1.default.drug_non_lab_investigation.findMany({
+            where: { active_status: 1 },
+            include: {
+                medicine_master: { select: { medicine_id: true, medicine_name: true, generic_name: true } }
+            }
+        });
+    }
     // Distinct active medicines that are referenced by the medicine_id column
     // of the chemotherapy_protocol_dilutions table.
     async listDilutionMedicines() {
@@ -949,7 +980,8 @@ class ChemotherapyRepository {
             include: { medicine_master: true },
             orderBy: { drug_sequence: "asc" }
         },
-        chemotherapy_plan_hydration: { orderBy: { display_order: "asc" } }
+        chemotherapy_plan_hydration: { orderBy: { display_order: "asc" } },
+        chemotherapy_plan_order_investigation: { orderBy: { display_order: "asc" } }
     };
     async generatePlanOrderId(tx) {
         return (0, idGenerator_1.generateId)(tx, chemotherapy_constants_1.ID_ENTITY.PLAN_ORDER);
@@ -1016,6 +1048,37 @@ class ChemotherapyRepository {
     }
     async deletePlanOrderHydration(tx, planOrderId) {
         return tx.chemotherapy_plan_hydration.deleteMany({ where: { plan_order_id: planOrderId } });
+    }
+    async deletePlanOrderInvestigations(tx, planOrderId) {
+        return tx.chemotherapy_plan_order_investigation.deleteMany({ where: { plan_order_id: planOrderId } });
+    }
+    async createPlanOrderInvestigation(tx, data) {
+        return tx.chemotherapy_plan_order_investigation.create({ data });
+    }
+    async updatePlanOrderInvestigationStatus(tx, planOrderId, updates, actingUserId) {
+        let updated = 0;
+        for (const update of updates) {
+            const identity = update.investigation_id
+                ? { investigation_id: update.investigation_id }
+                : update.lab_test_id
+                    ? { lab_test_id: update.lab_test_id }
+                    : null;
+            if (!identity) {
+                continue;
+            }
+            const result = await tx.chemotherapy_plan_order_investigation.updateMany({
+                where: { plan_order_id: planOrderId, ...identity },
+                data: {
+                    item_status: update.item_status,
+                    ...(update.lab_order_id !== undefined ? { lab_order_id: update.lab_order_id } : {}),
+                    ...(update.lab_order_item_id !== undefined ? { lab_order_item_id: update.lab_order_item_id } : {}),
+                    updated_by: actingUserId,
+                    updated_at: new Date()
+                }
+            });
+            updated += result.count;
+        }
+        return updated;
     }
     // Drops a plan's not-yet-completed orders (their items are deactivated
     // first so they don't fall back to the baseline when the FK nulls).
