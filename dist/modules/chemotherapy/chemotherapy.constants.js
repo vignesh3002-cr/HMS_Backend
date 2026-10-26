@@ -7,7 +7,7 @@
 // the soft-delete convention used everywhere else in this codebase (doctor
 // schedules, appointments) - nothing here is ever hard-deleted.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PROTOCOL_ACTIVE_STATUS = exports.PROTOCOL_TYPE = exports.ID_ENTITY = exports.ADMINISTERED_DRUG_ROLES = exports.DRUG_ROLE = exports.PLAN_CONFIRMATION_RULE = exports.CYCLE_ADMINISTRABLE_STATUSES = exports.CYCLE_TERMINAL_STATUSES = exports.CYCLE_STATUS_TRANSITIONS = exports.CYCLE_STATUS = exports.ADMINISTRATION_REASON_REQUIRED = exports.ADMINISTRATION_STATUSES = exports.ADMINISTRATION_STATUS = exports.PLAN_ORDER_STATUS = exports.OPEN_PLAN_STATUSES = exports.PLAN_TERMINAL_STATUSES = exports.PLAN_STATUS_TRANSITIONS = exports.PLAN_STATUS = void 0;
+exports.PROTOCOL_ACTIVE_STATUS = exports.PROTOCOL_TYPE = exports.ID_ENTITY = exports.ADVERSE_EVENT_SEVERITIES = exports.ADVERSE_EVENT_GRADES = exports.ADMINISTERED_DRUG_ROLES = exports.DRUG_ROLE = exports.PLAN_CONFIRMATION_RULE = exports.CYCLE_ADMINISTRABLE_STATUSES = exports.CYCLE_TERMINAL_STATUSES = exports.CYCLE_STATUS_TRANSITIONS = exports.CYCLE_STATUS = exports.ADMINISTRATION_REASON_REQUIRED = exports.ADMINISTRATION_STATUSES = exports.ADMINISTRATION_STATUS = exports.PLAN_ORDER_STATUS = exports.OPEN_PLAN_STATUSES = exports.PLAN_TERMINAL_STATUSES = exports.PLAN_STATUS_TRANSITIONS = exports.PLAN_STATUS = void 0;
 exports.PLAN_STATUS = {
     PLANNED: "PLANNED",
     ACTIVE: "ACTIVE",
@@ -103,6 +103,10 @@ exports.DRUG_ROLE = {
 exports.ADMINISTERED_DRUG_ROLES = [
     exports.DRUG_ROLE.PREMEDICATION, exports.DRUG_ROLE.PRIMARY, exports.DRUG_ROLE.SUPPORTIVE
 ];
+// Adverse events are graded on the CTCAE 1-5 scale (also used for an
+// infusion reaction's grade); severity is the matching plain-language label.
+exports.ADVERSE_EVENT_GRADES = ["1", "2", "3", "4", "5"];
+exports.ADVERSE_EVENT_SEVERITIES = ["Mild", "Moderate", "Severe", "Life-threatening", "Fatal"];
 exports.ID_ENTITY = {
     PLAN: "CHEMOTHERAPY_PLAN",
     PLAN_ITEM: "CHEMOTHERAPY_PLAN_ITEM",

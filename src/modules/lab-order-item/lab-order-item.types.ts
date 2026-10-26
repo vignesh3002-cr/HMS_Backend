@@ -9,6 +9,9 @@ export interface CreateLabOrderItemDto {
     clinical_notes?: string;
     priority?: string;
     target_date?: string | null;
+    /* Testing Method for Molecular-category tests. One of:
+       "Germline Testing" | "Tissue Biopsy Testing" | "Liquid Biopsy Testing". */
+    method?: string;
     branch_id?: string;
     user_id?: string;
 }

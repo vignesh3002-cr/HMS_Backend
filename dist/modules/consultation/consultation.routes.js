@@ -35,4 +35,7 @@ router.delete("/molecular-tests/:encounterMolecularTestId", auth_middleware_1.au
 // ---------------- Encounter immunizations ----------------
 router.get("/encounters/:encounterNo/immunizations", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), consultation_validation_1.getPersonalHistoryValidation, controller.getEncounterImmunizations.bind(controller));
 router.put("/encounters/:encounterNo/immunizations", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), consultation_validation_1.syncEncounterImmunizationsValidation, controller.syncEncounterImmunizations.bind(controller));
+// ---------------- Encounter past history treatments ----------------
+router.get("/encounters/:encounterNo/past-treatments", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), consultation_validation_1.getPersonalHistoryValidation, controller.getEncounterPastTreatments.bind(controller));
+router.put("/encounters/:encounterNo/past-treatments", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), consultation_validation_1.syncEncounterPastTreatmentsValidation, controller.syncEncounterPastTreatments.bind(controller));
 exports.default = router;

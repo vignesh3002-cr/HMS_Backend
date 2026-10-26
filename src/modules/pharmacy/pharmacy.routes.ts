@@ -4,6 +4,7 @@ import { authorize } from "../../middleware/authorize";
 import { PharmacyController } from "./pharmacy.controller";
 import {
     cancelSlipValidation,
+    createMedicineValidation,
     createSlipValidation,
     getSlipValidation,
     listSlipsValidation,
@@ -22,6 +23,21 @@ const controller = new PharmacyController();
 // slip - swap these to authorizeAny("pharmacy.dispense", "chemo.plan.read")
 // when that is addressed.
 const READ = authorize("chemo.plan.read");
+
+router.get(
+    "/master-items",
+    authenticate,
+    READ,
+    controller.listMasterItems.bind(controller)
+);
+
+router.post(
+    "/medicines",
+    authenticate,
+    READ,
+    createMedicineValidation,
+    controller.createMedicine.bind(controller)
+);
 
 router.get(
     "/slips/preview/plan/:planId",

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.reportIdValidation = exports.syncEncounterImmunizationsValidation = exports.molecularTestIdValidation = exports.updateMolecularTestValidation = exports.addMolecularTestValidation = exports.updateReportValidation = exports.addReportValidation = exports.upsertPersonalHistoryValidation = exports.getPersonalHistoryValidation = exports.createCustomMasterValidation = exports.listMasterValidation = void 0;
+exports.reportIdValidation = exports.syncEncounterPastTreatmentsValidation = exports.syncEncounterImmunizationsValidation = exports.molecularTestIdValidation = exports.updateMolecularTestValidation = exports.addMolecularTestValidation = exports.updateReportValidation = exports.addReportValidation = exports.upsertPersonalHistoryValidation = exports.getPersonalHistoryValidation = exports.createCustomMasterValidation = exports.listMasterValidation = void 0;
 const express_validator_1 = require("express-validator");
 exports.listMasterValidation = [
     (0, express_validator_1.query)("search").optional().isString(),
@@ -75,6 +75,15 @@ exports.syncEncounterImmunizationsValidation = [
     (0, express_validator_1.body)("rows.*.immunization_code").optional({ nullable: true }).isString().isLength({ max: 100 }),
     (0, express_validator_1.body)("rows.*.immunization_date").optional({ nullable: true }).isISO8601(),
     (0, express_validator_1.body)("rows.*.response").optional({ nullable: true }).isString()
+];
+exports.syncEncounterPastTreatmentsValidation = [
+    (0, express_validator_1.param)("encounterNo").notEmpty().withMessage("encounterNo is required"),
+    (0, express_validator_1.body)("rows").optional({ nullable: true }).isArray(),
+    (0, express_validator_1.body)("rows.*.treatment_type").notEmpty().withMessage("treatment_type is required").isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)("rows.*.treatment_type_code").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)("rows.*.treatment_date").optional({ nullable: true }).isISO8601(),
+    (0, express_validator_1.body)("rows.*.note").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("rows.*.treatment_response").optional({ nullable: true }).isString()
 ];
 exports.reportIdValidation = [
     (0, express_validator_1.param)("encounterReportId").notEmpty().withMessage("encounterReportId is required")

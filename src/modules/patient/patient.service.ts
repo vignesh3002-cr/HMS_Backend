@@ -357,6 +357,7 @@ export class PatientService {
         let branchId = data.branchId;
         let departmentId = data.departmentId;
         let employeeId = data.employeeId;
+        let appointmentStatus: string | null = null;
 
         if (data.appointmentId) {
             const appointment = await prisma.appointment_history.findUnique({
@@ -365,8 +366,10 @@ export class PatientService {
                     branch_id: true,
                     department_id: true,
                     employee_id: true,
+                    status: true,
                 }
             });
+            appointmentStatus = appointment?.status ?? null;
 
             if (appointment) {
                 branchId ??= appointment.branch_id ?? undefined;
@@ -419,6 +422,16 @@ export class PatientService {
                         user_id: createdBy,
                     }
                 });
+
+                /* Vitals are taken with the patient present: the visit has
+                   started, so a still-booked appointment is checked in (the
+                   doctor's check-in then moves it into consultation). */
+                if (data.appointmentId && (appointmentStatus === "SCHEDULED" || appointmentStatus === "RESCHEDULED")) {
+                    await tx.appointment_history.update({
+                        where: { appointment_id: data.appointmentId },
+                        data: { status: "CHECKED_IN" }
+                    });
+                }
             }
 
             // Per-field fill: only write fields that are still empty on the encounter

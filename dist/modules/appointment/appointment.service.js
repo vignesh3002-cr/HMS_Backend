@@ -37,6 +37,10 @@ function minutesToTimeDate(minutes) {
 /**
  * Checks whether two time ranges overlap.
  */
+/** End of a window in minutes, rolled into the next day when it passes midnight. */
+function spanEnd(start, end) {
+    return end <= start ? end + 24 * 60 : end;
+}
 function rangesOverlap(start1, end1, start2, end2) {
     return (start1 < end2 &&
         end1 > start2);
@@ -224,7 +228,9 @@ async function getEffectiveSchedules(employeeId, branchId, appointmentDate, norm
                 }
                 const startMinutes = dateToMinutes(change.start_time);
                 const endMinutes = dateToMinutes(change.end_time);
-                if (endMinutes <=
+                // An end before the start is an overnight window (it runs
+                // past midnight); only a zero-length window is invalid.
+                if (endMinutes ===
                     startMinutes) {
                     return null;
                 }
@@ -265,9 +271,10 @@ async function getEffectiveSchedules(employeeId, branchId, appointmentDate, norm
         const startMinutes = dateToMinutes(change.start_time);
         const endMinutes = dateToMinutes(change.end_time);
         /**
-         * Ignore invalid ranges.
+         * Ignore zero-length ranges. An end before the start is an
+         * overnight window that runs past midnight.
          */
-        if (endMinutes <=
+        if (endMinutes ===
             startMinutes) {
             continue;
         }
@@ -275,7 +282,7 @@ async function getEffectiveSchedules(employeeId, branchId, appointmentDate, norm
          * Prevent overlapping ADD/OVERRIDE ranges
          * from generating duplicate slots.
          */
-        const alreadyCovered = effectiveSchedules.some((schedule) => rangesOverlap(startMinutes, endMinutes, dateToMinutes(schedule.start_time), dateToMinutes(schedule.end_time)));
+        const alreadyCovered = effectiveSchedules.some((schedule) => rangesOverlap(startMinutes, spanEnd(startMinutes, endMinutes), dateToMinutes(schedule.start_time), spanEnd(dateToMinutes(schedule.start_time), dateToMinutes(schedule.end_time))));
         if (alreadyCovered) {
             continue;
         }
@@ -398,6 +405,12 @@ class AppointmentService {
             }
             const startMinutes = (0, appointment_utils_1.timeToMinutes)(schedule.start_time);
             const endMinutes = (0, appointment_utils_1.timeToMinutes)(schedule.end_time);
+            // Overnight window (e.g. 22:00-02:00): the slots listed after
+            // midnight (00:00-02:00) belong to the same booking day.
+            if (endMinutes <= startMinutes) {
+                return (requestedMinutes >= startMinutes ||
+                    requestedMinutes < endMinutes);
+            }
             return (requestedMinutes >=
                 startMinutes &&
                 requestedMinutes <
@@ -417,6 +430,10 @@ class AppointmentService {
             throw new Error("Patient not found");
         }
         const appointmentDate = (0, appointment_utils_1.parseDateOnly)(data.appointment_date);
+        if ((0, appointment_utils_1.formatDateOnly)(appointmentDate) <
+            (0, appointment_utils_1.getTodayInIST)()) {
+            throw new Error("Appointments cannot be booked for a past date");
+        }
         if (data.patient_visit_type === "Lab Visit") {
             const appointmentTime = (0, appointment_utils_1.timeStringToDate)(data.appointment_time);
             const branch = await repository.findBranch(data.branch_id);
@@ -632,6 +649,14 @@ class AppointmentService {
         const appointmentDate = data.appointment_date
             ? (0, appointment_utils_1.parseDateOnly)(data.appointment_date)
             : existing.appointment_date;
+        // Moving an appointment to a past day is never valid (leaving the
+        // original date untouched is fine, e.g. editing notes or status).
+        if (data.appointment_date &&
+            (0, appointment_utils_1.formatDateOnly)(appointmentDate) !==
+                (0, appointment_utils_1.formatDateOnly)(existing.appointment_date) &&
+            (0, appointment_utils_1.formatDateOnly)(appointmentDate) < (0, appointment_utils_1.getTodayInIST)()) {
+            throw new Error("Appointments cannot be moved to a past date");
+        }
         const appointmentTimeStr = data.appointment_time ??
             (0, appointment_utils_1.formatTimeOfDay)(existing.appointment_time);
         const scheduleChanged = !!data.employee_id ||
@@ -843,15 +868,11 @@ class AppointmentService {
         }
         const bookedTimes = await repository.findBookedAppointmentTimes(employeeId, appointmentDate);
         const bookedSet = new Set(bookedTimes.map(appointment_utils_1.formatTimeOfDay));
-        const now = new Date();
-        const isToday = appointmentDate.getUTCFullYear() ===
-            now.getUTCFullYear() &&
-            appointmentDate.getUTCMonth() ===
-                now.getUTCMonth() &&
-            appointmentDate.getUTCDate() ===
-                now.getUTCDate();
-        const nowMinutes = now.getHours() * 60 +
-            now.getMinutes();
+        // "Today" and "now" are hospital time (IST), independent of the
+        // server's own timezone.
+        const isToday = (0, appointment_utils_1.formatDateOnly)(appointmentDate) ===
+            (0, appointment_utils_1.getTodayInIST)();
+        const nowMinutes = (0, appointment_utils_1.getNowMinutesInIST)();
         const slots = effectiveSchedules.flatMap((schedule) => {
             if (!schedule.start_time ||
                 !schedule.end_time) {
@@ -859,10 +880,19 @@ class AppointmentService {
             }
             const times = (0, appointment_utils_1.generateTimeSlots)(schedule.start_time, schedule.end_time, schedule.consultation_minutes ??
                 20);
+            const scheduleStart = (0, appointment_utils_1.timeToMinutes)(schedule.start_time);
             return times
-                .filter((time) => !isToday ||
-                (0, appointment_utils_1.timeStringToMinutes)(time) >
-                    nowMinutes)
+                .filter((time) => {
+                if (!isToday)
+                    return true;
+                let minutes = (0, appointment_utils_1.timeStringToMinutes)(time);
+                // Slots after midnight of an overnight window
+                // are later on the same booking day.
+                if (minutes < scheduleStart) {
+                    minutes += 24 * 60;
+                }
+                return minutes > nowMinutes;
+            })
                 .map((time) => ({
                 schedule_id: schedule.schedule_id,
                 shift_name: schedule.shift_name,

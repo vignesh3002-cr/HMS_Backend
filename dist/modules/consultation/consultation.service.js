@@ -348,6 +348,72 @@ class ConsultationService {
             });
         });
     }
+    // ---------------- Encounter past history treatments ----------------
+    // Consultation > Past History: one row per selected Treatment Type per
+    // visit (date + brief note + treatment response), related to the encounter.
+    async listEncounterPastTreatments(encounterNo) {
+        const encounter = await repository.findEncounterByNumber(encounterNo);
+        if (!encounter) {
+            throw new Error("Encounter not found");
+        }
+        return prisma_1.default.encounter_past_treatment.findMany({
+            where: { encounter_no: encounterNo },
+            orderBy: { created_at: "asc" }
+        });
+    }
+    async syncEncounterPastTreatments(encounterNo, payload, actingUserId) {
+        const encounter = await repository.findEncounterByNumber(encounterNo);
+        if (!encounter) {
+            throw new Error("Encounter not found");
+        }
+        // Drop blank names and de-duplicate by lowercased name, so a value
+        // can never collide with the (encounter_no, lower(name)) unique index.
+        const incoming = new Map();
+        for (const row of payload.rows ?? []) {
+            const name = (row.treatment_type ?? "").trim();
+            if (!name)
+                continue;
+            incoming.set(name.toLowerCase(), { ...row, treatment_type: name });
+        }
+        return prisma_1.default.$transaction(async (tx) => {
+            const existing = await tx.encounter_past_treatment.findMany({ where: { encounter_no: encounterNo } });
+            const toDelete = existing.filter((row) => !incoming.has(row.treatment_type.toLowerCase()));
+            if (toDelete.length > 0) {
+                await tx.encounter_past_treatment.deleteMany({ where: { id: { in: toDelete.map((row) => row.id) } } });
+            }
+            const byName = new Map(existing.map((row) => [row.treatment_type.toLowerCase(), row]));
+            for (const [key, row] of incoming) {
+                const match = byName.get(key);
+                const data = {
+                    treatment_type_code: row.treatment_type_code ?? null,
+                    treatment_date: row.treatment_date ? new Date(row.treatment_date) : null,
+                    note: row.note ?? null,
+                    treatment_response: row.treatment_response ?? null
+                };
+                if (match) {
+                    await tx.encounter_past_treatment.update({
+                        where: { id: match.id },
+                        data: { ...data, updated_at: new Date() }
+                    });
+                }
+                else {
+                    await tx.encounter_past_treatment.create({
+                        data: {
+                            encounter_past_treatment_id: await (0, idGenerator_1.generateId)(tx, "ENCOUNTER_PAST_TREATMENT"),
+                            encounter_no: encounterNo,
+                            treatment_type: row.treatment_type,
+                            ...data,
+                            created_by: actingUserId
+                        }
+                    });
+                }
+            }
+            return tx.encounter_past_treatment.findMany({
+                where: { encounter_no: encounterNo },
+                orderBy: { created_at: "asc" }
+            });
+        });
+    }
     async removeReport(encounterReportId) {
         const existing = await repository.findReportById(encounterReportId);
         if (!existing) {

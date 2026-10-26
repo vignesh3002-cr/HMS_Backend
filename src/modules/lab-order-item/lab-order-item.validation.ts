@@ -1,5 +1,13 @@
 import { body } from "express-validator";
 
+/* Testing Methods accepted on a Molecular-category lab test
+   (Consultation > Investigations > Method). */
+export const LAB_ORDER_ITEM_METHODS = [
+  "Germline Testing",
+  "Tissue Biopsy Testing",
+  "Liquid Biopsy Testing",
+] as const;
+
 export const createLabOrderItemValidation = [
 
   body("lab_order_id")
@@ -39,6 +47,13 @@ export const createLabOrderItemValidation = [
     .optional({ nullable: true })
     .isISO8601()
     .withMessage("Target date must be a valid date"),
+
+  body("method")
+    .optional({ nullable: true })
+    .isIn([...LAB_ORDER_ITEM_METHODS])
+    .withMessage(
+      `Method must be one of: ${LAB_ORDER_ITEM_METHODS.join(", ")}`
+    ),
 
   body("branch_id")
     .optional()
@@ -91,6 +106,13 @@ export const updateLabOrderItemValidation = [
     .optional({ nullable: true })
     .isISO8601()
     .withMessage("Target date must be a valid date"),
+
+  body("method")
+    .optional({ nullable: true })
+    .isIn([...LAB_ORDER_ITEM_METHODS])
+    .withMessage(
+      `Method must be one of: ${LAB_ORDER_ITEM_METHODS.join(", ")}`
+    ),
 
   body("item_status")
     .optional()

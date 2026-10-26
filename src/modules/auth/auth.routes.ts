@@ -78,5 +78,15 @@ router.put(
   authenticate,
   authController.saveKpiPreferences.bind(authController)
 );
+router.get(
+  "/me/kpi-usage",
+  authenticate,
+  authController.getKpiUsage.bind(authController)
+);
+router.put(
+  "/me/kpi-usage",
+  authenticate,
+  authController.saveKpiUsage.bind(authController)
+);
 
 export default router;

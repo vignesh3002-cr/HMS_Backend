@@ -10,6 +10,7 @@ export interface ResolvedMedicationLine {
     // medicine_id, or typed literally for a free-typed "Others" drug.
     drug_name?: string | null;
     brand_name?: string | null;
+    patient_dose?: string | null;
     dose?: string | null;
     dose_unit?: string | null;
     // Whole packs only; validated as a non-negative integer.
@@ -54,6 +55,7 @@ export interface PharmacySlipItemView {
     medicine_id: string | null;
     drug_name: string | null;
     brand_name: string | null;
+    patient_dose?: string | null;
     dose: string | null;
     dose_unit: string | null;
     quantity: number | null;
@@ -62,6 +64,25 @@ export interface PharmacySlipItemView {
     frequency: string | null;
     duration: string | null;
     instructions: string | null;
+    pharmacy_item_id?: string | null;
+}
+
+export interface PharmacyMasterItemView {
+    pharmacy_item_id: string;
+    medicine_id: string | null;
+    item_name: string;
+    brand_name: string | null;
+    manufacturer_name: string | null;
+    dosage_form: string | null;
+    strength_text: string | null;
+    strength_value: string | number | null;
+    strength_unit: string | null;
+}
+
+export interface CreateMedicineDto {
+    medicine_name: string;
+    generic_name?: string | null;
+    dosage_form?: string | null;
 }
 
 export interface PharmacySlipView {
@@ -100,8 +121,20 @@ export interface CreateSlipFromPlanDto {
 
 export interface UpdateSlipItemsDto {
     items: {
-        pharmacy_slip_item_id: string;
+        pharmacy_slip_item_id?: string;
+        medicine_id?: string | null;
+        drug_name?: string | null;
+        brand_name?: string | null;
+        patient_dose?: string | null;
+        dose?: string | null;
+        dose_unit?: string | null;
         quantity?: number | null;
+        drug_role?: string | null;
+        route?: string | null;
+        frequency?: string | null;
+        duration?: string | null;
+        instructions?: string | null;
+        pharmacy_item_id?: string | null;
     }[];
 }
 

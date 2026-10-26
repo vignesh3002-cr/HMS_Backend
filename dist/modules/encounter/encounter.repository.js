@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EncounterRepository = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const idGenerator_1 = require("../../utils/idGenerator");
+const appointment_utils_1 = require("../appointment/appointment.utils");
 const encounterDetailInclude = {
     patient_bio_data: {
         select: {
@@ -275,19 +276,22 @@ class EncounterRepository {
         });
     }
     async getCheckedInPatientsToday(employeeId, branchId) {
-        const today = new Date().toISOString().slice(0, 10);
-        const todayDate = new Date(`${today}T00:00:00.000Z`);
-        // Count distinct patients with appointments today that are checked in.
-        // Using appointment status IN_CONSULTATION or CHECKED_IN ensures the
-        // metric is consistent with total appointments and scoped to the same
-        // employee/branch/date.
+        // Today is the IST calendar day (appointment_date is a DATE).
+        const todayDate = new Date(`${(0, appointment_utils_1.getTodayInIST)()}T00:00:00.000Z`);
+        // Distinct patients of today's appointments who came in: checked in,
+        // in consultation or already checked out - or whose visit encounter
+        // is open (e.g. vitals recorded before the doctor's check-in).
+        // Scoped to the same employee/branch/date as total appointments.
         const groups = await prisma_1.default.appointment_history.groupBy({
             by: ["patient_id"],
             where: {
                 ...(employeeId ? { employee_id: employeeId } : {}),
                 ...(branchId ? { branch_id: branchId } : {}),
                 appointment_date: todayDate,
-                status: { in: ["IN_CONSULTATION", "CHECKED_IN"] }
+                OR: [
+                    { status: { in: ["CHECKED_IN", "IN_CONSULTATION", "COMPLETED"] } },
+                    { status: { notIn: ["CANCELLED", "NO_SHOW"] }, encounter: { isNot: null } }
+                ]
             }
         });
         return groups.length;

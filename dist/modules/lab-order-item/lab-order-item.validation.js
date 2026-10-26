@@ -1,7 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateLabOrderItemValidation = exports.createLabOrderItemValidation = void 0;
+exports.updateLabOrderItemValidation = exports.createLabOrderItemValidation = exports.LAB_ORDER_ITEM_METHODS = void 0;
 const express_validator_1 = require("express-validator");
+/* Testing Methods accepted on a Molecular-category lab test
+   (Consultation > Investigations > Method). */
+exports.LAB_ORDER_ITEM_METHODS = [
+    "Germline Testing",
+    "Tissue Biopsy Testing",
+    "Liquid Biopsy Testing",
+];
 exports.createLabOrderItemValidation = [
     (0, express_validator_1.body)("lab_order_id")
         .notEmpty()
@@ -33,6 +40,10 @@ exports.createLabOrderItemValidation = [
         .optional({ nullable: true })
         .isISO8601()
         .withMessage("Target date must be a valid date"),
+    (0, express_validator_1.body)("method")
+        .optional({ nullable: true })
+        .isIn([...exports.LAB_ORDER_ITEM_METHODS])
+        .withMessage(`Method must be one of: ${exports.LAB_ORDER_ITEM_METHODS.join(", ")}`),
     (0, express_validator_1.body)("branch_id")
         .optional()
         .isString(),
@@ -73,6 +84,10 @@ exports.updateLabOrderItemValidation = [
         .optional({ nullable: true })
         .isISO8601()
         .withMessage("Target date must be a valid date"),
+    (0, express_validator_1.body)("method")
+        .optional({ nullable: true })
+        .isIn([...exports.LAB_ORDER_ITEM_METHODS])
+        .withMessage(`Method must be one of: ${exports.LAB_ORDER_ITEM_METHODS.join(", ")}`),
     (0, express_validator_1.body)("item_status")
         .optional()
         .isString()

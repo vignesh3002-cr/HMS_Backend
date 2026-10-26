@@ -108,6 +108,36 @@ class AuthService {
         await this.authRepository.updateKpiPreferences(userId, value);
         return validated;
     }
+    async getKpiUsage(userId) {
+        const user = await this.authRepository.findUserById(userId);
+        if (!user?.kpi_usage) {
+            return {};
+        }
+        const usage = {};
+        for (const pair of user.kpi_usage.split(",")) {
+            const [id, count] = pair.split(":");
+            const trimmedId = id?.trim();
+            const parsed = Number(count);
+            if (trimmedId && AuthService.ALLOWED_KPI_IDS.has(trimmedId) && Number.isFinite(parsed) && parsed > 0) {
+                usage[trimmedId] = Math.floor(parsed);
+            }
+        }
+        return usage;
+    }
+    async saveKpiUsage(userId, usage) {
+        const validated = {};
+        for (const id of this.validateKpiIds(Object.keys(usage))) {
+            const count = Math.floor(Number(usage[id]));
+            if (Number.isFinite(count) && count > 0) {
+                validated[id] = count;
+            }
+        }
+        const value = Object.keys(validated).length > 0
+            ? Object.entries(validated).map(([id, count]) => `${id}:${count}`).join(",")
+            : null;
+        await this.authRepository.updateKpiUsage(userId, value);
+        return validated;
+    }
     async login(username, password, rememberMe) {
         const user = await this.authRepository.findUserByUsername(username);
         if (!user) {

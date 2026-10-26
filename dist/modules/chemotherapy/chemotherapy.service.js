@@ -13,6 +13,7 @@ const chemotherapy_constants_1 = require("./chemotherapy.constants");
 const appointment_utils_1 = require("../appointment/appointment.utils");
 const audit_service_1 = require("../audit/audit.service");
 const audit_types_1 = require("../audit/audit.types");
+const chemotherapy_schedule_1 = require("./chemotherapy.schedule");
 function isPlanStatus(value) {
     return Object.values(chemotherapy_constants_1.PLAN_STATUS).includes(value);
 }
@@ -186,6 +187,23 @@ function openPlanMessage(plan) {
     return `This patient already has an open chemotherapy plan (${plan.chemotherapy_plan_id}${plan.regimen_name ? `, ${plan.regimen_name}` : ""}, ${plan.treatment_status}${where}). ` +
         "A new plan can be started once its last cycle day is completed, or after it is discontinued or cancelled.";
 }
+// The adverse-event fields an edit may change (updateAdverseEvent).
+const ADVERSE_EVENT_TEXT_FIELDS = [
+    "adverse_event_category", "ctcae_grade", "reaction_grade", "severity",
+    "reaction_description", "medication_given", "doctor_action",
+    "nursing_action", "remarks"
+];
+const ADVERSE_EVENT_BOOLEAN_FIELDS = [
+    "nausea", "vomiting", "diarrhea", "constipation", "mucositis", "fever",
+    "fatigue", "neuropathy", "alopecia", "skin_rash", "anemia", "neutropenia",
+    "thrombocytopenia", "infection", "bleeding", "pain",
+    "treatment_interrupted", "treatment_stopped", "hospitalization_required",
+    "icu_required", "emergency_medication_given", "dose_modified",
+    "dose_reduced", "dose_delayed", "resolved"
+];
+// A cycle day's planned date from the plan's schedule (null when the plan
+// has none yet).
+const plannedDateOf = (schedule, cycleNumber, cycleDay) => schedule.find((row) => row.cycle_number === cycleNumber && row.cycle_day === cycleDay)?.planned_date ?? null;
 class ChemotherapyService {
     repository = new chemotherapy_repository_1.ChemotherapyRepository();
     oncologyRepository = new oncology_repository_1.OncologyRepository();
@@ -2159,12 +2177,23 @@ class ChemotherapyService {
         if (!plan) {
             throw new Error("Chemotherapy plan not found");
         }
-        const [withOrders] = await this.withPlanOrders([plan]);
+        const [withOrders] = await this.withPlanOrders([plan], { withSchedule: true });
         return withOrders;
     }
     async listPlans(filters) {
         const result = await this.repository.listPlans(filters);
         return { ...result, rows: await this.withPlanOrders(result.rows) };
+    }
+    // The planned date of every cycle day (chemotherapy.schedule.ts). A
+    // failure here must not block reading the plan.
+    async planSchedule(plan) {
+        try {
+            return await (0, chemotherapy_schedule_1.computePlanSchedule)(prisma_1.default, plan);
+        }
+        catch (error) {
+            console.error("Failed to calculate the plan's cycle day dates:", error?.message ?? error);
+            return [];
+        }
     }
     /*
      * Adds each plan's saved cycle day orders (headers, in cycle / day
@@ -2174,7 +2203,7 @@ class ChemotherapyService {
      * (prescription, pharmacy slip, patient details) show current_order's
      * rows, falling back to the baseline chemotherapy_plan_items.
      */
-    async withPlanOrders(plans) {
+    async withPlanOrders(plans, options = {}) {
         if (plans.length === 0) {
             return [];
         }
@@ -2190,13 +2219,26 @@ class ChemotherapyService {
             .map(currentIdFor)
             .filter((id) => Boolean(id));
         const currentOrders = currentIds.length > 0 ? await this.repository.findPlanOrdersWithRows(currentIds) : [];
-        return plans.map((plan) => {
-            const orders = ordersByPlan.get(plan.chemotherapy_plan_id) ?? [];
+        // Single-plan reads get every cycle day's planned date; lists keep
+        // only the dates stored on the orders (no protocol lookup per plan).
+        const schedules = options.withSchedule
+            ? await Promise.all(plans.map((plan) => this.planSchedule(plan)))
+            : plans.map(() => []);
+        return plans.map((plan, index) => {
+            const schedule = schedules[index];
+            const withDate = (order) => ({
+                ...order,
+                planned_date: order.planned_date ?? plannedDateOf(schedule, order.cycle_number, order.cycle_day)
+            });
+            const orders = (ordersByPlan.get(plan.chemotherapy_plan_id) ?? []).map(withDate);
             const currentId = currentIdFor(plan);
+            const current = currentOrders.find((order) => order.plan_order_id === currentId);
             return {
                 ...plan,
                 plan_orders: orders,
-                current_order: currentOrders.find((order) => order.plan_order_id === currentId) ?? null
+                current_order: current ? withDate(current) : null,
+                // The planned date of every cycle day (chemotherapy.schedule.ts).
+                chemotherapy_plan_schedule: schedule
             };
         });
     }
@@ -2224,7 +2266,7 @@ class ChemotherapyService {
         if (!plan) {
             return null;
         }
-        const [withOrders] = await this.withPlanOrders([plan]);
+        const [withOrders] = await this.withPlanOrders([plan], { withSchedule: true });
         return withOrders;
     }
     /**
@@ -2785,7 +2827,14 @@ class ChemotherapyService {
             throw new Error("Chemotherapy plan not found");
         }
         const header = await this.repository.findPlanOrder(prisma_1.default, planId, cycleNumber, cycleDay);
-        return header ? this.repository.findPlanOrderWithRows(header.plan_order_id) : null;
+        const order = header ? await this.repository.findPlanOrderWithRows(header.plan_order_id) : null;
+        if (!order) {
+            return null;
+        }
+        return {
+            ...order,
+            planned_date: order.planned_date ?? plannedDateOf(await this.planSchedule(plan), cycleNumber, cycleDay)
+        };
     }
     async savePlanOrder(planId, cycleNumber, cycleDay, dto, actingUserId) {
         const plan = await this.repository.findPlanForUpdate(prisma_1.default, planId);
@@ -2815,7 +2864,8 @@ class ChemotherapyService {
             if (!lockedPlan || chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(lockedPlan.treatment_status)) {
                 throw new Error(`This chemotherapy course is already ${lockedPlan?.treatment_status ?? "closed"} - start a new plan from Treatment Plan`);
             }
-            const cycles = await this.ensurePlanCycles(tx, lockedPlan, actingUserId);
+            const schedule = await (0, chemotherapy_schedule_1.computePlanSchedule)(tx, lockedPlan);
+            const cycles = await this.ensurePlanCycles(tx, lockedPlan, actingUserId, schedule);
             const cycle = cycles.find((row) => row.cycle_number === cycleNumber);
             if (!cycle) {
                 throw new Error(`Cycle ${cycleNumber} not found on this plan`);
@@ -2843,6 +2893,9 @@ class ChemotherapyService {
                 ...(dto.additional_notes !== undefined
                     ? { additional_notes: dto.additional_notes?.trim() || null }
                     : {}),
+                // The Start Date the doctor set for this cycle day (only this
+                // day moves); left out = the kept / calculated date.
+                ...(dto.planned_date ? { planned_date: new Date(dto.planned_date) } : {}),
                 ...(dto.dosing
                     ? {
                         dosing_height_cm: dto.dosing.height_cm ?? null,
@@ -3124,14 +3177,19 @@ class ChemotherapyService {
     // the start date by the cycle interval) the first time they're needed,
     // re-activating any earlier row and retiring untouched PLANNED rows
     // beyond planned_cycles (e.g. after a protocol switch).
-    async ensurePlanCycles(tx, plan, actingUserId) {
+    async ensurePlanCycles(tx, plan, actingUserId, schedule = []) {
         const existing = await this.repository.findAllCyclesForPlan(tx, plan.chemotherapy_plan_id);
         const interval = plan.cycle_interval_days ?? 0;
         for (let number = 1; number <= plan.planned_cycles; number++) {
             const row = existing.find((cycle) => cycle.cycle_number === number);
             if (!row) {
-                const plannedDate = new Date(plan.treatment_start_date);
-                plannedDate.setUTCDate(plannedDate.getUTCDate() + (number - 1) * interval);
+                // The cycle starts on its scheduled Day 1 (older plans
+                // without a schedule: start + (cycle - 1) x interval).
+                const scheduledDayOne = schedule.find((day) => day.cycle_number === number && day.cycle_day === 1);
+                const plannedDate = scheduledDayOne ? new Date(scheduledDayOne.planned_date) : new Date(plan.treatment_start_date);
+                if (!scheduledDayOne) {
+                    plannedDate.setUTCDate(plannedDate.getUTCDate() + (number - 1) * interval);
+                }
                 await this.repository.createCycle(tx, {
                     chemotherapy_cycle_id: await this.repository.generateCycleId(tx),
                     chemotherapy_plan_id: plan.chemotherapy_plan_id,
@@ -3940,17 +3998,34 @@ class ChemotherapyService {
         await this.getCycle(cycleId);
         return this.repository.listVitalsForCycle(cycleId);
     }
-    async recordAdverseEvent(cycleId, dto, actingUserId) {
+    async recordAdverseEvent(cycleId, dto, actingUserId, actingEmployeeId = null) {
         const { plan } = await this.getCyclePlanContext(cycleId);
         if (!dto.adverse_event_name?.trim()) {
             throw new Error("adverse_event_name is required");
+        }
+        // The cycle day the event belongs to must be a day of this cycle;
+        // its day number comes from the order itself.
+        let cycleDay = null;
+        if (dto.plan_order_id) {
+            const order = await this.repository.findPlanOrderById(prisma_1.default, dto.plan_order_id);
+            if (!order || order.chemotherapy_cycle_id !== cycleId) {
+                throw new Error("Cycle day order not found");
+            }
+            cycleDay = order.cycle_day;
+        }
+        const eventDate = dto.event_date ? new Date(dto.event_date) : new Date();
+        const resolutionDate = dto.resolution_date ? new Date(dto.resolution_date) : null;
+        if (resolutionDate && resolutionDate.toISOString().slice(0, 10) < eventDate.toISOString().slice(0, 10)) {
+            throw new Error("resolution_date cannot be before the event date");
         }
         return prisma_1.default.$transaction(async (tx) => {
             const id = await this.repository.generateAdverseEventId(tx);
             const created = await this.repository.createAdverseEvent(tx, {
                 adverse_event_id: id,
                 chemotherapy_cycle_id: cycleId,
-                event_date: dto.event_date ? new Date(dto.event_date) : new Date(),
+                plan_order_id: dto.plan_order_id ?? null,
+                cycle_day: cycleDay,
+                event_date: eventDate,
                 adverse_event_name: dto.adverse_event_name,
                 adverse_event_category: dto.adverse_event_category ?? null,
                 nausea: dto.nausea ?? false,
@@ -3986,11 +4061,13 @@ class ChemotherapyService {
                 delay_days: dto.delay_days ?? null,
                 doctor_action: dto.doctor_action ?? null,
                 nursing_action: dto.nursing_action ?? null,
-                physician_id: dto.physician_id ?? null,
-                // reported_by FKs to employees.employee_id - see recordVitals' note.
-                reported_by: dto.reported_by ?? null,
+                // Defaults: the plan's treating doctor, and the signed-in
+                // employee as the reporter (both FK employees.employee_id -
+                // see recordVitals' note on actingUserId).
+                physician_id: dto.physician_id ?? plan?.employee_id ?? null,
+                reported_by: dto.reported_by ?? actingEmployeeId ?? null,
                 resolved: dto.resolved ?? false,
-                resolution_date: dto.resolution_date ? new Date(dto.resolution_date) : null,
+                resolution_date: resolutionDate,
                 remarks: dto.remarks ?? null,
                 created_by: actingUserId
             });
@@ -4001,7 +4078,7 @@ class ChemotherapyService {
                 performed_by: actingUserId,
                 patient_id: plan?.patient_id,
                 branch_id: plan?.branch_id,
-                change_summary: (0, audit_service_1.summarizeCreate)({ chemotherapy_cycle_id: cycleId, adverse_event_name: dto.adverse_event_name, ctcae_grade: dto.ctcae_grade ?? null })
+                change_summary: (0, audit_service_1.summarizeCreate)({ chemotherapy_cycle_id: cycleId, cycle_day: cycleDay, adverse_event_name: dto.adverse_event_name, ctcae_grade: dto.ctcae_grade ?? null })
             });
             return created;
         });
@@ -4009,6 +4086,98 @@ class ChemotherapyService {
     async listAdverseEvents(cycleId) {
         await this.getCycle(cycleId);
         return this.repository.listAdverseEventsForCycle(cycleId);
+    }
+    // An active adverse event and its plan (for audit context).
+    async getActiveAdverseEvent(adverseEventId) {
+        const event = await this.repository.findAdverseEventById(adverseEventId);
+        if (!event || event.active_status !== 1) {
+            throw new Error("Adverse event not found");
+        }
+        const { plan } = await this.getCyclePlanContext(event.chemotherapy_cycle_id);
+        return { event, plan };
+    }
+    // Edits a recorded adverse event (e.g. marking an ongoing event
+    // resolved). Only the fields sent are changed; the cycle day and the
+    // linked physician / reporter stay as recorded.
+    async updateAdverseEvent(adverseEventId, dto, actingUserId) {
+        const { event, plan } = await this.getActiveAdverseEvent(adverseEventId);
+        const changes = {};
+        if (dto.adverse_event_name !== undefined) {
+            const name = (dto.adverse_event_name ?? "").trim();
+            if (!name) {
+                throw new Error("adverse_event_name cannot be blank");
+            }
+            changes.adverse_event_name = name;
+        }
+        for (const field of ADVERSE_EVENT_TEXT_FIELDS) {
+            if (dto[field] !== undefined)
+                changes[field] = dto[field] ?? null;
+        }
+        for (const field of ADVERSE_EVENT_BOOLEAN_FIELDS) {
+            if (dto[field] !== undefined)
+                changes[field] = dto[field] ?? false;
+        }
+        if (dto.reduction_percentage !== undefined)
+            changes.reduction_percentage = dto.reduction_percentage ?? null;
+        if (dto.delay_days !== undefined)
+            changes.delay_days = dto.delay_days ?? null;
+        if (dto.event_date)
+            changes.event_date = new Date(dto.event_date);
+        if (dto.resolution_date !== undefined) {
+            changes.resolution_date = dto.resolution_date ? new Date(dto.resolution_date) : null;
+        }
+        // An event that is not resolved has no resolution date.
+        const resolved = changes.resolved ?? event.resolved;
+        if (!resolved && (changes.resolution_date ?? event.resolution_date)) {
+            changes.resolution_date = null;
+        }
+        const eventDate = changes.event_date ?? event.event_date;
+        const resolutionDate = changes.resolution_date !== undefined ? changes.resolution_date : event.resolution_date;
+        if (resolutionDate && resolutionDate.toISOString().slice(0, 10) < eventDate.toISOString().slice(0, 10)) {
+            throw new Error("resolution_date cannot be before the event date");
+        }
+        const summary = (0, audit_service_1.diffFields)(event, changes);
+        if (summary === "{}") {
+            return event;
+        }
+        return prisma_1.default.$transaction(async (tx) => {
+            const updated = await this.repository.updateAdverseEvent(tx, adverseEventId, {
+                ...changes,
+                updated_by: actingUserId
+            });
+            await (0, audit_service_1.logAudit)(tx, {
+                entity_type: "chemotherapy_adverse_event",
+                entity_id: adverseEventId,
+                action: audit_types_1.AUDIT_ACTION.UPDATE,
+                performed_by: actingUserId,
+                patient_id: plan?.patient_id,
+                branch_id: plan?.branch_id,
+                change_summary: summary
+            });
+            return updated;
+        });
+    }
+    // Removes an adverse event entered in error (soft delete, with the
+    // reason kept in the audit log).
+    async removeAdverseEvent(adverseEventId, reason, actingUserId) {
+        const { event, plan } = await this.getActiveAdverseEvent(adverseEventId);
+        await prisma_1.default.$transaction(async (tx) => {
+            await this.repository.deactivateAdverseEvent(tx, adverseEventId, actingUserId);
+            await (0, audit_service_1.logAudit)(tx, {
+                entity_type: "chemotherapy_adverse_event",
+                entity_id: adverseEventId,
+                action: audit_types_1.AUDIT_ACTION.DEACTIVATE,
+                performed_by: actingUserId,
+                patient_id: plan?.patient_id,
+                branch_id: plan?.branch_id,
+                change_summary: (0, audit_service_1.summarizeCreate)({
+                    adverse_event_name: event.adverse_event_name,
+                    cycle_day: event.cycle_day,
+                    reason: reason.trim()
+                })
+            });
+        });
+        return { adverse_event_id: adverseEventId };
     }
     async recordLabReview(cycleId, dto, actingUserId) {
         const { plan } = await this.getCyclePlanContext(cycleId);

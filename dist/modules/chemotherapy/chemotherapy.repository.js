@@ -1289,6 +1289,23 @@ class ChemotherapyRepository {
             orderBy: { event_date: "asc" }
         });
     }
+    async findAdverseEventById(adverseEventId) {
+        return prisma_1.default.chemotherapy_adverse_event.findUnique({ where: { adverse_event_id: adverseEventId } });
+    }
+    async updateAdverseEvent(tx, adverseEventId, data) {
+        return tx.chemotherapy_adverse_event.update({
+            where: { adverse_event_id: adverseEventId },
+            data: { ...data, updated_at: new Date() }
+        });
+    }
+    // Soft delete - adverse events are never hard-deleted; reads filter
+    // active_status = 1, so the row drops out of every list.
+    async deactivateAdverseEvent(tx, adverseEventId, actingUserId) {
+        return tx.chemotherapy_adverse_event.update({
+            where: { adverse_event_id: adverseEventId },
+            data: { active_status: 0, deleted_flag: true, updated_by: actingUserId, updated_at: new Date() }
+        });
+    }
     async generateLabReviewId(tx) {
         return (0, idGenerator_1.generateId)(tx, chemotherapy_constants_1.ID_ENTITY.LAB_REVIEW);
     }

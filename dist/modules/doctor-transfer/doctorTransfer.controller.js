@@ -21,7 +21,7 @@ class DoctorTransferController {
             const bypassHeader = (req.headers['x-bypass-pending-transfer'] || '').toString().toLowerCase();
             const bypassPending = bypassHeader === 'true';
             const authUser = req.user || {};
-            const isAdmin = ['HEAD_ADMIN', 'SUPER_ADMIN', 'BRANCH_ADMIN'].includes(authUser.role_type?.toUpperCase());
+            const isAdmin = ['HEAD_ADMIN', 'SUPER_ADMIN', 'BRANCH_ADMIN'].includes(String(authUser.role ?? '').toUpperCase());
             const result = await service.initiateTransfer(req.params.employeeId, req.body, actingUserId(req), bypassPending && isAdmin);
             return res.status(201).json({
                 success: true,

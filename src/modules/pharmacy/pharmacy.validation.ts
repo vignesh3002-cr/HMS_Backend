@@ -58,7 +58,7 @@ export const listSlipsValidation = [
 
 export const getSlipValidation = [slipIdValidation];
 
-// Quantity is the only editable field on a line and it counts whole packs.
+// Editable fields on a line: quantity, brand_name, dose, dose_unit, etc.
 export const updateSlipItemsValidation = [
 
     slipIdValidation,
@@ -68,13 +68,57 @@ export const updateSlipItemsValidation = [
         .withMessage("At least one slip item is required"),
 
     body("items.*.pharmacy_slip_item_id")
-        .notEmpty()
-        .withMessage("Each item must identify its slip item"),
+        .optional({ nullable: true })
+        .isString(),
 
     body("items.*.quantity")
         .optional({ nullable: true })
         .isInt({ min: 0 })
-        .withMessage("Quantity must be a whole number of zero or greater")
+        .withMessage("Quantity must be a whole number of zero or greater"),
+
+    body("items.*.brand_name")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items.*.dose")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items.*.dose_unit")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items.*.patient_dose")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items.*.drug_name")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items.*.medicine_id")
+        .optional({ nullable: true })
+        .isString()
+
+];
+
+export const createMedicineValidation = [
+
+    body("medicine_name")
+        .notEmpty()
+        .withMessage("Medicine name is required")
+        .isLength({ max: 255 })
+        .withMessage("Medicine name cannot exceed 255 characters"),
+
+    body("generic_name")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 255 }),
+
+    body("dosage_form")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 100 })
 
 ];
 

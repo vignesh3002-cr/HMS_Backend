@@ -162,5 +162,35 @@ class PharmacyController {
             return handleError(res, error);
         }
     }
+    async listMasterItems(req, res) {
+        try {
+            const medicineIdsParam = req.query.medicine_ids;
+            const medicineIds = medicineIdsParam ? medicineIdsParam.split(",").map((s) => s.trim()).filter(Boolean) : undefined;
+            const data = await service.listPharmacyMasterItems(medicineIds);
+            return res.json({
+                success: true,
+                message: "Pharmacy master items retrieved",
+                data
+            });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async createMedicine(req, res) {
+        if (!checkValidation(req, res))
+            return;
+        try {
+            const data = await service.createMedicine(req.body, actingUserId(req));
+            return res.status(201).json({
+                success: true,
+                message: "Medicine created in medicine master",
+                data
+            });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
 }
 exports.PharmacyController = PharmacyController;

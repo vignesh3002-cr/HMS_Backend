@@ -2,9 +2,11 @@ import { Request, Response } from "express";
 import { validationResult } from "express-validator";
 import { IpdService } from "./ipd.service";
 import { DaycareService } from "./ipd.daycare.service";
+import { CareTeamService } from "./ipd.care-team.service";
 
 const service = new IpdService();
 const daycareService = new DaycareService(service);
+const careTeamService = new CareTeamService(service);
 
 export class IpdController {
 
@@ -61,7 +63,11 @@ export class IpdController {
 
             }
 
+            const assignedToMe = String(req.query.assignedToMe ?? "") === "true";
+            const actor = (req as any).user;
+
             const admissions = await service.listAdmissions({
+                assignedTo: assignedToMe ? await service.resolveActorEmployeeId(actor) : undefined,
                 branchId: req.query.branchId as string,
                 status: req.query.status as string,
                 wardId: req.query.wardId as string,
@@ -851,6 +857,106 @@ export class IpdController {
                 success: true,
                 message: "Bed status updated successfully",
                 data: bed
+            });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async getCareTeam(req: Request, res: Response) {
+
+        try {
+
+            const careTeam = await careTeamService.getCareTeam(
+                req.params.id as string,
+                (req as any).user
+            );
+
+            return res.json({
+                success: true,
+                message: "Care team fetched successfully",
+                data: careTeam
+            });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async allocateCareTeam(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const careTeam = await careTeamService.allocate(
+                req.params.id as string,
+                req.body,
+                (req as any).user
+            );
+
+            return res.json({
+                success: true,
+                message: "Care team updated successfully",
+                data: careTeam
+            });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async bulkAllocateCareTeam(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const result = await careTeamService.bulkAllocate(req.body, (req as any).user);
+
+            return res.json({
+                success: true,
+                message: "Ward care team updated successfully",
+                data: result
             });
 
         } catch (error: any) {

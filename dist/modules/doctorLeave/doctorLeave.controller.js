@@ -103,7 +103,7 @@ class DoctorLeaveController {
                     ? Number(req.query.page)
                     : doctorLeave_constants_1.LEAVE_DEFAULT_PAGE,
                 limit: req.query.limit
-                    ? Number(req.query.limit)
+                    ? Math.min(Math.max(Number(req.query.limit) || doctorLeave_constants_1.LEAVE_DEFAULT_LIMIT, 1), 100)
                     : doctorLeave_constants_1.LEAVE_DEFAULT_LIMIT
             });
             return res.json(result);

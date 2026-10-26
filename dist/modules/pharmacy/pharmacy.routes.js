@@ -13,6 +13,8 @@ const controller = new pharmacy_controller_1.PharmacyController();
 // slip - swap these to authorizeAny("pharmacy.dispense", "chemo.plan.read")
 // when that is addressed.
 const READ = (0, authorize_1.authorize)("chemo.plan.read");
+router.get("/master-items", auth_middleware_1.authenticate, READ, controller.listMasterItems.bind(controller));
+router.post("/medicines", auth_middleware_1.authenticate, READ, pharmacy_validation_1.createMedicineValidation, controller.createMedicine.bind(controller));
 router.get("/slips/preview/plan/:planId", auth_middleware_1.authenticate, READ, pharmacy_validation_1.previewSlipValidation, controller.previewSlip.bind(controller));
 router.post("/slips/from-plan", auth_middleware_1.authenticate, READ, pharmacy_validation_1.createSlipValidation, controller.createSlip.bind(controller));
 // Declared before "/slips/:pharmacySlipId" so "slips" is not read as an id.

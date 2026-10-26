@@ -101,6 +101,23 @@ export const WARD_TYPE_VALUES = [
     "DAYCARE"
 ] as const;
 
+// Care team: who is responsible for an admitted patient, and from when
+// to when (start/end are stamped automatically). The consultant is admission.employee_id and is not part of this log.
+export const CARE_TEAM_ROLE = {
+    ASSIGNED_DOCTOR: "ASSIGNED_DOCTOR",
+    PRIMARY_NURSE: "PRIMARY_NURSE",
+} as const;
+
+// Why a care-team row was closed.
+export const CARE_TEAM_END_REASON = {
+    HANDOVER: "HANDOVER",
+    DISCHARGE: "DISCHARGE",
+    REMOVED: "REMOVED",
+} as const;
+
+// Most admissions one bulk ward allocation may touch.
+export const CARE_TEAM_BULK_MAX = 200;
+
 export const IDGeneratorGated = {
     ADMISSION: "ADMISSION",
     WARD: "WARD",
