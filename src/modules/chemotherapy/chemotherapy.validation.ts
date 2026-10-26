@@ -623,6 +623,8 @@ export const medicineInvestigationsValidation = [
 
 ];
 
+export const importMedicineInvestigationsValidation = [];
+
 export const planInvestigationStatusValidation = [
 
     ...planOrderParamValidation,

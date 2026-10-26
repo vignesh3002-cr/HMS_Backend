@@ -944,7 +944,34 @@ export class ChemotherapyController {
         } catch (error: any) {
             return handleError(res, error);
         }
+    }
 
+    async importMedicineInvestigations(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            if (!req.file) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Excel file is required",
+                });
+            }
+
+            const data = await service.importDrugMonitoringMappings(
+                req.file.buffer,
+                req.file.originalname
+            );
+            return res.json({
+                success: true,
+                message: "Medicine monitoring mappings imported successfully",
+                data,
+            });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
     }
 
     async updatePlanInvestigationStatus(req: Request, res: Response) {

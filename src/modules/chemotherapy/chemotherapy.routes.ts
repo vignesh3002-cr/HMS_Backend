@@ -1,4 +1,5 @@
 import { Router } from "express";
+import multer from "multer";
 import { ChemotherapyController } from "./chemotherapy.controller";
 import { authenticate } from "../auth/auth.middleware";
 import { authorize, authorizeAny } from "../../middleware/authorize";
@@ -19,6 +20,7 @@ import {
     planOrderParamValidation,
     savePlanOrderValidation,
     medicineInvestigationsValidation,
+    importMedicineInvestigationsValidation,
     planInvestigationStatusValidation,
     completePlanOrdersValidation,
     createCycleValidation,
@@ -61,6 +63,19 @@ import {
 
 const router = Router();
 const controller = new ChemotherapyController();
+
+// Memory storage for Excel file uploads (kept in memory, streamed to Prisma).
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
+    fileFilter: (_req, file, cb) => {
+        const allowed = [
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+            "application/vnd.ms-excel", // .xls
+        ];
+        cb(null, allowed.includes(file.mimetype));
+    },
+});
 
 // ---------------- Regimen protocols ----------------
 // Registered before "/plans/:planId" etc. so "/regimen-protocols" and its
@@ -260,6 +275,15 @@ router.get(
     authorizeAny("chemo.plan.read", "chemo.plan.update"),
     medicineInvestigationsValidation,
     controller.getMedicineInvestigations.bind(controller)
+);
+
+router.post(
+    "/medicine-investigations/import",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    importMedicineInvestigationsValidation,
+    upload.single("file"),
+    controller.importMedicineInvestigations.bind(controller)
 );
 
 router.get(
