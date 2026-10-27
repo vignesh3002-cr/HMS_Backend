@@ -2,6 +2,7 @@ import prisma from "../../config/prisma";
 
 import {
     CreateLabOrderDto,
+    LabOrderFilters,
     UpdateLabOrderDto
 } from "./lab-order-types";
 
@@ -53,9 +54,34 @@ class LabOrderRepository {
 
 }
 
-    async findAll() {
+    async findAll(
+        {
+            patientId,
+            appointmentId,
+            patientHistoryId,
+            limit
+        }: LabOrderFilters = {}
+    ) {
+
+    const hasFilter = Boolean(patientId || appointmentId || patientHistoryId);
 
     return prisma.lab_order.findMany({
+
+        /* Callers that pass a filter only ever see that patient's / visit's
+           orders - the list used to return every order in the branch, which
+           let clinical flows attach items to another patient's order. */
+        ...(hasFilter ? {
+            where: {
+                ...(appointmentId ? { appointment_id: appointmentId } : {}),
+                ...(patientHistoryId ? { patient_history_id: patientHistoryId } : {}),
+                ...(patientId ? { patient_history: { patient_id: patientId } } : {})
+            }
+        } : {}),
+
+        /* Only a caller that asks for a limit is capped (clinical flows ask
+           for the latest visit's rows); the lab screens still get the full
+           list they have always shown. */
+        ...(limit && limit > 0 ? { take: Math.min(limit, 500) } : {}),
 
         select: {
 
@@ -67,6 +93,7 @@ class LabOrderRepository {
             order_datetime: true,
             priority: true,
             clinical_notes: true,
+            lab_description: true,
             order_status: true,
 
             patient_history: {
@@ -77,6 +104,20 @@ class LabOrderRepository {
                     visit_status: true
                 }
             },
+
+            /* Which tests this order already has (the consultation flows skip
+               those instead of ordering the same test twice). Only loaded for
+               filtered (clinical) calls - the lab's full list would otherwise
+               join every order's items. */
+            ...(hasFilter ? {
+                lab_order_item: {
+                    select: {
+                        lab_order_item_id: true,
+                        lab_test_id: true,
+                        item_status: true
+                    }
+                }
+            } : {}),
 
             employees: {
                 select: {

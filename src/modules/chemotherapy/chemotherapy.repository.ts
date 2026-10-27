@@ -1301,6 +1301,22 @@ export class ChemotherapyRepository {
 
     }
 
+    /* The rows a re-save replaces: their normalized_key lets the service carry
+       an already-ORDERED row's status / lab links over to the recreated row. */
+    async listPlanOrderInvestigations(tx: Prisma.TransactionClient, planOrderId: string) {
+
+        return tx.chemotherapy_plan_order_investigation.findMany({
+            where: { plan_order_id: planOrderId },
+            select: {
+                normalized_key: true,
+                item_status: true,
+                lab_order_id: true,
+                lab_order_item_id: true
+            }
+        });
+
+    }
+
     async createPlanOrderInvestigation(
         tx: Prisma.TransactionClient,
         data: Prisma.chemotherapy_plan_order_investigationUncheckedCreateInput

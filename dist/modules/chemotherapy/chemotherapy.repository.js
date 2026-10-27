@@ -1052,6 +1052,19 @@ class ChemotherapyRepository {
     async deletePlanOrderInvestigations(tx, planOrderId) {
         return tx.chemotherapy_plan_order_investigation.deleteMany({ where: { plan_order_id: planOrderId } });
     }
+    /* The rows a re-save replaces: their normalized_key lets the service carry
+       an already-ORDERED row's status / lab links over to the recreated row. */
+    async listPlanOrderInvestigations(tx, planOrderId) {
+        return tx.chemotherapy_plan_order_investigation.findMany({
+            where: { plan_order_id: planOrderId },
+            select: {
+                normalized_key: true,
+                item_status: true,
+                lab_order_id: true,
+                lab_order_item_id: true
+            }
+        });
+    }
     async createPlanOrderInvestigation(tx, data) {
         return tx.chemotherapy_plan_order_investigation.create({ data });
     }

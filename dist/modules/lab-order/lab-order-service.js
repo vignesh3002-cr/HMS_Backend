@@ -91,8 +91,8 @@ class LabOrderService {
             ...(data.user_id ? { user_id: data.user_id } : {})
         });
     }
-    async getAll() {
-        return lab_order_repository_1.default.findAll();
+    async getAll(filters = {}) {
+        return lab_order_repository_1.default.findAll(filters);
     }
     async getById(id) {
         const order = await lab_order_repository_1.default.findById(id);

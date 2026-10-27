@@ -298,8 +298,22 @@ function planInvestigationCreateData(
     index: number,
     row: PlanInvestigationRowDto,
     actingUserId: string,
-    planOrderId: string
+    planOrderId: string,
+    carried?: {
+        item_status?: string | null;
+        lab_order_id?: string | null;
+        lab_order_item_id?: string | null;
+    } | null
 ): Prisma.chemotherapy_plan_order_investigationUncheckedCreateInput {
+
+    /* A row already ordered earlier keeps its ORDERED status / lab links when
+       the tab is saved again with the same (often stale) PLANNED row: the
+       status only changes through the explicit status endpoint. */
+    const incomingStatus = row.item_status ?? null;
+    const itemStatus = carried?.item_status === PLAN_INVESTIGATION_STATUS.ORDERED
+        && (!incomingStatus || incomingStatus === PLAN_INVESTIGATION_STATUS.PLANNED)
+        ? PLAN_INVESTIGATION_STATUS.ORDERED
+        : incomingStatus ?? PLAN_INVESTIGATION_STATUS.PLANNED;
 
     return {
         investigation_id: investigationId,
@@ -316,9 +330,9 @@ function planInvestigationCreateData(
         priority: row.priority?.trim() || "Normal",
         target_date: row.target_date ? new Date(row.target_date) : null,
         clinical_notes: row.clinical_notes?.trim() || null,
-        item_status: row.item_status ?? PLAN_INVESTIGATION_STATUS.PLANNED,
-        lab_order_id: row.lab_order_id?.trim() || null,
-        lab_order_item_id: row.lab_order_item_id?.trim() || null,
+        item_status: itemStatus,
+        lab_order_id: row.lab_order_id?.trim() || carried?.lab_order_id || null,
+        lab_order_item_id: row.lab_order_item_id?.trim() || carried?.lab_order_item_id || null,
         display_order: index + 1,
         normalized_key: normalizedInvestigationKey(row),
         created_by: actingUserId
@@ -4812,6 +4826,15 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
                 const rows = dto.investigations as PlanInvestigationRowDto[];
 
+                /* The tab replaces its rows with the submitted list. Rows that
+                   were already ordered (status / lab links set by the order or
+                   Discharge flow) are matched by normalized_key so a re-save
+                   never drops an ORDERED investigation back to PLANNED. */
+                const carriedByKey = new Map(
+                    (await this.repository.listPlanOrderInvestigations(tx, planOrderId))
+                        .map((row) => [row.normalized_key, row])
+                );
+
                 await this.repository.deletePlanOrderInvestigations(tx, planOrderId);
 
                 const investigationIds = await generateIdBatch(tx, ID_ENTITY.PLAN_INVESTIGATION, rows.length);
@@ -4819,7 +4842,15 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 for (const [index, row] of rows.entries()) {
                     await this.repository.createPlanOrderInvestigation(
                         tx,
-                        planInvestigationCreateData(planId, investigationIds[index], index, row, actingUserId, planOrderId)
+                        planInvestigationCreateData(
+                            planId,
+                            investigationIds[index],
+                            index,
+                            row,
+                            actingUserId,
+                            planOrderId,
+                            carriedByKey.get(normalizedInvestigationKey(row))
+                        )
                     );
                 }
 

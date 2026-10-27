@@ -4,6 +4,7 @@ import { generateId } from "../../utils/idGenerator";
 
 import {
     CreateLabOrderDto,
+    LabOrderFilters,
     UpdateLabOrderDto
 } from "./lab-order-types";
 
@@ -135,9 +136,9 @@ class LabOrderService {
 
     }
 
-    async getAll() {
+    async getAll(filters: LabOrderFilters = {}) {
 
-        return repository.findAll();
+        return repository.findAll(filters);
 
     }
 

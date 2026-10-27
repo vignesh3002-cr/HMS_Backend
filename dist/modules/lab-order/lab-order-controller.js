@@ -31,7 +31,16 @@ class LabOrderController {
     }
     async getAll(req, res) {
         try {
-            const orders = await lab_order_service_1.default.getAll();
+            const text = (value) => typeof value === "string" && value.trim() ? value.trim() : undefined;
+            const limitValue = Number(req.query.limit);
+            /* ?patientId= / ?appointmentId= / ?patientHistoryId= only return
+               that patient's / visit's orders (never the whole branch). */
+            const orders = await lab_order_service_1.default.getAll({
+                patientId: text(req.query.patientId),
+                appointmentId: text(req.query.appointmentId),
+                patientHistoryId: text(req.query.patientHistoryId),
+                limit: Number.isFinite(limitValue) && limitValue > 0 ? limitValue : undefined
+            });
             return res.status(200).json({
                 success: true,
                 data: orders
