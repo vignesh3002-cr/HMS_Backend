@@ -74,7 +74,16 @@ class LabOrderRepository {
                         select: {
                             lab_order_item_id: true,
                             lab_test_id: true,
-                            item_status: true
+                            item_status: true,
+                            /* The test's name / code, so clinical flows can spot a
+                               test already ordered under a different catalog id
+                               (the same test exists under more than one id). */
+                            lab_test_master: {
+                                select: {
+                                    test_name: true,
+                                    test_code: true
+                                }
+                            }
                         }
                     }
                 } : {}),
@@ -108,6 +117,14 @@ class LabOrderRepository {
     async findMostRecentPatientHistory(patient_id) {
         return prisma_1.default.patient_history.findFirst({
             where: { patient_id },
+            orderBy: { id: "desc" }
+        });
+    }
+    /* The visit record an appointment belongs to. Orders placed from a visit
+       must hang off that visit - not off the patient's latest one. */
+    async findPatientHistoryByAppointment(appointment_id) {
+        return prisma_1.default.patient_history.findFirst({
+            where: { appointment_id },
             orderBy: { id: "desc" }
         });
     }
