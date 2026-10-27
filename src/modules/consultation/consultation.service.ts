@@ -179,7 +179,9 @@ export class ConsultationService {
                 : (payload.immunization === null ? Prisma.JsonNull : payload.immunization),
             drug_consumption: payload.drug_consumption === undefined
                 ? undefined
-                : (payload.drug_consumption === null ? Prisma.JsonNull : payload.drug_consumption),
+                : (payload.drug_consumption === null
+                    ? Prisma.JsonNull
+                    : (payload.drug_consumption as unknown as Prisma.InputJsonValue)),
             diet_type: payload.diet_type === undefined ? undefined : payload.diet_type
         };
 
@@ -196,7 +198,9 @@ export class ConsultationService {
             personal_history_id: newId,
             encounter_no: encounterNo,
             immunization: payload.immunization == null ? Prisma.JsonNull : (payload.immunization as Prisma.InputJsonValue),
-            drug_consumption: payload.drug_consumption == null ? Prisma.JsonNull : (payload.drug_consumption as Prisma.InputJsonValue),
+            drug_consumption: payload.drug_consumption == null
+                ? Prisma.JsonNull
+                : (payload.drug_consumption as unknown as Prisma.InputJsonValue),
             diet_type: payload.diet_type ?? null,
             created_by: actingUserId
         });

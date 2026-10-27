@@ -12,10 +12,23 @@ export interface CreateCustomMasterDTO {
 
 }
 
+export interface DrugConsumptionItem {
+
+    code: string;
+    name: string;
+    others?: string;
+    /* Optional duration (value + day/week/month/year unit) and Command(s),
+       stored inside the drug_consumption JSON. */
+    duration_value?: number | null;
+    duration_unit?: string | null;
+    commands?: string | null;
+
+}
+
 export interface PersonalHistoryPayload {
 
     immunization?: { code: string; name: string; others?: string }[] | null;
-    drug_consumption?: { code: string; name: string; others?: string }[] | null;
+    drug_consumption?: DrugConsumptionItem[] | null;
     diet_type?: string | null;
 
 }

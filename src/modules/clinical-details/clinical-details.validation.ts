@@ -223,15 +223,19 @@ export const createEncounterSymptomValidation = [
         .isIn(['MILD', 'MODERATE', 'SEVERE', 'CRITICAL'])
         .withMessage('Invalid severity value'),
     body('durationDays')
-        .optional()
+        .optional({ nullable: true })
         .isInt({ min: 0, max: 9999 })
         .withMessage('Duration days must be between 0 and 9999'),
+    body('durationUnit')
+        .optional({ nullable: true })
+        .isIn(['day', 'week', 'month', 'year'])
+        .withMessage('Duration unit must be day, week, month or year'),
     body('onsetDate')
-        .optional()
+        .optional({ nullable: true })
         .isISO8601()
         .withMessage('Onset date must be a valid date (YYYY-MM-DD)'),
     body('clinicalNotes')
-        .optional()
+        .optional({ nullable: true })
         .isLength({ max: 1000 })
         .withMessage('Clinical notes must not exceed 1000 characters'),
     body('recordedBy')
@@ -256,15 +260,19 @@ export const updateEncounterSymptomValidation = [
         .isIn(['MILD', 'MODERATE', 'SEVERE', 'CRITICAL'])
         .withMessage('Invalid severity value'),
     body('durationDays')
-        .optional()
+        .optional({ nullable: true })
         .isInt({ min: 0, max: 9999 })
         .withMessage('Duration days must be between 0 and 9999'),
+    body('durationUnit')
+        .optional({ nullable: true })
+        .isIn(['day', 'week', 'month', 'year'])
+        .withMessage('Duration unit must be day, week, month or year'),
     body('onsetDate')
-        .optional()
+        .optional({ nullable: true })
         .isISO8601()
         .withMessage('Onset date must be a valid date (YYYY-MM-DD)'),
     body('clinicalNotes')
-        .optional()
+        .optional({ nullable: true })
         .isLength({ max: 1000 })
         .withMessage('Clinical notes must not exceed 1000 characters'),
     body('status')
@@ -289,13 +297,21 @@ export const createPatientAllergyValidation = [
         .isInt({ min: 1 })
         .withMessage('Invalid allergy ID'),
     body('reaction')
-        .optional()
+        .optional({ nullable: true })
         .isLength({ max: 500 })
         .withMessage('Reaction must not exceed 500 characters'),
     body('severity')
         .optional()
         .isIn(['MILD', 'MODERATE', 'SEVERE', 'ANAPHYLACTIC'])
         .withMessage('Invalid severity value'),
+    body('durationValue')
+        .optional({ nullable: true })
+        .isInt({ min: 0, max: 9999 })
+        .withMessage('Duration value must be between 0 and 9999'),
+    body('durationUnit')
+        .optional({ nullable: true })
+        .isIn(['day', 'week', 'month', 'year'])
+        .withMessage('Duration unit must be day, week, month or year'),
     body('status')
         .optional()
         .isIn(['ACTIVE', 'INACTIVE', 'RESOLVED'])
@@ -309,7 +325,7 @@ export const createPatientAllergyValidation = [
         .isLength({ max: 30 })
         .withMessage('Invalid encounter number'),
     body('clinicalNotes')
-        .optional()
+        .optional({ nullable: true })
         .isLength({ max: 1000 })
         .withMessage('Clinical notes must not exceed 1000 characters'),
 ];
@@ -326,19 +342,27 @@ export const updatePatientAllergyValidation = [
         .isInt({ min: 1 })
         .withMessage('Invalid allergy record ID'),
     body('reaction')
-        .optional()
+        .optional({ nullable: true })
         .isLength({ max: 500 })
         .withMessage('Reaction must not exceed 500 characters'),
     body('severity')
         .optional()
         .isIn(['MILD', 'MODERATE', 'SEVERE', 'ANAPHYLACTIC'])
         .withMessage('Invalid severity value'),
+    body('durationValue')
+        .optional({ nullable: true })
+        .isInt({ min: 0, max: 9999 })
+        .withMessage('Duration value must be between 0 and 9999'),
+    body('durationUnit')
+        .optional({ nullable: true })
+        .isIn(['day', 'week', 'month', 'year'])
+        .withMessage('Duration unit must be day, week, month or year'),
     body('status')
         .optional()
         .isIn(['ACTIVE', 'INACTIVE', 'RESOLVED'])
         .withMessage('Invalid status value'),
     body('clinicalNotes')
-        .optional()
+        .optional({ nullable: true })
         .isLength({ max: 1000 })
         .withMessage('Clinical notes must not exceed 1000 characters'),
     body('updatedBy')
@@ -363,9 +387,17 @@ export const createPatientComorbidityValidation = [
         .isIn(['ACTIVE', 'INACTIVE', 'HISTORY', 'RESOLVED'])
         .withMessage('Invalid status value'),
     body('onsetDate')
-        .optional()
+        .optional({ nullable: true })
         .isISO8601()
         .withMessage('Onset date must be a valid date (YYYY-MM-DD)'),
+    body('durationValue')
+        .optional({ nullable: true })
+        .isInt({ min: 0, max: 9999 })
+        .withMessage('Duration value must be between 0 and 9999'),
+    body('durationUnit')
+        .optional({ nullable: true })
+        .isIn(['day', 'week', 'month', 'year'])
+        .withMessage('Duration unit must be day, week, month or year'),
     body('identifiedBy')
         .optional()
         .isLength({ max: 20 })
@@ -375,7 +407,7 @@ export const createPatientComorbidityValidation = [
         .isLength({ max: 30 })
         .withMessage('Invalid encounter number'),
     body('clinicalNotes')
-        .optional()
+        .optional({ nullable: true })
         .isLength({ max: 1000 })
         .withMessage('Clinical notes must not exceed 1000 characters'),
 ];
@@ -396,11 +428,19 @@ export const updatePatientComorbidityValidation = [
         .isIn(['ACTIVE', 'INACTIVE', 'HISTORY', 'RESOLVED'])
         .withMessage('Invalid status value'),
     body('onsetDate')
-        .optional()
+        .optional({ nullable: true })
         .isISO8601()
         .withMessage('Onset date must be a valid date (YYYY-MM-DD)'),
+    body('durationValue')
+        .optional({ nullable: true })
+        .isInt({ min: 0, max: 9999 })
+        .withMessage('Duration value must be between 0 and 9999'),
+    body('durationUnit')
+        .optional({ nullable: true })
+        .isIn(['day', 'week', 'month', 'year'])
+        .withMessage('Duration unit must be day, week, month or year'),
     body('clinicalNotes')
-        .optional()
+        .optional({ nullable: true })
         .isLength({ max: 1000 })
         .withMessage('Clinical notes must not exceed 1000 characters'),
     body('updatedBy')

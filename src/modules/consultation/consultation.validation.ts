@@ -36,6 +36,19 @@ export const upsertPersonalHistoryValidation = [
     body("drug_consumption.*.code").optional().isString(),
     body("drug_consumption.*.name").optional().isString(),
     body("drug_consumption.*.others").optional({ nullable: true }).isString(),
+    body("drug_consumption.*.duration_value")
+        .optional({ nullable: true })
+        .isInt({ min: 0, max: 9999 })
+        .withMessage("Duration value must be between 0 and 9999"),
+    body("drug_consumption.*.duration_unit")
+        .optional({ nullable: true })
+        .isIn(["day", "week", "month", "year"])
+        .withMessage("Duration unit must be day, week, month or year"),
+    body("drug_consumption.*.commands")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 1000 })
+        .withMessage("Command(s) must not exceed 1000 characters"),
     body("diet_type").optional({ nullable: true }).isString()
 
 ];
