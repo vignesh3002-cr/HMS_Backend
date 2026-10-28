@@ -32,6 +32,10 @@ const careTeamEmployeeSelect = {
     specialization: true,
     designation: true,
 };
+function aliasAdmissionEmployee(row) {
+    const { employees_admission_employee_idToemployees: employees, ...rest } = row;
+    return { ...rest, employees };
+}
 class IpdRepository {
     // ------------------------------------------------------------------ wards
     async findWardById(wardId) {
@@ -291,7 +295,7 @@ class IpdRepository {
                 department_master: {
                     select: { department_id: true, department_name: true },
                 },
-                employees: {
+                employees_admission_employee_idToemployees: {
                     select: {
                         employee_id: true,
                         first_name: true,
@@ -312,7 +316,7 @@ class IpdRepository {
                     orderBy: { transferred_at: "desc" },
                 },
             },
-        });
+        }).then((row) => (row ? aliasAdmissionEmployee(row) : row));
     }
     async findAdmissionByAppointmentId(appointmentId) {
         return prisma_1.default.admission.findFirst({
@@ -420,7 +424,7 @@ class IpdRepository {
                     department_master: {
                         select: { department_id: true, department_name: true },
                     },
-                    employees: {
+                    employees_admission_employee_idToemployees: {
                         select: {
                             employee_id: true,
                             first_name: true,
@@ -443,7 +447,7 @@ class IpdRepository {
             page,
             limit,
             totalPages: Math.ceil(total / limit),
-            admissions,
+            admissions: admissions.map(aliasAdmissionEmployee),
         };
     }
     async createAdmission(tx, data) {
@@ -529,7 +533,7 @@ class IpdRepository {
                 department_master: {
                     select: { department_id: true, department_name: true },
                 },
-                employees: {
+                employees_admission_employee_idToemployees: {
                     select: {
                         employee_id: true,
                         first_name: true,
@@ -550,7 +554,7 @@ class IpdRepository {
                     orderBy: { transferred_at: "desc" },
                 },
             },
-        });
+        }).then((row) => (row ? aliasAdmissionEmployee(row) : row));
     }
 }
 exports.IpdRepository = IpdRepository;

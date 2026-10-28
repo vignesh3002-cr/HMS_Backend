@@ -213,7 +213,7 @@ class ChemotherapyService {
     // reuse by name, else create a medicine_master row (existing
     // columns only - no schema change).
     // ---------------------------------------------------------------
-    async resolveMedicineId(rawId) {
+    async resolveMedicineId(rawId, meta) {
         const raw = (rawId ?? "").trim();
         if (!raw)
             return null;
@@ -223,26 +223,44 @@ class ChemotherapyService {
         const byName = await this.repository.findMedicineByName(raw);
         if (byName)
             return byName.medicine_id;
-        const created = await this.repository.createMedicineFromTypedName(raw);
+        const created = await this.repository.createMedicineFromProtocol({
+            name: meta?.medicineName || raw,
+            genericName: meta?.genericName || raw,
+            form: meta?.form,
+            brand: meta?.brand
+        });
         return created.medicine_id;
     }
     async resolveDtoMedicines(dto) {
         if (!dto || typeof dto !== "object")
             return;
         if (dto.medicine_id) {
-            dto.medicine_id = (await this.resolveMedicineId(dto.medicine_id)) ?? dto.medicine_id;
+            dto.medicine_id = (await this.resolveMedicineId(dto.medicine_id, {
+                form: dto.drug_type || dto.form,
+                brand: dto.drug_brand_name,
+                genericName: dto.generic_name,
+                medicineName: dto.medicine_name
+            })) ?? dto.medicine_id;
         }
         if (Array.isArray(dto.items)) {
             for (const item of dto.items) {
                 if (!item || typeof item !== "object")
                     continue;
                 if (item.medicine_id) {
-                    item.medicine_id = (await this.resolveMedicineId(item.medicine_id)) ?? item.medicine_id;
+                    item.medicine_id = (await this.resolveMedicineId(item.medicine_id, {
+                        form: item.drug_type || item.form,
+                        brand: item.drug_brand_name,
+                        genericName: item.generic_name,
+                        medicineName: item.medicine_name
+                    })) ?? item.medicine_id;
                 }
                 if (Array.isArray(item.dilutions)) {
                     for (const d of item.dilutions) {
                         if (d && d.medicine_id) {
-                            d.medicine_id = (await this.resolveMedicineId(d.medicine_id)) ?? d.medicine_id;
+                            d.medicine_id = (await this.resolveMedicineId(d.medicine_id, {
+                                form: d.form,
+                                brand: d.drug_brand_name
+                            })) ?? d.medicine_id;
                         }
                     }
                 }
@@ -251,14 +269,24 @@ class ChemotherapyService {
         if (Array.isArray(dto.dilutions)) {
             for (const d of dto.dilutions) {
                 if (d && d.medicine_id) {
-                    d.medicine_id = (await this.resolveMedicineId(d.medicine_id)) ?? d.medicine_id;
+                    d.medicine_id = (await this.resolveMedicineId(d.medicine_id, {
+                        form: d.form,
+                        brand: d.drug_brand_name,
+                        genericName: d.generic_name,
+                        medicineName: d.medicine_name
+                    })) ?? d.medicine_id;
                 }
             }
         }
         if (Array.isArray(dto.discharge_instructions)) {
             for (const ins of dto.discharge_instructions) {
                 if (ins && ins.medicine_id) {
-                    ins.medicine_id = (await this.resolveMedicineId(ins.medicine_id)) ?? ins.medicine_id;
+                    ins.medicine_id = (await this.resolveMedicineId(ins.medicine_id, {
+                        form: ins.drug_type || ins.form,
+                        brand: ins.drug_brand_name,
+                        genericName: ins.generic_name,
+                        medicineName: ins.medicine_name
+                    })) ?? ins.medicine_id;
                 }
             }
         }
@@ -351,6 +379,9 @@ class ChemotherapyService {
     }
     async getProtocolFieldOptions() {
         return this.repository.getProtocolFieldOptions();
+    }
+    async getGenericFormsAndBrands() {
+        return this.repository.getGenericFormsAndBrands();
     }
     async listTreatmentIntents() {
         return this.repository.listTreatmentIntents();

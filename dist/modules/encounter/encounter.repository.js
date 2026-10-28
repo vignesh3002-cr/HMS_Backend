@@ -140,7 +140,7 @@ class EncounterRepository {
                         patient_active: true,
                     }
                 },
-                employees: {
+                employees_admission_employee_idToemployees: {
                     select: {
                         employee_id: true,
                         first_name: true,

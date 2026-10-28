@@ -1,12 +1,14 @@
 import { Router } from "express";
 import { authenticate } from "../auth/auth.middleware";
-import { authorize } from "../../middleware/authorize";
+import { authorizeAny } from "../../middleware/authorize";
 import { PharmacyController } from "./pharmacy.controller";
 import {
+    amendSlipValidation,
     cancelSlipValidation,
     createMedicineValidation,
     createSlipValidation,
     getSlipValidation,
+    issueSlipValidation,
     listSlipsValidation,
     previewSlipValidation,
     printSlipValidation,
@@ -17,12 +19,8 @@ const router = Router();
 
 const controller = new PharmacyController();
 
-// Everything here is gated on chemo.plan.read because the slip is opened from
-// the Order Master row of a chemotherapy plan. Note: PHARMACIST holds
-// pharmacy.dispense, not chemo.plan.read, so a pharmacist still cannot open a
-// slip - swap these to authorizeAny("pharmacy.dispense", "chemo.plan.read")
-// when that is addressed.
-const READ = authorize("chemo.plan.read");
+// Accessible by either Pharmacists (pharmacy.dispense) or Oncologists (chemo.plan.read)
+const READ = authorizeAny("pharmacy.dispense", "chemo.plan.read");
 
 router.get(
     "/master-items",
@@ -86,6 +84,22 @@ router.post(
     READ,
     cancelSlipValidation,
     controller.cancelSlip.bind(controller)
+);
+
+router.post(
+    "/slips/:pharmacySlipId/issue",
+    authenticate,
+    READ,
+    issueSlipValidation,
+    controller.issueSlip.bind(controller)
+);
+
+router.post(
+    "/slips/:pharmacySlipId/amend",
+    authenticate,
+    READ,
+    amendSlipValidation,
+    controller.amendSlip.bind(controller)
 );
 
 router.post(

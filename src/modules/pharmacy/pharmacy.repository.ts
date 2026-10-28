@@ -234,6 +234,8 @@ export class PharmacyRepository {
             select: {
                 pharmacy_item_id: true,
                 medicine_id: true,
+                generic_name: true,
+                generic_id: true,
                 item_name: true,
                 brand_name: true,
                 manufacturer_name: true,
@@ -244,6 +246,25 @@ export class PharmacyRepository {
             },
             orderBy: [{ item_name: "asc" }, { manufacturer_name: "asc" }]
         });
+
+    }
+
+    async generatePharmacyItemId(tx: Prisma.TransactionClient): Promise<string> {
+
+        const lastRow = await tx.pharmacy_master.findFirst({
+            orderBy: { id: "desc" },
+            select: { pharmacy_item_id: true }
+        });
+
+        let nextNum = 1;
+        if (lastRow?.pharmacy_item_id) {
+            const match = lastRow.pharmacy_item_id.match(/\d+/);
+            if (match) {
+                nextNum = parseInt(match[0], 10) + 1;
+            }
+        }
+
+        return "PHM" + String(nextNum).padStart(5, "0");
 
     }
 
@@ -270,6 +291,7 @@ export class PharmacyRepository {
                 medicine_name: data.medicine_name.trim(),
                 generic_name: data.generic_name?.trim() || null,
                 dosage_form: data.dosage_form?.trim() || null,
+                medicine_type: data.dosage_form?.trim() || null,
                 is_active: true
             }
         });
@@ -302,9 +324,7 @@ export class PharmacyRepository {
                         chemotherapy_discharge_instructions: {
                             where: { active_status: 1 },
                             include: {
-                                medicine_master: {
-                                    include: { pharmacy_master: { where: { is_active: true } } }
-                                }
+                                medicine_master: true
                             },
                             orderBy: { drug_sequence: "asc" as const }
                         }
@@ -313,9 +333,7 @@ export class PharmacyRepository {
                 chemotherapy_plan_items: {
                     where: { active_status: 1, plan_order_id: null },
                     include: {
-                        medicine_master: {
-                            include: { pharmacy_master: { where: { is_active: true } } }
-                        }
+                        medicine_master: true
                     },
                     orderBy: { drug_sequence: "asc" as const }
                 }
@@ -339,9 +357,7 @@ export class PharmacyRepository {
                     chemotherapy_plan_items: {
                         where: { active_status: 1 },
                         include: {
-                            medicine_master: {
-                                include: { pharmacy_master: { where: { is_active: true } } }
-                            }
+                            medicine_master: true
                         },
                         orderBy: { drug_sequence: "asc" as const }
                     }
@@ -427,9 +443,7 @@ export class PharmacyRepository {
             include: {
                 prescription_items: {
                     include: {
-                        medicine_master: {
-                            include: { pharmacy_master: { where: { is_active: true } } }
-                        }
+                        medicine_master: true
                     },
                     orderBy: { prescription_item_id: "asc" as const }
                 }
@@ -467,9 +481,7 @@ export class PharmacyRepository {
                 },
                 prescription_items: {
                     include: {
-                        medicine_master: {
-                            include: { pharmacy_master: { where: { is_active: true } } }
-                        }
+                        medicine_master: true
                     },
                     orderBy: { prescription_item_id: "asc" as const }
                 }

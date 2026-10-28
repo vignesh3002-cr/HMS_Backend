@@ -260,6 +260,13 @@ router.get(
 );
 
 router.get(
+    "/forms-and-brands",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    controller.getGenericFormsAndBrands.bind(controller)
+);
+
+router.get(
     "/treatment-intents",
     authenticate,
     authorize("chemo.protocol.read"),
