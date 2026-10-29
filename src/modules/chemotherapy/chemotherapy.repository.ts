@@ -28,7 +28,7 @@ export class ChemotherapyRepository {
             orderBy: { drug_sequence: "asc" as const },
             include: {
                 medicine_master: true,
-                chemotherapy_protocol_dilutions: { where: { active_status: 1 }, orderBy: { created_at: "asc" as const } }
+                chemotherapy_protocol_dilutions: { where: { active_status: 1 }, orderBy: { created_at: "asc" as const }, include: { medicine_master: true } }
             }
         },
         chemotherapy_discharge_instructions: { where: { active_status: 1 }, orderBy: { drug_sequence: "asc" as const }, include: { medicine_master: true } },
@@ -322,7 +322,7 @@ export class ChemotherapyRepository {
             orderBy: { drug_sequence: "asc" as const },
             include: {
                 medicine_master: true,
-                chemotherapy_protocol_dilutions: { where: { active_status: 1 } }
+                chemotherapy_protocol_dilutions: { where: { active_status: 1 }, include: { medicine_master: true } }
             }
         },
         cancer_types: { select: { cancer_type_id: true, cancer_type: true } },
@@ -456,20 +456,71 @@ export class ChemotherapyRepository {
         return `MED${String(next).padStart(6, "0")}`;
     }
 
-    async createMedicineFromTypedName(medicineName: string) {
-        const name = medicineName.trim();
+    async generateGenericId(): Promise<string> {
+        const last = await prisma.generic_master.findFirst({
+            where: {
+                generic_id: { startsWith: "GEN", not: "GEN_NOT_SPECIFIED" }
+            },
+            orderBy: { id: "desc" },
+            select: { generic_id: true }
+        });
+        const match = /^GEN(\d+)$/.exec((last?.generic_id ?? "").trim());
+        const next = match ? Number(match[1]) + 1 : 1;
+        return `GEN${next}`;
+    }
+
+    async findOrCreateGeneric(genericName?: string | null): Promise<{ generic_id: string; generic_name: string } | null> {
+        const gName = (genericName ?? "").trim();
+        if (!gName) return null;
+        const existing = await prisma.generic_master.findFirst({
+            where: { generic_name: { equals: gName, mode: "insensitive" } }
+        });
+        if (existing && existing.generic_id) {
+            return { generic_id: existing.generic_id, generic_name: existing.generic_name };
+        }
+        const genericId = await this.generateGenericId();
+        const created = await prisma.generic_master.create({
+            data: {
+                generic_id: genericId,
+                generic_name: gName
+            }
+        });
+        return { generic_id: created.generic_id!, generic_name: created.generic_name };
+    }
+
+    async createMedicineFromProtocol(data: {
+        name: string;
+        genericName?: string | null;
+        form?: string | null;
+        brand?: string | null;
+    }) {
         const medicineId = await this.generateMedicineId();
+        const rawGen = data.genericName?.trim() || data.name.trim();
+        const genRecord = await this.findOrCreateGeneric(rawGen);
+        const form = data.form?.trim() || null;
+        const brand = data.brand?.trim() || null;
+        const medicineName = data.name.trim() || rawGen;
+
         return prisma.medicine_master.create({
             data: {
                 medicine_id: medicineId,
-                medicine_name: name,
-                source_note: "Protocol Others",
+                medicine_name: medicineName,
+                generic_name: genRecord ? genRecord.generic_name : rawGen,
+                generic_id: genRecord ? genRecord.generic_id : "GEN_NOT_SPECIFIED",
+                brand_name: brand,
+                dosage_form: form,
+                medicine_type: form,
+                source_note: "Protocol Builder Custom Item",
                 prescription_required: true,
                 is_narcotic: false,
                 is_high_risk: false,
                 is_active: true
             }
         });
+    }
+
+    async createMedicineFromTypedName(medicineName: string) {
+        return this.createMedicineFromProtocol({ name: medicineName });
     }
 
     async listAllActiveMedicines() {
@@ -479,6 +530,7 @@ export class ChemotherapyRepository {
                 medicine_id: true,
                 medicine_name: true,
                 generic_name: true,
+                generic_id: true,
                 strength: true,
                 dosage_form: true,
                 unit: true,
@@ -500,6 +552,7 @@ export class ChemotherapyRepository {
                         medicine_id: true,
                         medicine_name: true,
                         generic_name: true,
+                        generic_id: true,
                         strength: true,
                         dosage_form: true,
                         unit: true,
@@ -522,6 +575,7 @@ export class ChemotherapyRepository {
                     medicine_id: true,
                     medicine_name: true,
                     generic_name: true,
+                    generic_id: true,
                     strength: true,
                     dosage_form: true,
                     unit: true,
@@ -660,6 +714,7 @@ export class ChemotherapyRepository {
                             medicine_id: true,
                             medicine_name: true,
                             generic_name: true,
+                            generic_id: true,
                             strength: true,
                             dosage_form: true,
                             unit: true,
@@ -706,36 +761,186 @@ export class ChemotherapyRepository {
     }
 
     async listMedicinesByDrugRole(drugRole: string) {
-        const items = await prisma.chemotherapy_regimen_protocol_items.findMany({
-            where: {
-                drug_role: drugRole,
-                active_status: 1,
-                chemotherapy_regimen_protocol: {
-                    active_status: 1
-                },
-                medicine_master: { is_active: true }
-            },
-            include: {
-                medicine_master: {
-                    select: {
-                        medicine_id: true,
-                        medicine_name: true,
-                        generic_name: true,
-                        strength: true,
-                        dosage_form: true,
-                        unit: true,
-                        route: true
-                    }
+        const roleUpper = (drugRole || "").toUpperCase();
+
+        let categoryCondition: Prisma.medicine_masterWhereInput = {};
+        let searchRoles = [roleUpper];
+
+        if (roleUpper === "PRIMARY") {
+            categoryCondition = { medicine_category: { startsWith: "Antineoplastic" } };
+        } else if (roleUpper === "PREMEDICATION") {
+            categoryCondition = {
+                medicine_category: {
+                    in: ["Antiemetic", "Corticosteroid", "Gastrointestinal", "Analgesic", "Anti-infective", "Antifungal"]
                 }
+            };
+        } else if (roleUpper === "SUPPORTIVE") {
+            searchRoles = ["SUPPORTIVE"];
+            categoryCondition = {
+                medicine_category: {
+                    in: [
+                        "Hematopoietic growth factor",
+                        "Supplement / Electrolyte",
+                        "Diuretic",
+                        "Bone modifying agent",
+                        "Analgesic",
+                        "Gastrointestinal",
+                        "Antiemetic"
+                    ]
+                }
+            };
+        } else if (roleUpper === "DISCHARGE") {
+            return prisma.medicine_master.findMany({
+                where: {
+                    is_active: true,
+                    OR: [
+                        {
+                            medicine_category: {
+                                in: [
+                                    "Analgesic",
+                                    "Anti-infective",
+                                    "Antifungal",
+                                    "Gastrointestinal",
+                                    "Antiemetic",
+                                    "Corticosteroid",
+                                    "Hematopoietic growth factor",
+                                    "Supplement / Electrolyte",
+                                    "Diuretic",
+                                    "Bone modifying agent",
+                                    "Other",
+                                    "Instruction"
+                                ]
+                            }
+                        },
+                        { chemotherapy_discharge_instructions: { some: { active_status: 1 } } },
+                        { chemotherapy_regimen_protocol_items: { some: { drug_role: "SUPPORTIVE", active_status: 1 } } },
+                        { dosage_form: { in: ["Tablet", "Capsule", "Syrup", "Drops"] } }
+                    ]
+                },
+                select: {
+                    medicine_id: true,
+                    medicine_name: true,
+                    generic_name: true,
+                    generic_id: true,
+                    strength: true,
+                    dosage_form: true,
+                    unit: true,
+                    route: true
+                },
+                orderBy: { medicine_name: "asc" }
+            });
+        }
+
+        const items = await prisma.medicine_master.findMany({
+            where: {
+                is_active: true,
+                OR: [
+                    categoryCondition,
+                    {
+                        chemotherapy_regimen_protocol_items: {
+                            some: { drug_role: { in: searchRoles }, active_status: 1 }
+                        }
+                    }
+                ]
             },
-            orderBy: { medicine_master: { medicine_name: "asc" } }
+            select: {
+                medicine_id: true,
+                medicine_name: true,
+                generic_name: true,
+                generic_id: true,
+                strength: true,
+                dosage_form: true,
+                unit: true,
+                route: true
+            },
+            orderBy: { medicine_name: "asc" }
         });
 
-        const seen = new Map<string, (typeof items)[number]["medicine_master"]>();
-        for (const item of items) {
-            if (!seen.has(item.medicine_id)) seen.set(item.medicine_id, item.medicine_master);
+        return items;
+    }
+
+    // Aggregates distinct dosage forms and brands for each generic_id
+    // combining pharmacy_master inventory and medicine_master catalog.
+    async getGenericFormsAndBrands() {
+        const [pharmRecords, medRecords] = await Promise.all([
+            prisma.pharmacy_master.findMany({
+                where: { generic_id: { not: null }, is_active: true },
+                select: {
+                    generic_id: true,
+                    dosage_form: true,
+                    brand_name: true,
+                    generic_master: {
+                        select: { generic_name: true }
+                    }
+                }
+            }),
+            prisma.medicine_master.findMany({
+                where: { generic_id: { not: null }, is_active: true },
+                select: {
+                    generic_id: true,
+                    dosage_form: true,
+                    brand_name: true,
+                    generic_name: true
+                }
+            })
+        ]);
+
+        const map: Record<string, { generic_name: string; forms: Set<string>; brandsByForm: Record<string, Set<string>> }> = {};
+
+        for (const m of medRecords) {
+            if (!m.generic_id) continue;
+            if (!map[m.generic_id]) {
+                map[m.generic_id] = {
+                    generic_name: m.generic_name || "",
+                    forms: new Set(),
+                    brandsByForm: {}
+                };
+            }
+            const form = m.dosage_form?.trim();
+            if (form) {
+                map[m.generic_id].forms.add(form);
+                if (!map[m.generic_id].brandsByForm[form]) {
+                    map[m.generic_id].brandsByForm[form] = new Set();
+                }
+                const b = m.brand_name?.trim();
+                if (b) map[m.generic_id].brandsByForm[form].add(b);
+            }
         }
-        return [...seen.values()];
+
+        for (const p of pharmRecords) {
+            if (!p.generic_id) continue;
+            if (!map[p.generic_id]) {
+                map[p.generic_id] = {
+                    generic_name: p.generic_master?.generic_name || "",
+                    forms: new Set(),
+                    brandsByForm: {}
+                };
+            } else if (!map[p.generic_id].generic_name && p.generic_master?.generic_name) {
+                map[p.generic_id].generic_name = p.generic_master.generic_name;
+            }
+            const form = p.dosage_form?.trim();
+            if (form) {
+                map[p.generic_id].forms.add(form);
+                if (!map[p.generic_id].brandsByForm[form]) {
+                    map[p.generic_id].brandsByForm[form] = new Set();
+                }
+                const b = p.brand_name?.trim();
+                if (b) map[p.generic_id].brandsByForm[form].add(b);
+            }
+        }
+
+        const result: Record<string, { generic_name: string; forms: string[]; brandsByForm: Record<string, string[]> }> = {};
+        for (const [gid, data] of Object.entries(map)) {
+            result[gid] = {
+                generic_name: data.generic_name,
+                forms: Array.from(data.forms).sort(),
+                brandsByForm: Object.fromEntries(
+                    Object.entries(data.brandsByForm).map(([f, bSet]) => [f, Array.from(bSet).sort()])
+                )
+            };
+        }
+
+        return result;
     }
 
     // Distinct non-null values (ordered A-Z) used across regimen-protocol

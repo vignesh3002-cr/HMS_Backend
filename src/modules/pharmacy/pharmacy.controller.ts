@@ -201,6 +201,54 @@ export class PharmacyController {
 
     }
 
+    async issueSlip(req: Request, res: Response) {
+
+        if (!checkValidation(req, res)) return;
+
+        try {
+
+            const data = await service.issue(
+                req.params.pharmacySlipId as string,
+                req.body,
+                actingUserId(req)
+            );
+
+            return res.json({
+                success: true,
+                message: "Pharmacy slip issued",
+                data
+            });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async amendSlip(req: Request, res: Response) {
+
+        if (!checkValidation(req, res)) return;
+
+        try {
+
+            const data = await service.amend(
+                req.params.pharmacySlipId as string,
+                req.body,
+                actingUserId(req)
+            );
+
+            return res.json({
+                success: true,
+                message: "Pharmacy slip amended",
+                data
+            });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
     async printSlip(req: Request, res: Response) {
 
         if (!checkValidation(req, res)) return;

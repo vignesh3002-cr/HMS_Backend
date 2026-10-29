@@ -3,6 +3,8 @@ export interface RegimenProtocolDilutionInput {
     protocol_dilution_id?: string;
     source_resource_id?: string | null;
     medicine_id?: string | null;
+    medicine_name?: string | null;
+    generic_name?: string | null;
     drug_brand_name?: string | null;
     form?: string | null;
     dose?: number | null;
@@ -36,6 +38,9 @@ export interface RegimenProtocolDischargeInstructionInput {
 
 export interface RegimenProtocolItemDto {
 
+    medicine_name?: string | null;
+    generic_name?: string | null;
+
     medicine_id: string;
     drug_role?: "PRIMARY" | "PREMEDICATION" | "POSTMEDICATION" | "SUPPORTIVE";
     drug_sequence: number;
@@ -62,6 +67,8 @@ export interface RegimenProtocolItemDto {
 }
 
 export interface UpdateRegimenProtocolItemDto {
+  medicine_name?: string | null;
+  generic_name?: string | null;
   medicine_id?: string;
   drug_role?: "PRIMARY" | "PREMEDICATION" | "POSTMEDICATION" | "SUPPORTIVE";
   drug_sequence?: number;

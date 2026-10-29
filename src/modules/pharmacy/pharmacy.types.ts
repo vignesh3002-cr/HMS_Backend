@@ -70,6 +70,8 @@ export interface PharmacySlipItemView {
 export interface PharmacyMasterItemView {
     pharmacy_item_id: string;
     medicine_id: string | null;
+    generic_name?: string | null;
+    generic_id?: string | null;
     item_name: string;
     brand_name: string | null;
     manufacturer_name: string | null;
@@ -104,6 +106,10 @@ export interface PharmacySlipView {
     cancelled_at: Date | null;
     cancelled_by: string | null;
     cancellation_reason: string | null;
+    amend_count: number;
+    last_amended_at: Date | null;
+    last_amended_by: string | null;
+    last_amend_reason: string | null;
     created_by: string | null;
     created_at: Date | null;
     updated_at: Date | null;
@@ -117,6 +123,14 @@ export interface PharmacySlipView {
 
 export interface CreateSlipFromPlanDto {
     plan_id: string;
+}
+
+export interface IssueSlipDto {
+    note?: string | null;
+}
+
+export interface AmendSlipDto extends UpdateSlipItemsDto {
+    reason: string;
 }
 
 export interface UpdateSlipItemsDto {

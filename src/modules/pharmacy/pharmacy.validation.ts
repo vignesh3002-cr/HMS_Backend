@@ -145,3 +145,16 @@ export const printSlipValidation = [
         .withMessage("Printed by cannot exceed 100 characters")
 
 ];
+
+export const issueSlipValidation = [
+    slipIdValidation,
+    body("note").optional({ nullable: true }).isString().isLength({ max: 500 })
+];
+
+export const amendSlipValidation = [
+    ...updateSlipItemsValidation,
+    body("reason")
+        .notEmpty().withMessage("An amendment reason is required")
+        .isLength({ max: 500 })
+        .withMessage("Amendment reason cannot exceed 500 characters")
+];

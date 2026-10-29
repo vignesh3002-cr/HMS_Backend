@@ -142,6 +142,15 @@ class ChemotherapyController {
             return handleError(res, error);
         }
     }
+    async getGenericFormsAndBrands(req, res) {
+        try {
+            const data = await service.getGenericFormsAndBrands();
+            return res.json({ success: true, message: "Generic forms and brands fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
     async listTreatmentIntents(req, res) {
         try {
             const data = await service.listTreatmentIntents();
