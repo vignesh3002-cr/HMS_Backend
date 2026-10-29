@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.printSlipValidation = exports.cancelSlipValidation = exports.createMedicineValidation = exports.updateSlipItemsValidation = exports.getSlipValidation = exports.listSlipsValidation = exports.createSlipValidation = exports.previewSlipValidation = void 0;
+exports.amendSlipValidation = exports.issueSlipValidation = exports.printSlipValidation = exports.cancelSlipValidation = exports.createMedicineValidation = exports.updateSlipItemsValidation = exports.getSlipValidation = exports.listSlipsValidation = exports.createSlipValidation = exports.previewSlipValidation = void 0;
 const express_validator_1 = require("express-validator");
 const pharmacy_constants_1 = require("./pharmacy.constants");
 /*
@@ -101,4 +101,15 @@ exports.printSlipValidation = [
         .isString()
         .isLength({ max: 100 })
         .withMessage("Printed by cannot exceed 100 characters")
+];
+exports.issueSlipValidation = [
+    slipIdValidation,
+    (0, express_validator_1.body)("note").optional({ nullable: true }).isString().isLength({ max: 500 })
+];
+exports.amendSlipValidation = [
+    ...exports.updateSlipItemsValidation,
+    (0, express_validator_1.body)("reason")
+        .notEmpty().withMessage("An amendment reason is required")
+        .isLength({ max: 500 })
+        .withMessage("Amendment reason cannot exceed 500 characters")
 ];

@@ -1,13 +1,13 @@
 "use strict";
-// The pharmacy slip is a document of record: it is resolved once from the
-// chemotherapy order and then frozen. There is no separate Issue step - printing
-// the slip is what finalises it, so a DRAFT can still be edited up to that
-// moment and ISSUED/CANCELLED cannot change at all. The database enforces the
-// same three statuses plus the "ISSUED implies issued_at" rule via the named
-// constraints in prisma/sql/20261001_pharmacy_slip.sql; the transition map below
-// is the application-side mirror of that.
+// The pharmacy slip is a document of record: it is resolved from the
+// chemotherapy order and starts as DRAFT. The explicit Issue action moves it
+// from DRAFT to ISSUED. Printing is an independent document action that never
+// alters the slip's status. Once ISSUED, lines are locked against addition or
+// deletion, but existing lines can be amended with a mandatory reason and full
+// audit trail. The database enforces the three statuses plus the "ISSUED implies
+// issued_at" rule via named constraints.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CONSTRAINT_MESSAGES = exports.ID_ENTITY = exports.PHARMACY_DRUG_ROLE = exports.PHARMACY_SLIP_EDITABLE_STATUSES = exports.PHARMACY_SLIP_TERMINAL_STATUSES = exports.PHARMACY_SLIP_STATUS_TRANSITIONS = exports.PHARMACY_SLIP_STATUS_VALUES = exports.PHARMACY_SLIP_STATUS = void 0;
+exports.CONSTRAINT_MESSAGES = exports.ID_ENTITY = exports.PHARMACY_DRUG_ROLE = exports.PHARMACY_SLIP_AMENDABLE_STATUSES = exports.PHARMACY_SLIP_EDITABLE_STATUSES = exports.PHARMACY_SLIP_TERMINAL_STATUSES = exports.PHARMACY_SLIP_STATUS_TRANSITIONS = exports.PHARMACY_SLIP_STATUS_VALUES = exports.PHARMACY_SLIP_STATUS = void 0;
 exports.PHARMACY_SLIP_STATUS = {
     DRAFT: "DRAFT",
     ISSUED: "ISSUED",
@@ -22,11 +22,13 @@ exports.PHARMACY_SLIP_STATUS_TRANSITIONS = {
 exports.PHARMACY_SLIP_TERMINAL_STATUSES = [
     exports.PHARMACY_SLIP_STATUS.CANCELLED
 ];
-// Only a DRAFT's quantity is still editable. ISSUED may still be printed again
-// (which re-stamps printed_at) and CANCELLED (e.g. returned stock), but neither
-// accepts quantity changes.
+// Slips that are not cancelled are editable directly via updateItems.
 exports.PHARMACY_SLIP_EDITABLE_STATUSES = [
-    exports.PHARMACY_SLIP_STATUS.DRAFT
+    exports.PHARMACY_SLIP_STATUS.DRAFT,
+    exports.PHARMACY_SLIP_STATUS.ISSUED
+];
+exports.PHARMACY_SLIP_AMENDABLE_STATUSES = [
+    exports.PHARMACY_SLIP_STATUS.ISSUED
 ];
 // drug_role values a slip line can carry. The first four mirror
 // chemotherapy.DRUG_ROLE; ADVICE is stamped by the consultation on the
@@ -36,6 +38,7 @@ exports.PHARMACY_DRUG_ROLE = {
     PRIMARY: "PRIMARY",
     PREMEDICATION: "PREMEDICATION",
     POSTMEDICATION: "POSTMEDICATION",
+    DILUTION: "DILUTION",
     SUPPORTIVE: "SUPPORTIVE",
     ADVICE: "ADVICE",
     DISCHARGE: "DISCHARGE"

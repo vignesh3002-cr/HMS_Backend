@@ -3,7 +3,8 @@ export const AUDIT_ACTION = {
     UPDATE: "UPDATE",
     STATUS_CHANGE: "STATUS_CHANGE",
     DEACTIVATE: "DEACTIVATE",
-    PRINT: "PRINT"
+    PRINT: "PRINT",
+    AMEND: "AMEND"
 } as const;
 
 export type AuditAction = typeof AUDIT_ACTION[keyof typeof AUDIT_ACTION];
