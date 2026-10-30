@@ -1828,6 +1828,7 @@ model encounter_symptom {
   recorded_by    String?        @db.VarChar(100)
   recorded_at    DateTime       @default(now()) @db.Timestamp(6)
   updated_at     DateTime       @default(now()) @db.Timestamp(6)
+  duration_unit  String?        @db.VarChar(20)
   encounter      encounter      @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction)
   employees      employees?     @relation(fields: [recorded_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
   symptom_master symptom_master @relation(fields: [symptom_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_encounter_symptom_master")
@@ -2472,6 +2473,8 @@ model patient_allergy {
   clinical_notes             String?          @db.VarChar(1000)
   updated_at                 DateTime         @default(now()) @db.Timestamp(6)
   updated_by                 String?          @db.VarChar(100)
+  duration_value             Int?
+  duration_unit              String?          @db.VarChar(20)
   allergy_master             allergy_master   @relation(fields: [allergy_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_patient_allergy_master")
   encounter                  encounter?       @relation(fields: [identified_at_encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction)
   employees                  employees?       @relation(fields: [identified_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
@@ -2549,6 +2552,8 @@ model patient_comorbidity {
   updated_by                 String?            @db.VarChar(100)
   comorbidity_id             BigInt
   diagnosis_id               String?            @db.VarChar(100)
+  duration_value             Int?
+  duration_unit              String?            @db.VarChar(20)
   comorbidity_master         comorbidity_master @relation(fields: [comorbidity_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_patient_comorbidity_master")
   encounter                  encounter?         @relation(fields: [identified_at_encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction)
   employees                  employees?         @relation(fields: [identified_by], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
@@ -2693,6 +2698,7 @@ model patient_personal_history {
   created_at          DateTime? @default(now()) @db.Timestamp(6)
   updated_at          DateTime? @default(now()) @db.Timestamp(6)
   created_by          String?   @db.VarChar(100)
+  family_history      Json?
   encounter           encounter @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_personal_history_encounter")
 }
 
