@@ -1,5 +1,5 @@
 import { body, param, query } from "express-validator";
-import { PRESCRIPTION_STATUS_VALUES, BEFORE_AFTER_FOOD_VALUES } from "./prescription.constants";
+import { PRESCRIPTION_STATUS_VALUES, PRESCRIPTION_TYPE_VALUES, BEFORE_AFTER_FOOD_VALUES } from "./prescription.constants";
 
 const medicineItemValidation = (prefix: string) => {
 
@@ -25,7 +25,12 @@ const medicineItemValidation = (prefix: string) => {
         body(field("quantity")).optional().isInt({ min: 1 }),
         body(field("instruction")).optional().isString(),
         body(field("drug_role")).optional().isString(),
-        body(field("drug_type")).optional().isString()
+        body(field("drug_type")).optional().isString(),
+        body(field("chemotherapy_plan_id")).optional({ nullable: true }).isString(),
+        body(field("plan_order_id")).optional({ nullable: true }).isString(),
+        body(field("plan_item_id")).optional({ nullable: true }).isString(),
+        body(field("cycle_number")).optional({ nullable: true }).isInt({ min: 1 }),
+        body(field("cycle_day")).optional({ nullable: true }).isInt({ min: 1 })
     ];
 
 };
@@ -42,6 +47,9 @@ export const createPrescriptionValidation = [
         .optional()
         .isISO8601()
         .withMessage("Follow-up date must be a valid date (YYYY-MM-DD)"),
+    body("finalize").optional().isBoolean(),
+    body("finalize_encounter").optional().isBoolean(),
+    body("prescription_type").optional().isIn(PRESCRIPTION_TYPE_VALUES),
     body("medicines").isArray({ min: 1 }).withMessage("At least one medicine is required"),
     ...medicineItemValidation("medicines.*")
 
@@ -52,6 +60,8 @@ export const getPrescriptionsValidation = [
     query("page").optional().isInt({ min: 1 }),
     query("limit").optional().isInt({ min: 1, max: 100 }),
     query("status").optional().isIn(PRESCRIPTION_STATUS_VALUES),
+    query("prescriptionType").optional().isIn(PRESCRIPTION_TYPE_VALUES),
+    query("encounterNo").optional().isString(),
     query("date").optional().isISO8601(),
     query("dateFrom").optional().isISO8601(),
     query("dateTo").optional().isISO8601()

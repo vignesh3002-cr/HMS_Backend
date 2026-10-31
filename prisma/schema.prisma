@@ -2681,6 +2681,7 @@ model patient_history {
   updated_by                 String?                   @db.VarChar(100)
   updated_at                 DateTime?                 @default(now()) @db.Timestamp(6)
   appointment_id             String?                   @db.VarChar(100)
+  encounter_no               String?                   @db.VarChar(100)
   user_id                    String?                   @db.VarChar(100)
   branch_id                  String?                   @db.VarChar(100)
   department_id              String?                   @db.VarChar(100)
@@ -2882,6 +2883,8 @@ model prescription {
   diagnosis_id        String?              @db.VarChar(100)
   prescription_date   DateTime?            @default(now()) @db.Timestamp(6)
   patient_history_id  String?              @db.VarChar(100)
+  encounter_no        String?              @db.VarChar(100)
+  prescription_type   String               @default("GENERAL") @db.VarChar(20)
   visit_type          String?              @db.VarChar(100)
   chief_complaint     String?
   clinical_notes      String?
@@ -2922,6 +2925,11 @@ model prescription_items {
   drug_role            String?          @db.VarChar(100)
   drug_type            String?          @db.VarChar(100)
   drug_name            String?          @db.VarChar(200)
+  chemotherapy_plan_id String?          @db.VarChar(100)
+  plan_order_id        String?          @db.VarChar(100)
+  plan_item_id         String?          @db.VarChar(100)
+  cycle_number         Int?
+  cycle_day            Int?
   medicine_master      medicine_master? @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_prescription_items_medicine")
   prescription         prescription     @relation(fields: [prescription_id], references: [prescription_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_prescription_items_prescription")
 }

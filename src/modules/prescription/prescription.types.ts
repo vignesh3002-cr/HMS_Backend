@@ -17,6 +17,12 @@ export interface MedicineItemDto {
     instruction?: string;
     drug_role?: string;
     drug_type?: string;
+    /* The chemotherapy plan cycle day / order this item was prescribed from. */
+    chemotherapy_plan_id?: string;
+    plan_order_id?: string;
+    plan_item_id?: string;
+    cycle_number?: number;
+    cycle_day?: number;
 }
 
 export interface CreatePrescriptionDto {
@@ -27,6 +33,14 @@ export interface CreatePrescriptionDto {
     clinical_notes?: string;
     advice?: string;
     followup_date?: string;
+    /* The visit's intended prescription kind. Defaults to CHEMOTHERAPY for
+       clinical-role items and ADVICE when every item is an Advice row. */
+    prescription_type?: "ADVICE" | "CHEMOTHERAPY" | "GENERAL";
+    /* Lock the visit's prescription once this submit completes. */
+    finalize?: boolean;
+    /* Also finalize the encounter's other DRAFT prescriptions (the Advice
+       one) so one Submit leaves every prescription of the visit locked. */
+    finalize_encounter?: boolean;
     medicines: MedicineItemDto[];
 }
 
@@ -77,6 +91,8 @@ export interface GetPrescriptionsQuery {
     doctorId?: string;
     patientHistoryId?: string;
     appointmentId?: string;
+    encounterNo?: string;
+    prescriptionType?: string;
     diagnosisId?: string;
     status?: string;
     date?: string;
