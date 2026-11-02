@@ -200,8 +200,9 @@ class PrescriptionRepository {
     }
     // Resolve drug_role/drug_type for a set of medicine ids from the patient's
     // chemotherapy plan. Prefers the plan linked to the encounter, then falls
-    // back to the patient's most recent active plan. Returns a map keyed by
-    // medicine_id so the caller can default to PRIMARY/null when absent.
+    // back to the patient's most recent active plan. When the visit has a
+    // cycle-day order, its rows win so a drug that appears on another day with
+    // another role cannot leak in. Returns a map keyed by medicine_id.
     async findDrugMetadata(encounterNo, patientId, medicineIds) {
         const cleanIds = medicineIds.filter((id) => typeof id === "string" && id.length > 0);
         if (cleanIds.length === 0) {
@@ -223,31 +224,232 @@ class PrescriptionRepository {
         if (!plan) {
             return new Map();
         }
-        const planItems = await prisma_1.default.chemotherapy_plan_items.findMany({
+        const order = await prisma_1.default.chemotherapy_plan_order.findFirst({
             where: {
                 chemotherapy_plan_id: plan.chemotherapy_plan_id,
-                active_status: 1,
-                medicine_id: { in: cleanIds }
+                ...(encounterNo ? { encounter_no: encounterNo } : {})
             },
-            select: {
-                medicine_id: true,
-                drug_role: true,
-                drug_type: true
-            }
+            orderBy: [{ cycle_number: "desc" }, { cycle_day: "desc" }]
         });
+        const itemSelect = {
+            medicine_id: true,
+            drug_role: true,
+            drug_type: true,
+            chemotherapy_plan_item_id: true,
+            plan_order_id: true,
+            chemotherapy_plan_id: true,
+            cycle_day: true
+        };
+        let planItems = order
+            ? await prisma_1.default.chemotherapy_plan_items.findMany({
+                where: {
+                    chemotherapy_plan_id: plan.chemotherapy_plan_id,
+                    active_status: 1,
+                    medicine_id: { in: cleanIds },
+                    plan_order_id: order.plan_order_id
+                },
+                select: itemSelect
+            })
+            : [];
+        // Baseline plans (and items saved before cycle-day orders) have no
+        // plan_order_id, so fall back to the plan-level rows.
+        if (planItems.length === 0) {
+            planItems = await prisma_1.default.chemotherapy_plan_items.findMany({
+                where: {
+                    chemotherapy_plan_id: plan.chemotherapy_plan_id,
+                    active_status: 1,
+                    medicine_id: { in: cleanIds }
+                },
+                select: itemSelect
+            });
+        }
         return new Map(planItems
             .filter((item) => Boolean(item.medicine_id))
             .map((item) => [
             item.medicine_id,
             {
                 drug_role: item.drug_role,
-                drug_type: item.drug_type
+                drug_type: item.drug_type,
+                chemotherapy_plan_id: item.chemotherapy_plan_id,
+                plan_order_id: item.plan_order_id ?? order?.plan_order_id ?? null,
+                plan_item_id: item.chemotherapy_plan_item_id,
+                cycle_number: order?.cycle_number ?? null,
+                cycle_day: item.cycle_day ?? order?.cycle_day ?? null
             }
         ]));
+    }
+    // Authoritative plan-item rows for the items the client linked. Scoped to
+    // the visit's plan (or the patient's plans) so a stray plan_item_id from
+    // another patient cannot inject a drug role. This is the role source: the
+    // plan item was copied from chemotherapy_regimen_protocol_items.
+    async findPlanItemMetadata(planItemIds, scope) {
+        if (planItemIds.length === 0) {
+            return new Map();
+        }
+        const planScopes = [
+            { patient_id: scope.patientId }
+        ];
+        if (scope.encounterNo) {
+            planScopes.push({ encounter_no: scope.encounterNo });
+        }
+        const rows = await prisma_1.default.chemotherapy_plan_items.findMany({
+            where: {
+                chemotherapy_plan_item_id: { in: planItemIds },
+                active_status: 1,
+                chemotherapy_plan: { OR: planScopes }
+            },
+            select: {
+                chemotherapy_plan_item_id: true,
+                chemotherapy_plan_id: true,
+                plan_order_id: true,
+                drug_role: true,
+                drug_type: true,
+                cycle_day: true
+            }
+        });
+        return new Map(rows.map((row) => [row.chemotherapy_plan_item_id, row]));
     }
     async findPatientHistoryByAppointment(appointmentId) {
         return prisma_1.default.patient_history.findFirst({
             where: { appointment_id: appointmentId }
+        });
+    }
+    // Resolve the visit's patient_history without ever creating a second row
+    // for the same visit: appointment -> encounter -> the history its
+    // chemotherapy plan points at -> the patient's most recent row (24h).
+    // Legacy/imported rows can have appointment_id = NULL, which is exactly
+    // the case that used to create duplicate histories.
+    async findPatientHistoryForVisit(tx, visit) {
+        if (visit.appointmentId) {
+            const byAppointment = await tx.patient_history.findFirst({
+                where: { appointment_id: visit.appointmentId }
+            });
+            if (byAppointment) {
+                return byAppointment;
+            }
+        }
+        if (visit.encounterNo) {
+            const byEncounter = await tx.patient_history.findFirst({
+                where: { encounter_no: visit.encounterNo },
+                orderBy: { id: "desc" }
+            });
+            if (byEncounter) {
+                return byEncounter;
+            }
+        }
+        const visitScopes = [];
+        if (visit.encounterNo) {
+            visitScopes.push({ encounter_no: visit.encounterNo });
+        }
+        if (visit.appointmentId) {
+            visitScopes.push({ appointment_id: visit.appointmentId });
+        }
+        if (visitScopes.length > 0) {
+            const plan = await tx.chemotherapy_plan.findFirst({
+                where: {
+                    patient_id: visit.patientId,
+                    OR: visitScopes
+                },
+                orderBy: { created_at: "desc" },
+                select: { patient_history_id: true }
+            });
+            if (plan?.patient_history_id) {
+                const byPlan = await tx.patient_history.findUnique({
+                    where: { patient_history_id: plan.patient_history_id }
+                });
+                if (byPlan) {
+                    return byPlan;
+                }
+            }
+        }
+        const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        return tx.patient_history.findFirst({
+            where: {
+                patient_id: visit.patientId,
+                updated_at: { gte: since }
+            },
+            orderBy: [{ updated_at: "desc" }, { id: "desc" }]
+        });
+    }
+    async linkPatientHistoryToVisit(tx, history, visit) {
+        const data = {};
+        if (visit.appointmentId && !history.appointment_id) {
+            data.appointment_id = visit.appointmentId;
+        }
+        if (visit.encounterNo && !history.encounter_no) {
+            data.encounter_no = visit.encounterNo;
+        }
+        if (visit.branchId && !history.branch_id) {
+            data.branch_id = visit.branchId;
+        }
+        if (visit.departmentId && !history.department_id) {
+            data.department_id = visit.departmentId;
+        }
+        if (Object.keys(data).length === 0) {
+            return;
+        }
+        await tx.patient_history.updateMany({
+            where: { patient_history_id: history.patient_history_id },
+            data
+        });
+    }
+    // The visit's prescription of one kind. A visit can have an ADVICE and a
+    // CHEMOTHERAPY prescription at the same time, so the lookup is always
+    // scoped by type; otherwise a Submit would merge the plan into the Advice
+    // rows (the one-prescription model).
+    async findPrescriptionForEncounter(tx, params) {
+        const include = {
+            prescription_items: {
+                select: {
+                    prescription_item_id: true,
+                    medicine_id: true,
+                    drug_name: true,
+                    drug_role: true
+                }
+            }
+        };
+        const where = {
+            prescription_type: params.prescriptionType,
+            prescription_status: { not: "CANCELLED" }
+        };
+        const byEncounter = await tx.prescription.findFirst({
+            where: { ...where, encounter_no: params.encounterNo },
+            orderBy: { created_at: "asc" },
+            include
+        });
+        if (byEncounter) {
+            return byEncounter;
+        }
+        if (!params.appointmentId) {
+            return null;
+        }
+        return tx.prescription.findFirst({
+            where: {
+                ...where,
+                patient_history: { appointment_id: params.appointmentId }
+            },
+            orderBy: { created_at: "asc" },
+            include
+        });
+    }
+    // Finalize every other DRAFT prescription of the encounter, so one Submit
+    // locks the visit's Advice prescription as well as the chemotherapy one.
+    async finalizeEncounterDrafts(tx, encounterNo, exceptPrescriptionId) {
+        return tx.prescription.updateMany({
+            where: {
+                encounter_no: encounterNo,
+                prescription_id: { not: exceptPrescriptionId },
+                prescription_status: "DRAFT"
+            },
+            data: {
+                prescription_status: "FINALIZED"
+            }
+        });
+    }
+    async updatePrescriptionHeader(tx, prescriptionId, data) {
+        return tx.prescription.update({
+            where: { prescription_id: prescriptionId },
+            data
         });
     }
     async generatePatientHistoryId(tx) {
@@ -350,7 +552,7 @@ class PrescriptionRepository {
         });
     }
     async getPrescriptions(query) {
-        const { branchId, doctorId, patientHistoryId, appointmentId, diagnosisId, status, date, dateFrom, dateTo, search, sortBy = "prescription_date", sortOrder = "desc", page = 1, limit = 10 } = query;
+        const { branchId, doctorId, patientHistoryId, appointmentId, encounterNo, prescriptionType, diagnosisId, status, date, dateFrom, dateTo, search, sortBy = "prescription_date", sortOrder = "desc", page = 1, limit = 10 } = query;
         const where = {};
         if (branchId)
             where.branch_id = branchId;
@@ -358,6 +560,10 @@ class PrescriptionRepository {
             where.employee_id = doctorId;
         if (patientHistoryId)
             where.patient_history_id = patientHistoryId;
+        if (encounterNo)
+            where.encounter_no = encounterNo;
+        if (prescriptionType)
+            where.prescription_type = prescriptionType;
         if (diagnosisId)
             where.diagnosis_id = diagnosisId;
         if (status)

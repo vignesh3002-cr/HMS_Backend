@@ -219,18 +219,21 @@ const activeMappings = user.user_branch_mapping?.filter(
 
     const otp = randomInt(100000, 999999).toString();
 
-    const otpId = await generateId(prisma, "LOGIN_OTP");
-
     const expiry = new Date(Date.now() + 5 * 60 * 1000);
 
-    await prisma.login_otp.create({
-      data: {
-        otp_id: otpId,
-        user_id: user.user_id!,
-        user_type: user.role_type === "PATIENT" ? "PATIENT" : "EMPLOYEE",
-        otp_code: otp,
-        expires_at: expiry
-      }
+    // Generate and insert in one transaction: if the insert fails the id is
+    // not consumed, keeping id_sequences aligned with the data.
+    await prisma.$transaction(async (tx) => {
+      const id = await generateId(tx, "LOGIN_OTP");
+      await tx.login_otp.create({
+        data: {
+          otp_id: id,
+          user_id: user.user_id!,
+          user_type: user.role_type === "PATIENT" ? "PATIENT" : "EMPLOYEE",
+          otp_code: otp,
+          expires_at: expiry
+        }
+      });
     });
 
     await sendOtpEmail(email, otp);

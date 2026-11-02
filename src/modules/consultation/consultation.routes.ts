@@ -100,6 +100,13 @@ router.get(
     controller.getDietTypes.bind(controller)
 );
 
+router.get(
+    "/masters/relative-types",
+    authenticate,
+    authorize("encounter.read"),
+    controller.getRelativeTypes.bind(controller)
+);
+
 // ---------------- Personal history ----------------
 
 router.get(

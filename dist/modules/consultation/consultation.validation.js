@@ -27,7 +27,48 @@ exports.upsertPersonalHistoryValidation = [
     (0, express_validator_1.body)("drug_consumption.*.code").optional().isString(),
     (0, express_validator_1.body)("drug_consumption.*.name").optional().isString(),
     (0, express_validator_1.body)("drug_consumption.*.others").optional({ nullable: true }).isString(),
-    (0, express_validator_1.body)("diet_type").optional({ nullable: true }).isString()
+    (0, express_validator_1.body)("drug_consumption.*.duration_value")
+        .optional({ nullable: true })
+        .isInt({ min: 0, max: 9999 })
+        .withMessage("Duration value must be between 0 and 9999"),
+    (0, express_validator_1.body)("drug_consumption.*.duration_unit")
+        .optional({ nullable: true })
+        .isIn(["day", "week", "month", "year"])
+        .withMessage("Duration unit must be day, week, month or year"),
+    (0, express_validator_1.body)("drug_consumption.*.commands")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 1000 })
+        .withMessage("Command(s) must not exceed 1000 characters"),
+    (0, express_validator_1.body)("diet_type").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("family_history").optional({ nullable: true }).isObject(),
+    (0, express_validator_1.body)("family_history.status")
+        .optional()
+        .isIn(["PRESENT", "NOT_PRESENT"])
+        .withMessage("Family history status must be PRESENT or NOT_PRESENT"),
+    (0, express_validator_1.body)("family_history.entries").optional().isArray(),
+    (0, express_validator_1.body)("family_history.entries.*.degree")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 20 }),
+    (0, express_validator_1.body)("family_history.entries.*.relative_type")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 100 }),
+    (0, express_validator_1.body)("family_history.entries.*.condition")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 200 })
+        .withMessage("Condition must not exceed 200 characters"),
+    (0, express_validator_1.body)("family_history.entries.*.age_at_diagnosis")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 20 }),
+    (0, express_validator_1.body)("family_history.entries.*.remarks")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 1000 })
+        .withMessage("Remarks must not exceed 1000 characters")
 ];
 exports.addReportValidation = [
     (0, express_validator_1.param)("encounterNo").notEmpty().withMessage("encounterNo is required"),

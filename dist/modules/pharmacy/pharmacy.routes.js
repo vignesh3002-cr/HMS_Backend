@@ -13,6 +13,9 @@ router.get("/master-items", auth_middleware_1.authenticate, READ, controller.lis
 router.post("/medicines", auth_middleware_1.authenticate, READ, pharmacy_validation_1.createMedicineValidation, controller.createMedicine.bind(controller));
 router.get("/slips/preview/plan/:planId", auth_middleware_1.authenticate, READ, pharmacy_validation_1.previewSlipValidation, controller.previewSlip.bind(controller));
 router.post("/slips/from-plan", auth_middleware_1.authenticate, READ, pharmacy_validation_1.createSlipValidation, controller.createSlip.bind(controller));
+// Discharge Medication popup: the live slip of one explicit cycle day.
+router.get("/slips/by-order", auth_middleware_1.authenticate, READ, pharmacy_validation_1.getSlipByOrderValidation, controller.getSlipByOrder.bind(controller));
+router.post("/slips/from-order", auth_middleware_1.authenticate, READ, pharmacy_validation_1.saveFromOrderValidation, controller.saveSlipFromOrder.bind(controller));
 // Declared before "/slips/:pharmacySlipId" so "slips" is not read as an id.
 router.get("/slips", auth_middleware_1.authenticate, READ, pharmacy_validation_1.listSlipsValidation, controller.listSlips.bind(controller));
 router.get("/slips/:pharmacySlipId", auth_middleware_1.authenticate, READ, pharmacy_validation_1.getSlipValidation, controller.getSlip.bind(controller));

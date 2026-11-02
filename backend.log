@@ -1,3 +1,84 @@
 $ ts-node src/server.ts
 Server running on port 5000
 [ELIFECYCLE] Command failed with exit code 3221225786.
+
+> hms-backend@1.0.0 dev
+> ts-node src/server.ts
+
+Server running on port 5000
+
+> hms-backend@1.0.0 dev
+> ts-node src/server.ts
+
+Server running on port 5000
+
+> hms-backend@1.0.0 dev
+> ts-node src/server.ts
+
+Server running on port 5000
+Fetching employee by ID: DOC034
+(node:18524) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Fetching employee by ID: DOC034
+
+> hms-backend@1.0.0 dev
+> ts-node src/server.ts
+
+Server running on port 5000
+(node:19096) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Remember Me: false
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Remember Me: false
+Fetching employee by ID: DOC034
+Remember Me: false
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034
+Remember Me: false
+Remember Me: false
+Remember Me: false
+Remember Me: false
+Remember Me: false
+Fetching employee by ID: DOC034
+Fetching employee by ID: DOC034

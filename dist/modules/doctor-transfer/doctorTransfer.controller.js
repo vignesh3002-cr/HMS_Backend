@@ -106,6 +106,7 @@ class DoctorTransferController {
                 branchId: req.query.branchId,
                 patientId: req.query.patientId,
                 status: req.query.status,
+                priority: req.query.priority,
                 page: Number(req.query.page || 1),
                 limit: Number(req.query.limit || 10)
             });

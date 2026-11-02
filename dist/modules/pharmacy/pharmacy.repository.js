@@ -49,6 +49,20 @@ class PharmacyRepository {
             include: slipDetailInclude
         });
     }
+    // The saved order of one explicit cycle day. The popup names the cycle /
+    // day, so it must not use the "current order" heuristic the full-page
+    // slip resolves with.
+    async findPlanOrderHeader(planId, cycleNumber, cycleDay) {
+        return prisma_1.default.chemotherapy_plan_order.findUnique({
+            where: {
+                chemotherapy_plan_id_cycle_number_cycle_day: {
+                    chemotherapy_plan_id: planId,
+                    cycle_number: cycleNumber,
+                    cycle_day: cycleDay
+                }
+            }
+        });
+    }
     async listSlips(query) {
         const { branch_id, patient_id, encounter_no, appointment_id, cycle_number, plan_id, status, search, date_from, date_to, page = 1, limit = 20 } = query;
         const where = {};
@@ -149,10 +163,30 @@ class PharmacyRepository {
     // ---------------------------------------------------------------
     // Pharmacy Master & Medicine Master helpers
     // ---------------------------------------------------------------
-    async findPharmacyMasterItems(medicineIds) {
+    async findPharmacyMasterItems(medicineIds, branchId, genericIds) {
+        // Brands are matched on the ORDERED medicine's generic, so a row for a
+        // different brand of the same generic must be included even though its
+        // medicine_id differs. medicine_id alone is only a fallback for a
+        // master row that names no generic.
+        const conditions = [];
+        if ((medicineIds && medicineIds.length > 0) || (genericIds && genericIds.length > 0)) {
+            const match = [];
+            if (medicineIds && medicineIds.length > 0) {
+                match.push({ medicine_id: { in: medicineIds } });
+            }
+            if (genericIds && genericIds.length > 0) {
+                match.push({ generic_id: { in: genericIds } });
+            }
+            conditions.push({ OR: match });
+        }
+        // Branch-owned rows plus the shared (null-branch) catalog, so a
+        // branch-scoped pickup does not hide the common medicines.
+        if (branchId) {
+            conditions.push({ OR: [{ branch_id: branchId }, { branch_id: null }] });
+        }
         const where = { is_active: true };
-        if (medicineIds && medicineIds.length > 0) {
-            where.medicine_id = { in: medicineIds };
+        if (conditions.length > 0) {
+            where.AND = conditions;
         }
         return prisma_1.default.pharmacy_master.findMany({
             where,

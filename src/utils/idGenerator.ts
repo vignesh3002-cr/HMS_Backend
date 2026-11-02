@@ -5,7 +5,7 @@ import { Prisma } from "@prisma/client";
 // sync with the real data (e.g. after manual seeds/imports bypassed it).
 // padTo is the zero-padding width for the numeric portion; entities that
 // lack one keep the historical 3-digit padding.
-const ENTITY_TARGET: Record<string, { table: string; column: string; padTo?: number }> = {
+export const ENTITY_TARGET: Record<string, { table: string; column: string; padTo?: number }> = {
     APPOINTMENT: { table: "appointment_history", column: "appointment_id" },
     BRANCH: { table: "branch", column: "branch_id" },
     BRANCH_ADMIN: { table: "employees", column: "employee_id" },
@@ -20,6 +20,8 @@ const ENTITY_TARGET: Record<string, { table: string; column: string; padTo?: num
     SAMPLE_COLLECTION: { table: "sample_collection", column: "sample_collection_id" },
     USER: { table: "user_table", column: "user_id" },
     DOCTOR_TRANSFER: { table: "doctor_transfer", column: "transfer_id" },
+    GENERIC: { table: "generic_master", column: "generic_id" },
+    MEDICINE: { table: "medicine_master", column: "medicine_id", padTo: 6 },
     REGIMEN_PROTOCOL: { table: "chemotherapy_regimen_protocol", column: "protocol_id", padTo: 6 },
     REGIMEN_PROTOCOL_ITEM: { table: "chemotherapy_regimen_protocol_items", column: "protocol_item_id", padTo: 7 },
     REGIMEN_PROTOCOL_DAY: { table: "chemotherapy_regimen_protocol_days", column: "protocol_day_id", padTo: 7 },
@@ -31,7 +33,24 @@ const ENTITY_TARGET: Record<string, { table: string; column: string; padTo?: num
     ENCOUNTER_PAST_TREATMENT: { table: "encounter_past_treatment", column: "encounter_past_treatment_id", padTo: 7 },
     CHEMOTHERAPY_PLAN_HYDRATION: { table: "chemotherapy_plan_hydration", column: "plan_hydration_id", padTo: 7 },
     CHEMOTHERAPY_PLAN_ORDER: { table: "chemotherapy_plan_order", column: "plan_order_id", padTo: 7 },
+    CHEMOTHERAPY_PLAN_INVESTIGATION: { table: "chemotherapy_plan_order_investigation", column: "investigation_id", padTo: 7 },
     CHEMOTHERAPY_ADMINISTRATION: { table: "chemotherapy_administration", column: "administration_id" },
+    CHEMOTHERAPY_PLAN: { table: "chemotherapy_plan", column: "chemotherapy_plan_id" },
+    CHEMOTHERAPY_PLAN_ITEM: { table: "chemotherapy_plan_items", column: "chemotherapy_plan_item_id" },
+    CHEMOTHERAPY_CYCLE: { table: "chemotherapy_cycle", column: "chemotherapy_cycle_id" },
+    CHEMOTHERAPY_ADVERSE_EVENT: { table: "chemotherapy_adverse_event", column: "adverse_event_id" },
+    CHEMOTHERAPY_VITALS: { table: "chemotherapy_vitals", column: "vital_id" },
+    CHEMOTHERAPY_LAB_REVIEW: { table: "chemotherapy_lab_review", column: "lab_review_id" },
+    CHEMOTHERAPY_FOLLOWUP: { table: "chemotherapy_followup", column: "followup_id" },
+    PATIENT_HISTORY: { table: "patient_history", column: "patient_history_id" },
+    PRESCRIPTION: { table: "prescription", column: "prescription_id" },
+    PRESCRIPTION_ITEM: { table: "prescription_items", column: "prescription_item_id" },
+    STAGING_DETAIL: { table: "oncology_staging_detail", column: "staging_detail_id" },
+    IHC_RESULT: { table: "ihc_results", column: "ihc_id" },
+    MOLECULAR_RESULT: { table: "molecular_results", column: "mol_id" },
+    DERIVED_FIELD: { table: "derived_fields", column: "derived_id" },
+    DOCTOR_LEAVE: { table: "doctor_leave", column: "leave_id" },
+    ONCOLOGY_AUDIT_LOG: { table: "oncology_audit_log", column: "audit_id" },
     PERSONAL_HISTORY: { table: "patient_personal_history", column: "personal_history_id", padTo: 7 },
     ANATOMICAL_SITE: { table: "anatomical_site_master", column: "site_id", padTo: 4 },
     CANCER_GRADE: { table: "cancer_grade_master", column: "grade_id", padTo: 4 },
@@ -57,6 +76,10 @@ const ENTITY_TARGET: Record<string, { table: string; column: string; padTo?: num
     DUTY_ROSTER: { table: "staff_duty_roster", column: "roster_id", padTo: 6 },
 };
 
+function escapeSqlLiteral(value: string): string {
+    return value.replace(/'/g, "''");
+}
+
 // Generates `count` consecutive ids for one entity while holding the
 // sequence row lock exactly once. Batch callers (e.g. prescription items)
 // would otherwise pay the lock-read + collision-check + sequence-update
@@ -73,10 +96,10 @@ export async function generateIdBatch(
     }
 
     // Lock the row
-    let rows = await tx.$queryRawUnsafe<any[]>(`
+    const rows = await tx.$queryRawUnsafe<any[]>(`
         SELECT *
         FROM id_sequences
-        WHERE entity_name='${entity}'
+        WHERE entity_name='${escapeSqlLiteral(entity)}'
         FOR UPDATE
     `);
 
@@ -90,7 +113,30 @@ export async function generateIdBatch(
 
     const target = ENTITY_TARGET[entity];
 
-    let nextNumber = sequence.current_number;
+    const prefix = sequence.prefix ?? "";
+
+    let nextNumber = Number(sequence.current_number);
+
+    // Rows can be written outside the sequence (seeds, imports, manual SQL),
+    // leaving current_number behind the real data. Start from the highest
+    // numeric suffix already in the table so the first generated id is free
+    // instead of looping once per missing number. Only ids that are exactly
+    // prefix + digits are considered (legacy/imported ids can have suffixes).
+    if (target) {
+
+        const maxRows = await tx.$queryRawUnsafe<any[]>(`
+            SELECT COALESCE(MAX(SUBSTRING(${target.column} FROM ${prefix.length + 1})::bigint), 0) AS max_number
+            FROM ${target.table}
+            WHERE ${target.column} ~ '^${escapeSqlLiteral(prefix)}[0-9]+$'
+        `);
+
+        const maxNumber = Number(maxRows[0]?.max_number ?? 0);
+
+        if (Number.isFinite(maxNumber) && maxNumber > nextNumber) {
+            nextNumber = maxNumber;
+        }
+
+    }
 
     const generatedIds: string[] = [];
 
@@ -98,7 +144,7 @@ export async function generateIdBatch(
 
         nextNumber += 1;
 
-        const candidate = sequence.prefix +
+        const candidate = prefix +
             nextNumber
                 .toString()
                 .padStart(target?.padTo ?? 3, "0");
@@ -106,7 +152,7 @@ export async function generateIdBatch(
         if (target) {
 
             const existing = await tx.$queryRawUnsafe<any[]>(
-                `SELECT 1 FROM ${target.table} WHERE ${target.column} = '${candidate}'`
+                `SELECT 1 FROM ${target.table} WHERE ${target.column} = '${escapeSqlLiteral(candidate)}'`
             );
 
             if (existing.length > 0) {

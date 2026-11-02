@@ -16,8 +16,10 @@ router.post(
     controller.create.bind(controller)
 );
 
+// ?patientId= / ?appointmentId= narrow the list to a patient / one visit.
 router.get(
     "/",
+    authenticate,
     controller.getAll.bind(controller)
 );
 

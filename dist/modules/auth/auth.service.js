@@ -165,16 +165,20 @@ class AuthService {
             throw new Error("Email address not found");
         }
         const otp = (0, crypto_1.randomInt)(100000, 999999).toString();
-        const otpId = await (0, idGenerator_1.generateId)(prisma_1.default, "LOGIN_OTP");
         const expiry = new Date(Date.now() + 5 * 60 * 1000);
-        await prisma_1.default.login_otp.create({
-            data: {
-                otp_id: otpId,
-                user_id: user.user_id,
-                user_type: user.role_type === "PATIENT" ? "PATIENT" : "EMPLOYEE",
-                otp_code: otp,
-                expires_at: expiry
-            }
+        // Generate and insert in one transaction: if the insert fails the id is
+        // not consumed, keeping id_sequences aligned with the data.
+        await prisma_1.default.$transaction(async (tx) => {
+            const id = await (0, idGenerator_1.generateId)(tx, "LOGIN_OTP");
+            await tx.login_otp.create({
+                data: {
+                    otp_id: id,
+                    user_id: user.user_id,
+                    user_type: user.role_type === "PATIENT" ? "PATIENT" : "EMPLOYEE",
+                    otp_code: otp,
+                    expires_at: expiry
+                }
+            });
         });
         await (0, mail_1.sendOtpEmail)(email, otp);
         return {

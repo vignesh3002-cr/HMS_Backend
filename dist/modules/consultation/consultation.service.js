@@ -120,6 +120,9 @@ class ConsultationService {
     listDietTypes() {
         return consultation_constants_1.DIET_TYPES;
     }
+    listRelativeTypes() {
+        return consultation_constants_1.RELATIVE_TYPES;
+    }
     listMolecularTestOptions() {
         return consultation_constants_1.MOLECULAR_TESTS;
     }
@@ -143,7 +146,14 @@ class ConsultationService {
                 : (payload.immunization === null ? client_1.Prisma.JsonNull : payload.immunization),
             drug_consumption: payload.drug_consumption === undefined
                 ? undefined
-                : (payload.drug_consumption === null ? client_1.Prisma.JsonNull : payload.drug_consumption),
+                : (payload.drug_consumption === null
+                    ? client_1.Prisma.JsonNull
+                    : payload.drug_consumption),
+            family_history: payload.family_history === undefined
+                ? undefined
+                : (payload.family_history === null
+                    ? client_1.Prisma.JsonNull
+                    : payload.family_history),
             diet_type: payload.diet_type === undefined ? undefined : payload.diet_type
         };
         if (existing) {
@@ -157,7 +167,12 @@ class ConsultationService {
             personal_history_id: newId,
             encounter_no: encounterNo,
             immunization: payload.immunization == null ? client_1.Prisma.JsonNull : payload.immunization,
-            drug_consumption: payload.drug_consumption == null ? client_1.Prisma.JsonNull : payload.drug_consumption,
+            drug_consumption: payload.drug_consumption == null
+                ? client_1.Prisma.JsonNull
+                : payload.drug_consumption,
+            family_history: payload.family_history == null
+                ? client_1.Prisma.JsonNull
+                : payload.family_history,
             diet_type: payload.diet_type ?? null,
             created_by: actingUserId
         });

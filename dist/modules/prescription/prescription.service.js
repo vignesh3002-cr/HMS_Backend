@@ -27,6 +27,45 @@ function computeQuantity(item) {
     }
     return dosesPerDay * item.days;
 }
+// A medicine may legitimately appear twice on one visit's prescription with a
+// different role (e.g. the same drug as pre-medication and as supportive
+// care). Duplicates are therefore scoped to the medicine + role.
+function prescriptionItemKey(item) {
+    const role = (item.drug_role || "PRIMARY").toUpperCase();
+    if (item.medicine_id) {
+        return `id:${item.medicine_id}|${role}`;
+    }
+    return `name:${(item.drug_name ?? "").trim().toLowerCase()}|${role}`;
+}
+function prescriptionItemData(item) {
+    const meta = item.resolved_meta;
+    return {
+        medicine_id: item.medicine_id || null,
+        drug_name: item.medicine_id ? null : item.drug_name?.trim() || null,
+        dosage: item.dosage,
+        unit: item.unit,
+        route: item.resolved_route,
+        frequency: item.frequency,
+        before_after_food: item.before_after_food,
+        morning: item.morning ?? false,
+        afternoon: item.afternoon ?? false,
+        night: item.night ?? false,
+        days: item.days,
+        duration: item.duration,
+        quantity: item.resolved_quantity,
+        instruction: item.instruction,
+        drug_role: meta?.drug_role ?? item.drug_role ?? "PRIMARY",
+        drug_type: meta?.drug_type ?? item.drug_type ?? null,
+        chemotherapy_plan_id: meta?.chemotherapy_plan_id ?? item.chemotherapy_plan_id ?? null,
+        plan_order_id: meta?.plan_order_id ?? item.plan_order_id ?? null,
+        plan_item_id: meta?.plan_item_id ?? item.plan_item_id ?? null,
+        cycle_number: meta?.cycle_number ?? item.cycle_number ?? null,
+        cycle_day: meta?.cycle_day ?? item.cycle_day ?? null
+    };
+}
+function prescriptionItemRole(item) {
+    return (item.resolved_meta?.drug_role ?? item.drug_role ?? "PRIMARY").toUpperCase();
+}
 class PrescriptionService {
     async createPrescription(data, createdBy) {
         void createdBy; // no created_by column on prescription today - kept for interface symmetry
@@ -59,13 +98,24 @@ class PrescriptionService {
                 throw new Error("Each medicine needs a medicine from the list or a drug name");
             }
         }
-        const seenMedicineIds = new Set();
-        for (const medicineId of medicineIds) {
-            if (seenMedicineIds.has(medicineId)) {
-                throw new Error(`Duplicate medicine entries are not allowed within the same prescription: ${medicineId}`);
-            }
-            seenMedicineIds.add(medicineId);
+        // A visit can produce two prescriptions: the Advice one (all items
+        // role ADVICE) and the chemotherapy one (plan roles). They must never
+        // mix, because each has its own identity and lifecycle.
+        const requestedRoles = data.medicines.map((item) => (item.drug_role ?? "").toUpperCase());
+        const allAdvice = requestedRoles.every((role) => role === prescription_constants_1.PRESCRIPTION_TYPE.ADVICE);
+        const anyAdvice = requestedRoles.some((role) => role === prescription_constants_1.PRESCRIPTION_TYPE.ADVICE);
+        if (anyAdvice && !allAdvice) {
+            throw new Error("Advice and chemotherapy medicines cannot be mixed in one prescription");
         }
+        let prescriptionType = data.prescription_type ??
+            (allAdvice ? prescription_constants_1.PRESCRIPTION_TYPE.ADVICE : prescription_constants_1.PRESCRIPTION_TYPE.CHEMOTHERAPY);
+        if (allAdvice) {
+            prescriptionType = prescription_constants_1.PRESCRIPTION_TYPE.ADVICE;
+        }
+        else if (prescriptionType === prescription_constants_1.PRESCRIPTION_TYPE.ADVICE) {
+            throw new Error("An Advice prescription can only contain Advice medicines");
+        }
+        const isAdvicePrescription = prescriptionType === prescription_constants_1.PRESCRIPTION_TYPE.ADVICE;
         // One round-trip validates every medicine instead of one query
         // per item (high-latency remote database).
         const medicines = await repository.findMedicines(medicineIds);
@@ -76,15 +126,58 @@ class PrescriptionService {
             }
         }
         const medicineRouteById = new Map(medicines.map((medicine) => [medicine.medicine_id, medicine.route ?? undefined]));
-        const resolvedItems = data.medicines.map((item) => ({
-            ...item,
-            resolved_route: item.route ?? (item.medicine_id ? medicineRouteById.get(item.medicine_id) : undefined),
-            resolved_quantity: computeQuantity(item)
-        }));
-        // drug_role/drug_type: what the client sent (the chemotherapy order
-        // knows each row's tab), else the patient's chemotherapy plan
-        // (derived server-side), else PRIMARY/null (e.g. OPD prescriptions).
-        const drugMetadata = await repository.findDrugMetadata(data.encounter_no, encounter.patient_id, medicineIds);
+        // Advice rows never inherit plan metadata. Chemotherapy rows take the
+        // role from the linked plan item (the plan's copy of the regimen
+        // protocol item), then the client row, then the plan's medicine row.
+        const drugMetadata = isAdvicePrescription
+            ? new Map()
+            : await repository.findDrugMetadata(data.encounter_no, encounter.patient_id, medicineIds);
+        const planItemIds = data.medicines
+            .map((item) => item.plan_item_id)
+            .filter((id) => Boolean(id));
+        const planItemMetadata = isAdvicePrescription || planItemIds.length === 0
+            ? new Map()
+            : await repository.findPlanItemMetadata(planItemIds, {
+                encounterNo: data.encounter_no,
+                patientId: encounter.patient_id
+            });
+        const resolvedItems = data.medicines.map((item) => {
+            const byMedicine = item.medicine_id ? drugMetadata.get(item.medicine_id) : undefined;
+            const byPlanItem = item.plan_item_id ? planItemMetadata.get(item.plan_item_id) : undefined;
+            return {
+                ...item,
+                // Advice items are always stamped ADVICE, whatever the client
+                // sent, and carry no plan/cycle metadata.
+                ...(isAdvicePrescription ? { drug_role: prescription_constants_1.PRESCRIPTION_TYPE.ADVICE } : {}),
+                resolved_route: item.route ?? (item.medicine_id ? medicineRouteById.get(item.medicine_id) : undefined),
+                resolved_quantity: computeQuantity(item),
+                resolved_meta: isAdvicePrescription
+                    ? undefined
+                    : {
+                        drug_role: byPlanItem?.drug_role ?? item.drug_role ?? byMedicine?.drug_role ?? "PRIMARY",
+                        drug_type: byPlanItem?.drug_type ?? item.drug_type ?? byMedicine?.drug_type ?? null,
+                        chemotherapy_plan_id: byPlanItem?.chemotherapy_plan_id ?? item.chemotherapy_plan_id ?? byMedicine?.chemotherapy_plan_id ?? null,
+                        plan_order_id: byPlanItem?.plan_order_id ?? item.plan_order_id ?? byMedicine?.plan_order_id ?? null,
+                        plan_item_id: item.plan_item_id ?? byMedicine?.plan_item_id ?? null,
+                        cycle_number: item.cycle_number ?? byMedicine?.cycle_number ?? null,
+                        cycle_day: item.cycle_day ?? byPlanItem?.cycle_day ?? byMedicine?.cycle_day ?? null
+                    }
+            };
+        });
+        // Duplicate rows are scoped to medicine + role: the same drug may be
+        // prescribed once under two legitimate roles.
+        const seenKeys = new Set();
+        for (const item of resolvedItems) {
+            const key = prescriptionItemKey({
+                medicine_id: item.medicine_id,
+                drug_name: item.drug_name,
+                drug_role: prescriptionItemRole(item)
+            });
+            if (seenKeys.has(key)) {
+                throw new Error(`Duplicate medicine entries are not allowed within the same prescription: ${item.medicine_id || item.drug_name}`);
+            }
+            seenKeys.add(key);
+        }
         const diagnosisId = data.diagnosis_id ?? encounter.diagnosis_id ?? undefined;
         if (diagnosisId) {
             const diagnosis = await repository.findDiagnosis(diagnosisId);
@@ -97,15 +190,74 @@ class PrescriptionService {
         // x sequential id-generation queries), so both the timeout and the
         // in-transaction work are tuned here.
         const prescriptionId = await prisma_1.default.$transaction(async (tx) => {
-            let patientHistory = encounter.appointment_id
-                ? await repository.findPatientHistoryByAppointment(encounter.appointment_id)
-                : null;
-            if (!patientHistory) {
+            // One prescription per kind per visit. "Proceed to Next" saves the
+            // ADVICE rows; "Submit" writes a separate CHEMOTHERAPY
+            // prescription, so the same patient can receive Advice medicines
+            // and a chemotherapy plan on the same day. Re-submitting the same
+            // kind is a no-op/merge, never a duplicate.
+            const existing = await repository.findPrescriptionForEncounter(tx, {
+                encounterNo: data.encounter_no,
+                appointmentId: encounter.appointment_id,
+                prescriptionType
+            });
+            if (existing) {
+                // Re-submitting a completed prescription is a no-op, not an
+                // error. Still lock the visit's other drafts when asked.
+                if (existing.prescription_status === prescription_constants_1.PRESCRIPTION_STATUS.FINALIZED) {
+                    if (data.finalize_encounter) {
+                        await repository.finalizeEncounterDrafts(tx, data.encounter_no, existing.prescription_id);
+                    }
+                    return existing.prescription_id;
+                }
+                const existingKeys = new Set((existing.prescription_items ?? []).map((item) => prescriptionItemKey(item)));
+                const itemsToAdd = resolvedItems.filter((item) => !existingKeys.has(prescriptionItemKey({
+                    medicine_id: item.medicine_id,
+                    drug_name: item.drug_name,
+                    drug_role: prescriptionItemRole(item)
+                })));
+                if (itemsToAdd.length > 0) {
+                    const itemIds = await repository.generatePrescriptionItemIds(tx, itemsToAdd.length);
+                    await repository.createPrescriptionItems(tx, itemsToAdd.map((item, index) => ({
+                        prescription_item_id: itemIds[index],
+                        prescription_id: existing.prescription_id,
+                        ...prescriptionItemData(item)
+                    })));
+                }
+                await repository.updatePrescriptionHeader(tx, existing.prescription_id, {
+                    ...(diagnosisId ? { diagnosis_id: diagnosisId } : {}),
+                    ...(data.chief_complaint ? { chief_complaint: data.chief_complaint } : {}),
+                    ...(data.clinical_notes ? { clinical_notes: data.clinical_notes } : {}),
+                    ...(data.advice ? { advice: data.advice } : {}),
+                    ...(data.followup_date ? { followup_date: new Date(data.followup_date) } : {}),
+                    ...(data.finalize ? { prescription_status: prescription_constants_1.PRESCRIPTION_STATUS.FINALIZED } : {})
+                });
+                if (data.finalize_encounter) {
+                    await repository.finalizeEncounterDrafts(tx, data.encounter_no, existing.prescription_id);
+                }
+                return existing.prescription_id;
+            }
+            // Reuse the visit's existing history (appointment / encounter /
+            // chemo plan / recent row) instead of inserting a duplicate one.
+            let patientHistory = await repository.findPatientHistoryForVisit(tx, {
+                patientId: encounter.patient_id,
+                appointmentId: encounter.appointment_id,
+                encounterNo: encounter.encounter_no
+            });
+            if (patientHistory) {
+                await repository.linkPatientHistoryToVisit(tx, patientHistory, {
+                    appointmentId: encounter.appointment_id,
+                    encounterNo: encounter.encounter_no,
+                    branchId: encounter.branch_id,
+                    departmentId: encounter.department_id
+                });
+            }
+            else {
                 const patientHistoryId = await repository.generatePatientHistoryId(tx);
                 patientHistory = await repository.createPatientHistory(tx, {
                     patient_history_id: patientHistoryId,
                     patient_id: encounter.patient_id,
                     appointment_id: encounter.appointment_id,
+                    encounter_no: encounter.encounter_no,
                     branch_id: encounter.branch_id,
                     department_id: encounter.department_id,
                     diagnosis_id: diagnosisId,
@@ -122,6 +274,8 @@ class PrescriptionService {
                 department_id: encounter.department_id,
                 diagnosis_id: diagnosisId,
                 patient_history_id: patientHistory.patient_history_id,
+                encounter_no: encounter.encounter_no,
+                prescription_type: prescriptionType,
                 visit_type: data.visit_type ?? encounter.encounter_type,
                 chief_complaint: data.chief_complaint ?? encounter.chief_complaint,
                 clinical_notes: data.clinical_notes ?? encounter.clinical_notes,
@@ -129,7 +283,9 @@ class PrescriptionService {
                 followup_date: data.followup_date
                     ? new Date(data.followup_date)
                     : encounter.follow_up_date,
-                prescription_status: prescription_constants_1.PRESCRIPTION_STATUS.DRAFT,
+                prescription_status: data.finalize
+                    ? prescription_constants_1.PRESCRIPTION_STATUS.FINALIZED
+                    : prescription_constants_1.PRESCRIPTION_STATUS.DRAFT,
                 branch_id: encounter.branch_id,
                 user_id: doctor.user_id
             });
@@ -138,29 +294,14 @@ class PrescriptionService {
             // are inserted with a single createMany. The caller re-reads the
             // full prescription afterwards, so no per-item return is needed.
             const itemIds = await repository.generatePrescriptionItemIds(tx, resolvedItems.length);
-            await repository.createPrescriptionItems(tx, resolvedItems.map((item, index) => {
-                const meta = item.medicine_id ? drugMetadata.get(item.medicine_id) : undefined;
-                return {
-                    prescription_item_id: itemIds[index],
-                    prescription_id: prescription.prescription_id,
-                    medicine_id: item.medicine_id || null,
-                    drug_name: item.medicine_id ? null : item.drug_name?.trim() || null,
-                    dosage: item.dosage,
-                    unit: item.unit,
-                    route: item.resolved_route,
-                    frequency: item.frequency,
-                    before_after_food: item.before_after_food,
-                    morning: item.morning ?? false,
-                    afternoon: item.afternoon ?? false,
-                    night: item.night ?? false,
-                    days: item.days,
-                    duration: item.duration,
-                    quantity: item.resolved_quantity,
-                    instruction: item.instruction,
-                    drug_role: item.drug_role || meta?.drug_role || "PRIMARY",
-                    drug_type: item.drug_type || meta?.drug_type || null
-                };
-            }));
+            await repository.createPrescriptionItems(tx, resolvedItems.map((item, index) => ({
+                prescription_item_id: itemIds[index],
+                prescription_id: prescription.prescription_id,
+                ...prescriptionItemData(item)
+            })));
+            if (data.finalize_encounter) {
+                await repository.finalizeEncounterDrafts(tx, data.encounter_no, prescription.prescription_id);
+            }
             return prescription.prescription_id;
         }, {
             timeout: 30000,

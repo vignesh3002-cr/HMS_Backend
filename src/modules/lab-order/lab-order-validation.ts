@@ -56,6 +56,10 @@ export const updateLabOrderValidation = [
         .optional()
         .isString(),
 
+    body("lab_description")
+        .optional({ nullable: true })
+        .isString(),
+
     body("order_status")
         .optional()
         .isIn([

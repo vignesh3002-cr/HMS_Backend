@@ -29,8 +29,23 @@ class LabOrderRepository {
             }
         });
     }
-    async findAll() {
+    async findAll({ patientId, appointmentId, patientHistoryId, limit } = {}) {
+        const hasFilter = Boolean(patientId || appointmentId || patientHistoryId);
         return prisma_1.default.lab_order.findMany({
+            /* Callers that pass a filter only ever see that patient's / visit's
+               orders - the list used to return every order in the branch, which
+               let clinical flows attach items to another patient's order. */
+            ...(hasFilter ? {
+                where: {
+                    ...(appointmentId ? { appointment_id: appointmentId } : {}),
+                    ...(patientHistoryId ? { patient_history_id: patientHistoryId } : {}),
+                    ...(patientId ? { patient_history: { patient_id: patientId } } : {})
+                }
+            } : {}),
+            /* Only a caller that asks for a limit is capped (clinical flows ask
+               for the latest visit's rows); the lab screens still get the full
+               list they have always shown. */
+            ...(limit && limit > 0 ? { take: Math.min(limit, 500) } : {}),
             select: {
                 lab_order_id: true,
                 patient_history_id: true,
@@ -40,6 +55,7 @@ class LabOrderRepository {
                 order_datetime: true,
                 priority: true,
                 clinical_notes: true,
+                lab_description: true,
                 order_status: true,
                 patient_history: {
                     select: {
@@ -49,6 +65,28 @@ class LabOrderRepository {
                         visit_status: true
                     }
                 },
+                /* Which tests this order already has (the consultation flows skip
+                   those instead of ordering the same test twice). Only loaded for
+                   filtered (clinical) calls - the lab's full list would otherwise
+                   join every order's items. */
+                ...(hasFilter ? {
+                    lab_order_item: {
+                        select: {
+                            lab_order_item_id: true,
+                            lab_test_id: true,
+                            item_status: true,
+                            /* The test's name / code, so clinical flows can spot a
+                               test already ordered under a different catalog id
+                               (the same test exists under more than one id). */
+                            lab_test_master: {
+                                select: {
+                                    test_name: true,
+                                    test_code: true
+                                }
+                            }
+                        }
+                    }
+                } : {}),
                 employees: {
                     select: {
                         employee_id: true,
@@ -79,6 +117,14 @@ class LabOrderRepository {
     async findMostRecentPatientHistory(patient_id) {
         return prisma_1.default.patient_history.findFirst({
             where: { patient_id },
+            orderBy: { id: "desc" }
+        });
+    }
+    /* The visit record an appointment belongs to. Orders placed from a visit
+       must hang off that visit - not off the patient's latest one. */
+    async findPatientHistoryByAppointment(appointment_id) {
+        return prisma_1.default.patient_history.findFirst({
+            where: { appointment_id },
             orderBy: { id: "desc" }
         });
     }

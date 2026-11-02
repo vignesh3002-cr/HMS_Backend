@@ -1072,7 +1072,7 @@ class DoctorTransferService {
             throw new Error("No pending reschedule request found for this appointment");
         }
         if (dto.action === "ASSIGN") {
-            if (queue.status !== doctorTransfer_constants_1.RESCHEDULE_QUEUE_STATUS.PENDING) {
+            if (queue.status !== doctorTransfer_constants_1.RESCHEDULE_QUEUE_STATUS.PENDING && queue.status !== doctorTransfer_constants_1.RESCHEDULE_QUEUE_STATUS.ASSIGNED) {
                 throw new Error(`Cannot assign a slot to a reschedule request that is already ${queue.status}`);
             }
             if (!dto.employee_id || !dto.branch_id || !dto.appointment_date || !dto.appointment_time) {

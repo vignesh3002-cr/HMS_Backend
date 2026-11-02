@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
-import { generateId } from "../../utils/idGenerator";
+import { generateId, generateIdBatch } from "../../utils/idGenerator";
 import { ADMINISTRATION_STATUS, DRUG_ROLE, ID_ENTITY, OPEN_PLAN_STATUSES, PLAN_ORDER_STATUS } from "./chemotherapy.constants";
 import { PlanFilterQuery, RegimenProtocolFilterQuery } from "./chemotherapy.types";
 
@@ -446,40 +446,30 @@ export class ChemotherapyRepository {
 
     }
 
-    async generateMedicineId(): Promise<string> {
-        const last = await prisma.medicine_master.findFirst({
-            orderBy: { medicine_id: "desc" },
-            select: { medicine_id: true }
-        });
-        const match = /^MED(\d+)$/.exec((last?.medicine_id ?? "").trim());
-        const next = match ? Number(match[1]) + 1 : 1;
-        return `MED${String(next).padStart(6, "0")}`;
+    async generateMedicineId(tx?: Prisma.TransactionClient): Promise<string> {
+        const client = tx || prisma;
+        const [id] = await generateIdBatch(client as any, "MEDICINE", 1);
+        return id;
     }
 
-    async generateGenericId(): Promise<string> {
-        const last = await prisma.generic_master.findFirst({
-            where: {
-                generic_id: { startsWith: "GEN", not: "GEN_NOT_SPECIFIED" }
-            },
-            orderBy: { id: "desc" },
-            select: { generic_id: true }
-        });
-        const match = /^GEN(\d+)$/.exec((last?.generic_id ?? "").trim());
-        const next = match ? Number(match[1]) + 1 : 1;
-        return `GEN${next}`;
+    async generateGenericId(tx?: Prisma.TransactionClient): Promise<string> {
+        const client = tx || prisma;
+        const [id] = await generateIdBatch(client as any, "GENERIC", 1);
+        return id;
     }
 
-    async findOrCreateGeneric(genericName?: string | null): Promise<{ generic_id: string; generic_name: string } | null> {
+    async findOrCreateGeneric(genericName?: string | null, tx?: Prisma.TransactionClient): Promise<{ generic_id: string; generic_name: string } | null> {
+        const client = tx || prisma;
         const gName = (genericName ?? "").trim();
         if (!gName) return null;
-        const existing = await prisma.generic_master.findFirst({
+        const existing = await client.generic_master.findFirst({
             where: { generic_name: { equals: gName, mode: "insensitive" } }
         });
         if (existing && existing.generic_id) {
             return { generic_id: existing.generic_id, generic_name: existing.generic_name };
         }
-        const genericId = await this.generateGenericId();
-        const created = await prisma.generic_master.create({
+        const genericId = await this.generateGenericId(tx);
+        const created = await client.generic_master.create({
             data: {
                 generic_id: genericId,
                 generic_name: gName
@@ -493,6 +483,7 @@ export class ChemotherapyRepository {
         genericName?: string | null;
         form?: string | null;
         brand?: string | null;
+        drugRole?: string | null;
     }) {
         const medicineId = await this.generateMedicineId();
         const rawGen = data.genericName?.trim() || data.name.trim();
@@ -500,6 +491,18 @@ export class ChemotherapyRepository {
         const form = data.form?.trim() || null;
         const brand = data.brand?.trim() || null;
         const medicineName = data.name.trim() || rawGen;
+
+        let category: string | null = null;
+        const roleUpper = (data.drugRole || "").toUpperCase();
+        if (roleUpper === "PRIMARY") {
+            category = "Antineoplastic - Other";
+        } else if (roleUpper === "PREMEDICATION") {
+            category = "Premedication";
+        } else if (roleUpper === "SUPPORTIVE") {
+            category = "Supportive";
+        } else if (roleUpper === "DISCHARGE") {
+            category = "Discharge Medication";
+        }
 
         return prisma.medicine_master.create({
             data: {
@@ -510,10 +513,11 @@ export class ChemotherapyRepository {
                 brand_name: brand,
                 dosage_form: form,
                 medicine_type: form,
+                medicine_category: category,
                 source_note: "Protocol Builder Custom Item",
                 prescription_required: true,
                 is_narcotic: false,
-                is_high_risk: false,
+                is_high_risk: roleUpper === "PRIMARY",
                 is_active: true
             }
         });
@@ -523,7 +527,96 @@ export class ChemotherapyRepository {
         return this.createMedicineFromProtocol({ name: medicineName });
     }
 
+    async updateGenericMasterName(genericId: string, genericName: string) {
+        return prisma.generic_master.updateMany({
+            where: { generic_id: genericId },
+            data: { generic_name: genericName }
+        });
+    }
+
+    async updateAllMedicinesByGenericId(genericId: string, genericName: string) {
+        return prisma.medicine_master.updateMany({
+            where: { generic_id: genericId },
+            data: { generic_name: genericName }
+        });
+    }
+
+    async updateSingleMedicineGeneric(medicineId: string, genericId: string, genericName: string) {
+        return prisma.medicine_master.update({
+            where: { medicine_id: medicineId },
+            data: {
+                generic_id: genericId,
+                generic_name: genericName
+            }
+        });
+    }
+
+    async updateMedicineGenericDetails(medicineId: string, data: { generic_id: string; generic_name: string }) {
+        return prisma.medicine_master.update({
+            where: { medicine_id: medicineId },
+            data: {
+                generic_id: data.generic_id,
+                generic_name: data.generic_name
+            }
+        });
+    }
+
+    async syncGenericNameAcrossAllChildTablesByGenericId(genericId: string, genericName: string) {
+        await prisma.$executeRawUnsafe(
+            `UPDATE chemotherapy_regimen_protocol_items crpi
+             SET generic_name = $1
+             FROM medicine_master mm
+             WHERE crpi.medicine_id = mm.medicine_id
+               AND mm.generic_id = $2`,
+            genericName,
+            genericId
+        );
+        await prisma.$executeRawUnsafe(
+            `UPDATE chemotherapy_discharge_instructions cdi
+             SET generic_name = $1
+             FROM medicine_master mm
+             WHERE cdi.medicine_id = mm.medicine_id
+               AND mm.generic_id = $2`,
+            genericName,
+            genericId
+        );
+        await prisma.$executeRawUnsafe(
+            `UPDATE chemotherapy_protocol_dilutions cpd
+             SET generic_name = $1
+             FROM medicine_master mm
+             WHERE cpd.medicine_id = mm.medicine_id
+               AND mm.generic_id = $2`,
+            genericName,
+            genericId
+        );
+    }
+
+    async syncMedicineGenericNameAcrossConnectedTables(medicineId: string, genericName: string) {
+        await prisma.$executeRawUnsafe(
+            `UPDATE chemotherapy_regimen_protocol_items
+             SET generic_name = $1
+             WHERE medicine_id = $2`,
+            genericName,
+            medicineId
+        );
+        await prisma.$executeRawUnsafe(
+            `UPDATE chemotherapy_discharge_instructions
+             SET generic_name = $1
+             WHERE medicine_id = $2`,
+            genericName,
+            medicineId
+        );
+        await prisma.$executeRawUnsafe(
+            `UPDATE chemotherapy_protocol_dilutions
+             SET generic_name = $1
+             WHERE medicine_id = $2`,
+            genericName,
+            medicineId
+        );
+    }
+
     async listAllActiveMedicines() {
+
         return prisma.medicine_master.findMany({
             where: { is_active: true },
             select: {
@@ -537,6 +630,44 @@ export class ChemotherapyRepository {
                 route: true
             },
             orderBy: { medicine_name: "asc" }
+        });
+    }
+
+    async findActiveMedicinesByIds(medicineIds: string[]) {
+
+        if (medicineIds.length === 0) {
+            return [];
+        }
+
+        return prisma.medicine_master.findMany({
+            where: { medicine_id: { in: medicineIds }, is_active: true },
+            select: { medicine_id: true, medicine_name: true, generic_name: true }
+        });
+    }
+
+    // The drug-monitoring mappings are small reference tables. Load them with
+    // their medicine/test names so the service can match legacy plan medicine
+    // ids by name as well as by id.
+    async listDrugLabMonitoringMappings() {
+
+        return prisma.drug_lab_monitoring.findMany({
+            where: { active_status: 1 },
+            include: {
+                medicine_master: { select: { medicine_id: true, medicine_name: true, generic_name: true } },
+                lab_test_master: {
+                    include: { lab_test_category: { select: { lab_test_category_id: true, category_name: true } } }
+                }
+            }
+        });
+    }
+
+    async listDrugNonLabMappings() {
+
+        return prisma.drug_non_lab_investigation.findMany({
+            where: { active_status: 1 },
+            include: {
+                medicine_master: { select: { medicine_id: true, medicine_name: true, generic_name: true } }
+            }
         });
     }
 
@@ -763,58 +894,47 @@ export class ChemotherapyRepository {
     async listMedicinesByDrugRole(drugRole: string) {
         const roleUpper = (drugRole || "").toUpperCase();
 
-        let categoryCondition: Prisma.medicine_masterWhereInput = {};
-        let searchRoles = [roleUpper];
+        if (["PREMEDICATION", "SUPPORTIVE", "DISCHARGE"].includes(roleUpper)) {
+            // Premedication, Supportive, and Discharge:
+            // 1. Identify all medicines that have been assigned to PREMEDICATION, SUPPORTIVE, or DISCHARGE
+            const [psItems, dischItems] = await Promise.all([
+                prisma.chemotherapy_regimen_protocol_items.findMany({
+                    where: { drug_role: { in: ["PREMEDICATION", "SUPPORTIVE"] }, active_status: 1 },
+                    select: { medicine_id: true },
+                    distinct: ["medicine_id"]
+                }),
+                prisma.chemotherapy_discharge_instructions.findMany({
+                    where: { active_status: 1, medicine_id: { not: null } },
+                    select: { medicine_id: true },
+                    distinct: ["medicine_id"]
+                })
+            ]);
 
-        if (roleUpper === "PRIMARY") {
-            categoryCondition = { medicine_category: { startsWith: "Antineoplastic" } };
-        } else if (roleUpper === "PREMEDICATION") {
-            categoryCondition = {
-                medicine_category: {
-                    in: ["Antiemetic", "Corticosteroid", "Gastrointestinal", "Analgesic", "Anti-infective", "Antifungal"]
-                }
-            };
-        } else if (roleUpper === "SUPPORTIVE") {
-            searchRoles = ["SUPPORTIVE"];
-            categoryCondition = {
-                medicine_category: {
-                    in: [
-                        "Hematopoietic growth factor",
-                        "Supplement / Electrolyte",
-                        "Diuretic",
-                        "Bone modifying agent",
-                        "Analgesic",
-                        "Gastrointestinal",
-                        "Antiemetic"
-                    ]
-                }
-            };
-        } else if (roleUpper === "DISCHARGE") {
+            const preSuppDischSet = new Set([
+                ...psItems.map((i) => i.medicine_id),
+                ...dischItems.map((i) => i.medicine_id!)
+            ]);
+
+            // 2. Identify medicines that are PURE PRIMARY (used in PRIMARY and NEVER in PRE/SUPP/DISCHARGE)
+            const primaryItems = await prisma.chemotherapy_regimen_protocol_items.findMany({
+                where: { drug_role: "PRIMARY", active_status: 1 },
+                select: { medicine_id: true },
+                distinct: ["medicine_id"]
+            });
+
+            const purePrimaryIds = primaryItems
+                .map((p) => p.medicine_id)
+                .filter((id) => !preSuppDischSet.has(id));
+
+            // 3. Return all active medicines EXCEPT pure primary antineoplastics.
+            // Dual-use medicines (like MED000076 Avastin) are included because they exist in preSuppDischSet.
             return prisma.medicine_master.findMany({
                 where: {
                     is_active: true,
+                    medicine_id: { notIn: purePrimaryIds },
                     OR: [
-                        {
-                            medicine_category: {
-                                in: [
-                                    "Analgesic",
-                                    "Anti-infective",
-                                    "Antifungal",
-                                    "Gastrointestinal",
-                                    "Antiemetic",
-                                    "Corticosteroid",
-                                    "Hematopoietic growth factor",
-                                    "Supplement / Electrolyte",
-                                    "Diuretic",
-                                    "Bone modifying agent",
-                                    "Other",
-                                    "Instruction"
-                                ]
-                            }
-                        },
-                        { chemotherapy_discharge_instructions: { some: { active_status: 1 } } },
-                        { chemotherapy_regimen_protocol_items: { some: { drug_role: "SUPPORTIVE", active_status: 1 } } },
-                        { dosage_form: { in: ["Tablet", "Capsule", "Syrup", "Drops"] } }
+                        { medicine_id: { in: Array.from(preSuppDischSet) } },
+                        { NOT: { medicine_category: { startsWith: "Antineoplastic" } } }
                     ]
                 },
                 select: {
@@ -831,32 +951,34 @@ export class ChemotherapyRepository {
             });
         }
 
-        const items = await prisma.medicine_master.findMany({
-            where: {
-                is_active: true,
-                OR: [
-                    categoryCondition,
-                    {
-                        chemotherapy_regimen_protocol_items: {
-                            some: { drug_role: { in: searchRoles }, active_status: 1 }
-                        }
-                    }
-                ]
-            },
-            select: {
-                medicine_id: true,
-                medicine_name: true,
-                generic_name: true,
-                generic_id: true,
-                strength: true,
-                dosage_form: true,
-                unit: true,
-                route: true
-            },
-            orderBy: { medicine_name: "asc" }
-        });
+        if (roleUpper === "PRIMARY") {
+            // Chemotherapy (Primary):
+            // Return all antineoplastic medicines and existing PRIMARY protocol items,
+            // including dual-use drugs like MED000076.
+            return prisma.medicine_master.findMany({
+                where: {
+                    is_active: true,
+                    medicine_category: { not: "Instruction" },
+                    OR: [
+                        { medicine_category: { startsWith: "Antineoplastic" } },
+                        { chemotherapy_regimen_protocol_items: { some: { drug_role: "PRIMARY", active_status: 1 } } }
+                    ]
+                },
+                select: {
+                    medicine_id: true,
+                    medicine_name: true,
+                    generic_name: true,
+                    generic_id: true,
+                    strength: true,
+                    dosage_form: true,
+                    unit: true,
+                    route: true
+                },
+                orderBy: { medicine_name: "asc" }
+            });
+        }
 
-        return items;
+        return [];
     }
 
     // Aggregates distinct dosage forms and brands for each generic_id
@@ -1302,12 +1424,19 @@ export class ChemotherapyRepository {
                         medicine_id: true,
                         drug_name: true,
                         brand_name: true,
+                        dosage_form: true,
+                        patient_dose: true,
                         dose: true,
                         dose_unit: true,
                         quantity: true,
                         drug_role: true,
                         medicine_master: {
-                            select: { medicine_name: true, generic_name: true, brand_name: true }
+                            select: {
+                                medicine_name: true,
+                                generic_name: true,
+                                brand_name: true,
+                                dosage_form: true
+                            }
                         }
                     },
                     orderBy: { display_order: "asc" }
@@ -1352,7 +1481,8 @@ export class ChemotherapyRepository {
             include: { medicine_master: true },
             orderBy: { drug_sequence: "asc" as const }
         },
-        chemotherapy_plan_hydration: { orderBy: { display_order: "asc" as const } }
+        chemotherapy_plan_hydration: { orderBy: { display_order: "asc" as const } },
+        chemotherapy_plan_order_investigation: { orderBy: { display_order: "asc" as const } }
     } satisfies Prisma.chemotherapy_plan_orderInclude;
 
     async generatePlanOrderId(tx: Prisma.TransactionClient) {
@@ -1458,6 +1588,82 @@ export class ChemotherapyRepository {
     async deletePlanOrderHydration(tx: Prisma.TransactionClient, planOrderId: string) {
 
         return tx.chemotherapy_plan_hydration.deleteMany({ where: { plan_order_id: planOrderId } });
+
+    }
+
+    async deletePlanOrderInvestigations(tx: Prisma.TransactionClient, planOrderId: string) {
+
+        return tx.chemotherapy_plan_order_investigation.deleteMany({ where: { plan_order_id: planOrderId } });
+
+    }
+
+    /* The rows a re-save replaces: their normalized_key lets the service carry
+       an already-ORDERED row's status / lab links over to the recreated row. */
+    async listPlanOrderInvestigations(tx: Prisma.TransactionClient, planOrderId: string) {
+
+        return tx.chemotherapy_plan_order_investigation.findMany({
+            where: { plan_order_id: planOrderId },
+            select: {
+                normalized_key: true,
+                item_status: true,
+                lab_order_id: true,
+                lab_order_item_id: true
+            }
+        });
+
+    }
+
+    async createPlanOrderInvestigation(
+        tx: Prisma.TransactionClient,
+        data: Prisma.chemotherapy_plan_order_investigationUncheckedCreateInput
+    ) {
+
+        return tx.chemotherapy_plan_order_investigation.create({ data });
+
+    }
+
+    async updatePlanOrderInvestigationStatus(
+        tx: Prisma.TransactionClient,
+        planOrderId: string,
+        updates: {
+            investigation_id?: string | null;
+            lab_test_id?: string | null;
+            item_status: string;
+            lab_order_id?: string | null;
+            lab_order_item_id?: string | null;
+        }[],
+        actingUserId: string
+    ) {
+
+        let updated = 0;
+
+        for (const update of updates) {
+
+            const identity = update.investigation_id
+                ? { investigation_id: update.investigation_id }
+                : update.lab_test_id
+                    ? { lab_test_id: update.lab_test_id }
+                    : null;
+
+            if (!identity) {
+                continue;
+            }
+
+            const result = await tx.chemotherapy_plan_order_investigation.updateMany({
+                where: { plan_order_id: planOrderId, ...identity },
+                data: {
+                    item_status: update.item_status,
+                    ...(update.lab_order_id !== undefined ? { lab_order_id: update.lab_order_id } : {}),
+                    ...(update.lab_order_item_id !== undefined ? { lab_order_item_id: update.lab_order_item_id } : {}),
+                    updated_by: actingUserId,
+                    updated_at: new Date()
+                }
+            });
+
+            updated += result.count;
+        }
+
+        return updated;
 
     }
 

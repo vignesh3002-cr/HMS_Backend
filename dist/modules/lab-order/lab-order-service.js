@@ -9,10 +9,14 @@ const idGenerator_1 = require("../../utils/idGenerator");
 class LabOrderService {
     async create(data) {
         // Resolve patient history: accept patient_history_id directly or
-        // resolve it from the patient's most recent visit (patient_id).
+        // resolve it from the order's appointment (the visit it belongs to),
+        // falling back to the patient's most recent visit.
         let patient_history_id = data.patient_history_id;
         if (!patient_history_id && data.patient_id) {
-            const history = await lab_order_repository_1.default.findMostRecentPatientHistory(data.patient_id);
+            const history = (data.appointment_id
+                ? await lab_order_repository_1.default.findPatientHistoryByAppointment(data.appointment_id)
+                : null) ??
+                (await lab_order_repository_1.default.findMostRecentPatientHistory(data.patient_id));
             if (history) {
                 patient_history_id = history.patient_history_id;
             }
@@ -91,8 +95,8 @@ class LabOrderService {
             ...(data.user_id ? { user_id: data.user_id } : {})
         });
     }
-    async getAll() {
-        return lab_order_repository_1.default.findAll();
+    async getAll(filters = {}) {
+        return lab_order_repository_1.default.findAll(filters);
     }
     async getById(id) {
         const order = await lab_order_repository_1.default.findById(id);

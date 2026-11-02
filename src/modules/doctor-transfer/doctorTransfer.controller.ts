@@ -160,6 +160,7 @@ export class DoctorTransferController {
                 branchId: req.query.branchId as string,
                 patientId: req.query.patientId as string,
                 status: req.query.status as string,
+                priority: req.query.priority as string,
                 page: Number(req.query.page || 1),
                 limit: Number(req.query.limit || 10)
             });

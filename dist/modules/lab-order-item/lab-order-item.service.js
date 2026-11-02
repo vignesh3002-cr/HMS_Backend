@@ -53,8 +53,9 @@ class LabOrderItemService {
             net_amount
         });
     }
-    async getAll() {
-        return repository.findAll();
+    /* The latest items - all, or a patient's / one visit's (appointment). */
+    async getAll(filters = {}) {
+        return repository.findAll(filters);
     }
     async getById(lab_order_item_id) {
         const item = await repository.findById(lab_order_item_id);
