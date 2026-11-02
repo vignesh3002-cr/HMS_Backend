@@ -1169,6 +1169,7 @@ model chemotherapy_regimen_protocol_items {
   remarks                            String?
   active_status                      Int?                                 @default(1) @db.SmallInt
   drug_brand_name                    String?                              @db.VarChar(100)
+  generic_name                       String?                              @db.VarChar(255)
   protocol_dose                      Decimal?                             @db.Decimal(10, 2)
   protocol_dose_unit                 String?                              @db.VarChar(100)
   protocol_dose_text                 String?                              @db.VarChar(100)
