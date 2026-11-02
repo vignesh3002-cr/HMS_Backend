@@ -25,7 +25,12 @@ const medicineItemValidation = (prefix) => {
         (0, express_validator_1.body)(field("quantity")).optional().isInt({ min: 1 }),
         (0, express_validator_1.body)(field("instruction")).optional().isString(),
         (0, express_validator_1.body)(field("drug_role")).optional().isString(),
-        (0, express_validator_1.body)(field("drug_type")).optional().isString()
+        (0, express_validator_1.body)(field("drug_type")).optional().isString(),
+        (0, express_validator_1.body)(field("chemotherapy_plan_id")).optional({ nullable: true }).isString(),
+        (0, express_validator_1.body)(field("plan_order_id")).optional({ nullable: true }).isString(),
+        (0, express_validator_1.body)(field("plan_item_id")).optional({ nullable: true }).isString(),
+        (0, express_validator_1.body)(field("cycle_number")).optional({ nullable: true }).isInt({ min: 1 }),
+        (0, express_validator_1.body)(field("cycle_day")).optional({ nullable: true }).isInt({ min: 1 })
     ];
 };
 exports.createPrescriptionValidation = [
@@ -39,6 +44,9 @@ exports.createPrescriptionValidation = [
         .optional()
         .isISO8601()
         .withMessage("Follow-up date must be a valid date (YYYY-MM-DD)"),
+    (0, express_validator_1.body)("finalize").optional().isBoolean(),
+    (0, express_validator_1.body)("finalize_encounter").optional().isBoolean(),
+    (0, express_validator_1.body)("prescription_type").optional().isIn(prescription_constants_1.PRESCRIPTION_TYPE_VALUES),
     (0, express_validator_1.body)("medicines").isArray({ min: 1 }).withMessage("At least one medicine is required"),
     ...medicineItemValidation("medicines.*")
 ];
@@ -46,6 +54,8 @@ exports.getPrescriptionsValidation = [
     (0, express_validator_1.query)("page").optional().isInt({ min: 1 }),
     (0, express_validator_1.query)("limit").optional().isInt({ min: 1, max: 100 }),
     (0, express_validator_1.query)("status").optional().isIn(prescription_constants_1.PRESCRIPTION_STATUS_VALUES),
+    (0, express_validator_1.query)("prescriptionType").optional().isIn(prescription_constants_1.PRESCRIPTION_TYPE_VALUES),
+    (0, express_validator_1.query)("encounterNo").optional().isString(),
     (0, express_validator_1.query)("date").optional().isISO8601(),
     (0, express_validator_1.query)("dateFrom").optional().isISO8601(),
     (0, express_validator_1.query)("dateTo").optional().isISO8601()

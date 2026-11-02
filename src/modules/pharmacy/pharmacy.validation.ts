@@ -58,6 +58,67 @@ export const listSlipsValidation = [
 
 export const getSlipValidation = [slipIdValidation];
 
+// The Discharge Medication popup's save. `items` may be empty only when the
+// cycle day truly has no medicines; the plan order itself is still required.
+export const saveFromOrderValidation = [
+
+    body("plan_id")
+        .notEmpty()
+        .withMessage("Chemotherapy plan ID is required"),
+
+    body("cycle_number")
+        .isInt({ min: 1 })
+        .withMessage("Cycle number must be a positive integer"),
+
+    body("cycle_day")
+        .isInt({ min: 1 })
+        .withMessage("Cycle day must be a positive integer"),
+
+    body("encounter_no")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("appointment_id")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items")
+        .isArray()
+        .withMessage("Items must be an array"),
+
+    body("items.*.quantity")
+        .optional({ nullable: true })
+        .isInt({ min: 0 })
+        .withMessage("Quantity must be a whole number of zero or greater"),
+
+    body("items.*.medicine_id").optional({ nullable: true }).isString(),
+    body("items.*.drug_name").optional({ nullable: true }).isString(),
+    body("items.*.brand_name").optional({ nullable: true }).isString(),
+    body("items.*.dosage_form").optional({ nullable: true }).isString(),
+    body("items.*.patient_dose").optional({ nullable: true }).isString(),
+    body("items.*.dose").optional({ nullable: true }).isString(),
+    body("items.*.dose_unit").optional({ nullable: true }).isString(),
+    body("items.*.drug_role").optional({ nullable: true }).isString(),
+    body("items.*.pharmacy_item_id").optional({ nullable: true }).isString()
+
+];
+
+export const getSlipByOrderValidation = [
+
+    query("plan_id")
+        .notEmpty()
+        .withMessage("Chemotherapy plan ID is required"),
+
+    query("cycle_number")
+        .isInt({ min: 1 })
+        .withMessage("Cycle number must be a positive integer"),
+
+    query("cycle_day")
+        .isInt({ min: 1 })
+        .withMessage("Cycle day must be a positive integer")
+
+];
+
 // Editable fields on a line: quantity, brand_name, dose, dose_unit, etc.
 export const updateSlipItemsValidation = [
 
@@ -89,6 +150,10 @@ export const updateSlipItemsValidation = [
         .isString(),
 
     body("items.*.patient_dose")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items.*.dosage_form")
         .optional({ nullable: true })
         .isString(),
 

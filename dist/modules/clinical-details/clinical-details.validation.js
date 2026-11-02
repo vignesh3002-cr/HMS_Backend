@@ -218,15 +218,19 @@ exports.createEncounterSymptomValidation = [
         .isIn(['MILD', 'MODERATE', 'SEVERE', 'CRITICAL'])
         .withMessage('Invalid severity value'),
     (0, express_validator_1.body)('durationDays')
-        .optional()
+        .optional({ nullable: true })
         .isInt({ min: 0, max: 9999 })
         .withMessage('Duration days must be between 0 and 9999'),
+    (0, express_validator_1.body)('durationUnit')
+        .optional({ nullable: true })
+        .isIn(['day', 'week', 'month', 'year'])
+        .withMessage('Duration unit must be day, week, month or year'),
     (0, express_validator_1.body)('onsetDate')
-        .optional()
+        .optional({ nullable: true })
         .isISO8601()
         .withMessage('Onset date must be a valid date (YYYY-MM-DD)'),
     (0, express_validator_1.body)('clinicalNotes')
-        .optional()
+        .optional({ nullable: true })
         .isLength({ max: 1000 })
         .withMessage('Clinical notes must not exceed 1000 characters'),
     (0, express_validator_1.body)('recordedBy')
@@ -250,15 +254,19 @@ exports.updateEncounterSymptomValidation = [
         .isIn(['MILD', 'MODERATE', 'SEVERE', 'CRITICAL'])
         .withMessage('Invalid severity value'),
     (0, express_validator_1.body)('durationDays')
-        .optional()
+        .optional({ nullable: true })
         .isInt({ min: 0, max: 9999 })
         .withMessage('Duration days must be between 0 and 9999'),
+    (0, express_validator_1.body)('durationUnit')
+        .optional({ nullable: true })
+        .isIn(['day', 'week', 'month', 'year'])
+        .withMessage('Duration unit must be day, week, month or year'),
     (0, express_validator_1.body)('onsetDate')
-        .optional()
+        .optional({ nullable: true })
         .isISO8601()
         .withMessage('Onset date must be a valid date (YYYY-MM-DD)'),
     (0, express_validator_1.body)('clinicalNotes')
-        .optional()
+        .optional({ nullable: true })
         .isLength({ max: 1000 })
         .withMessage('Clinical notes must not exceed 1000 characters'),
     (0, express_validator_1.body)('status')
@@ -282,13 +290,21 @@ exports.createPatientAllergyValidation = [
         .isInt({ min: 1 })
         .withMessage('Invalid allergy ID'),
     (0, express_validator_1.body)('reaction')
-        .optional()
+        .optional({ nullable: true })
         .isLength({ max: 500 })
         .withMessage('Reaction must not exceed 500 characters'),
     (0, express_validator_1.body)('severity')
         .optional()
         .isIn(['MILD', 'MODERATE', 'SEVERE', 'ANAPHYLACTIC'])
         .withMessage('Invalid severity value'),
+    (0, express_validator_1.body)('durationValue')
+        .optional({ nullable: true })
+        .isInt({ min: 0, max: 9999 })
+        .withMessage('Duration value must be between 0 and 9999'),
+    (0, express_validator_1.body)('durationUnit')
+        .optional({ nullable: true })
+        .isIn(['day', 'week', 'month', 'year'])
+        .withMessage('Duration unit must be day, week, month or year'),
     (0, express_validator_1.body)('status')
         .optional()
         .isIn(['ACTIVE', 'INACTIVE', 'RESOLVED'])
@@ -302,7 +318,7 @@ exports.createPatientAllergyValidation = [
         .isLength({ max: 30 })
         .withMessage('Invalid encounter number'),
     (0, express_validator_1.body)('clinicalNotes')
-        .optional()
+        .optional({ nullable: true })
         .isLength({ max: 1000 })
         .withMessage('Clinical notes must not exceed 1000 characters'),
 ];
@@ -318,19 +334,27 @@ exports.updatePatientAllergyValidation = [
         .isInt({ min: 1 })
         .withMessage('Invalid allergy record ID'),
     (0, express_validator_1.body)('reaction')
-        .optional()
+        .optional({ nullable: true })
         .isLength({ max: 500 })
         .withMessage('Reaction must not exceed 500 characters'),
     (0, express_validator_1.body)('severity')
         .optional()
         .isIn(['MILD', 'MODERATE', 'SEVERE', 'ANAPHYLACTIC'])
         .withMessage('Invalid severity value'),
+    (0, express_validator_1.body)('durationValue')
+        .optional({ nullable: true })
+        .isInt({ min: 0, max: 9999 })
+        .withMessage('Duration value must be between 0 and 9999'),
+    (0, express_validator_1.body)('durationUnit')
+        .optional({ nullable: true })
+        .isIn(['day', 'week', 'month', 'year'])
+        .withMessage('Duration unit must be day, week, month or year'),
     (0, express_validator_1.body)('status')
         .optional()
         .isIn(['ACTIVE', 'INACTIVE', 'RESOLVED'])
         .withMessage('Invalid status value'),
     (0, express_validator_1.body)('clinicalNotes')
-        .optional()
+        .optional({ nullable: true })
         .isLength({ max: 1000 })
         .withMessage('Clinical notes must not exceed 1000 characters'),
     (0, express_validator_1.body)('updatedBy')
@@ -354,9 +378,17 @@ exports.createPatientComorbidityValidation = [
         .isIn(['ACTIVE', 'INACTIVE', 'HISTORY', 'RESOLVED'])
         .withMessage('Invalid status value'),
     (0, express_validator_1.body)('onsetDate')
-        .optional()
+        .optional({ nullable: true })
         .isISO8601()
         .withMessage('Onset date must be a valid date (YYYY-MM-DD)'),
+    (0, express_validator_1.body)('durationValue')
+        .optional({ nullable: true })
+        .isInt({ min: 0, max: 9999 })
+        .withMessage('Duration value must be between 0 and 9999'),
+    (0, express_validator_1.body)('durationUnit')
+        .optional({ nullable: true })
+        .isIn(['day', 'week', 'month', 'year'])
+        .withMessage('Duration unit must be day, week, month or year'),
     (0, express_validator_1.body)('identifiedBy')
         .optional()
         .isLength({ max: 20 })
@@ -366,7 +398,7 @@ exports.createPatientComorbidityValidation = [
         .isLength({ max: 30 })
         .withMessage('Invalid encounter number'),
     (0, express_validator_1.body)('clinicalNotes')
-        .optional()
+        .optional({ nullable: true })
         .isLength({ max: 1000 })
         .withMessage('Clinical notes must not exceed 1000 characters'),
 ];
@@ -386,11 +418,19 @@ exports.updatePatientComorbidityValidation = [
         .isIn(['ACTIVE', 'INACTIVE', 'HISTORY', 'RESOLVED'])
         .withMessage('Invalid status value'),
     (0, express_validator_1.body)('onsetDate')
-        .optional()
+        .optional({ nullable: true })
         .isISO8601()
         .withMessage('Onset date must be a valid date (YYYY-MM-DD)'),
+    (0, express_validator_1.body)('durationValue')
+        .optional({ nullable: true })
+        .isInt({ min: 0, max: 9999 })
+        .withMessage('Duration value must be between 0 and 9999'),
+    (0, express_validator_1.body)('durationUnit')
+        .optional({ nullable: true })
+        .isIn(['day', 'week', 'month', 'year'])
+        .withMessage('Duration unit must be day, week, month or year'),
     (0, express_validator_1.body)('clinicalNotes')
-        .optional()
+        .optional({ nullable: true })
         .isLength({ max: 1000 })
         .withMessage('Clinical notes must not exceed 1000 characters'),
     (0, express_validator_1.body)('updatedBy')

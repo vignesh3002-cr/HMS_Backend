@@ -2855,6 +2855,8 @@ model pharmacy_slip_item {
   medicine_id           String?          @db.VarChar(100)
   drug_name             String?          @db.VarChar(200)
   brand_name            String?          @db.VarChar(255)
+  dosage_form           String?          @db.VarChar(100)
+  patient_dose          String?          @db.VarChar(100)
   dose                  String?          @db.VarChar(100)
   dose_unit             String?          @db.VarChar(50)
   quantity              Int?

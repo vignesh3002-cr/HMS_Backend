@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.amendSlipValidation = exports.issueSlipValidation = exports.printSlipValidation = exports.cancelSlipValidation = exports.createMedicineValidation = exports.updateSlipItemsValidation = exports.getSlipValidation = exports.listSlipsValidation = exports.createSlipValidation = exports.previewSlipValidation = void 0;
+exports.amendSlipValidation = exports.issueSlipValidation = exports.printSlipValidation = exports.cancelSlipValidation = exports.createMedicineValidation = exports.updateSlipItemsValidation = exports.getSlipByOrderValidation = exports.saveFromOrderValidation = exports.getSlipValidation = exports.listSlipsValidation = exports.createSlipValidation = exports.previewSlipValidation = void 0;
 const express_validator_1 = require("express-validator");
 const pharmacy_constants_1 = require("./pharmacy.constants");
 /*
@@ -39,6 +39,52 @@ exports.listSlipsValidation = [
     (0, express_validator_1.query)("limit").optional().isInt({ min: 1, max: 200 }).withMessage("Limit must be between 1 and 200")
 ];
 exports.getSlipValidation = [slipIdValidation];
+// The Discharge Medication popup's save. `items` may be empty only when the
+// cycle day truly has no medicines; the plan order itself is still required.
+exports.saveFromOrderValidation = [
+    (0, express_validator_1.body)("plan_id")
+        .notEmpty()
+        .withMessage("Chemotherapy plan ID is required"),
+    (0, express_validator_1.body)("cycle_number")
+        .isInt({ min: 1 })
+        .withMessage("Cycle number must be a positive integer"),
+    (0, express_validator_1.body)("cycle_day")
+        .isInt({ min: 1 })
+        .withMessage("Cycle day must be a positive integer"),
+    (0, express_validator_1.body)("encounter_no")
+        .optional({ nullable: true })
+        .isString(),
+    (0, express_validator_1.body)("appointment_id")
+        .optional({ nullable: true })
+        .isString(),
+    (0, express_validator_1.body)("items")
+        .isArray()
+        .withMessage("Items must be an array"),
+    (0, express_validator_1.body)("items.*.quantity")
+        .optional({ nullable: true })
+        .isInt({ min: 0 })
+        .withMessage("Quantity must be a whole number of zero or greater"),
+    (0, express_validator_1.body)("items.*.medicine_id").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("items.*.drug_name").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("items.*.brand_name").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("items.*.dosage_form").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("items.*.patient_dose").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("items.*.dose").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("items.*.dose_unit").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("items.*.drug_role").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("items.*.pharmacy_item_id").optional({ nullable: true }).isString()
+];
+exports.getSlipByOrderValidation = [
+    (0, express_validator_1.query)("plan_id")
+        .notEmpty()
+        .withMessage("Chemotherapy plan ID is required"),
+    (0, express_validator_1.query)("cycle_number")
+        .isInt({ min: 1 })
+        .withMessage("Cycle number must be a positive integer"),
+    (0, express_validator_1.query)("cycle_day")
+        .isInt({ min: 1 })
+        .withMessage("Cycle day must be a positive integer")
+];
 // Editable fields on a line: quantity, brand_name, dose, dose_unit, etc.
 exports.updateSlipItemsValidation = [
     slipIdValidation,
@@ -62,6 +108,9 @@ exports.updateSlipItemsValidation = [
         .optional({ nullable: true })
         .isString(),
     (0, express_validator_1.body)("items.*.patient_dose")
+        .optional({ nullable: true })
+        .isString(),
+    (0, express_validator_1.body)("items.*.dosage_form")
         .optional({ nullable: true })
         .isString(),
     (0, express_validator_1.body)("items.*.drug_name")

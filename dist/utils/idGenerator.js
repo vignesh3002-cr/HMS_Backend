@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ENTITY_TARGET = void 0;
 exports.generateIdBatch = generateIdBatch;
 exports.generateId = generateId;
 // Table + id column that each entity's generated ID lands in. Used to
@@ -7,7 +8,7 @@ exports.generateId = generateId;
 // sync with the real data (e.g. after manual seeds/imports bypassed it).
 // padTo is the zero-padding width for the numeric portion; entities that
 // lack one keep the historical 3-digit padding.
-const ENTITY_TARGET = {
+exports.ENTITY_TARGET = {
     APPOINTMENT: { table: "appointment_history", column: "appointment_id" },
     BRANCH: { table: "branch", column: "branch_id" },
     BRANCH_ADMIN: { table: "employees", column: "employee_id" },
@@ -35,6 +36,22 @@ const ENTITY_TARGET = {
     CHEMOTHERAPY_PLAN_ORDER: { table: "chemotherapy_plan_order", column: "plan_order_id", padTo: 7 },
     CHEMOTHERAPY_PLAN_INVESTIGATION: { table: "chemotherapy_plan_order_investigation", column: "investigation_id", padTo: 7 },
     CHEMOTHERAPY_ADMINISTRATION: { table: "chemotherapy_administration", column: "administration_id" },
+    CHEMOTHERAPY_PLAN: { table: "chemotherapy_plan", column: "chemotherapy_plan_id" },
+    CHEMOTHERAPY_PLAN_ITEM: { table: "chemotherapy_plan_items", column: "chemotherapy_plan_item_id" },
+    CHEMOTHERAPY_CYCLE: { table: "chemotherapy_cycle", column: "chemotherapy_cycle_id" },
+    CHEMOTHERAPY_ADVERSE_EVENT: { table: "chemotherapy_adverse_event", column: "adverse_event_id" },
+    CHEMOTHERAPY_VITALS: { table: "chemotherapy_vitals", column: "vital_id" },
+    CHEMOTHERAPY_LAB_REVIEW: { table: "chemotherapy_lab_review", column: "lab_review_id" },
+    CHEMOTHERAPY_FOLLOWUP: { table: "chemotherapy_followup", column: "followup_id" },
+    PATIENT_HISTORY: { table: "patient_history", column: "patient_history_id" },
+    PRESCRIPTION: { table: "prescription", column: "prescription_id" },
+    PRESCRIPTION_ITEM: { table: "prescription_items", column: "prescription_item_id" },
+    STAGING_DETAIL: { table: "oncology_staging_detail", column: "staging_detail_id" },
+    IHC_RESULT: { table: "ihc_results", column: "ihc_id" },
+    MOLECULAR_RESULT: { table: "molecular_results", column: "mol_id" },
+    DERIVED_FIELD: { table: "derived_fields", column: "derived_id" },
+    DOCTOR_LEAVE: { table: "doctor_leave", column: "leave_id" },
+    ONCOLOGY_AUDIT_LOG: { table: "oncology_audit_log", column: "audit_id" },
     PERSONAL_HISTORY: { table: "patient_personal_history", column: "personal_history_id", padTo: 7 },
     ANATOMICAL_SITE: { table: "anatomical_site_master", column: "site_id", padTo: 4 },
     CANCER_GRADE: { table: "cancer_grade_master", column: "grade_id", padTo: 4 },
@@ -59,6 +76,9 @@ const ENTITY_TARGET = {
     DUTY_TEMPLATE: { table: "staff_duty_roster_template", column: "template_id", padTo: 6 },
     DUTY_ROSTER: { table: "staff_duty_roster", column: "roster_id", padTo: 6 },
 };
+function escapeSqlLiteral(value) {
+    return value.replace(/'/g, "''");
+}
 // Generates `count` consecutive ids for one entity while holding the
 // sequence row lock exactly once. Batch callers (e.g. prescription items)
 // would otherwise pay the lock-read + collision-check + sequence-update
@@ -69,27 +89,44 @@ async function generateIdBatch(tx, entity, count) {
         return [];
     }
     // Lock the row
-    let rows = await tx.$queryRawUnsafe(`
+    const rows = await tx.$queryRawUnsafe(`
         SELECT *
         FROM id_sequences
-        WHERE entity_name='${entity}'
+        WHERE entity_name='${escapeSqlLiteral(entity)}'
         FOR UPDATE
     `);
     if (rows.length === 0) {
         throw new Error(`Sequence not found for ${entity}`);
     }
     const sequence = rows[0];
-    const target = ENTITY_TARGET[entity];
-    let nextNumber = sequence.current_number;
+    const target = exports.ENTITY_TARGET[entity];
+    const prefix = sequence.prefix ?? "";
+    let nextNumber = Number(sequence.current_number);
+    // Rows can be written outside the sequence (seeds, imports, manual SQL),
+    // leaving current_number behind the real data. Start from the highest
+    // numeric suffix already in the table so the first generated id is free
+    // instead of looping once per missing number. Only ids that are exactly
+    // prefix + digits are considered (legacy/imported ids can have suffixes).
+    if (target) {
+        const maxRows = await tx.$queryRawUnsafe(`
+            SELECT COALESCE(MAX(SUBSTRING(${target.column} FROM ${prefix.length + 1})::bigint), 0) AS max_number
+            FROM ${target.table}
+            WHERE ${target.column} ~ '^${escapeSqlLiteral(prefix)}[0-9]+$'
+        `);
+        const maxNumber = Number(maxRows[0]?.max_number ?? 0);
+        if (Number.isFinite(maxNumber) && maxNumber > nextNumber) {
+            nextNumber = maxNumber;
+        }
+    }
     const generatedIds = [];
     while (generatedIds.length < count) {
         nextNumber += 1;
-        const candidate = sequence.prefix +
+        const candidate = prefix +
             nextNumber
                 .toString()
                 .padStart(target?.padTo ?? 3, "0");
         if (target) {
-            const existing = await tx.$queryRawUnsafe(`SELECT 1 FROM ${target.table} WHERE ${target.column} = '${candidate}'`);
+            const existing = await tx.$queryRawUnsafe(`SELECT 1 FROM ${target.table} WHERE ${target.column} = '${escapeSqlLiteral(candidate)}'`);
             if (existing.length > 0) {
                 continue;
             }

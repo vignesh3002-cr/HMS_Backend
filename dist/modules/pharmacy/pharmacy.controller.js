@@ -75,6 +75,45 @@ class PharmacyController {
             return handleError(res, error);
         }
     }
+    /*
+     * Discharge Medication popup: the doctor's brand / strength / quantity
+     * picks for one explicit cycle day. Creates the DRAFT slip or replaces a
+     * DRAFT's lines; an ISSUED slip is never rewritten.
+     */
+    async saveSlipFromOrder(req, res) {
+        if (!checkValidation(req, res))
+            return;
+        try {
+            const data = await service.saveFromOrder(req.body, actingUserId(req));
+            return res.status(201).json({
+                success: true,
+                message: "Pharmacy slip saved",
+                data
+            });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async getSlipByOrder(req, res) {
+        if (!checkValidation(req, res))
+            return;
+        try {
+            const data = await service.getSlipByOrder({
+                plan_id: req.query.plan_id,
+                cycle_number: Number(req.query.cycle_number),
+                cycle_day: Number(req.query.cycle_day)
+            });
+            return res.json({
+                success: true,
+                message: data ? "Pharmacy slip retrieved" : "No pharmacy slip for this cycle day",
+                data
+            });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
     async listSlips(req, res) {
         if (!checkValidation(req, res))
             return;
@@ -196,7 +235,16 @@ class PharmacyController {
         try {
             const medicineIdsParam = req.query.medicine_ids;
             const medicineIds = medicineIdsParam ? medicineIdsParam.split(",").map((s) => s.trim()).filter(Boolean) : undefined;
-            const data = await service.listPharmacyMasterItems(medicineIds);
+            // Brands of the ordered medicine's generic - a different brand has
+            // a different medicine_id but the same generic_id.
+            const genericIdsParam = req.query.generic_ids;
+            const genericIds = genericIdsParam ? genericIdsParam.split(",").map((s) => s.trim()).filter(Boolean) : undefined;
+            // Optional: scopes the pickup to this branch plus the shared
+            // (null-branch) catalog. Omitted keeps the old mixed listing.
+            const branchId = req.headers["x-branch-id"]
+                || req.query.branch_id
+                || null;
+            const data = await service.listPharmacyMasterItems(medicineIds, branchId, genericIds);
             return res.json({
                 success: true,
                 message: "Pharmacy master items retrieved",

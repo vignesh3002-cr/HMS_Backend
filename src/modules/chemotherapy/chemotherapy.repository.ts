@@ -1341,12 +1341,19 @@ export class ChemotherapyRepository {
                         medicine_id: true,
                         drug_name: true,
                         brand_name: true,
+                        dosage_form: true,
+                        patient_dose: true,
                         dose: true,
                         dose_unit: true,
                         quantity: true,
                         drug_role: true,
                         medicine_master: {
-                            select: { medicine_name: true, generic_name: true, brand_name: true }
+                            select: {
+                                medicine_name: true,
+                                generic_name: true,
+                                brand_name: true,
+                                dosage_form: true
+                            }
                         }
                     },
                     orderBy: { display_order: "asc" }
