@@ -123,6 +123,7 @@ export interface GetRescheduleQueueQuery {
     patientId?: string;
 
     status?: string;
+    priority?: string;
 
     page?: number;
 

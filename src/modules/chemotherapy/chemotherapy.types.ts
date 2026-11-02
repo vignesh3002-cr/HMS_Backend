@@ -22,6 +22,8 @@ export interface RegimenProtocolDischargeInstructionInput {
     discharge_instruction_id?: string;
     source_resource_id?: string | null;
     medicine_id?: string | null;
+    medicine_name?: string | null;
+    generic_name?: string | null;
     drug_brand_name?: string | null;
     drug_sequence?: number | null;
     drug_from?: string | null;

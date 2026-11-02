@@ -358,39 +358,29 @@ class ChemotherapyRepository {
             where: { medicine_name: { equals: name, mode: "insensitive" } }
         });
     }
-    async generateMedicineId() {
-        const last = await prisma_1.default.medicine_master.findFirst({
-            orderBy: { medicine_id: "desc" },
-            select: { medicine_id: true }
-        });
-        const match = /^MED(\d+)$/.exec((last?.medicine_id ?? "").trim());
-        const next = match ? Number(match[1]) + 1 : 1;
-        return `MED${String(next).padStart(6, "0")}`;
+    async generateMedicineId(tx) {
+        const client = tx || prisma_1.default;
+        const [id] = await (0, idGenerator_1.generateIdBatch)(client, "MEDICINE", 1);
+        return id;
     }
-    async generateGenericId() {
-        const last = await prisma_1.default.generic_master.findFirst({
-            where: {
-                generic_id: { startsWith: "GEN", not: "GEN_NOT_SPECIFIED" }
-            },
-            orderBy: { id: "desc" },
-            select: { generic_id: true }
-        });
-        const match = /^GEN(\d+)$/.exec((last?.generic_id ?? "").trim());
-        const next = match ? Number(match[1]) + 1 : 1;
-        return `GEN${next}`;
+    async generateGenericId(tx) {
+        const client = tx || prisma_1.default;
+        const [id] = await (0, idGenerator_1.generateIdBatch)(client, "GENERIC", 1);
+        return id;
     }
-    async findOrCreateGeneric(genericName) {
+    async findOrCreateGeneric(genericName, tx) {
+        const client = tx || prisma_1.default;
         const gName = (genericName ?? "").trim();
         if (!gName)
             return null;
-        const existing = await prisma_1.default.generic_master.findFirst({
+        const existing = await client.generic_master.findFirst({
             where: { generic_name: { equals: gName, mode: "insensitive" } }
         });
         if (existing && existing.generic_id) {
             return { generic_id: existing.generic_id, generic_name: existing.generic_name };
         }
-        const genericId = await this.generateGenericId();
-        const created = await prisma_1.default.generic_master.create({
+        const genericId = await this.generateGenericId(tx);
+        const created = await client.generic_master.create({
             data: {
                 generic_id: genericId,
                 generic_name: gName
@@ -405,6 +395,20 @@ class ChemotherapyRepository {
         const form = data.form?.trim() || null;
         const brand = data.brand?.trim() || null;
         const medicineName = data.name.trim() || rawGen;
+        let category = null;
+        const roleUpper = (data.drugRole || "").toUpperCase();
+        if (roleUpper === "PRIMARY") {
+            category = "Antineoplastic - Other";
+        }
+        else if (roleUpper === "PREMEDICATION") {
+            category = "Premedication";
+        }
+        else if (roleUpper === "SUPPORTIVE") {
+            category = "Supportive";
+        }
+        else if (roleUpper === "DISCHARGE") {
+            category = "Discharge Medication";
+        }
         return prisma_1.default.medicine_master.create({
             data: {
                 medicine_id: medicineId,
@@ -414,16 +418,75 @@ class ChemotherapyRepository {
                 brand_name: brand,
                 dosage_form: form,
                 medicine_type: form,
+                medicine_category: category,
                 source_note: "Protocol Builder Custom Item",
                 prescription_required: true,
                 is_narcotic: false,
-                is_high_risk: false,
+                is_high_risk: roleUpper === "PRIMARY",
                 is_active: true
             }
         });
     }
     async createMedicineFromTypedName(medicineName) {
         return this.createMedicineFromProtocol({ name: medicineName });
+    }
+    async updateGenericMasterName(genericId, genericName) {
+        return prisma_1.default.generic_master.updateMany({
+            where: { generic_id: genericId },
+            data: { generic_name: genericName }
+        });
+    }
+    async updateAllMedicinesByGenericId(genericId, genericName) {
+        return prisma_1.default.medicine_master.updateMany({
+            where: { generic_id: genericId },
+            data: { generic_name: genericName }
+        });
+    }
+    async updateSingleMedicineGeneric(medicineId, genericId, genericName) {
+        return prisma_1.default.medicine_master.update({
+            where: { medicine_id: medicineId },
+            data: {
+                generic_id: genericId,
+                generic_name: genericName
+            }
+        });
+    }
+    async updateMedicineGenericDetails(medicineId, data) {
+        return prisma_1.default.medicine_master.update({
+            where: { medicine_id: medicineId },
+            data: {
+                generic_id: data.generic_id,
+                generic_name: data.generic_name
+            }
+        });
+    }
+    async syncGenericNameAcrossAllChildTablesByGenericId(genericId, genericName) {
+        await prisma_1.default.$executeRawUnsafe(`UPDATE chemotherapy_regimen_protocol_items crpi
+             SET generic_name = $1
+             FROM medicine_master mm
+             WHERE crpi.medicine_id = mm.medicine_id
+               AND mm.generic_id = $2`, genericName, genericId);
+        await prisma_1.default.$executeRawUnsafe(`UPDATE chemotherapy_discharge_instructions cdi
+             SET generic_name = $1
+             FROM medicine_master mm
+             WHERE cdi.medicine_id = mm.medicine_id
+               AND mm.generic_id = $2`, genericName, genericId);
+        await prisma_1.default.$executeRawUnsafe(`UPDATE chemotherapy_protocol_dilutions cpd
+             SET generic_name = $1
+             FROM medicine_master mm
+             WHERE cpd.medicine_id = mm.medicine_id
+               AND mm.generic_id = $2`, genericName, genericId);
+    }
+    async syncMedicineGenericNameAcrossConnectedTables(medicineId, genericName) {
+        await prisma_1.default.$executeRawUnsafe(`UPDATE chemotherapy_regimen_protocol_items
+             SET generic_name = $1
+             WHERE medicine_id = $2`, genericName, medicineId);
+        await prisma_1.default.$executeRawUnsafe(`UPDATE chemotherapy_discharge_instructions
+             SET generic_name = $1
+             WHERE medicine_id = $2`, genericName, medicineId);
+        await prisma_1.default.$executeRawUnsafe(`UPDATE chemotherapy_protocol_dilutions
+             SET generic_name = $1
+             WHERE medicine_id = $2`, genericName, medicineId);
     }
     async listAllActiveMedicines() {
         return prisma_1.default.medicine_master.findMany({
@@ -642,60 +705,43 @@ class ChemotherapyRepository {
     }
     async listMedicinesByDrugRole(drugRole) {
         const roleUpper = (drugRole || "").toUpperCase();
-        let categoryCondition = {};
-        let searchRoles = [roleUpper];
-        if (roleUpper === "PRIMARY") {
-            categoryCondition = { medicine_category: { startsWith: "Antineoplastic" } };
-        }
-        else if (roleUpper === "PREMEDICATION") {
-            categoryCondition = {
-                medicine_category: {
-                    in: ["Antiemetic", "Corticosteroid", "Gastrointestinal", "Analgesic", "Anti-infective", "Antifungal"]
-                }
-            };
-        }
-        else if (roleUpper === "SUPPORTIVE") {
-            searchRoles = ["SUPPORTIVE"];
-            categoryCondition = {
-                medicine_category: {
-                    in: [
-                        "Hematopoietic growth factor",
-                        "Supplement / Electrolyte",
-                        "Diuretic",
-                        "Bone modifying agent",
-                        "Analgesic",
-                        "Gastrointestinal",
-                        "Antiemetic"
-                    ]
-                }
-            };
-        }
-        else if (roleUpper === "DISCHARGE") {
+        if (["PREMEDICATION", "SUPPORTIVE", "DISCHARGE"].includes(roleUpper)) {
+            // Premedication, Supportive, and Discharge:
+            // 1. Identify all medicines that have been assigned to PREMEDICATION, SUPPORTIVE, or DISCHARGE
+            const [psItems, dischItems] = await Promise.all([
+                prisma_1.default.chemotherapy_regimen_protocol_items.findMany({
+                    where: { drug_role: { in: ["PREMEDICATION", "SUPPORTIVE"] }, active_status: 1 },
+                    select: { medicine_id: true },
+                    distinct: ["medicine_id"]
+                }),
+                prisma_1.default.chemotherapy_discharge_instructions.findMany({
+                    where: { active_status: 1, medicine_id: { not: null } },
+                    select: { medicine_id: true },
+                    distinct: ["medicine_id"]
+                })
+            ]);
+            const preSuppDischSet = new Set([
+                ...psItems.map((i) => i.medicine_id),
+                ...dischItems.map((i) => i.medicine_id)
+            ]);
+            // 2. Identify medicines that are PURE PRIMARY (used in PRIMARY and NEVER in PRE/SUPP/DISCHARGE)
+            const primaryItems = await prisma_1.default.chemotherapy_regimen_protocol_items.findMany({
+                where: { drug_role: "PRIMARY", active_status: 1 },
+                select: { medicine_id: true },
+                distinct: ["medicine_id"]
+            });
+            const purePrimaryIds = primaryItems
+                .map((p) => p.medicine_id)
+                .filter((id) => !preSuppDischSet.has(id));
+            // 3. Return all active medicines EXCEPT pure primary antineoplastics.
+            // Dual-use medicines (like MED000076 Avastin) are included because they exist in preSuppDischSet.
             return prisma_1.default.medicine_master.findMany({
                 where: {
                     is_active: true,
+                    medicine_id: { notIn: purePrimaryIds },
                     OR: [
-                        {
-                            medicine_category: {
-                                in: [
-                                    "Analgesic",
-                                    "Anti-infective",
-                                    "Antifungal",
-                                    "Gastrointestinal",
-                                    "Antiemetic",
-                                    "Corticosteroid",
-                                    "Hematopoietic growth factor",
-                                    "Supplement / Electrolyte",
-                                    "Diuretic",
-                                    "Bone modifying agent",
-                                    "Other",
-                                    "Instruction"
-                                ]
-                            }
-                        },
-                        { chemotherapy_discharge_instructions: { some: { active_status: 1 } } },
-                        { chemotherapy_regimen_protocol_items: { some: { drug_role: "SUPPORTIVE", active_status: 1 } } },
-                        { dosage_form: { in: ["Tablet", "Capsule", "Syrup", "Drops"] } }
+                        { medicine_id: { in: Array.from(preSuppDischSet) } },
+                        { NOT: { medicine_category: { startsWith: "Antineoplastic" } } }
                     ]
                 },
                 select: {
@@ -711,31 +757,33 @@ class ChemotherapyRepository {
                 orderBy: { medicine_name: "asc" }
             });
         }
-        const items = await prisma_1.default.medicine_master.findMany({
-            where: {
-                is_active: true,
-                OR: [
-                    categoryCondition,
-                    {
-                        chemotherapy_regimen_protocol_items: {
-                            some: { drug_role: { in: searchRoles }, active_status: 1 }
-                        }
-                    }
-                ]
-            },
-            select: {
-                medicine_id: true,
-                medicine_name: true,
-                generic_name: true,
-                generic_id: true,
-                strength: true,
-                dosage_form: true,
-                unit: true,
-                route: true
-            },
-            orderBy: { medicine_name: "asc" }
-        });
-        return items;
+        if (roleUpper === "PRIMARY") {
+            // Chemotherapy (Primary):
+            // Return all antineoplastic medicines and existing PRIMARY protocol items,
+            // including dual-use drugs like MED000076.
+            return prisma_1.default.medicine_master.findMany({
+                where: {
+                    is_active: true,
+                    medicine_category: { not: "Instruction" },
+                    OR: [
+                        { medicine_category: { startsWith: "Antineoplastic" } },
+                        { chemotherapy_regimen_protocol_items: { some: { drug_role: "PRIMARY", active_status: 1 } } }
+                    ]
+                },
+                select: {
+                    medicine_id: true,
+                    medicine_name: true,
+                    generic_name: true,
+                    generic_id: true,
+                    strength: true,
+                    dosage_form: true,
+                    unit: true,
+                    route: true
+                },
+                orderBy: { medicine_name: "asc" }
+            });
+        }
+        return [];
     }
     // Aggregates distinct dosage forms and brands for each generic_id
     // combining pharmacy_master inventory and medicine_master catalog.

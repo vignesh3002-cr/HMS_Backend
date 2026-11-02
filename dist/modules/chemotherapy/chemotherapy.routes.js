@@ -43,6 +43,8 @@ router.get("/medicines/by-role", auth_middleware_1.authenticate, (0, authorize_1
 router.get("/protocol-field-options", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), controller.getProtocolFieldOptions.bind(controller));
 router.get("/forms-and-brands", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), controller.getGenericFormsAndBrands.bind(controller));
 router.get("/treatment-intents", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), controller.listTreatmentIntents.bind(controller));
+router.post("/medicines/catalog-generic", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.manage"), controller.catalogMedicineGeneric.bind(controller));
+router.patch("/medicines/:medicineId/generic", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.manage"), controller.catalogMedicineGeneric.bind(controller));
 router.post("/regimen-protocols", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.manage"), chemotherapy_validation_1.createRegimenProtocolValidation, controller.createRegimenProtocol.bind(controller));
 router.put("/regimen-protocols/:protocolId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.manage"), chemotherapy_validation_1.updateRegimenProtocolValidation, controller.updateRegimenProtocol.bind(controller));
 router.post("/regimen-protocols/:protocolId/items", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.manage"), chemotherapy_validation_1.addRegimenProtocolItemValidation, controller.addRegimenProtocolItem.bind(controller));
