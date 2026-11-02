@@ -308,6 +308,20 @@ router.get(
 );
 
 router.post(
+    "/medicines/catalog-generic",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    controller.catalogMedicineGeneric.bind(controller)
+);
+
+router.patch(
+    "/medicines/:medicineId/generic",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    controller.catalogMedicineGeneric.bind(controller)
+);
+
+router.post(
     "/regimen-protocols",
     authenticate,
     authorize("chemo.protocol.manage"),

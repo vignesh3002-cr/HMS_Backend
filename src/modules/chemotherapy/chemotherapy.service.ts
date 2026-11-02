@@ -520,19 +520,29 @@ export class ChemotherapyService {
 
     private async resolveMedicineId(
         rawId?: string | null,
-        meta?: { form?: string | null; brand?: string | null; genericName?: string | null; medicineName?: string | null }
+        meta?: { form?: string | null; brand?: string | null; genericName?: string | null; medicineName?: string | null; drugRole?: string | null }
     ): Promise<string | null> {
         const raw = (rawId ?? "").trim();
         if (!raw) return null;
         const byId = await this.repository.findMedicineById(raw);
-        if (byId) return byId.medicine_id;
+        if (byId) {
+            if (
+                meta?.genericName &&
+                meta.genericName.trim() &&
+                meta.genericName.trim() !== (byId.generic_name || byId.medicine_name)
+            ) {
+                await this.catalogMedicineGeneric(byId.medicine_id, meta.genericName.trim(), { form: meta?.form, drugRole: meta?.drugRole }, "SYSTEM");
+            }
+            return byId.medicine_id;
+        }
         const byName = await this.repository.findMedicineByName(raw);
         if (byName) return byName.medicine_id;
         const created = await this.repository.createMedicineFromProtocol({
             name: meta?.medicineName || raw,
             genericName: meta?.genericName || raw,
             form: meta?.form,
-            brand: meta?.brand
+            brand: meta?.brand,
+            drugRole: meta?.drugRole
         });
         return created.medicine_id;
     }
@@ -551,7 +561,8 @@ export class ChemotherapyService {
                 form: dto.drug_type || dto.form,
                 brand: dto.drug_brand_name,
                 genericName: dto.generic_name,
-                medicineName: dto.medicine_name
+                medicineName: dto.medicine_name,
+                drugRole: dto.drug_role
             })) ?? dto.medicine_id;
         }
         if (Array.isArray(dto.items)) {
@@ -562,7 +573,8 @@ export class ChemotherapyService {
                         form: item.drug_type || item.form,
                         brand: item.drug_brand_name,
                         genericName: item.generic_name,
-                        medicineName: item.medicine_name
+                        medicineName: item.medicine_name,
+                        drugRole: item.drug_role
                     })) ?? item.medicine_id;
                 }
                 if (Array.isArray(item.dilutions)) {
@@ -570,7 +582,8 @@ export class ChemotherapyService {
                         if (d && d.medicine_id) {
                             d.medicine_id = (await this.resolveMedicineId(d.medicine_id, {
                                 form: d.form,
-                                brand: d.drug_brand_name
+                                brand: d.drug_brand_name,
+                                drugRole: "DILUTION"
                             })) ?? d.medicine_id;
                         }
                     }
@@ -584,7 +597,8 @@ export class ChemotherapyService {
                         form: d.form,
                         brand: d.drug_brand_name,
                         genericName: (d as any).generic_name,
-                        medicineName: (d as any).medicine_name
+                        medicineName: (d as any).medicine_name,
+                        drugRole: "DILUTION"
                     })) ?? d.medicine_id;
                 }
             }
@@ -596,7 +610,8 @@ export class ChemotherapyService {
                         form: ins.drug_type || ins.form,
                         brand: ins.drug_brand_name,
                         genericName: ins.generic_name,
-                        medicineName: ins.medicine_name
+                        medicineName: ins.medicine_name,
+                        drugRole: "DISCHARGE"
                     })) ?? ins.medicine_id;
                 }
             }
@@ -705,6 +720,72 @@ export class ChemotherapyService {
 
     }
 
+    async catalogMedicineGeneric(
+        medicineIdOrName: string,
+        customGenericName: string,
+        meta?: { form?: string | null; drugRole?: string | null },
+        actingUserId?: string
+    ) {
+        const raw = (medicineIdOrName || "").trim();
+        const cleanGenericName = (customGenericName || "").trim();
+        if (!cleanGenericName && !raw) {
+            throw new Error("Generic name or medicine name is required");
+        }
+        const finalGenericName = cleanGenericName || raw;
+
+        // Check if an existing medicine matches by ID or Name
+        let medicine = await this.repository.findMedicineById(raw);
+        if (!medicine) {
+            medicine = await this.repository.findMedicineByName(raw);
+        }
+
+        if (medicine) {
+            // Existing medicine case
+            let genericId = medicine.generic_id;
+            if (genericId && genericId !== "GEN_NOT_SPECIFIED") {
+                // 1. Update parent generic_master
+                await this.repository.updateGenericMasterName(genericId, finalGenericName);
+                // 2. Update ALL medicines in medicine_master sharing this generic_id
+                await this.repository.updateAllMedicinesByGenericId(genericId, finalGenericName);
+                // 3. Sync ALL child protocol tables connected via this generic_id
+                await this.repository.syncGenericNameAcrossAllChildTablesByGenericId(genericId, finalGenericName);
+            } else {
+                // Assign new/matched generic_id
+                const genRecord = await this.repository.findOrCreateGeneric(finalGenericName);
+                genericId = genRecord ? genRecord.generic_id : "GEN_NOT_SPECIFIED";
+                await this.repository.updateSingleMedicineGeneric(medicine.medicine_id, genericId, finalGenericName);
+                // Sync child tables for this medicine_id
+                await this.repository.syncMedicineGenericNameAcrossConnectedTables(medicine.medicine_id, finalGenericName);
+                if (genericId && genericId !== "GEN_NOT_SPECIFIED") {
+                    await this.repository.syncGenericNameAcrossAllChildTablesByGenericId(genericId, finalGenericName);
+                }
+            }
+
+            return {
+                medicine_id: medicine.medicine_id,
+                generic_id: genericId,
+                generic_name: finalGenericName,
+                dosage_form: medicine.dosage_form
+            };
+        }
+
+        // Brand New Typed Medicine case (not in DB yet)
+        const genRecord = await this.repository.findOrCreateGeneric(finalGenericName);
+        const createdMedicine = await this.repository.createMedicineFromProtocol({
+            name: raw,
+            genericName: finalGenericName,
+            form: meta?.form,
+            drugRole: meta?.drugRole
+        });
+
+        return {
+            medicine_id: createdMedicine.medicine_id,
+            generic_id: genRecord ? genRecord.generic_id : createdMedicine.generic_id,
+            generic_name: finalGenericName,
+            dosage_form: createdMedicine.dosage_form
+        };
+    }
+
     async listAllActiveMedicines() {
         return this.repository.listAllActiveMedicines();
     }
@@ -769,6 +850,7 @@ export class ChemotherapyService {
                 protocol_id: protocolId,
                 protocol_item_id: itemId,
                 medicine_id: dilution.medicine_id ?? null,
+                generic_name: (dilution as any).generic_name ?? null,
                 drug_brand_name: dilution.drug_brand_name ?? null,
                 form: dilution.form ?? null,
                 dose: dilution.dose ?? null,
@@ -837,6 +919,7 @@ export class ChemotherapyService {
             const payload = {
                 protocol_id: protocolId,
                 medicine_id: instruction.medicine_id ?? null,
+                generic_name: instruction.generic_name ?? null,
                 drug_brand_name: instruction.drug_brand_name ?? null,
                 drug_sequence: instruction.drug_sequence ?? sequence,
                 drug_from: instruction.drug_from ?? null,
@@ -911,6 +994,7 @@ export class ChemotherapyService {
                 protocol_id: protocolId,
                 protocol_item_id: null,
                 medicine_id: dilution.medicine_id?.trim() || null,
+                generic_name: (dilution as any).generic_name ?? null,
                 drug_brand_name: dilution.drug_brand_name ?? null,
                 form: dilution.form ?? null,
                 dose: dilution.dose != null && String(dilution.dose).trim() !== "" ? Number(dilution.dose) : null,
@@ -1227,6 +1311,7 @@ export class ChemotherapyService {
                 protocol_id: protocolId,
                 source_resource_id: instruction.source_resource_id ?? null,
                 medicine_id: instruction.medicine_id ?? null,
+                generic_name: instruction.generic_name ?? null,
                 drug_brand_name: instruction.drug_brand_name ?? null,
                 drug_sequence: instruction.drug_sequence ?? null,
                 drug_from: instruction.drug_from ?? null,
@@ -1285,6 +1370,7 @@ export class ChemotherapyService {
 
             await this.repository.updateDischargeInstruction(tx, dischargeInstructionId, {
                 medicine_id: instruction.medicine_id ?? null,
+                generic_name: instruction.generic_name !== undefined ? instruction.generic_name : undefined,
                 drug_brand_name: instruction.drug_brand_name ?? null,
                 drug_sequence: instruction.drug_sequence ?? null,
                 drug_from: instruction.drug_from ?? null,
@@ -1812,6 +1898,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
             const payload = {
                 medicine_id: item.medicine_id,
+                generic_name: (item as any).generic_name ?? null,
                 drug_role: item.drug_role ?? "PRIMARY",
                 drug_sequence: item.drug_sequence,
                 drug_type: item.drug_type ?? null,

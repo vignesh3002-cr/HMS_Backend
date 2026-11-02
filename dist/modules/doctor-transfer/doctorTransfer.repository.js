@@ -445,7 +445,7 @@ class DoctorTransferRepository {
         });
     }
     async getRescheduleQueue(query) {
-        const { branchId, patientId, status, page = 1, limit = 10 } = query;
+        const { branchId, patientId, status, priority, page = 1, limit = 10 } = query;
         const where = {};
         if (branchId)
             where.branch_id = branchId;
@@ -453,6 +453,8 @@ class DoctorTransferRepository {
             where.patient_id = patientId;
         if (status)
             where.status = status;
+        if (priority)
+            where.priority = priority;
         const [entries, total] = await Promise.all([
             prisma_1.default.appointment_reschedule_queue.findMany({
                 where,

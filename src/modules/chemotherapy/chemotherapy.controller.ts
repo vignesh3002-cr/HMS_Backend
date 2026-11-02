@@ -228,6 +228,27 @@ export class ChemotherapyController {
 
     }
 
+    async catalogMedicineGeneric(req: Request, res: Response) {
+        try {
+            const { medicineId } = req.params;
+            const { medicineIdOrName, genericName, form, drugRole } = req.body;
+            const rawIdentifier = (medicineId || medicineIdOrName || genericName || "").trim();
+            const gName = (genericName || rawIdentifier).trim();
+            if (!rawIdentifier) {
+                return res.status(400).json({ success: false, message: "Medicine name or generic name is required" });
+            }
+            const data = await service.catalogMedicineGeneric(
+                rawIdentifier,
+                gName,
+                { form, drugRole },
+                actingUserId(req)
+            );
+            return res.json({ success: true, message: "Generic cataloged successfully", data });
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+    }
+
     async getMedicinesByCancerTypeAndSubtype(req: Request, res: Response) {
 
         try {

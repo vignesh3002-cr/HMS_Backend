@@ -20,6 +20,8 @@ export const ENTITY_TARGET: Record<string, { table: string; column: string; padT
     SAMPLE_COLLECTION: { table: "sample_collection", column: "sample_collection_id" },
     USER: { table: "user_table", column: "user_id" },
     DOCTOR_TRANSFER: { table: "doctor_transfer", column: "transfer_id" },
+    GENERIC: { table: "generic_master", column: "generic_id" },
+    MEDICINE: { table: "medicine_master", column: "medicine_id", padTo: 6 },
     REGIMEN_PROTOCOL: { table: "chemotherapy_regimen_protocol", column: "protocol_id", padTo: 6 },
     REGIMEN_PROTOCOL_ITEM: { table: "chemotherapy_regimen_protocol_items", column: "protocol_item_id", padTo: 7 },
     REGIMEN_PROTOCOL_DAY: { table: "chemotherapy_regimen_protocol_days", column: "protocol_day_id", padTo: 7 },
