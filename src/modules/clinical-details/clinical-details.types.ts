@@ -62,17 +62,19 @@ export interface EncounterSymptomDTO {
     encounterNo: string;
     symptomId: number;
     severity?: string;
-    durationDays?: number;
-    onsetDate?: string;
-    clinicalNotes?: string;
+    durationDays?: number | null;
+    durationUnit?: string | null;
+    onsetDate?: string | null;
+    clinicalNotes?: string | null;
     recordedBy?: string;
 }
 
 export interface UpdateEncounterSymptomDTO {
     severity?: string;
-    durationDays?: number;
-    onsetDate?: string;
-    clinicalNotes?: string;
+    durationDays?: number | null;
+    durationUnit?: string | null;
+    onsetDate?: string | null;
+    clinicalNotes?: string | null;
     status?: string;
     updatedBy?: string;
 }
@@ -80,19 +82,23 @@ export interface UpdateEncounterSymptomDTO {
 export interface PatientAllergyDTO {
     patientId: string;
     allergyId: number;
-    reaction?: string;
+    reaction?: string | null;
     severity?: string;
+    durationValue?: number | null;
+    durationUnit?: string | null;
     status?: string;
     identifiedBy?: string;
     identifiedAtEncounterNo?: string;
-    clinicalNotes?: string;
+    clinicalNotes?: string | null;
 }
 
 export interface UpdatePatientAllergyDTO {
-    reaction?: string;
+    reaction?: string | null;
     severity?: string;
+    durationValue?: number | null;
+    durationUnit?: string | null;
     status?: string;
-    clinicalNotes?: string;
+    clinicalNotes?: string | null;
     updatedBy?: string;
 }
 
@@ -101,16 +107,20 @@ export interface PatientComorbidityDTO {
     /* comorbidity_master.id */
     comorbidityId: number | string;
     status?: string;
-    onsetDate?: string;
+    onsetDate?: string | null;
+    durationValue?: number | null;
+    durationUnit?: string | null;
     identifiedBy?: string;
     identifiedAtEncounterNo?: string;
-    clinicalNotes?: string;
+    clinicalNotes?: string | null;
 }
 
 export interface UpdatePatientComorbidityDTO {
     status?: string;
-    onsetDate?: string;
-    clinicalNotes?: string;
+    onsetDate?: string | null;
+    durationValue?: number | null;
+    durationUnit?: string | null;
+    clinicalNotes?: string | null;
     updatedBy?: string;
 }
 
@@ -163,6 +173,7 @@ export interface GetClinicalDetailsResponse {
         symptomName: string;
         severity: string | null;
         durationDays: number | null;
+        durationUnit: string | null;
         onsetDate: Date | null;
         clinicalNotes: string | null;
         status: string;
@@ -177,6 +188,8 @@ export interface GetClinicalDetailsResponse {
         substanceType: string;
         reaction: string | null;
         severity: string | null;
+        durationValue: number | null;
+        durationUnit: string | null;
         status: string;
         identifiedAt: Date;
         identifiedBy: string | null;
@@ -192,6 +205,8 @@ export interface GetClinicalDetailsResponse {
         icdCode: string | null;
         status: string;
         onsetDate: Date | null;
+        durationValue: number | null;
+        durationUnit: string | null;
         identifiedAt: Date;
         identifiedBy: string | null;
         identifiedAtEncounterNo: string | null;

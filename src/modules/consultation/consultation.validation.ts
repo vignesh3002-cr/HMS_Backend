@@ -36,7 +36,49 @@ export const upsertPersonalHistoryValidation = [
     body("drug_consumption.*.code").optional().isString(),
     body("drug_consumption.*.name").optional().isString(),
     body("drug_consumption.*.others").optional({ nullable: true }).isString(),
-    body("diet_type").optional({ nullable: true }).isString()
+    body("drug_consumption.*.duration_value")
+        .optional({ nullable: true })
+        .isInt({ min: 0, max: 9999 })
+        .withMessage("Duration value must be between 0 and 9999"),
+    body("drug_consumption.*.duration_unit")
+        .optional({ nullable: true })
+        .isIn(["day", "week", "month", "year"])
+        .withMessage("Duration unit must be day, week, month or year"),
+    body("drug_consumption.*.commands")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 1000 })
+        .withMessage("Command(s) must not exceed 1000 characters"),
+    body("diet_type").optional({ nullable: true }).isString(),
+
+    body("family_history").optional({ nullable: true }).isObject(),
+    body("family_history.status")
+        .optional()
+        .isIn(["PRESENT", "NOT_PRESENT"])
+        .withMessage("Family history status must be PRESENT or NOT_PRESENT"),
+    body("family_history.entries").optional().isArray(),
+    body("family_history.entries.*.degree")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 20 }),
+    body("family_history.entries.*.relative_type")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 100 }),
+    body("family_history.entries.*.condition")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 200 })
+        .withMessage("Condition must not exceed 200 characters"),
+    body("family_history.entries.*.age_at_diagnosis")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 20 }),
+    body("family_history.entries.*.remarks")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 1000 })
+        .withMessage("Remarks must not exceed 1000 characters")
 
 ];
 

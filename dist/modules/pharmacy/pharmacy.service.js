@@ -116,6 +116,7 @@ class PharmacyService {
                 medicine_id: item.medicine_id ?? null,
                 drug_name: drugNameOf(item.medicine_id, item.drug_name, medicine),
                 brand_name: brandName,
+                dosage_form: clean(medicine?.dosage_form ?? item.formulation),
                 patient_dose: protoDoseText,
                 dose,
                 dose_unit: doseUnit,
@@ -123,7 +124,8 @@ class PharmacyService {
                 drug_role: clean(item.drug_role) ?? pharmacy_constants_1.PHARMACY_DRUG_ROLE.PRIMARY,
                 route: clean(item.administration_route),
                 frequency: clean(item.frequency),
-                instructions: clean(item.administration_detail ?? item.remarks)
+                instructions: clean(item.administration_detail ?? item.remarks),
+                pharmacy_item_id: pharmMaster?.pharmacy_item_id ?? null
             };
         });
         for (const instruction of discharge) {
@@ -143,6 +145,7 @@ class PharmacyService {
                 medicine_id: instruction.medicine_id ?? null,
                 drug_name: drugNameOf(instruction.medicine_id, instruction.drug_brand_name, medicine),
                 brand_name: brandName,
+                dosage_form: clean(medicine?.dosage_form),
                 patient_dose: protoDoseText,
                 dose,
                 dose_unit: doseUnit,
@@ -150,7 +153,8 @@ class PharmacyService {
                 drug_role: pharmacy_constants_1.PHARMACY_DRUG_ROLE.DISCHARGE,
                 frequency: clean(instruction.frequency),
                 duration: clean(instruction.duration ?? instruction.duration_days),
-                instructions: clean(instruction.administration_detail ?? instruction.comment)
+                instructions: clean(instruction.administration_detail ?? instruction.comment),
+                pharmacy_item_id: pharmMaster?.pharmacy_item_id ?? null
             });
         }
         if (advice) {
@@ -192,6 +196,7 @@ class PharmacyService {
                 medicine_id: item.medicine_id ?? null,
                 drug_name: drugNameOf(item.medicine_id, item.drug_name, medicine),
                 brand_name: brandName,
+                dosage_form: clean(medicine?.dosage_form ?? item.dosage_form),
                 patient_dose: protoDoseText,
                 dose,
                 dose_unit: doseUnit,
@@ -202,7 +207,8 @@ class PharmacyService {
                 route: clean(item.route),
                 frequency: clean(item.frequency),
                 duration: clean(item.duration),
-                instructions: clean(item.instruction)
+                instructions: clean(item.instruction),
+                pharmacy_item_id: pharmMaster?.pharmacy_item_id ?? null
             };
         });
     }
@@ -267,6 +273,8 @@ class PharmacyService {
                 medicine_id: line.medicine_id ?? null,
                 drug_name: line.drug_name ?? null,
                 brand_name: line.brand_name ?? null,
+                dosage_form: line.dosage_form ?? null,
+                patient_dose: line.patient_dose ?? null,
                 dose: line.dose ?? null,
                 dose_unit: line.dose_unit ?? null,
                 quantity: line.quantity ?? null,
@@ -274,7 +282,8 @@ class PharmacyService {
                 route: line.route ?? null,
                 frequency: line.frequency ?? null,
                 duration: line.duration ?? null,
-                instructions: line.instructions ?? null
+                instructions: line.instructions ?? null,
+                pharmacy_item_id: line.pharmacy_item_id ?? null
             })));
             await (0, audit_service_1.logAudit)(tx, {
                 entity_type: AUDIT_ENTITY,
@@ -295,6 +304,152 @@ class PharmacyService {
             const full = await this.repository.findSlipById(slip.pharmacy_slip_id);
             return full;
         });
+    }
+    // ---------------------------------------------------------------
+    // Discharge Medication popup: one explicit cycle day
+    // ---------------------------------------------------------------
+    /*
+     * The popup's own save. Unlike createFromPlan it does not re-resolve the
+     * plan's "current" order: the doctor names the cycle / day, and every line
+     * is written exactly as chosen (brand, strength, quantity, patient dose).
+     *
+     * A DRAFT is replaced wholesale, so removing a row in the popup removes
+     * it from the slip. An ISSUED slip is read-only - printing it dispensed
+     * the medicines, so a re-open must not rewrite them.
+     */
+    async saveFromOrder(dto, actingUserId) {
+        const found = await this.repository.findPlanForPharmacy(dto.plan_id);
+        if (!found) {
+            throw new Error("Chemotherapy plan not found");
+        }
+        const { plan } = found;
+        const header = await this.repository.findPlanOrderHeader(dto.plan_id, dto.cycle_number, dto.cycle_day);
+        if (!header) {
+            throw new Error("Save this cycle day's chemotherapy order before creating its pharmacy slip");
+        }
+        const existing = await this.repository.findLiveSlipForOrder(header.plan_order_id);
+        if (existing && existing.slip_status !== pharmacy_constants_1.PHARMACY_SLIP_STATUS.DRAFT) {
+            throw new Error(`This pharmacy slip has already been issued (${existing.pharmacy_slip_id}) and is read-only. Cancel it from the Orders page to create a replacement.`);
+        }
+        const lines = this.normalizeOrderLines(dto.items);
+        const protocolName = plan.protocol_name
+            ?? plan.chemotherapy_regimen_protocol?.regimen_name
+            ?? null;
+        const regimenName = plan.regimen_name
+            ?? plan.chemotherapy_regimen_protocol?.regimen_name
+            ?? null;
+        return prisma_1.default.$transaction(async (tx) => {
+            let pharmacySlipId = existing?.pharmacy_slip_id;
+            if (pharmacySlipId) {
+                await this.repository.updateSlip(tx, pharmacySlipId, {
+                    encounter_no: clean(dto.encounter_no) ?? header.encounter_no ?? null,
+                    appointment_id: clean(dto.appointment_id) ?? plan.appointment_id ?? null,
+                    cycle_number: header.cycle_number,
+                    cycle_day: header.cycle_day,
+                    protocol_name: protocolName,
+                    regimen_name: regimenName,
+                    updated_by: actingUserId
+                });
+                await this.repository.deleteSlipItems(tx, pharmacySlipId, []);
+            }
+            else {
+                pharmacySlipId = await this.repository.generateSlipId(tx);
+                await this.repository.createSlip(tx, {
+                    pharmacy_slip_id: pharmacySlipId,
+                    patient_id: plan.patient_id,
+                    branch_id: plan.branch_id,
+                    encounter_no: clean(dto.encounter_no) ?? header.encounter_no ?? null,
+                    appointment_id: clean(dto.appointment_id) ?? plan.appointment_id ?? null,
+                    plan_order_id: header.plan_order_id,
+                    cycle_number: header.cycle_number,
+                    cycle_day: header.cycle_day,
+                    protocol_name: protocolName,
+                    regimen_name: regimenName,
+                    slip_status: pharmacy_constants_1.PHARMACY_SLIP_STATUS.DRAFT,
+                    created_by: actingUserId,
+                    updated_by: actingUserId
+                });
+            }
+            const itemIds = await this.repository.generateSlipItemIds(tx, lines.length);
+            await this.repository.createSlipItems(tx, lines.map((line, index) => ({
+                pharmacy_slip_item_id: itemIds[index],
+                pharmacy_slip_id: pharmacySlipId,
+                display_order: index,
+                medicine_id: line.medicine_id ?? null,
+                drug_name: line.drug_name ?? null,
+                brand_name: line.brand_name ?? null,
+                dosage_form: line.dosage_form ?? null,
+                patient_dose: line.patient_dose ?? null,
+                dose: line.dose ?? null,
+                dose_unit: line.dose_unit ?? null,
+                quantity: line.quantity ?? null,
+                drug_role: line.drug_role ?? null,
+                route: line.route ?? null,
+                frequency: line.frequency ?? null,
+                duration: line.duration ?? null,
+                instructions: line.instructions ?? null,
+                pharmacy_item_id: line.pharmacy_item_id ?? null
+            })));
+            await (0, audit_service_1.logAudit)(tx, {
+                entity_type: AUDIT_ENTITY,
+                entity_id: pharmacySlipId,
+                action: existing ? "UPDATE" : "CREATE",
+                performed_by: actingUserId,
+                patient_id: plan.patient_id,
+                branch_id: plan.branch_id,
+                change_summary: (0, audit_service_1.summarizeCreate)({
+                    source: "DISCHARGE_MEDICATION_POPUP",
+                    cycle_number: header.cycle_number,
+                    cycle_day: header.cycle_day,
+                    item_count: lines.length
+                })
+            });
+            const full = await this.repository.findSlipById(pharmacySlipId);
+            return full;
+        }, { timeout: 30000 });
+    }
+    // GET /slips/by-order - the popup restores the doctor's earlier choices.
+    async getSlipByOrder(query) {
+        const header = await this.repository.findPlanOrderHeader(query.plan_id, query.cycle_number, query.cycle_day);
+        if (!header)
+            return null;
+        const slip = await this.repository.findLiveSlipForOrder(header.plan_order_id);
+        return slip ?? null;
+    }
+    /*
+     * Only a catalogue medicine or a typed drug name is a real line; an empty
+     * row (no drug at all) is dropped rather than failing the whole save.
+     * Quantity is a whole number of dosage units, so 1.5 stored as 1 would be
+     * wrong - it is rounded up to the next unit instead.
+     */
+    normalizeOrderLines(items) {
+        const lines = [];
+        for (const item of items ?? []) {
+            const medicineId = clean(item.medicine_id);
+            const drugName = clean(item.drug_name);
+            if (!medicineId && !drugName)
+                continue;
+            const rawQuantity = asNumber(item.quantity);
+            lines.push({
+                medicine_id: medicineId,
+                drug_name: drugName,
+                brand_name: clean(item.brand_name),
+                dosage_form: clean(item.dosage_form),
+                patient_dose: clean(item.patient_dose),
+                dose: clean(item.dose),
+                dose_unit: clean(item.dose_unit),
+                quantity: rawQuantity === null
+                    ? null
+                    : Math.max(0, Math.ceil(rawQuantity)),
+                drug_role: clean(item.drug_role),
+                route: clean(item.route),
+                frequency: clean(item.frequency),
+                duration: clean(item.duration),
+                instructions: clean(item.instructions),
+                pharmacy_item_id: clean(item.pharmacy_item_id)
+            });
+        }
+        return lines;
     }
     // ---------------------------------------------------------------
     // Reads
@@ -685,8 +840,8 @@ class PharmacyService {
     // ---------------------------------------------------------------
     // Pharmacy Master & Medicine Master
     // ---------------------------------------------------------------
-    async listPharmacyMasterItems(medicineIds) {
-        return this.repository.findPharmacyMasterItems(medicineIds);
+    async listPharmacyMasterItems(medicineIds, branchId, genericIds) {
+        return this.repository.findPharmacyMasterItems(medicineIds, branchId, genericIds);
     }
     async createMedicine(dto, actingUserId) {
         if (!dto.medicine_name?.trim()) {

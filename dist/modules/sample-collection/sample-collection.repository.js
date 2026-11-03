@@ -7,9 +7,13 @@ const prisma_1 = __importDefault(require("../../config/prisma"));
 const idGenerator_1 = require("../../utils/idGenerator");
 class SampleCollectionRepository {
     async create(data) {
-        const sample_collection_id = await (0, idGenerator_1.generateId)(prisma_1.default, "SAMPLE_COLLECTION");
-        return prisma_1.default.sample_collection.create({
-            data: { sample_collection_id, ...data }
+        // Generate and insert in one transaction so a failed insert rolls the
+        // sequence back too, instead of burning an id and drifting behind data.
+        return prisma_1.default.$transaction(async (tx) => {
+            const sample_collection_id = await (0, idGenerator_1.generateId)(tx, "SAMPLE_COLLECTION");
+            return tx.sample_collection.create({
+                data: { sample_collection_id, ...data }
+            });
         });
     }
     async findAll() {

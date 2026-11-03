@@ -458,12 +458,50 @@ export interface PlanHydrationRowDto {
 
 }
 
+export type PlanInvestigationCategory = "LAB" | "NON_LAB" | "TISSUE";
+export type PlanInvestigationStatus = "PLANNED" | "ORDERED" | "CANCELLED";
+
+// A plan order's investigations (Chemotherapy Order > Investigations),
+// replaced as a whole by the cycle-day order save.
+export interface PlanInvestigationRowDto {
+
+    investigation_id?: string | null;
+    lab_test_id?: string | null;
+    investigation_name: string;
+    investigation_category: PlanInvestigationCategory;
+    investigation_type?: string | null;
+    source_medicine_ids?: string | null;
+    source_drug_names?: string | null;
+    source_test_text?: string | null;
+    monitoring_phase?: string | null;
+    priority?: string | null;
+    target_date?: string | null;
+    clinical_notes?: string | null;
+    item_status?: PlanInvestigationStatus | null;
+    lab_order_id?: string | null;
+    lab_order_item_id?: string | null;
+
+}
+
+export interface UpdatePlanInvestigationStatusDto {
+
+    updates: {
+        investigation_id?: string | null;
+        lab_test_id?: string | null;
+        item_status: PlanInvestigationStatus;
+        lab_order_id?: string | null;
+        lab_order_item_id?: string | null;
+    }[];
+
+}
+
 // PUT /plans/:planId/orders/:cycle/:day - one cycle day's full order.
-// hydration left out = that day's hydration is left untouched.
+// hydration / investigations left out = those rows are left untouched.
 export interface SavePlanOrderDto {
 
     items: PlanItemInputDto[];
     hydration?: PlanHydrationRowDto[] | null;
+    investigations?: PlanInvestigationRowDto[] | null;
     dosing?: {
         height_cm?: number | null;
         weight_kg?: number | null;

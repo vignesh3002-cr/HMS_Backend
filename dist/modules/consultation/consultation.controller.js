@@ -136,6 +136,14 @@ class ConsultationController {
             return handleError(res, err);
         }
     }
+    async getRelativeTypes(req, res) {
+        try {
+            return res.json({ success: true, message: "Relative types fetched successfully", data: service.listRelativeTypes() });
+        }
+        catch (err) {
+            return handleError(res, err);
+        }
+    }
     // ---------------- Personal history ----------------
     async getPersonalHistory(req, res) {
         try {

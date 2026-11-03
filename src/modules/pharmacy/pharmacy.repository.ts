@@ -67,6 +67,23 @@ export class PharmacyRepository {
 
     }
 
+    // The saved order of one explicit cycle day. The popup names the cycle /
+    // day, so it must not use the "current order" heuristic the full-page
+    // slip resolves with.
+    async findPlanOrderHeader(planId: string, cycleNumber: number, cycleDay: number) {
+
+        return prisma.chemotherapy_plan_order.findUnique({
+            where: {
+                chemotherapy_plan_id_cycle_number_cycle_day: {
+                    chemotherapy_plan_id: planId,
+                    cycle_number: cycleNumber,
+                    cycle_day: cycleDay
+                }
+            }
+        });
+
+    }
+
     async listSlips(query: GetSlipsQuery) {
 
         const {
@@ -221,12 +238,40 @@ export class PharmacyRepository {
     // Pharmacy Master & Medicine Master helpers
     // ---------------------------------------------------------------
 
-    async findPharmacyMasterItems(medicineIds?: string[]) {
+    async findPharmacyMasterItems(medicineIds?: string[], branchId?: string | null, genericIds?: string[]) {
+
+        // Brands are matched on the ORDERED medicine's generic, so a row for a
+        // different brand of the same generic must be included even though its
+        // medicine_id differs. medicine_id alone is only a fallback for a
+        // master row that names no generic.
+        const conditions: Prisma.pharmacy_masterWhereInput[] = [];
+
+        if ((medicineIds && medicineIds.length > 0) || (genericIds && genericIds.length > 0)) {
+
+            const match: Prisma.pharmacy_masterWhereInput[] = [];
+
+            if (medicineIds && medicineIds.length > 0) {
+                match.push({ medicine_id: { in: medicineIds } });
+            }
+
+            if (genericIds && genericIds.length > 0) {
+                match.push({ generic_id: { in: genericIds } });
+            }
+
+            conditions.push({ OR: match });
+
+        }
+
+        // Branch-owned rows plus the shared (null-branch) catalog, so a
+        // branch-scoped pickup does not hide the common medicines.
+        if (branchId) {
+            conditions.push({ OR: [{ branch_id: branchId }, { branch_id: null }] });
+        }
 
         const where: Prisma.pharmacy_masterWhereInput = { is_active: true };
 
-        if (medicineIds && medicineIds.length > 0) {
-            where.medicine_id = { in: medicineIds };
+        if (conditions.length > 0) {
+            where.AND = conditions;
         }
 
         return prisma.pharmacy_master.findMany({

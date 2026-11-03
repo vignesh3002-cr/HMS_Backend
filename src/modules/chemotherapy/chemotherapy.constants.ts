@@ -122,6 +122,18 @@ export const ADMINISTERED_DRUG_ROLES: string[] = [
     DRUG_ROLE.PREMEDICATION, DRUG_ROLE.PRIMARY, DRUG_ROLE.SUPPORTIVE
 ];
 
+export const PLAN_INVESTIGATION_CATEGORY = {
+    LAB: "LAB",
+    NON_LAB: "NON_LAB",
+    TISSUE: "TISSUE"
+} as const;
+
+export const PLAN_INVESTIGATION_STATUS = {
+    PLANNED: "PLANNED",
+    ORDERED: "ORDERED",
+    CANCELLED: "CANCELLED"
+} as const;
+
 // Adverse events are graded on the CTCAE 1-5 scale (also used for an
 // infusion reaction's grade); severity is the matching plain-language label.
 export const ADVERSE_EVENT_GRADES = ["1", "2", "3", "4", "5"];
@@ -132,6 +144,7 @@ export const ID_ENTITY = {
     PLAN_ITEM: "CHEMOTHERAPY_PLAN_ITEM",
     PLAN_HYDRATION: "CHEMOTHERAPY_PLAN_HYDRATION",
     PLAN_ORDER: "CHEMOTHERAPY_PLAN_ORDER",
+    PLAN_INVESTIGATION: "CHEMOTHERAPY_PLAN_INVESTIGATION",
     CYCLE: "CHEMOTHERAPY_CYCLE",
     ADMINISTRATION: "CHEMOTHERAPY_ADMINISTRATION",
     ADVERSE_EVENT: "CHEMOTHERAPY_ADVERSE_EVENT",

@@ -16,7 +16,8 @@
     "db:seed:clinical-master": "ts-node prisma/seedClinical_Master_Details.ts",
     "db:seed:comorbidities": "ts-node prisma/seedComorbidityMaster.ts",
     "db:seed:consultation": "ts-node prisma/seedConsultation.ts",
-    "db:seed:cancer-scores": "ts-node prisma/seedCancerScores.ts"
+    "db:seed:cancer-scores": "ts-node prisma/seedCancerScores.ts",
+    "db:seed:drug-monitoring": "ts-node prisma/seedDrugMonitoringMappings.ts"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +27,7 @@
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.10.0",
     "@types/compression": "^1.8.1",
+    "@types/multer": "^2.3.0",
     "approve": "^0.0.12",
     "bcrypt": "^6.0.0",
     "compression": "^1.8.2",
@@ -35,9 +37,11 @@
     "express": "^5.2.1",
     "express-validator": "^7.3.2",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.5.0",
     "nodemailer": "^9.0.3",
     "openai": "^7.17.0",
-    "scripts": "^0.1.0"
+    "scripts": "^0.1.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -54,7 +58,7 @@
   "allowScripts": {
     "bcrypt@6.0.0": true,
     "scripts@0.1.0": true,
-    "@prisma/engines@7.9.0": true,
-    "prisma@7.9.0": true
+    "@prisma/engines@7.10.0": true,
+    "prisma@7.10.0": true
   }
 }

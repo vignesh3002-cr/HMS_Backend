@@ -12,12 +12,44 @@ export interface CreateCustomMasterDTO {
 
 }
 
+export interface DrugConsumptionItem {
+
+    code: string;
+    name: string;
+    others?: string;
+    /* Optional duration (value + day/week/month/year unit) and Command(s),
+       stored inside the drug_consumption JSON. */
+    duration_value?: number | null;
+    duration_unit?: string | null;
+    commands?: string | null;
+
+}
+
 export interface PersonalHistoryPayload {
 
     immunization?: { code: string; name: string; others?: string }[] | null;
-    drug_consumption?: { code: string; name: string; others?: string }[] | null;
+    drug_consumption?: DrugConsumptionItem[] | null;
     diet_type?: string | null;
+    family_history?: FamilyHistoryPayload | null;
 
+}
+
+export type FamilyHistoryStatus = "PRESENT" | "NOT_PRESENT";
+
+export interface FamilyHistoryEntry {
+    // 1st / 2nd / 3rd (kept as text so a hand-typed value never fails a save).
+    degree: string;
+    // Master relative type name or a value typed by hand.
+    relative_type: string;
+    // Free text; a relative may have several conditions comma-separated.
+    condition?: string | null;
+    age_at_diagnosis?: string | null;
+    remarks?: string | null;
+}
+
+export interface FamilyHistoryPayload {
+    status: FamilyHistoryStatus;
+    entries: FamilyHistoryEntry[];
 }
 
 export interface EncounterMolecularTestDTO {

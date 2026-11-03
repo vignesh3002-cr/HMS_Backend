@@ -1,12 +1,28 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
+const multer_1 = __importDefault(require("multer"));
 const chemotherapy_controller_1 = require("./chemotherapy.controller");
 const auth_middleware_1 = require("../auth/auth.middleware");
 const authorize_1 = require("../../middleware/authorize");
 const chemotherapy_validation_1 = require("./chemotherapy.validation");
 const router = (0, express_1.Router)();
 const controller = new chemotherapy_controller_1.ChemotherapyController();
+// Memory storage for Excel file uploads (kept in memory, streamed to Prisma).
+const upload = (0, multer_1.default)({
+    storage: multer_1.default.memoryStorage(),
+    limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
+    fileFilter: (_req, file, cb) => {
+        const allowed = [
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+            "application/vnd.ms-excel", // .xls
+        ];
+        cb(null, allowed.includes(file.mimetype));
+    },
+});
 // ---------------- Regimen protocols ----------------
 // Registered before "/plans/:planId" etc. so "/regimen-protocols" and its
 // sub-paths are never swallowed by a param route (same trap documented in
@@ -40,6 +56,8 @@ router.get("/medicines", auth_middleware_1.authenticate, (0, authorize_1.authori
 router.get("/medicines/dilution-medicines", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), controller.listDilutionMedicines.bind(controller));
 router.get("/medicines/by-cancer-subtype", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), controller.getMedicinesByCancerTypeAndSubtype.bind(controller));
 router.get("/medicines/by-role", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), controller.listMedicinesByDrugRole.bind(controller));
+router.get("/medicine-investigations", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("chemo.plan.read", "chemo.plan.update"), chemotherapy_validation_1.medicineInvestigationsValidation, controller.getMedicineInvestigations.bind(controller));
+router.post("/medicine-investigations/import", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.manage"), chemotherapy_validation_1.importMedicineInvestigationsValidation, upload.single("file"), controller.importMedicineInvestigations.bind(controller));
 router.get("/protocol-field-options", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), controller.getProtocolFieldOptions.bind(controller));
 router.get("/forms-and-brands", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), controller.getGenericFormsAndBrands.bind(controller));
 router.get("/treatment-intents", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), controller.listTreatmentIntents.bind(controller));
@@ -84,6 +102,7 @@ router.post("/plans/:planId/orders/complete", auth_middleware_1.authenticate, (0
 router.get("/plans/:planId/orders", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.planIdParamValidation, controller.listPlanOrders.bind(controller));
 router.get("/plans/:planId/orders/:cycleNumber/:cycleDay", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.planOrderParamValidation, controller.getPlanOrder.bind(controller));
 router.put("/plans/:planId/orders/:cycleNumber/:cycleDay", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.savePlanOrderValidation, controller.savePlanOrder.bind(controller));
+router.patch("/plans/:planId/orders/:cycleNumber/:cycleDay/investigations/status", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.planInvestigationStatusValidation, controller.updatePlanInvestigationStatus.bind(controller));
 // ---------------- Cycles ----------------
 router.post("/plans/:planId/cycles", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.cycle.manage"), chemotherapy_validation_1.createCycleValidation, controller.createCycle.bind(controller));
 router.get("/plans/:planId/cycles", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.planIdParamValidation, controller.listCyclesForPlan.bind(controller));

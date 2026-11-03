@@ -1,4 +1,6 @@
 import { Prisma } from "@prisma/client";
+import * as XLSX from "xlsx";
+import crypto from "crypto";
 import prisma from "../../config/prisma";
 import { generateId, generateIdBatch } from "../../utils/idGenerator";
 import { TOP_LEVEL_ADMIN_ROLES } from "../../permissions/roles";
@@ -23,7 +25,9 @@ import {
     ADMINISTRATION_STATUSES,
     ADMINISTRATION_REASON_REQUIRED,
     ADMINISTERED_DRUG_ROLES,
-    AdministrationStatus
+    AdministrationStatus,
+    PLAN_INVESTIGATION_CATEGORY,
+    PLAN_INVESTIGATION_STATUS
 } from "./chemotherapy.constants";
 import {
     CreatePlanDto,
@@ -33,6 +37,8 @@ import {
     AddPlanItemDto,
     PlanItemInputDto,
     PlanHydrationRowDto,
+    PlanInvestigationRowDto,
+    UpdatePlanInvestigationStatusDto,
     CreateCycleDto,
     UpdateCycleDto,
     CycleStatusChangeDto,
@@ -230,6 +236,105 @@ function planHydrationCreateData(
         dilution_volume_unit: row.dilution_volume_unit ?? null,
         guidance: row.guidance ?? null,
         display_order: index + 1,
+        created_by: actingUserId
+    };
+
+}
+
+function normalizedMedicineText(value?: string | null): string {
+
+    return (value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+}
+
+function scoreMedicineMatch(
+    target: { medicine_id: string; medicine_name: string; generic_name: string | null },
+    mapping: { medicine_id: string; medicine_name: string; generic_name: string | null }
+): number {
+
+    if (target.medicine_id === mapping.medicine_id) {
+        return 10000;
+    }
+
+    const targetName = normalizedMedicineText(target.medicine_name);
+    const mappingName = normalizedMedicineText(mapping.medicine_name);
+    const targetGeneric = normalizedMedicineText(target.generic_name);
+    const mappingGeneric = normalizedMedicineText(mapping.generic_name);
+
+    if (mappingName && targetName === mappingName) {
+        return 3000 + mappingName.length;
+    }
+
+    if (mappingName.length >= 4 && targetName.includes(mappingName)) {
+        return 2000 + mappingName.length;
+    }
+
+    if (mappingGeneric && targetGeneric === mappingGeneric) {
+        return 1000 + mappingGeneric.length;
+    }
+
+    if (mappingGeneric.length >= 4 && targetName.includes(mappingGeneric)) {
+        return 900 + mappingGeneric.length;
+    }
+
+    return 0;
+
+}
+
+function normalizedInvestigationKey(row: PlanInvestigationRowDto): string {
+
+    const name = row.investigation_name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const identity = row.investigation_category === PLAN_INVESTIGATION_CATEGORY.LAB && row.lab_test_id
+        ? row.lab_test_id
+        : name;
+
+    return `${row.investigation_category}:${identity}`.slice(0, 220);
+
+}
+
+function planInvestigationCreateData(
+    planId: string,
+    investigationId: string,
+    index: number,
+    row: PlanInvestigationRowDto,
+    actingUserId: string,
+    planOrderId: string,
+    carried?: {
+        item_status?: string | null;
+        lab_order_id?: string | null;
+        lab_order_item_id?: string | null;
+    } | null
+): Prisma.chemotherapy_plan_order_investigationUncheckedCreateInput {
+
+    /* A row already ordered earlier keeps its ORDERED status / lab links when
+       the tab is saved again with the same (often stale) PLANNED row: the
+       status only changes through the explicit status endpoint. */
+    const incomingStatus = row.item_status ?? null;
+    const itemStatus = carried?.item_status === PLAN_INVESTIGATION_STATUS.ORDERED
+        && (!incomingStatus || incomingStatus === PLAN_INVESTIGATION_STATUS.PLANNED)
+        ? PLAN_INVESTIGATION_STATUS.ORDERED
+        : incomingStatus ?? PLAN_INVESTIGATION_STATUS.PLANNED;
+
+    return {
+        investigation_id: investigationId,
+        plan_order_id: planOrderId,
+        chemotherapy_plan_id: planId,
+        lab_test_id: row.investigation_category === PLAN_INVESTIGATION_CATEGORY.LAB ? row.lab_test_id || null : null,
+        investigation_name: row.investigation_name.trim(),
+        investigation_category: row.investigation_category,
+        investigation_type: row.investigation_type?.trim() || null,
+        source_medicine_ids: row.source_medicine_ids?.trim() || null,
+        source_drug_names: row.source_drug_names?.trim() || null,
+        source_test_text: row.source_test_text?.trim() || null,
+        monitoring_phase: row.monitoring_phase?.trim() || "BASELINE",
+        priority: row.priority?.trim() || "Normal",
+        target_date: row.target_date ? new Date(row.target_date) : null,
+        clinical_notes: row.clinical_notes?.trim() || null,
+        item_status: itemStatus,
+        lab_order_id: row.lab_order_id?.trim() || carried?.lab_order_id || null,
+        lab_order_item_id: row.lab_order_item_id?.trim() || carried?.lab_order_item_id || null,
+        display_order: index + 1,
+        normalized_key: normalizedInvestigationKey(row),
         created_by: actingUserId
     };
 
@@ -440,6 +545,13 @@ export class ChemotherapyService {
             drugRole: meta?.drugRole
         });
         return created.medicine_id;
+    }
+
+    private async resolveItemGenericName(medicineId?: string | null): Promise<string | null> {
+        const id = (medicineId ?? "").trim();
+        if (!id) return null;
+        const medicine = await this.repository.findMedicineById(id);
+        return medicine?.generic_name ?? null;
     }
 
     private async resolveDtoMedicines(dto: any): Promise<void> {
@@ -1016,11 +1128,13 @@ export class ChemotherapyService {
 
                 const itemId = await this.repository.generateRegimenProtocolItemId(tx);
 
+                const genericName = await this.resolveItemGenericName(item.medicine_id);
+
                 await this.repository.createRegimenProtocolItem(tx, {
                     protocol_item_id: itemId,
                     protocol_id: newProtocolId,
                     medicine_id: item.medicine_id,
-                    generic_name: item.generic_name ?? null,
+                    generic_name: genericName,
                     drug_role: item.drug_role ?? "PRIMARY",
                     drug_sequence: item.drug_sequence,
                     drug_type: item.drug_type ?? null,
@@ -1343,7 +1457,7 @@ export class ChemotherapyService {
                 protocol_item_id: itemId,
                 protocol_id: protocolId,
                 medicine_id: item.medicine_id,
-                generic_name: item.generic_name ?? null,
+                generic_name: medicine.generic_name,
                 drug_role: item.drug_role ?? "PRIMARY",
                 drug_sequence: item.drug_sequence,
                 drug_type: item.drug_type ?? null,
@@ -1437,11 +1551,19 @@ export class ChemotherapyService {
             throw new Error("Protocol item not found on this protocol");
         }
 
+        /* Re-resolve generic_name when the medicine changes; otherwise keep the
+           value already stored on the item. */
+        const targetMedicineId = dto.medicine_id ?? item.medicine_id;
+        const genericName =
+            dto.medicine_id && dto.medicine_id !== item.medicine_id
+                ? await this.resolveItemGenericName(dto.medicine_id)
+                : item.generic_name ?? null;
+
         await prisma.$transaction(async (tx) => {
 
             const updated = {
-                medicine_id: dto.medicine_id ?? item.medicine_id,
-                generic_name: dto.generic_name !== undefined ? dto.generic_name : (item as any).generic_name,
+                medicine_id: targetMedicineId,
+                generic_name: genericName,
                 drug_role: dto.drug_role ?? item.drug_role,
                 drug_sequence: dto.drug_sequence ?? item.drug_sequence,
                 drug_type: dto.drug_type ?? item.drug_type,
@@ -4142,6 +4264,531 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
     }
 
+    // Suggests baseline lab / non-lab / tissue investigations for the medicines
+    // on a cycle-day order. Mappings were imported for curated drug ids, while
+    // existing protocols use legacy medicine ids, so an exact id match, the
+    // medicine name, and the generic name are all considered (longest name wins
+    // - e.g. Trastuzumab deruxtecan over Trastuzumab).
+    async getMedicineInvestigations(medicineIds: string[]) {
+
+        const ids = [...new Set(medicineIds.map((id) => id.trim()).filter(Boolean))];
+
+        if (ids.length === 0) {
+            return { lab: [], nonLab: [] };
+        }
+
+        const [medicines, labMappings, nonLabMappings] = await Promise.all([
+            this.repository.findActiveMedicinesByIds(ids),
+            this.repository.listDrugLabMonitoringMappings(),
+            this.repository.listDrugNonLabMappings()
+        ]);
+
+        const mappingMedicines = new Map<string, { medicine_id: string; medicine_name: string; generic_name: string | null }>();
+
+        for (const row of [...labMappings, ...nonLabMappings]) {
+            mappingMedicines.set(row.medicine_master.medicine_id, row.medicine_master);
+        }
+
+        const matchedByMedicine = new Map<string, { medicine_id: string; medicine_name: string; generic_name: string | null }>();
+
+        for (const medicine of medicines) {
+
+            let best: { medicine_id: string; medicine_name: string; generic_name: string | null } | null = null;
+            let bestScore = 0;
+
+            for (const mappingMedicine of mappingMedicines.values()) {
+                const score = scoreMedicineMatch(medicine, mappingMedicine);
+                if (score > bestScore) {
+                    best = mappingMedicine;
+                    bestScore = score;
+                }
+            }
+
+            if (best) {
+                matchedByMedicine.set(medicine.medicine_id, best);
+            }
+
+        }
+
+        const matchedMappingIds = new Set([...matchedByMedicine.values()].map((medicine) => medicine.medicine_id));
+
+        if (matchedMappingIds.size === 0) {
+            return { lab: [], nonLab: [] };
+        }
+
+        const lab = new Map<string, {
+            lab_test_id: string;
+            investigation_name: string;
+            investigation_category: string;
+            investigation_type: string | null;
+            test_code: string | null;
+            sample_type: string | null;
+            category_name: string | null;
+            source_test_text: string | null;
+            monitoring_phase: string;
+            priority: string;
+            item_status: string;
+            source_medicine_ids: Set<string>;
+            source_drug_names: Set<string>;
+        }>();
+
+        for (const row of labMappings) {
+
+            if (!matchedMappingIds.has(row.medicine_id)) {
+                continue;
+            }
+
+            const key = `${row.lab_test_id}:${row.monitoring_phase ?? "BASELINE"}`;
+            const current = lab.get(key) ?? {
+                lab_test_id: row.lab_test_id,
+                investigation_name: row.lab_test_master.test_name,
+                investigation_category: PLAN_INVESTIGATION_CATEGORY.LAB,
+                investigation_type: row.lab_test_master.sample_type ?? row.lab_test_master.lab_test_category?.category_name ?? null,
+                test_code: row.lab_test_master.test_code ?? null,
+                sample_type: row.lab_test_master.sample_type ?? null,
+                category_name: row.lab_test_master.lab_test_category?.category_name ?? null,
+                source_test_text: row.source_test_text ?? null,
+                monitoring_phase: row.monitoring_phase ?? "BASELINE",
+                priority: "Normal",
+                item_status: PLAN_INVESTIGATION_STATUS.PLANNED,
+                source_medicine_ids: new Set<string>(),
+                source_drug_names: new Set<string>()
+            };
+
+            current.source_medicine_ids.add(row.medicine_id);
+
+            for (const [targetId, mappingMedicine] of matchedByMedicine.entries()) {
+                if (mappingMedicine.medicine_id === row.medicine_id) {
+                    const target = medicines.find((medicine) => medicine.medicine_id === targetId);
+                    if (target) current.source_drug_names.add(target.medicine_name);
+                }
+            }
+
+            if (row.source_test_text) current.source_test_text = row.source_test_text;
+            lab.set(key, current);
+
+        }
+
+        const nonLab = new Map<string, {
+            investigation_name: string;
+            investigation_category: string;
+            investigation_type: string | null;
+            source_test_text: string | null;
+            monitoring_phase: string;
+            priority: string;
+            item_status: string;
+            source_medicine_ids: Set<string>;
+            source_drug_names: Set<string>;
+        }>();
+
+        for (const row of nonLabMappings) {
+
+            if (!matchedMappingIds.has(row.medicine_id)) {
+                continue;
+            }
+
+            const type = (row.investigation_type ?? "").toLowerCase();
+            const category = type.includes("tissue") || type.includes("molecular")
+                ? PLAN_INVESTIGATION_CATEGORY.TISSUE
+                : PLAN_INVESTIGATION_CATEGORY.NON_LAB;
+            const key = `${category}:${normalizedMedicineText(row.investigation_name)}`;
+            const current = nonLab.get(key) ?? {
+                investigation_name: row.investigation_name,
+                investigation_category: category,
+                investigation_type: row.investigation_type ?? null,
+                source_test_text: null,
+                monitoring_phase: "BASELINE",
+                priority: "Normal",
+                item_status: PLAN_INVESTIGATION_STATUS.PLANNED,
+                source_medicine_ids: new Set<string>(),
+                source_drug_names: new Set<string>()
+            };
+
+            current.source_medicine_ids.add(row.medicine_id);
+
+            for (const [targetId, mappingMedicine] of matchedByMedicine.entries()) {
+                if (mappingMedicine.medicine_id === row.medicine_id) {
+                    const target = medicines.find((medicine) => medicine.medicine_id === targetId);
+                    if (target) current.source_drug_names.add(target.medicine_name);
+                }
+            }
+
+            nonLab.set(key, current);
+
+        }
+
+        const serialize = <T extends { source_medicine_ids: Set<string>; source_drug_names: Set<string> }>(row: T) => ({
+            ...row,
+            source_medicine_ids: [...row.source_medicine_ids].join(","),
+            source_drug_names: [...row.source_drug_names].join(", "),
+            lab_test_id: (row as T & { lab_test_id?: string | null }).lab_test_id ?? null
+        });
+
+        return {
+            lab: [...lab.values()]
+                .map(serialize)
+                .sort((a, b) => a.investigation_name.localeCompare(b.investigation_name)),
+            nonLab: [...nonLab.values()]
+                .map(serialize)
+                .sort((a, b) => a.investigation_name.localeCompare(b.investigation_name))
+        };
+
+    }
+
+    // ---------------------------------------------------------------
+    // Import drug->monitoring mappings from an uploaded Excel file.
+    // Populates drug_lab_monitoring and drug_non_lab_investigation so the
+    // medicine-investigations endpoint can auto-suggest baseline lab tests
+    // and non-lab/tissue investigations for ordered medicines.
+    // ---------------------------------------------------------------
+    async importDrugMonitoringMappings(fileBuffer: Buffer, fileName: string) {
+
+        const workbook = XLSX.read(fileBuffer, { type: "buffer" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const raw = XLSX.utils.sheet_to_json<any>(worksheet, { header: 1 });
+
+        if (!raw || raw.length === 0) {
+            throw new Error("Excel sheet is empty.");
+        }
+
+        const headers = (raw[0] as any[]).map((h) => String(h ?? "").trim());
+        const normalize = (value?: string | null) =>
+            (value ?? "")
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, " ")
+                .trim();
+
+        const scoreTestMatch = (
+            target: { lab_test_id: string; test_name: string },
+            mappingName: string
+        ): number => {
+            const targetName = normalize(target.test_name);
+            const mapping = normalize(mappingName);
+            if (!mapping) return 0;
+            if (targetName === mapping) return 10000;
+            if (mapping.length >= 4 && targetName.includes(mapping))
+                return 2000 + mapping.length;
+            if (targetName.length >= 4 && mapping.includes(targetName))
+                return 1500 + targetName.length;
+            const tTokens = new Set(targetName.split(" ").filter(Boolean));
+            const mTokens = new Set(mapping.split(" ").filter(Boolean));
+            let overlap = 0;
+            for (const t of tTokens) if (mTokens.has(t)) overlap += 1;
+            return overlap > 0 ? overlap * 100 : 0;
+        };
+
+        const findBestLabTest = (
+            testName: string,
+            labTestByName: Map<string, { lab_test_id: string; test_name: string }>,
+            labTests: { lab_test_id: string; test_name: string }[]
+        ): { lab_test_id: string; test_name: string } | null => {
+            const key = normalize(testName);
+            if (key && labTestByName.has(key)) {
+                return labTestByName.get(key)!;
+            }
+            let best: { lab_test_id: string; test_name: string } | null = null;
+            let bestScore = 0;
+            for (const test of labTests) {
+                const score = scoreTestMatch(test, testName);
+                if (score > bestScore) {
+                    best = test;
+                    bestScore = score;
+                }
+            }
+            return bestScore >= 200 ? best : null;
+        };
+
+        const findColumn = (candidates: string[]): string | undefined => {
+            const normalized = headers.map((h) => normalize(h));
+            for (const candidate of candidates) {
+                const cn = normalize(candidate);
+                const exactIndex = normalized.findIndex((h) => h === cn);
+                if (exactIndex !== -1) return headers[exactIndex];
+                const containsIndex = normalized.findIndex(
+                    (h) => h.includes(cn) || cn.includes(h)
+                );
+                if (containsIndex !== -1) return headers[containsIndex];
+            }
+            return undefined;
+        };
+
+        const colMedicine = findColumn([
+            "medicine_name",
+            "medicine name",
+            "drug name",
+            "drug_name",
+        ]);
+        const colGeneric = findColumn(["generic_name", "generic name"]);
+        const colLabTest = findColumn([
+            "lab_test_name",
+            "lab test name",
+            "blood test",
+            "lab test",
+        ]);
+        const colPhase = findColumn([
+            "monitoring_phase",
+            "monitoring phase",
+            "phase",
+        ]);
+        const colInvestigation = findColumn([
+            "investigation_name",
+            "investigation name",
+            "non-lab investigation",
+            "other investigation",
+            "non lab investigation",
+        ]);
+        const colInvestigationType = findColumn([
+            "investigation_type",
+            "investigation type",
+            "type",
+        ]);
+        const colSourceText = findColumn([
+            "source_test_text",
+            "source test text",
+            "notes",
+            "remarks",
+        ]);
+
+        if (!colMedicine) {
+            throw new Error(
+                "No medicine name column found in Excel. Expected one of: medicine_name, medicine name, drug name, drug_name."
+            );
+        }
+
+        const medicineIdx = headers.indexOf(colMedicine);
+        const genericIdx = colGeneric ? headers.indexOf(colGeneric) : -1;
+        const labTestIdx = colLabTest ? headers.indexOf(colLabTest) : -1;
+        const phaseIdx = colPhase ? headers.indexOf(colPhase) : -1;
+        const investigationIdx = colInvestigation
+            ? headers.indexOf(colInvestigation)
+            : -1;
+        const investigationTypeIdx = colInvestigationType
+            ? headers.indexOf(colInvestigationType)
+            : -1;
+        const sourceTextIdx = colSourceText ? headers.indexOf(colSourceText) : -1;
+
+        const medicines = await prisma.medicine_master.findMany({
+            where: { is_active: true },
+            select: { medicine_id: true, medicine_name: true, generic_name: true },
+        });
+
+        const medicineByName = new Map(
+            medicines.map((m) => [normalize(m.medicine_name), m])
+        );
+        const medicineByGeneric = new Map(
+            medicines
+                .filter((m) => m.generic_name)
+                .map((m) => [normalize(m.generic_name)!, m])
+        );
+
+        const labTests = await prisma.lab_test_master.findMany({
+            where: { test_status: 1 },
+            select: { lab_test_id: true, test_name: true },
+        });
+        const labTestByName = new Map(
+            labTests.map((t) => [normalize(t.test_name), t])
+        );
+
+        const resolveMedicineId = (
+            medicineName: string | null,
+            genericName: string | null
+        ): string | null => {
+            const nameKey = normalize(medicineName);
+            const genericKey = normalize(genericName);
+            if (nameKey && medicineByName.has(nameKey)) {
+                return medicineByName.get(nameKey)!.medicine_id;
+            }
+            if (genericKey && medicineByGeneric.has(genericKey)) {
+                return medicineByGeneric.get(genericKey)!.medicine_id;
+            }
+            return null;
+        };
+
+        const resolveLabTestId = (
+            testName: string | null
+        ): string | null => {
+            if (!testName) return null;
+            const best = findBestLabTest(testName, labTestByName, labTests);
+            return best?.lab_test_id ?? null;
+        };
+
+        let rowsProcessed = 0;
+        let labMappingsUpserted = 0;
+        let nonLabMappingsUpserted = 0;
+        let medicinesUnmatched = 0;
+        let labTestsUnmatched = 0;
+        const unmatched: string[] = [];
+
+        for (const row of raw.slice(1) as any[]) {
+            const medicineName =
+                medicineIdx !== -1 ? row[medicineIdx] : null;
+            if (!medicineName || String(medicineName).trim() === "") {
+                continue;
+            }
+
+            rowsProcessed += 1;
+            const genericName =
+                genericIdx !== -1 ? row[genericIdx] : null;
+            const medicineId = resolveMedicineId(
+                String(medicineName),
+                genericName ? String(genericName) : null
+            );
+
+            if (!medicineId) {
+                medicinesUnmatched += 1;
+                unmatched.push(`Medicine not found: ${medicineName}`);
+                continue;
+            }
+
+            const labTestName =
+                labTestIdx !== -1 ? row[labTestIdx] : null;
+            // A cell may list several tests separated by ";" (e.g.
+            // "Pregnancy test; HBV screen; CBC"), so create one mapping
+            // per individual test.
+            const labTestsList = labTestName
+                ? String(labTestName).split(";").map((t) => t.trim()).filter(Boolean)
+                : [];
+            for (const singleLabTest of labTestsList) {
+                const labTestId = resolveLabTestId(singleLabTest);
+                if (!labTestId) {
+                    labTestsUnmatched += 1;
+                    unmatched.push(
+                        `Lab test not found for medicine ${medicineName}: ${singleLabTest}`
+                    );
+                    continue;
+                }
+                await prisma.drug_lab_monitoring.upsert({
+                    where: {
+                        medicine_id_lab_test_id_monitoring_phase: {
+                            medicine_id: medicineId,
+                            lab_test_id: labTestId,
+                            monitoring_phase:
+                                (phaseIdx !== -1
+                                    ? String(row[phaseIdx])
+                                    : "BASELINE"
+                                ).trim() || "BASELINE",
+                        },
+                    },
+                    update: {
+                        source_test_text:
+                            sourceTextIdx !== -1
+                                ? String(row[sourceTextIdx])
+                                : null,
+                        active_status: 1,
+                    },
+                    create: {
+                        monitoring_id: crypto.randomUUID(),
+                        medicine_id: medicineId,
+                        lab_test_id: labTestId,
+                        source_test_text:
+                            sourceTextIdx !== -1
+                                ? String(row[sourceTextIdx])
+                                : null,
+                        monitoring_phase:
+                            (phaseIdx !== -1
+                                ? String(row[phaseIdx])
+                                : "BASELINE"
+                            ).trim() || "BASELINE",
+                        active_status: 1,
+                    },
+                });
+                labMappingsUpserted += 1;
+            }
+
+            const investigationName =
+                investigationIdx !== -1 ? row[investigationIdx] : null;
+            if (investigationName && String(investigationName).trim() !== "") {
+                await prisma.drug_non_lab_investigation.upsert({
+                    where: {
+                        medicine_id_investigation_name: {
+                            medicine_id: medicineId,
+                            investigation_name: String(investigationName).trim(),
+                        },
+                    },
+                    update: {
+                        investigation_type:
+                            investigationTypeIdx !== -1
+                                ? String(row[investigationTypeIdx])
+                                : null,
+                        active_status: 1,
+                    },
+                    create: {
+                        investigation_id: crypto.randomUUID(),
+                        medicine_id: medicineId,
+                        investigation_name: String(investigationName).trim(),
+                        investigation_type:
+                            investigationTypeIdx !== -1
+                                ? String(row[investigationTypeIdx])
+                                : null,
+                        active_status: 1,
+                    },
+                });
+                nonLabMappingsUpserted += 1;
+            }
+        }
+
+        return {
+            fileName,
+            sheetName,
+            rowsProcessed,
+            labMappingsUpserted,
+            nonLabMappingsUpserted,
+            medicinesUnmatched,
+            labTestsUnmatched,
+            unmatched,
+        };
+    }
+
+    async updatePlanInvestigationStatus(
+        planId: string,
+        cycleNumber: number,
+        cycleDay: number,
+        dto: UpdatePlanInvestigationStatusDto,
+        actingUserId: string
+    ) {
+
+        const plan = await this.repository.findPlanForUpdate(prisma, planId);
+
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+
+        const order = await this.repository.findPlanOrder(prisma, planId, cycleNumber, cycleDay);
+
+        if (!order) {
+            throw new Error("Cycle day order not found");
+        }
+
+        if (order.order_status === PLAN_ORDER_STATUS.COMPLETED) {
+            throw new Error("This cycle day is already completed and can no longer be changed");
+        }
+
+        const updates = dto.updates ?? [];
+
+        if (updates.length === 0) {
+            return { updated: 0 };
+        }
+
+        if (updates.length > 100) {
+            throw new Error("Too many investigation updates (maximum 100)");
+        }
+
+        if (updates.some((update) => !update.investigation_id && !update.lab_test_id)) {
+            throw new Error("Each investigation update requires investigation_id or lab_test_id");
+        }
+
+        const updated = await this.repository.updatePlanOrderInvestigationStatus(
+            prisma,
+            order.plan_order_id,
+            updates,
+            actingUserId
+        );
+
+        return { updated };
+
+    }
+
     async savePlanOrder(planId: string, cycleNumber: number, cycleDay: number, dto: SavePlanOrderDto, actingUserId: string) {
 
         const plan = await this.repository.findPlanForUpdate(prisma, planId);
@@ -4163,8 +4810,31 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
         }
 
         const items = dto.items ?? [];
+        const saveInvestigations = Array.isArray(dto.investigations);
 
         await this.assertPlanItemDrugs(items);
+
+        if (saveInvestigations) {
+
+            const keys = new Set<string>();
+
+            for (const row of dto.investigations as PlanInvestigationRowDto[]) {
+
+                if (!row.investigation_name?.trim()) {
+                    throw new Error("Each investigation requires a name");
+                }
+
+                const key = normalizedInvestigationKey(row);
+
+                if (keys.has(key)) {
+                    throw new Error(`Duplicate investigation: ${row.investigation_name}`);
+                }
+
+                keys.add(key);
+
+            }
+
+        }
 
         if (dto.copied_from_order_id) {
 
@@ -4214,6 +4884,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 ...(dto.encounter_no ? { encounter_no: dto.encounter_no } : {}),
                 ...(dto.copied_from_order_id ? { copied_from_order_id: dto.copied_from_order_id } : {}),
                 ...(saveHydration ? { hydration_saved: true } : {}),
+                ...(saveInvestigations ? { investigations_saved: true } : {}),
                 // Instructions left out (row edits, Discharge Medication
                 // re-save) keep what was saved; empty text clears them.
                 ...(dto.chemo_instructions !== undefined
@@ -4293,6 +4964,40 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
             }
 
+            if (saveInvestigations) {
+
+                const rows = dto.investigations as PlanInvestigationRowDto[];
+
+                /* The tab replaces its rows with the submitted list. Rows that
+                   were already ordered (status / lab links set by the order or
+                   Discharge flow) are matched by normalized_key so a re-save
+                   never drops an ORDERED investigation back to PLANNED. */
+                const carriedByKey = new Map(
+                    (await this.repository.listPlanOrderInvestigations(tx, planOrderId))
+                        .map((row) => [row.normalized_key, row])
+                );
+
+                await this.repository.deletePlanOrderInvestigations(tx, planOrderId);
+
+                const investigationIds = await generateIdBatch(tx, ID_ENTITY.PLAN_INVESTIGATION, rows.length);
+
+                for (const [index, row] of rows.entries()) {
+                    await this.repository.createPlanOrderInvestigation(
+                        tx,
+                        planInvestigationCreateData(
+                            planId,
+                            investigationIds[index],
+                            index,
+                            row,
+                            actingUserId,
+                            planOrderId,
+                            carriedByKey.get(normalizedInvestigationKey(row))
+                        )
+                    );
+                }
+
+            }
+
             await logAudit(tx, {
                 entity_type: "chemotherapy_plan_order",
                 entity_id: planOrderId,
@@ -4305,6 +5010,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                     cycle_day: cycleDay,
                     item_count: items.length,
                     hydration_count: saveHydration ? (dto.hydration as PlanHydrationRowDto[]).length : null,
+                    investigation_count: saveInvestigations ? (dto.investigations as PlanInvestigationRowDto[]).length : null,
                     copied_from_order_id: dto.copied_from_order_id ?? null,
                     encounter_no: dto.encounter_no ?? null
                 })

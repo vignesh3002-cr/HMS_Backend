@@ -629,6 +629,7 @@ export class ChemotherapyRepository {
     }
 
     async listAllActiveMedicines() {
+
         return prisma.medicine_master.findMany({
             where: { is_active: true },
             select: {
@@ -642,6 +643,44 @@ export class ChemotherapyRepository {
                 route: true
             },
             orderBy: { medicine_name: "asc" }
+        });
+    }
+
+    async findActiveMedicinesByIds(medicineIds: string[]) {
+
+        if (medicineIds.length === 0) {
+            return [];
+        }
+
+        return prisma.medicine_master.findMany({
+            where: { medicine_id: { in: medicineIds }, is_active: true },
+            select: { medicine_id: true, medicine_name: true, generic_name: true }
+        });
+    }
+
+    // The drug-monitoring mappings are small reference tables. Load them with
+    // their medicine/test names so the service can match legacy plan medicine
+    // ids by name as well as by id.
+    async listDrugLabMonitoringMappings() {
+
+        return prisma.drug_lab_monitoring.findMany({
+            where: { active_status: 1 },
+            include: {
+                medicine_master: { select: { medicine_id: true, medicine_name: true, generic_name: true } },
+                lab_test_master: {
+                    include: { lab_test_category: { select: { lab_test_category_id: true, category_name: true } } }
+                }
+            }
+        });
+    }
+
+    async listDrugNonLabMappings() {
+
+        return prisma.drug_non_lab_investigation.findMany({
+            where: { active_status: 1 },
+            include: {
+                medicine_master: { select: { medicine_id: true, medicine_name: true, generic_name: true } }
+            }
         });
     }
 
@@ -1398,12 +1437,19 @@ export class ChemotherapyRepository {
                         medicine_id: true,
                         drug_name: true,
                         brand_name: true,
+                        dosage_form: true,
+                        patient_dose: true,
                         dose: true,
                         dose_unit: true,
                         quantity: true,
                         drug_role: true,
                         medicine_master: {
-                            select: { medicine_name: true, generic_name: true, brand_name: true }
+                            select: {
+                                medicine_name: true,
+                                generic_name: true,
+                                brand_name: true,
+                                dosage_form: true
+                            }
                         }
                     },
                     orderBy: { display_order: "asc" }
@@ -1448,7 +1494,8 @@ export class ChemotherapyRepository {
             include: { medicine_master: true },
             orderBy: { drug_sequence: "asc" as const }
         },
-        chemotherapy_plan_hydration: { orderBy: { display_order: "asc" as const } }
+        chemotherapy_plan_hydration: { orderBy: { display_order: "asc" as const } },
+        chemotherapy_plan_order_investigation: { orderBy: { display_order: "asc" as const } }
     } satisfies Prisma.chemotherapy_plan_orderInclude;
 
     async generatePlanOrderId(tx: Prisma.TransactionClient) {
@@ -1554,6 +1601,82 @@ export class ChemotherapyRepository {
     async deletePlanOrderHydration(tx: Prisma.TransactionClient, planOrderId: string) {
 
         return tx.chemotherapy_plan_hydration.deleteMany({ where: { plan_order_id: planOrderId } });
+
+    }
+
+    async deletePlanOrderInvestigations(tx: Prisma.TransactionClient, planOrderId: string) {
+
+        return tx.chemotherapy_plan_order_investigation.deleteMany({ where: { plan_order_id: planOrderId } });
+
+    }
+
+    /* The rows a re-save replaces: their normalized_key lets the service carry
+       an already-ORDERED row's status / lab links over to the recreated row. */
+    async listPlanOrderInvestigations(tx: Prisma.TransactionClient, planOrderId: string) {
+
+        return tx.chemotherapy_plan_order_investigation.findMany({
+            where: { plan_order_id: planOrderId },
+            select: {
+                normalized_key: true,
+                item_status: true,
+                lab_order_id: true,
+                lab_order_item_id: true
+            }
+        });
+
+    }
+
+    async createPlanOrderInvestigation(
+        tx: Prisma.TransactionClient,
+        data: Prisma.chemotherapy_plan_order_investigationUncheckedCreateInput
+    ) {
+
+        return tx.chemotherapy_plan_order_investigation.create({ data });
+
+    }
+
+    async updatePlanOrderInvestigationStatus(
+        tx: Prisma.TransactionClient,
+        planOrderId: string,
+        updates: {
+            investigation_id?: string | null;
+            lab_test_id?: string | null;
+            item_status: string;
+            lab_order_id?: string | null;
+            lab_order_item_id?: string | null;
+        }[],
+        actingUserId: string
+    ) {
+
+        let updated = 0;
+
+        for (const update of updates) {
+
+            const identity = update.investigation_id
+                ? { investigation_id: update.investigation_id }
+                : update.lab_test_id
+                    ? { lab_test_id: update.lab_test_id }
+                    : null;
+
+            if (!identity) {
+                continue;
+            }
+
+            const result = await tx.chemotherapy_plan_order_investigation.updateMany({
+                where: { plan_order_id: planOrderId, ...identity },
+                data: {
+                    item_status: update.item_status,
+                    ...(update.lab_order_id !== undefined ? { lab_order_id: update.lab_order_id } : {}),
+                    ...(update.lab_order_item_id !== undefined ? { lab_order_item_id: update.lab_order_item_id } : {}),
+                    updated_by: actingUserId,
+                    updated_at: new Date()
+                }
+            });
+
+            updated += result.count;
+        }
+
+        return updated;
 
     }
 

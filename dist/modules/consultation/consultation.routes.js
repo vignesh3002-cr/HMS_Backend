@@ -18,6 +18,7 @@ router.get("/masters/treatment-types", auth_middleware_1.authenticate, (0, autho
 router.post("/masters/treatment-types/custom", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), consultation_validation_1.createCustomMasterValidation, controller.createCustomTreatmentType.bind(controller));
 router.get("/masters/molecular-tests", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), controller.getMolecularTestOptions.bind(controller));
 router.get("/masters/diet-types", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), controller.getDietTypes.bind(controller));
+router.get("/masters/relative-types", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), controller.getRelativeTypes.bind(controller));
 // ---------------- Personal history ----------------
 router.get("/encounters/:encounterNo/personal-history", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), consultation_validation_1.getPersonalHistoryValidation, controller.getPersonalHistory.bind(controller));
 router.put("/encounters/:encounterNo/personal-history", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), consultation_validation_1.upsertPersonalHistoryValidation, controller.upsertPersonalHistory.bind(controller));

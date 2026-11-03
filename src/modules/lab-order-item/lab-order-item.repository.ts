@@ -19,9 +19,19 @@ export class LabOrderItemRepository {
 
     }
 
-    async findAll(take = 500) {
+    async findAll(
+        { patientId, appointmentId }: { patientId?: string; appointmentId?: string } = {},
+        take = 500
+    ) {
+
+        const orderFilter = {
+            ...(appointmentId ? { appointment_id: appointmentId } : {}),
+            ...(patientId ? { patient_history: { patient_id: patientId } } : {})
+        };
 
         return prisma.lab_order_item.findMany({
+
+            ...(appointmentId || patientId ? { where: { lab_order: orderFilter } } : {}),
 
             take,
 

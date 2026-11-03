@@ -3,7 +3,7 @@ import prisma from "../../config/prisma";
 import { generateId } from "../../utils/idGenerator";
 import { ConsultationRepository } from "./consultation.repository";
 import { CreateCustomMasterDTO, EncounterImmunizationSyncDTO, EncounterPastTreatmentSyncDTO, EncounterMolecularTestDTO, EncounterReportDTO, MasterListQuery, PersonalHistoryPayload } from "./consultation.types";
-import { DIET_TYPES, GENERAL_EXAMINATION_CORE_FINDINGS, MOLECULAR_TESTS } from "./consultation.constants";
+import { DIET_TYPES, GENERAL_EXAMINATION_CORE_FINDINGS, MOLECULAR_TESTS, RELATIVE_TYPES } from "./consultation.constants";
 
 const repository = new ConsultationRepository();
 
@@ -147,6 +147,10 @@ export class ConsultationService {
         return DIET_TYPES;
     }
 
+    listRelativeTypes() {
+        return RELATIVE_TYPES;
+    }
+
     listMolecularTestOptions() {
         return MOLECULAR_TESTS;
     }
@@ -179,7 +183,14 @@ export class ConsultationService {
                 : (payload.immunization === null ? Prisma.JsonNull : payload.immunization),
             drug_consumption: payload.drug_consumption === undefined
                 ? undefined
-                : (payload.drug_consumption === null ? Prisma.JsonNull : payload.drug_consumption),
+                : (payload.drug_consumption === null
+                    ? Prisma.JsonNull
+                    : (payload.drug_consumption as unknown as Prisma.InputJsonValue)),
+            family_history: payload.family_history === undefined
+                ? undefined
+                : (payload.family_history === null
+                    ? Prisma.JsonNull
+                    : (payload.family_history as unknown as Prisma.InputJsonValue)),
             diet_type: payload.diet_type === undefined ? undefined : payload.diet_type
         };
 
@@ -196,7 +207,12 @@ export class ConsultationService {
             personal_history_id: newId,
             encounter_no: encounterNo,
             immunization: payload.immunization == null ? Prisma.JsonNull : (payload.immunization as Prisma.InputJsonValue),
-            drug_consumption: payload.drug_consumption == null ? Prisma.JsonNull : (payload.drug_consumption as Prisma.InputJsonValue),
+            drug_consumption: payload.drug_consumption == null
+                ? Prisma.JsonNull
+                : (payload.drug_consumption as unknown as Prisma.InputJsonValue),
+            family_history: payload.family_history == null
+                ? Prisma.JsonNull
+                : (payload.family_history as unknown as Prisma.InputJsonValue),
             diet_type: payload.diet_type ?? null,
             created_by: actingUserId
         });

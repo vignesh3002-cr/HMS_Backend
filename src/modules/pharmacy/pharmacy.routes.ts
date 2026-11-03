@@ -7,11 +7,13 @@ import {
     cancelSlipValidation,
     createMedicineValidation,
     createSlipValidation,
+    getSlipByOrderValidation,
     getSlipValidation,
     issueSlipValidation,
     listSlipsValidation,
     previewSlipValidation,
     printSlipValidation,
+    saveFromOrderValidation,
     updateSlipItemsValidation
 } from "./pharmacy.validation";
 
@@ -51,6 +53,23 @@ router.post(
     READ,
     createSlipValidation,
     controller.createSlip.bind(controller)
+);
+
+// Discharge Medication popup: the live slip of one explicit cycle day.
+router.get(
+    "/slips/by-order",
+    authenticate,
+    READ,
+    getSlipByOrderValidation,
+    controller.getSlipByOrder.bind(controller)
+);
+
+router.post(
+    "/slips/from-order",
+    authenticate,
+    READ,
+    saveFromOrderValidation,
+    controller.saveSlipFromOrder.bind(controller)
 );
 
 // Declared before "/slips/:pharmacySlipId" so "slips" is not read as an id.

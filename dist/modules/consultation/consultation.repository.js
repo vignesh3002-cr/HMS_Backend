@@ -119,8 +119,9 @@ class ConsultationRepository {
             orderBy: { created_at: "desc" }
         });
     }
-    async findReportsByPatient(_patientId) {
+    async findReportsByPatient(patientId) {
         return prisma_1.default.encounter_report.findMany({
+            where: { encounter: { patient_id: patientId } },
             include: { lab_test_master: true },
             orderBy: { report_completed_date: { sort: "desc", nulls: "last" } }
         });

@@ -961,6 +961,75 @@ export class ChemotherapyController {
 
     }
 
+    async getMedicineInvestigations(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            const raw = req.query.medicine_ids;
+            const medicineIds = (Array.isArray(raw) ? raw.join(",") : String(raw ?? ""))
+                .split(",")
+                .map((id) => id.trim())
+                .filter(Boolean);
+
+            const data = await service.getMedicineInvestigations(medicineIds);
+            return res.json({ success: true, message: "Medicine investigations fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+    }
+
+    async importMedicineInvestigations(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            if (!req.file) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Excel file is required",
+                });
+            }
+
+            const data = await service.importDrugMonitoringMappings(
+                req.file.buffer,
+                req.file.originalname
+            );
+            return res.json({
+                success: true,
+                message: "Medicine monitoring mappings imported successfully",
+                data,
+            });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+    }
+
+    async updatePlanInvestigationStatus(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            const data = await service.updatePlanInvestigationStatus(
+                req.params.planId as string,
+                Number(req.params.cycleNumber),
+                Number(req.params.cycleDay),
+                req.body,
+                actingUserId(req)
+            );
+            return res.json({ success: true, message: "Investigation status updated successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
     async savePlanOrder(req: Request, res: Response) {
 
         try {

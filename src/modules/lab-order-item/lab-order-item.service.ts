@@ -70,8 +70,9 @@ export class LabOrderItemService {
 
     }
 
-    async getAll() {
-        return repository.findAll();
+    /* The latest items - all, or a patient's / one visit's (appointment). */
+    async getAll(filters: { patientId?: string; appointmentId?: string } = {}) {
+        return repository.findAll(filters);
     }
 
     async getById(lab_order_item_id: string) {

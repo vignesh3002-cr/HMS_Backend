@@ -1,25 +1,31 @@
 import { PharmacySlipStatus } from "./pharmacy.constants";
 
-// A single medicine line as the plan resolves it. `dose` / `dose_unit` are the
-// clinical dose the doctor ordered; `quantity` is the whole-pack count the
-// pharmacy hands over. They are deliberately separate - the doctor's dose is
-// not the quantity given to the patient.
+// A single medicine line as the plan resolves it.
+//
+// `patient_dose` is the clinical dose the doctor ordered ("150 mg").
+// `dose` / `dose_unit` are the brand strength the doctor picked in the
+// Discharge Medication pharmacy slip ("120 mg").
+// `quantity` is how many units of that strength are handed over, so the four
+// test cases hold: 120 selected for a 150 patient with a 30 available adds a
+// 30 row of 1, while a brand that only has 120 folds into 120 x 2.
 export interface ResolvedMedicationLine {
     medicine_id?: string | null;
     // Display name. Generated from medicine_master.medicine_name via
     // medicine_id, or typed literally for a free-typed "Others" drug.
     drug_name?: string | null;
     brand_name?: string | null;
+    dosage_form?: string | null;
     patient_dose?: string | null;
     dose?: string | null;
     dose_unit?: string | null;
-    // Whole packs only; validated as a non-negative integer.
+    // Units of `dose`; validated as a non-negative integer.
     quantity?: number | null;
     drug_role?: string | null;
     route?: string | null;
     frequency?: string | null;
     duration?: string | null;
     instructions?: string | null;
+    pharmacy_item_id?: string | null;
 }
 
 export interface ResolveContext {
@@ -55,6 +61,7 @@ export interface PharmacySlipItemView {
     medicine_id: string | null;
     drug_name: string | null;
     brand_name: string | null;
+    dosage_form?: string | null;
     patient_dose?: string | null;
     dose: string | null;
     dose_unit: string | null;
@@ -125,6 +132,44 @@ export interface CreateSlipFromPlanDto {
     plan_id: string;
 }
 
+// One line of the Discharge Medication popup's save. It carries what the
+// doctor chose per medicine: brand, strength, quantity and the patient dose
+// the strength was matched against. The backend stores it verbatim so a
+// reopened slip shows exactly what was dispensed.
+export interface SlipOrderItemDto {
+    medicine_id?: string | null;
+    drug_name?: string | null;
+    dosage_form?: string | null;
+    patient_dose?: string | null;
+    brand_name?: string | null;
+    dose?: string | null;
+    dose_unit?: string | null;
+    quantity?: number | null;
+    drug_role?: string | null;
+    route?: string | null;
+    frequency?: string | null;
+    duration?: string | null;
+    instructions?: string | null;
+    pharmacy_item_id?: string | null;
+}
+
+// POST /pharmacy/slips/from-order - upsert the live slip of one cycle day.
+export interface CreateSlipFromOrderDto {
+    plan_id: string;
+    cycle_number: number;
+    cycle_day: number;
+    encounter_no?: string | null;
+    appointment_id?: string | null;
+    items: SlipOrderItemDto[];
+}
+
+// GET /pharmacy/slips/by-order
+export interface GetSlipByOrderQuery {
+    plan_id: string;
+    cycle_number: number;
+    cycle_day: number;
+}
+
 export interface IssueSlipDto {
     note?: string | null;
 }
@@ -139,6 +184,7 @@ export interface UpdateSlipItemsDto {
         medicine_id?: string | null;
         drug_name?: string | null;
         brand_name?: string | null;
+        dosage_form?: string | null;
         patient_dose?: string | null;
         dose?: string | null;
         dose_unit?: string | null;
