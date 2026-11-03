@@ -29,6 +29,21 @@ class LabTestMasterController {
             });
         }
     }
+    async getAllParameters(req, res) {
+        try {
+            const parameters = await lab_test_master_service_1.default.getAllParameters();
+            return res.status(200).json({
+                success: true,
+                data: parameters
+            });
+        }
+        catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
     async getAll(req, res) {
         try {
             const tests = await lab_test_master_service_1.default.getAll();

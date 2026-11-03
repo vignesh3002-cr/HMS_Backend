@@ -7,6 +7,11 @@ import {
 
 const repository = new LabOrderItemRepository();
 
+const toTargetDateData = (target_date?: string | null) =>
+    target_date !== undefined
+        ? { target_date: target_date ? new Date(target_date) : null }
+        : {};
+
 export class LabOrderItemService {
 
     async create(data: CreateLabOrderItemDto) {
@@ -50,8 +55,11 @@ export class LabOrderItemService {
         // Calculate Net Amount
         const net_amount = price - discount;
 
+        const { target_date, ...rest } = data;
+
         return repository.create({
-            ...data,
+            ...rest,
+            ...toTargetDateData(target_date),
             lab_order_item_id,
             price,
             net_amount
@@ -82,9 +90,14 @@ export class LabOrderItemService {
 
         await this.getById(lab_order_item_id);
 
+        const { target_date, ...rest } = data;
+
         return repository.update(
             lab_order_item_id,
-            data
+            {
+                ...rest,
+                ...toTargetDateData(target_date)
+            }
         );
 
     }

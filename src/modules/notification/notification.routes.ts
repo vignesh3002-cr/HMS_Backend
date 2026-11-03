@@ -6,6 +6,11 @@ const router = Router();
 
 const controller = new NotificationController();
 
+// Lab notifications (stat alerts & sample status)
+router.get("/lab", controller.getLabNotifications.bind(controller));
+router.put("/lab/read-all", controller.markAllLabRead.bind(controller));
+
+
 // In-app notifications for a doctor (bookings + check-ins)
 router.get(
     "/",

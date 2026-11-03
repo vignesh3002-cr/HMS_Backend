@@ -16,13 +16,29 @@ class LabOrderRepository {
                 lab_order_id
             },
             include: {
-                patient_history: true,
+                patient_history: {
+                    include: {
+                        patient_bio_data: true
+                    }
+                },
                 employees: true,
                 department_master: true,
                 appointment_history: true,
                 lab_order_item: {
                     include: {
-                        lab_test_master: true
+                        lab_test_master: {
+                            include: {
+                                lab_test_parameter: {
+                                    orderBy: { sort_order: "asc" }
+                                }
+                            }
+                        },
+                        sample_collection: true,
+                        lab_result: {
+                            include: {
+                                lab_test_parameter: true
+                            }
+                        }
                     }
                 },
                 lab_report: true
@@ -39,13 +55,31 @@ class LabOrderRepository {
                 department_id: true,
                 order_datetime: true,
                 priority: true,
+                clinical_notes: true,
                 order_status: true,
                 patient_history: {
                     select: {
                         patient_history_id: true,
                         patient_id: true,
                         visit_type: true,
-                        visit_status: true
+                        visit_status: true,
+                        patient_bio_data: {
+                            select: {
+                                patient_id: true,
+                                patient_first_name: true,
+                                patient_middle_name: true,
+                                patient_last_name: true,
+                                patient_dob: true,
+                                patient_gender: true,
+                                patient_primary_mobile: true,
+                                patient_email: true,
+                                Patient_address: true,
+                                patient_photo_url: true,
+                                patient_area: true,
+                                patient_district: true,
+                                patient_state: true
+                            }
+                        }
                     }
                 },
                 employees: {
@@ -60,6 +94,23 @@ class LabOrderRepository {
                     select: {
                         department_id: true,
                         department_name: true
+                    }
+                },
+                lab_order_item: {
+                    include: {
+                        lab_test_master: {
+                            include: {
+                                lab_test_parameter: {
+                                    orderBy: { sort_order: "asc" }
+                                }
+                            }
+                        },
+                        sample_collection: true,
+                        lab_result: {
+                            include: {
+                                lab_test_parameter: true
+                            }
+                        }
                     }
                 }
             },

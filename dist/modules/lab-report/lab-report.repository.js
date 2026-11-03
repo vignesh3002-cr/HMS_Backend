@@ -36,6 +36,11 @@ class LabReportRepository {
                             include: {
                                 lab_test_master: true,
                                 sample_collection: true,
+                                lab_result: {
+                                    include: {
+                                        lab_test_parameter: true,
+                                    },
+                                },
                             },
                         },
                     },
@@ -58,6 +63,11 @@ class LabReportRepository {
                             include: {
                                 lab_test_master: true,
                                 sample_collection: true,
+                                lab_result: {
+                                    include: {
+                                        lab_test_parameter: true,
+                                    },
+                                },
                             },
                         },
                     },
@@ -80,6 +90,11 @@ class LabReportRepository {
                             include: {
                                 lab_test_master: true,
                                 sample_collection: true,
+                                lab_result: {
+                                    include: {
+                                        lab_test_parameter: true,
+                                    },
+                                },
                             },
                         },
                     },
@@ -89,7 +104,7 @@ class LabReportRepository {
         });
     }
     async create(data) {
-        return prisma_1.default.lab_report.create({
+        const report = await prisma_1.default.lab_report.create({
             data: data,
             include: {
                 employees: true,
@@ -101,12 +116,32 @@ class LabReportRepository {
                             include: {
                                 lab_test_master: true,
                                 sample_collection: true,
+                                lab_result: {
+                                    include: {
+                                        lab_test_parameter: true,
+                                    },
+                                },
                             },
                         },
                     },
                 },
             },
         });
+        // Link any unassigned lab_result rows for this order to the newly created report
+        if (data.lab_order_id && report.lab_report_id) {
+            await prisma_1.default.lab_result.updateMany({
+                where: {
+                    lab_order_item: {
+                        lab_order_id: data.lab_order_id,
+                    },
+                    lab_report_id: null,
+                },
+                data: {
+                    lab_report_id: report.lab_report_id,
+                },
+            }).catch(() => { });
+        }
+        return report;
     }
     async update(lab_report_id, data) {
         return prisma_1.default.lab_report.update({
@@ -122,6 +157,11 @@ class LabReportRepository {
                             include: {
                                 lab_test_master: true,
                                 sample_collection: true,
+                                lab_result: {
+                                    include: {
+                                        lab_test_parameter: true,
+                                    },
+                                },
                             },
                         },
                     },
@@ -148,6 +188,11 @@ class LabReportRepository {
                             include: {
                                 lab_test_master: true,
                                 sample_collection: true,
+                                lab_result: {
+                                    include: {
+                                        lab_test_parameter: true,
+                                    },
+                                },
                             },
                         },
                     },

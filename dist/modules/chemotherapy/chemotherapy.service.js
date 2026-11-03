@@ -24,13 +24,13 @@ function diagnosedCancers(staging) {
             cancer_type_id: staging.cancer_type_id,
             cancer_subtype_id: staging.cancer_subtype_id,
             cancer_type: staging.cancer_types.cancer_type,
-            cancer_subtype: staging.cancer_subtypes.subtype_name
+            cancer_subtype: staging.histopathology || staging.cancer_subtypes.subtype_name
         },
         ...(staging.oncology_staging_additional_cancers ?? []).map((extra) => ({
             cancer_type_id: extra.cancer_type_id,
             cancer_subtype_id: extra.cancer_subtype_id,
             cancer_type: extra.cancer_types.cancer_type,
-            cancer_subtype: extra.cancer_subtypes?.subtype_name ?? null
+            cancer_subtype: extra.histopathology || extra.cancer_subtypes?.subtype_name || null
         }))
     ];
 }
@@ -90,6 +90,7 @@ function planItemCreateData(planId, itemId, item, actingUserId, order) {
         minimum_dose: item.minimum_dose ?? null,
         dose_required: item.dose_required ?? true,
         remarks: item.remarks ?? null,
+        duration: item.duration ?? null,
         created_by: actingUserId
     };
 }
@@ -237,7 +238,7 @@ class ChemotherapyService {
             staging_detail_id: staging.staging_detail_id,
             patient_id: staging.patient_id,
             cancer_type: staging.cancer_types.cancer_type,
-            cancer_subtype: staging.cancer_subtypes.subtype_name,
+            cancer_subtype: staging.histopathology || staging.cancer_subtypes.subtype_name,
             additional_cancers: cancers.slice(1),
             clinical_stage: staging.clinical_stage,
             suggested_therapy: staging.derived_fields?.suggested_therapy ?? null,
@@ -2438,7 +2439,8 @@ class ChemotherapyService {
             ...(dto.administration_route !== undefined ? { administration_route: dto.administration_route } : {}),
             ...(dto.infusion_duration_minutes !== undefined ? { infusion_duration_minutes: dto.infusion_duration_minutes } : {}),
             ...(dto.frequency !== undefined ? { frequency: dto.frequency } : {}),
-            ...(dto.remarks !== undefined ? { remarks: dto.remarks } : {})
+            ...(dto.remarks !== undefined ? { remarks: dto.remarks } : {}),
+            ...(dto.duration !== undefined ? { duration: dto.duration } : {})
         };
         await prisma_1.default.$transaction(async (tx) => {
             await this.repository.updatePlanItem(tx, planItemId, itemChanges);
@@ -2554,6 +2556,141 @@ class ChemotherapyService {
             });
         });
         return this.repository.findPlanHydration(planId);
+    }
+    // ---------------------------------------------------------------
+    // Discharge (take-home) medicines. These rows belong to THIS patient's
+    // plan only: a drug picked from medicine_master is stored by medicine_id,
+    // a name the doctor types is stored as drug_name on the plan item and
+    // is never written to medicine_master, and neither the regimen protocol's
+    // discharge instructions nor its master data are touched.
+    // ---------------------------------------------------------------
+    async listPlanDischargeMedicines(planId) {
+        const plan = await this.repository.findPlanForUpdate(prisma_1.default, planId);
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+        return this.repository.findPlanDischargeItems(planId);
+    }
+    async addPlanDischargeMedicine(planId, dto, actingUserId) {
+        const plan = await this.repository.findPlanForUpdate(prisma_1.default, planId);
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+        if (chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(plan.treatment_status)) {
+            throw new Error(`Cannot add a discharge medicine to a plan that is already ${plan.treatment_status}`);
+        }
+        await this.assertPlanItemDrugs([dto]);
+        const item = { ...dto, drug_role: chemotherapy_constants_1.DRUG_ROLE.DISCHARGE };
+        await prisma_1.default.$transaction(async (tx) => {
+            const itemId = await this.repository.generatePlanItemId(tx);
+            await this.repository.createPlanItem(tx, planItemCreateData(planId, itemId, item, actingUserId));
+            await (0, audit_service_1.logAudit)(tx, {
+                entity_type: "chemotherapy_plan_items",
+                entity_id: itemId,
+                action: audit_types_1.AUDIT_ACTION.CREATE,
+                performed_by: actingUserId,
+                patient_id: plan.patient_id,
+                branch_id: plan.branch_id,
+                change_summary: (0, audit_service_1.summarizeCreate)({
+                    discharge_medicine: true,
+                    medicine_id: dto.medicine_id ?? null,
+                    drug_name: dto.medicine_id ? null : dto.drug_name ?? null
+                })
+            });
+        });
+        return this.repository.findPlanDischargeItems(planId);
+    }
+    async updatePlanDischargeMedicine(planId, planItemId, dto, actingUserId) {
+        const plan = await this.repository.findPlanForUpdate(prisma_1.default, planId);
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+        const item = await this.repository.findPlanItemById(planItemId);
+        if (!item || item.chemotherapy_plan_id !== planId || item.active_status !== 1) {
+            throw new Error("Plan item not found on this plan");
+        }
+        if (item.drug_role !== chemotherapy_constants_1.DRUG_ROLE.DISCHARGE) {
+            throw new Error("That row is not a discharge medicine");
+        }
+        if (chemotherapy_constants_1.PLAN_TERMINAL_STATUSES.includes(plan.treatment_status)) {
+            throw new Error(`Cannot change a discharge medicine on a plan that is already ${plan.treatment_status}`);
+        }
+        const changes = await this.planDischargeItemChanges(item, dto);
+        if (Object.keys(changes).length === 0) {
+            return this.repository.findPlanDischargeItems(planId);
+        }
+        await prisma_1.default.$transaction(async (tx) => {
+            await this.repository.updatePlanItem(tx, planItemId, changes);
+            await (0, audit_service_1.logAudit)(tx, {
+                entity_type: "chemotherapy_plan_items",
+                entity_id: planItemId,
+                action: audit_types_1.AUDIT_ACTION.UPDATE,
+                performed_by: actingUserId,
+                patient_id: plan.patient_id,
+                branch_id: plan.branch_id,
+                change_summary: (0, audit_service_1.diffFields)(item, changes)
+            });
+        });
+        return this.repository.findPlanDischargeItems(planId);
+    }
+    async removePlanDischargeMedicine(planId, planItemId, actingUserId) {
+        const plan = await this.repository.findPlanForUpdate(prisma_1.default, planId);
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+        const item = await this.repository.findPlanItemById(planItemId);
+        if (!item || item.chemotherapy_plan_id !== planId || item.active_status !== 1) {
+            throw new Error("Plan item not found on this plan");
+        }
+        if (item.drug_role !== chemotherapy_constants_1.DRUG_ROLE.DISCHARGE) {
+            throw new Error("That row is not a discharge medicine");
+        }
+        await prisma_1.default.$transaction(async (tx) => {
+            await this.repository.deactivatePlanItem(tx, planItemId);
+            await (0, audit_service_1.logAudit)(tx, {
+                entity_type: "chemotherapy_plan_items",
+                entity_id: planItemId,
+                action: audit_types_1.AUDIT_ACTION.DEACTIVATE,
+                performed_by: actingUserId,
+                patient_id: plan.patient_id,
+                branch_id: plan.branch_id,
+                change_summary: (0, audit_service_1.summarizeCreate)({ discharge_medicine: true, medicine_id: item.medicine_id, drug_name: item.drug_name })
+            });
+        });
+        return this.repository.findPlanDischargeItems(planId);
+    }
+    /* A discharge row edit: the drug (a medicine from the list, or - with
+       medicine_id null - a name typed for this patient) and its columns.
+       drug_role is fixed by the endpoint and never taken from the body. */
+    async planDischargeItemChanges(item, dto) {
+        let drugChanges = {};
+        if (dto.medicine_id) {
+            drugChanges = { medicine_id: dto.medicine_id, drug_name: null };
+        }
+        else if (dto.medicine_id === null || (dto.drug_name !== undefined && !item.medicine_id)) {
+            if (!dto.drug_name?.trim()) {
+                throw new Error("Select a drug from the list or type a drug name");
+            }
+            drugChanges = { medicine_id: null, drug_name: dto.drug_name.trim() };
+        }
+        const changes = {
+            ...drugChanges,
+            ...(dto.drug_sequence !== undefined ? { drug_sequence: dto.drug_sequence } : {}),
+            ...(dto.drug_type !== undefined ? { drug_type: dto.drug_type } : {}),
+            ...(dto.dosage !== undefined ? { protocol_dose: dto.dosage } : {}),
+            ...(dto.dosage_unit !== undefined ? { protocol_dose_unit: dto.dosage_unit } : {}),
+            ...(dto.frequency !== undefined ? { frequency: dto.frequency } : {}),
+            ...(dto.administration_detail !== undefined ? { administration_detail: dto.administration_detail } : {}),
+            ...(dto.duration !== undefined ? { duration: dto.duration } : {}),
+            ...(dto.remarks !== undefined ? { remarks: dto.remarks } : {})
+        };
+        if (dto.medicine_id && dto.medicine_id !== item.medicine_id) {
+            const medicine = await this.repository.findMedicineById(dto.medicine_id);
+            if (!medicine) {
+                throw new Error("Medicine not found");
+            }
+        }
+        return changes;
     }
     // ---------------------------------------------------------------
     // Cycle day orders (Chemotherapy Order tab). One saved order per plan

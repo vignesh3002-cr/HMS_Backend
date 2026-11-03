@@ -7,6 +7,9 @@ exports.LabOrderItemService = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const lab_order_item_repository_1 = require("./lab-order-item.repository");
 const repository = new lab_order_item_repository_1.LabOrderItemRepository();
+const toTargetDateData = (target_date) => target_date !== undefined
+    ? { target_date: target_date ? new Date(target_date) : null }
+    : {};
 class LabOrderItemService {
     async create(data) {
         // Check Lab Order
@@ -38,8 +41,10 @@ class LabOrderItemService {
         const discount = Number(data.discount ?? 0);
         // Calculate Net Amount
         const net_amount = price - discount;
+        const { target_date, ...rest } = data;
         return repository.create({
-            ...data,
+            ...rest,
+            ...toTargetDateData(target_date),
             lab_order_item_id,
             price,
             net_amount
@@ -57,7 +62,11 @@ class LabOrderItemService {
     }
     async update(lab_order_item_id, data) {
         await this.getById(lab_order_item_id);
-        return repository.update(lab_order_item_id, data);
+        const { target_date, ...rest } = data;
+        return repository.update(lab_order_item_id, {
+            ...rest,
+            ...toTargetDateData(target_date)
+        });
     }
     async delete(lab_order_item_id) {
         await this.getById(lab_order_item_id);

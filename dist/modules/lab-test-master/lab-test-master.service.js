@@ -28,6 +28,9 @@ class LabTestMasterService {
             lab_test_id
         });
     }
+    async getAllParameters() {
+        return lab_test_master_repository_1.default.findAllParameters();
+    }
     async getAll() {
         return lab_test_master_repository_1.default.findAll();
     }

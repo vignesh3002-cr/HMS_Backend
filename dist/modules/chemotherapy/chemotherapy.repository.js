@@ -1013,11 +1013,30 @@ class ChemotherapyRepository {
             data: { ...data, updated_at: new Date() }
         });
     }
-    // Baseline items only - cycle day orders keep theirs.
+    // Baseline items only - cycle day orders keep theirs. Discharge rows are
+    // the doctor's own take-home drugs for this patient, not a copy of the
+    // protocol, so a protocol swap or a baseline replace leaves them alone.
     async deactivateActivePlanItems(tx, planId) {
         return tx.chemotherapy_plan_items.updateMany({
-            where: { chemotherapy_plan_id: planId, active_status: 1, plan_order_id: null },
+            where: {
+                chemotherapy_plan_id: planId,
+                active_status: 1,
+                plan_order_id: null,
+                drug_role: { not: chemotherapy_constants_1.DRUG_ROLE.DISCHARGE }
+            },
             data: { active_status: 0, updated_at: new Date() }
+        });
+    }
+    // This patient's discharge (take-home) rows - drug_role DISCHARGE.
+    async findPlanDischargeItems(planId) {
+        return prisma_1.default.chemotherapy_plan_items.findMany({
+            where: {
+                chemotherapy_plan_id: planId,
+                active_status: 1,
+                drug_role: chemotherapy_constants_1.DRUG_ROLE.DISCHARGE
+            },
+            include: { medicine_master: true },
+            orderBy: { drug_sequence: "asc" }
         });
     }
     async deactivatePlanItem(tx, planItemId) {

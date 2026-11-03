@@ -6,7 +6,8 @@ import {
 
 export class LabOrderItemRepository {
 
-    async create(data: CreateLabOrderItemDto & {
+    async create(data: Omit<CreateLabOrderItemDto, "target_date"> & {
+        target_date?: Date | null;
         lab_order_item_id: string;
         price: number;
         net_amount: number;
@@ -35,11 +36,33 @@ export class LabOrderItemRepository {
                                 patient_id: true,
                                 appointment_id: true,
                                 visit_date: true,
+                                patient_bio_data: {
+                                    select: {
+                                        patient_id: true,
+                                        patient_first_name: true,
+                                        patient_middle_name: true,
+                                        patient_last_name: true,
+                                        patient_gender: true,
+                                        patient_dob: true,
+                                        patient_blood_group: true
+                                    }
+                                }
                             }
                         }
                     }
                 },
-                lab_test_master: true,
+                lab_test_master: {
+                    include: {
+                        lab_test_parameter: {
+                            orderBy: { sort_order: "asc" }
+                        }
+                    }
+                },
+                lab_result: {
+                    include: {
+                        lab_test_parameter: true
+                    }
+                },
                 sample_collection: true
             }
 
@@ -61,7 +84,18 @@ export class LabOrderItemRepository {
                         patient_history: true
                     }
                 },
-                lab_test_master: true,
+                lab_test_master: {
+                    include: {
+                        lab_test_parameter: {
+                            orderBy: { sort_order: "asc" }
+                        }
+                    }
+                },
+                lab_result: {
+                    include: {
+                        lab_test_parameter: true
+                    }
+                },
                 sample_collection: true
             }
 
@@ -124,7 +158,9 @@ export class LabOrderItemRepository {
     async update(
 
         lab_order_item_id: string,
-        data: UpdateLabOrderItemDto
+        data: Omit<UpdateLabOrderItemDto, "target_date"> & {
+            target_date?: Date | null;
+        }
 
     ) {
 

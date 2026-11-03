@@ -25,6 +25,21 @@ export const createLabOrderItemValidation = [
     .isString()
     .withMessage("Remarks must be a string"),
 
+  body("clinical_notes")
+    .optional()
+    .isString()
+    .withMessage("Clinical notes must be a string"),
+
+  body("priority")
+    .optional()
+    .isIn(["Normal", "Urgent", "Stat"])
+    .withMessage("Priority must be Normal, Urgent or Stat"),
+
+  body("target_date")
+    .optional({ nullable: true })
+    .isISO8601()
+    .withMessage("Target date must be a valid date"),
+
   body("branch_id")
     .optional()
     .isString(),
@@ -61,6 +76,21 @@ export const updateLabOrderItemValidation = [
     .optional()
     .isString()
     .withMessage("Remarks must be a string"),
+
+  body("clinical_notes")
+    .optional()
+    .isString()
+    .withMessage("Clinical notes must be a string"),
+
+  body("priority")
+    .optional()
+    .isIn(["Normal", "Urgent", "Stat"])
+    .withMessage("Priority must be Normal, Urgent or Stat"),
+
+  body("target_date")
+    .optional({ nullable: true })
+    .isISO8601()
+    .withMessage("Target date must be a valid date"),
 
   body("item_status")
     .optional()

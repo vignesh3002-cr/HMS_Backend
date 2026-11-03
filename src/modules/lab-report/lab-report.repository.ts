@@ -33,6 +33,11 @@ export class LabReportRepository {
               include: {
                 lab_test_master: true,
                 sample_collection: true,
+                lab_result: {
+                  include: {
+                    lab_test_parameter: true,
+                  },
+                },
               },
             },
           },
@@ -56,6 +61,11 @@ export class LabReportRepository {
               include: {
                 lab_test_master: true,
                 sample_collection: true,
+                lab_result: {
+                  include: {
+                    lab_test_parameter: true,
+                  },
+                },
               },
             },
           },
@@ -79,6 +89,11 @@ export class LabReportRepository {
               include: {
                 lab_test_master: true,
                 sample_collection: true,
+                lab_result: {
+                  include: {
+                    lab_test_parameter: true,
+                  },
+                },
               },
             },
           },
@@ -104,7 +119,7 @@ export class LabReportRepository {
     branch_id?: string | null;
     user_id?: string | null;
   }) {
-    return prisma.lab_report.create({
+    const report = await prisma.lab_report.create({
       data: data as any,
       include: {
         employees: true,
@@ -116,12 +131,34 @@ export class LabReportRepository {
               include: {
                 lab_test_master: true,
                 sample_collection: true,
+                lab_result: {
+                  include: {
+                    lab_test_parameter: true,
+                  },
+                },
               },
             },
           },
         },
       },
     });
+
+    // Link any unassigned lab_result rows for this order to the newly created report
+    if (data.lab_order_id && report.lab_report_id) {
+      await prisma.lab_result.updateMany({
+        where: {
+          lab_order_item: {
+            lab_order_id: data.lab_order_id,
+          },
+          lab_report_id: null,
+        },
+        data: {
+          lab_report_id: report.lab_report_id,
+        },
+      }).catch(() => {});
+    }
+
+    return report;
   }
 
   async update(lab_report_id: string, data: any) {
@@ -138,6 +175,11 @@ export class LabReportRepository {
               include: {
                 lab_test_master: true,
                 sample_collection: true,
+                lab_result: {
+                  include: {
+                    lab_test_parameter: true,
+                  },
+                },
               },
             },
           },
@@ -172,6 +214,11 @@ export class LabReportRepository {
               include: {
                 lab_test_master: true,
                 sample_collection: true,
+                lab_result: {
+                  include: {
+                    lab_test_parameter: true,
+                  },
+                },
               },
             },
           },

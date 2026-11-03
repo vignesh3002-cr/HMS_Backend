@@ -4,6 +4,9 @@ export interface CreateLabOrderItemDto {
     quantity?: number;
     discount?: number;
     remarks?: string;
+    clinical_notes?: string;
+    priority?: string;
+    target_date?: string | null;
     branch_id?: string;
     user_id?: string;
 }

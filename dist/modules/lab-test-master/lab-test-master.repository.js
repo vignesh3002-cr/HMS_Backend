@@ -14,6 +14,12 @@ class LabTestMasterRepository {
         return prisma_1.default.lab_test_master.findUnique({
             where: {
                 lab_test_id
+            },
+            include: {
+                lab_test_category: true,
+                lab_test_parameter: {
+                    orderBy: { sort_order: "asc" }
+                }
             }
         });
     }
@@ -38,10 +44,32 @@ class LabTestMasterRepository {
             }
         });
     }
+    async findAllParameters() {
+        return prisma_1.default.lab_test_parameter.findMany({
+            include: {
+                lab_test_master: {
+                    select: {
+                        test_name: true,
+                        test_code: true,
+                        unit: true,
+                        reference_range: true,
+                        sample_type: true
+                    }
+                }
+            },
+            orderBy: [
+                { lab_test_id: "asc" },
+                { sort_order: "asc" }
+            ]
+        });
+    }
     async findAll() {
         return prisma_1.default.lab_test_master.findMany({
             include: {
-                lab_test_category: true
+                lab_test_category: true,
+                lab_test_parameter: {
+                    orderBy: { sort_order: "asc" }
+                }
             },
             orderBy: {
                 created_at: "desc"
