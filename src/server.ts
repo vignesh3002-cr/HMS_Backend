@@ -3,6 +3,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import compression from "compression";
 
 import authRoutes from "./modules/auth/auth.routes";
 import userRoutes from "./modules/auth/user/user.routes";
@@ -49,7 +50,7 @@ import { hashPassword } from "./utils/bcrypt";
   return this.toString();
 };
 
-const app = express();
+export const app = express();
 
 const configuredOrigins = (
   process.env.FRONTEND_URL || "http://localhost:5173"
@@ -116,6 +117,7 @@ app.use(
   })
 );
 
+app.use(compression());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cookieParser());
@@ -180,14 +182,19 @@ app.use("/api/hashpassword", async (req, res) => {
   res.json({ hashedPassword });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT || 5000);
 
 // Daily day-boundary sweeps (appointment NO_SHOW, IPD bed reservations and
 // planned-admission NO_SHOW) run inside Postgres via pg_cron -- see
 // prisma/sql/20261007_daily_sweeps_pg_cron.sql. Nothing is polled from here.
 
-app.listen(PORT, () => {
-
+export const startServer = () =>
+  app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+  });
 
-});
+if (require.main === module) {
+  startServer();
+}
+
+export default app;
