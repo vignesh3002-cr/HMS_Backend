@@ -65,6 +65,55 @@ export class LabReportRepository {
     });
   }
 
+  /* Everything needed to show one order item's report: the item, its
+     lab_result rows (which link it to a lab_report), every report of the
+     parent order and the patient. Read-only; used by the doctor's
+     "View Report" action. */
+  async findByOrderItem(lab_order_item_id: string) {
+    const item = await prisma.lab_order_item.findUnique({
+      where: { lab_order_item_id },
+      include: {
+        lab_test_master: true,
+        sample_collection: true,
+        lab_order: {
+          include: {
+            patient_history: true,
+            employees: {
+              select: {
+                employee_id: true,
+                first_name: true,
+                last_name: true,
+                designation: true,
+              },
+            },
+            department_master: true,
+          },
+        },
+      },
+    });
+
+    if (!item) return null;
+
+    const [results, orderReports] = await Promise.all([
+      prisma.lab_result.findMany({
+        where: { lab_order_item_id },
+        orderBy: { id: "desc" },
+        include: { lab_test_parameter: true, lab_report: true },
+      }),
+      prisma.lab_report.findMany({
+        where: { lab_order_id: item.lab_order_id },
+        orderBy: { id: "desc" },
+      }),
+    ]);
+
+    const patientId = item.lab_order?.patient_history?.patient_id;
+    const patient = patientId
+      ? await prisma.patient_bio_data.findUnique({ where: { patient_id: patientId } })
+      : null;
+
+    return { item, results, orderReports, patient };
+  }
+
   async findByOrderId(lab_order_id: string) {
     return prisma.lab_report.findFirst({
       where: { lab_order_id },

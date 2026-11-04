@@ -51,6 +51,22 @@ export class LabReportController {
     }
   }
 
+  async getByOrderItem(req: Request, res: Response) {
+    try {
+      const itemId = String(req.params.itemId);
+      const report = await service.getByOrderItem(itemId);
+      return res.json({
+        success: true,
+        data: report,
+      });
+    } catch (error: any) {
+      return res.status(404).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
   async create(req: Request, res: Response) {
     try {
       const { lab_order_id } = req.body;
