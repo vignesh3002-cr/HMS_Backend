@@ -153,6 +153,39 @@ export class ConsultationRepository {
 
     }
 
+    async getLineOfTherapies(query: { search?: string; isActive?: boolean }) {
+
+        const where: Prisma.line_of_therapy_masterWhereInput = {};
+        if (query.isActive !== undefined) where.is_active = query.isActive;
+        if (query.search) {
+            where.OR = [
+                { name: { contains: query.search, mode: "insensitive" } },
+                { code: { contains: query.search, mode: "insensitive" } }
+            ];
+        }
+
+        return prisma.line_of_therapy_master.findMany({ where, orderBy: { name: "asc" } });
+
+    }
+
+    async findLineOfTherapyByCode(code: string) {
+
+        return prisma.line_of_therapy_master.findUnique({ where: { code } });
+
+    }
+
+    async findLineOfTherapyByName(name: string) {
+
+        return prisma.line_of_therapy_master.findFirst({ where: { name: { equals: name, mode: "insensitive" } } });
+
+    }
+
+    async createLineOfTherapy(data: Prisma.line_of_therapy_masterUncheckedCreateInput) {
+
+        return prisma.line_of_therapy_master.create({ data });
+
+    }
+
     // ---------------- Personal history ----------------
 
     async findPersonalHistoryByEncounter(encounterNo: string) {
