@@ -7,7 +7,7 @@
 // the soft-delete convention used everywhere else in this codebase (doctor
 // schedules, appointments) - nothing here is ever hard-deleted.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PROTOCOL_ACTIVE_STATUS = exports.PROTOCOL_TYPE = exports.ID_ENTITY = exports.DRUG_ROLE = exports.PLAN_CONFIRMATION_RULE = exports.CYCLE_ADMINISTRABLE_STATUSES = exports.CYCLE_TERMINAL_STATUSES = exports.CYCLE_STATUS_TRANSITIONS = exports.CYCLE_STATUS = exports.PLAN_ORDER_STATUS = exports.OPEN_PLAN_STATUSES = exports.PLAN_TERMINAL_STATUSES = exports.PLAN_STATUS_TRANSITIONS = exports.PLAN_STATUS = void 0;
+exports.PROTOCOL_ACTIVE_STATUS = exports.PROTOCOL_TYPE = exports.ID_ENTITY = exports.ADVERSE_EVENT_SEVERITIES = exports.ADVERSE_EVENT_GRADES = exports.PLAN_INVESTIGATION_STATUS = exports.PLAN_INVESTIGATION_CATEGORY = exports.ADMINISTERED_DRUG_ROLES = exports.DRUG_ROLE = exports.PLAN_CONFIRMATION_RULE = exports.CYCLE_ADMINISTRABLE_STATUSES = exports.CYCLE_TERMINAL_STATUSES = exports.CYCLE_STATUS_TRANSITIONS = exports.CYCLE_STATUS = exports.ADMINISTRATION_REASON_REQUIRED = exports.ADMINISTRATION_STATUSES = exports.ADMINISTRATION_STATUS = exports.PLAN_ORDER_STATUS = exports.OPEN_PLAN_STATUSES = exports.PLAN_TERMINAL_STATUSES = exports.PLAN_STATUS_TRANSITIONS = exports.PLAN_STATUS = void 0;
 exports.PLAN_STATUS = {
     PLANNED: "PLANNED",
     ACTIVE: "ACTIVE",
@@ -33,11 +33,29 @@ exports.PLAN_TERMINAL_STATUSES = [
 // A plan is one course: a patient has at most one open plan at a time
 // (enforced by the uq_open_chemo_plan_per_patient partial index too).
 exports.OPEN_PLAN_STATUSES = [exports.PLAN_STATUS.PLANNED, exports.PLAN_STATUS.ACTIVE];
-// A cycle day's saved order: ORDERED until its consultation is submitted.
+// A cycle day's saved order: ORDERED (editable) until its consultation is
+// submitted, then IN_ADMINISTRATION (read-only, one administration row per
+// medicine), then COMPLETED once every medicine is resolved and the day is
+// completed from the Administration tab. Unlike the rest of this module,
+// order_status IS DB-constrained (chk_plan_order_status).
 exports.PLAN_ORDER_STATUS = {
     ORDERED: "ORDERED",
+    IN_ADMINISTRATION: "IN_ADMINISTRATION",
     COMPLETED: "COMPLETED"
 };
+// A medicine on an IN_ADMINISTRATION day starts PENDING; the day can only be
+// completed once each one is GIVEN, SKIPPED or CANCELLED (the latter two
+// with a reason). DB-constrained for rows linked to an order.
+exports.ADMINISTRATION_STATUS = {
+    PENDING: "PENDING",
+    GIVEN: "GIVEN",
+    SKIPPED: "SKIPPED",
+    CANCELLED: "CANCELLED"
+};
+exports.ADMINISTRATION_STATUSES = Object.values(exports.ADMINISTRATION_STATUS);
+exports.ADMINISTRATION_REASON_REQUIRED = [
+    exports.ADMINISTRATION_STATUS.SKIPPED, exports.ADMINISTRATION_STATUS.CANCELLED
+];
 exports.CYCLE_STATUS = {
     PLANNED: "PLANNED",
     APPROVED: "APPROVED",
@@ -79,11 +97,32 @@ exports.DRUG_ROLE = {
        on the patient's cycle day order like the other drug tabs. */
     DILUTION: "DILUTION"
 };
+// The cycle day order's drugs whose administration is tracked. DILUTION rows
+// are the diluent a drug is prepared in; DISCHARGE (post-treatment) drugs
+// are plan-level take-home medicines.
+exports.ADMINISTERED_DRUG_ROLES = [
+    exports.DRUG_ROLE.PREMEDICATION, exports.DRUG_ROLE.PRIMARY, exports.DRUG_ROLE.SUPPORTIVE
+];
+exports.PLAN_INVESTIGATION_CATEGORY = {
+    LAB: "LAB",
+    NON_LAB: "NON_LAB",
+    TISSUE: "TISSUE"
+};
+exports.PLAN_INVESTIGATION_STATUS = {
+    PLANNED: "PLANNED",
+    ORDERED: "ORDERED",
+    CANCELLED: "CANCELLED"
+};
+// Adverse events are graded on the CTCAE 1-5 scale (also used for an
+// infusion reaction's grade); severity is the matching plain-language label.
+exports.ADVERSE_EVENT_GRADES = ["1", "2", "3", "4", "5"];
+exports.ADVERSE_EVENT_SEVERITIES = ["Mild", "Moderate", "Severe", "Life-threatening", "Fatal"];
 exports.ID_ENTITY = {
     PLAN: "CHEMOTHERAPY_PLAN",
     PLAN_ITEM: "CHEMOTHERAPY_PLAN_ITEM",
     PLAN_HYDRATION: "CHEMOTHERAPY_PLAN_HYDRATION",
     PLAN_ORDER: "CHEMOTHERAPY_PLAN_ORDER",
+    PLAN_INVESTIGATION: "CHEMOTHERAPY_PLAN_INVESTIGATION",
     CYCLE: "CHEMOTHERAPY_CYCLE",
     ADMINISTRATION: "CHEMOTHERAPY_ADMINISTRATION",
     ADVERSE_EVENT: "CHEMOTHERAPY_ADVERSE_EVENT",

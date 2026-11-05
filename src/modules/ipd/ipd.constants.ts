@@ -32,11 +32,47 @@ export const DISCHARGE_TYPE = {
 
 export const DISCHARGE_TYPE_VALUES: string[] = Object.values(DISCHARGE_TYPE);
 
+// The patient's clinical condition at the moment of discharge -- distinct
+// from discharge_type (why they're leaving). DECEASED is never picked
+// manually: it's forced automatically when discharge_type is DECEASED (see
+// IpdService.dischargeAdmission).
+export const PATIENT_STATUS_AT_DISCHARGE = {
+    STABLE: "STABLE",
+    IMPROVED: "IMPROVED",
+    UNCHANGED: "UNCHANGED",
+    DETERIORATED: "DETERIORATED",
+    CRITICAL: "CRITICAL",
+    DECEASED: "DECEASED",
+} as const;
+
+export const PATIENT_STATUS_AT_DISCHARGE_VALUES: string[] = Object.values(PATIENT_STATUS_AT_DISCHARGE);
+
 export const ADMISSION_DEFAULT_STATUS = IPD_STATUS.ADMITTED;
 
 export const WARD_TYPE_DEFAULT = "GENERAL";
 export const BED_TYPE_DEFAULT = "GENERAL";
 export const BED_STATUS_DEFAULT = BED_STATUS.AVAILABLE;
+
+// Statuses staff can set by hand. RESERVED and OCCUPIED only ever come from
+// the reserve / admit / transfer / discharge flows.
+export const MANUAL_BED_STATUSES = [
+    BED_STATUS.AVAILABLE,
+    BED_STATUS.CLEANING,
+    BED_STATUS.MAINTENANCE,
+] as const;
+
+// A bed can be reserved for a planned admission dated at most this many days
+// ahead (0 = today only, 1 = today or tomorrow). The reservation lapses at the
+// end of the planned day (IST).
+//
+// The nightly pg_cron sweep (prisma/sql/20261007_daily_sweeps_pg_cron.sql)
+// releases lapsed reservations and turns PLANNED admissions whose planned
+// day has passed into NO_SHOW.
+export const RESERVATION_MAX_DAYS_AHEAD = 1;
+
+// The hospital runs on IST (UTC+05:30, no DST) -- same fixed offset as the
+// appointment job, so day boundaries don't depend on the server timezone.
+export const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
 
 export const PAYMENT_MODE_VALUES = [
     "CASH",
@@ -64,6 +100,23 @@ export const WARD_TYPE_VALUES = [
     "ISOLATION",
     "DAYCARE"
 ] as const;
+
+// Care team: who is responsible for an admitted patient, and from when
+// to when (start/end are stamped automatically). The consultant is admission.employee_id and is not part of this log.
+export const CARE_TEAM_ROLE = {
+    ASSIGNED_DOCTOR: "ASSIGNED_DOCTOR",
+    PRIMARY_NURSE: "PRIMARY_NURSE",
+} as const;
+
+// Why a care-team row was closed.
+export const CARE_TEAM_END_REASON = {
+    HANDOVER: "HANDOVER",
+    DISCHARGE: "DISCHARGE",
+    REMOVED: "REMOVED",
+} as const;
+
+// Most admissions one bulk ward allocation may touch.
+export const CARE_TEAM_BULK_MAX = 200;
 
 export const IDGeneratorGated = {
     ADMISSION: "ADMISSION",

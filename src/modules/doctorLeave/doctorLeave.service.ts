@@ -1,4 +1,6 @@
+import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
+import { APPOINTMENT_STATUS } from "../appointment/appointment.constants";
 import { DoctorLeaveRepository } from "./doctorLeave.repository";
 import {
     ApplyDoctorLeaveDto,
@@ -22,15 +24,18 @@ export class DoctorLeaveService {
             await this.repository.findDoctorWithRole(employeeId);
 
         if (!employee) {
-            throw new Error("Doctor not found");
+            throw new Error("Doctor or nurse not found");
         }
 
-        if (employee.user_table?.role_type !== "DOCTOR") {
-            throw new Error("Selected employee is not a doctor");
+        // Duty nurses take leave through the same table, so the roster and the
+        // care-team allocation exclude them while they are away.
+        const roleType = employee.user_table?.role_type;
+        if (roleType !== "DOCTOR" && roleType !== "NURSE") {
+            throw new Error("Leave can only be applied for a doctor or a nurse");
         }
 
         if (employee.emp_status === false) {
-            throw new Error("Doctor is inactive");
+            throw new Error("Employee is inactive");
         }
 
         return employee;
@@ -101,9 +106,9 @@ export class DoctorLeaveService {
                 throw new Error("Replacement doctor not found");
             }
 
-            if (replacement.user_table?.role_type !== "DOCTOR") {
+            if (replacement.user_table?.role_type !== doctor.user_table?.role_type) {
                 throw new Error(
-                    "Replacement employee is not a doctor"
+                    `Replacement employee must also be a ${String(doctor.user_table?.role_type ?? "doctor").toLowerCase()}`
                 );
             }
 
@@ -194,6 +199,19 @@ export class DoctorLeaveService {
 
                 });
 
+            // Admin-created leave is approved at once, so the doctor's booked
+            // appointments in that window are queued in the same transaction
+            // (no window where the leave exists but patients are still booked).
+            if (isAdmin) {
+                await this.queueForApprovedLeaveTx(
+                    tx,
+                    employeeId,
+                    startDate,
+                    endDate,
+                    requestedBy
+                );
+            }
+
 
             return {
                 message: isAdmin
@@ -240,6 +258,14 @@ export class DoctorLeaveService {
                         remarks: dto.remarks ?? null
                     }
                 );
+
+            await this.queueForApprovedLeaveTx(
+                tx,
+                leave.employee_id,
+                leave.leave_start_date,
+                leave.leave_end_date,
+                approvedBy
+            );
 
 
             return {
@@ -291,6 +317,16 @@ export class DoctorLeaveService {
                         remarks: dto.remarks
                     }
                 );
+
+            // Undo the reschedule queue the doctor's request created, so
+            // patients are not left in RESCHEDULE_REQUIRED for a leave that
+            // will never happen.
+            await this.releaseLeaveQueueTx(
+                tx,
+                leave.employee_id,
+                leave.leave_start_date,
+                leave.leave_end_date
+            );
 
 
             return {
@@ -409,63 +445,163 @@ export class DoctorLeaveService {
             );
         }
 
-        return prisma.$transaction(async (tx) => {
+        return prisma.$transaction((tx) =>
+            this.queueAppointmentsTx(
+                tx,
+                employeeId,
+                dto.date_from,
+                dto.date_to,
+                createdBy,
+                dto.priority ?? "NORMAL",
+                dto.reason
+            )
+        );
 
-            const appointments =
-                await this.repository.findActiveAppointmentsInRange(
-                    tx,
-                    employeeId,
-                    dto.date_from,
-                    dto.date_to
-                );
+    }
 
-            let queued = 0;
 
-            for (const appointment of appointments) {
+    /*
+     * Marks the doctor's active appointments in [dateFrom, dateTo] as
+     * RESCHEDULE_REQUIRED and queues them, inside the caller's transaction.
+     * Appointments already queued are skipped (findActiveAppointmentsInRange
+     * excludes RESCHEDULE_REQUIRED), so calling it twice never double-queues.
+     */
+    async queueAppointmentsTx(
+        tx: Prisma.TransactionClient,
+        employeeId: string,
+        dateFrom: string,
+        dateTo: string,
+        createdBy: string,
+        priority: string = "NORMAL",
+        reason?: string,
+        branchId?: string,
+        reasonPrefix: string = "DOCTOR_LEAVE"
+    ) {
 
-                await this.repository.markAppointmentRescheduleRequired(
-                    tx,
-                    appointment.appointment_id
-                );
+        const appointments =
+            await this.repository.findActiveAppointmentsInRange(
+                tx,
+                employeeId,
+                dateFrom,
+                dateTo,
+                branchId
+            );
 
-                const queueId = await generateId(
-                    tx,
-                    "RESCHEDULE_QUEUE"
-                );
+        let queued = 0;
 
-                await this.repository.createRescheduleQueueEntry(
-                    tx,
-                    {
-                        queue_id: queueId,
-                        appointment_id:
-                            appointment.appointment_id,
-                        patient_id: appointment.patient_id,
-                        employee_id: employeeId,
-                        branch_id: appointment.branch_id ?? "",
-                        department_id:
-                            appointment.department_id,
-                        old_schedule_id:
-                            appointment.schedule_id,
-                        old_appointment_date:
-                            appointment.appointment_date,
-                        old_appointment_time:
-                            appointment.appointment_time,
-                        transfer_id: null,
-                        priority: dto.priority ?? "NORMAL",
-                        reason:
-                            `DOCTOR_LEAVE${dto.reason ? `: ${dto.reason}` : ""}`,
-                        status: RESCHEDULE_QUEUE_STATUS.PENDING,
-                        created_by: createdBy
-                    }
-                );
+        for (const appointment of appointments) {
 
-                queued += 1;
+            await this.repository.markAppointmentRescheduleRequired(
+                tx,
+                appointment.appointment_id
+            );
 
-            }
+            const queueId = await generateId(
+                tx,
+                "RESCHEDULE_QUEUE"
+            );
 
-            return { total: appointments.length, queued };
+            await this.repository.createRescheduleQueueEntry(
+                tx,
+                {
+                    queue_id: queueId,
+                    appointment_id:
+                        appointment.appointment_id,
+                    patient_id: appointment.patient_id,
+                    employee_id: employeeId,
+                    branch_id: appointment.branch_id ?? "",
+                    department_id:
+                        appointment.department_id,
+                    old_schedule_id:
+                        appointment.schedule_id,
+                    old_appointment_date:
+                        appointment.appointment_date,
+                    old_appointment_time:
+                        appointment.appointment_time,
+                    transfer_id: null,
+                    priority,
+                    reason:
+                        `${reasonPrefix}${reason ? `: ${reason}` : ""}`,
+                    status: RESCHEDULE_QUEUE_STATUS.PENDING,
+                    created_by: createdBy
+                }
+            );
 
+            queued += 1;
+
+        }
+
+        return { total: appointments.length, queued };
+
+    }
+
+
+    /*
+     * A rejected leave must not leave patients stranded: undo the reschedule
+     * queue created for it. Only entries still PENDING are released (a slot
+     * already assigned/confirmed was handled by staff and is left alone), and
+     * only appointments still marked RESCHEDULE_REQUIRED go back to SCHEDULED.
+     * Leave requests of one doctor cannot overlap, so the date range belongs
+     * to this leave alone.
+     */
+    private async releaseLeaveQueueTx(
+        tx: Prisma.TransactionClient,
+        employeeId: string,
+        dateFrom: Date,
+        dateTo: Date
+    ) {
+
+        const entries = await tx.appointment_reschedule_queue.findMany({
+            where: {
+                employee_id: employeeId,
+                status: RESCHEDULE_QUEUE_STATUS.PENDING,
+                reason: { startsWith: "DOCTOR_LEAVE" },
+                old_appointment_date: { gte: dateFrom, lte: dateTo }
+            },
+            select: { queue_id: true, appointment_id: true }
         });
+
+        if (entries.length === 0) return 0;
+
+        await tx.appointment_reschedule_queue.updateMany({
+            where: { queue_id: { in: entries.map((e) => e.queue_id) } },
+            data: { status: RESCHEDULE_QUEUE_STATUS.CANCELLED }
+        });
+
+        await tx.appointment_history.updateMany({
+            where: {
+                appointment_id: { in: entries.map((e) => e.appointment_id) },
+                status: APPOINTMENT_STATUS.RESCHEDULE_REQUIRED
+            },
+            data: { status: APPOINTMENT_STATUS.SCHEDULED }
+        });
+
+        return entries.length;
+
+    }
+
+
+    /** Queues the doctor's appointments for an approved leave (nurses have none). */
+    private async queueForApprovedLeaveTx(
+        tx: Prisma.TransactionClient,
+        employeeId: string,
+        dateFrom: Date,
+        dateTo: Date,
+        actorUserId: string
+    ) {
+
+        const emp = await this.repository.findDoctorWithRole(employeeId);
+        if (emp?.user_table?.role_type !== "DOCTOR") return null;
+
+        return this.queueAppointmentsTx(
+            tx,
+            employeeId,
+            dateFrom.toISOString().slice(0, 10),
+            dateTo.toISOString().slice(0, 10),
+            actorUserId,
+            "NORMAL",
+            "Approved leave"
+        );
 
     }
 

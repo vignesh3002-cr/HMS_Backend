@@ -164,7 +164,7 @@ export class DoctorLeaveController {
                     ? Number(req.query.page)
                     : LEAVE_DEFAULT_PAGE,
                 limit: req.query.limit
-                    ? Number(req.query.limit)
+                    ? Math.min(Math.max(Number(req.query.limit) || LEAVE_DEFAULT_LIMIT, 1), 100)
                     : LEAVE_DEFAULT_LIMIT
             });
 

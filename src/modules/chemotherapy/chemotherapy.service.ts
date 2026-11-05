@@ -1,4 +1,6 @@
 import { Prisma } from "@prisma/client";
+import * as XLSX from "xlsx";
+import crypto from "crypto";
 import prisma from "../../config/prisma";
 import { generateId, generateIdBatch } from "../../utils/idGenerator";
 import { TOP_LEVEL_ADMIN_ROLES } from "../../permissions/roles";
@@ -18,7 +20,14 @@ import {
     PROTOCOL_ACTIVE_STATUS,
     DRUG_ROLE,
     ID_ENTITY,
-    PLAN_ORDER_STATUS
+    PLAN_ORDER_STATUS,
+    ADMINISTRATION_STATUS,
+    ADMINISTRATION_STATUSES,
+    ADMINISTRATION_REASON_REQUIRED,
+    ADMINISTERED_DRUG_ROLES,
+    AdministrationStatus,
+    PLAN_INVESTIGATION_CATEGORY,
+    PLAN_INVESTIGATION_STATUS
 } from "./chemotherapy.constants";
 import {
     CreatePlanDto,
@@ -28,12 +37,15 @@ import {
     AddPlanItemDto,
     PlanItemInputDto,
     PlanHydrationRowDto,
+    PlanInvestigationRowDto,
+    UpdatePlanInvestigationStatusDto,
     CreateCycleDto,
     UpdateCycleDto,
     CycleStatusChangeDto,
     RecordAdministrationDto,
     RecordVitalsDto,
     RecordAdverseEventDto,
+    UpdateAdverseEventDto,
     RecordLabReviewDto,
     RecordFollowupDto,
     CreateRegimenProtocolDto,
@@ -55,10 +67,13 @@ import {
     RegimenProtocolDilutionInput,
     RegimenProtocolDayInput,
     RegimenProtocolDischargeInstructionInput,
-    SavePlanOrderDto
+    SavePlanOrderDto,
+    UpdateAdministrationStatusDto
 } from "./chemotherapy.types";
+import { getTodayInIST, parseDateOnly } from "../appointment/appointment.utils";
 import { logAudit, diffFields, summarizeCreate, summarizeStatusChange } from "../audit/audit.service";
 import { AUDIT_ACTION } from "../audit/audit.types";
+import { computePlanSchedule, type PlanScheduleDay } from "./chemotherapy.schedule";
 
 function isPlanStatus(value: string): value is PlanStatus {
     return Object.values(PLAN_STATUS).includes(value as PlanStatus);
@@ -226,6 +241,105 @@ function planHydrationCreateData(
 
 }
 
+function normalizedMedicineText(value?: string | null): string {
+
+    return (value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+}
+
+function scoreMedicineMatch(
+    target: { medicine_id: string; medicine_name: string; generic_name: string | null },
+    mapping: { medicine_id: string; medicine_name: string; generic_name: string | null }
+): number {
+
+    if (target.medicine_id === mapping.medicine_id) {
+        return 10000;
+    }
+
+    const targetName = normalizedMedicineText(target.medicine_name);
+    const mappingName = normalizedMedicineText(mapping.medicine_name);
+    const targetGeneric = normalizedMedicineText(target.generic_name);
+    const mappingGeneric = normalizedMedicineText(mapping.generic_name);
+
+    if (mappingName && targetName === mappingName) {
+        return 3000 + mappingName.length;
+    }
+
+    if (mappingName.length >= 4 && targetName.includes(mappingName)) {
+        return 2000 + mappingName.length;
+    }
+
+    if (mappingGeneric && targetGeneric === mappingGeneric) {
+        return 1000 + mappingGeneric.length;
+    }
+
+    if (mappingGeneric.length >= 4 && targetName.includes(mappingGeneric)) {
+        return 900 + mappingGeneric.length;
+    }
+
+    return 0;
+
+}
+
+function normalizedInvestigationKey(row: PlanInvestigationRowDto): string {
+
+    const name = row.investigation_name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const identity = row.investigation_category === PLAN_INVESTIGATION_CATEGORY.LAB && row.lab_test_id
+        ? row.lab_test_id
+        : name;
+
+    return `${row.investigation_category}:${identity}`.slice(0, 220);
+
+}
+
+function planInvestigationCreateData(
+    planId: string,
+    investigationId: string,
+    index: number,
+    row: PlanInvestigationRowDto,
+    actingUserId: string,
+    planOrderId: string,
+    carried?: {
+        item_status?: string | null;
+        lab_order_id?: string | null;
+        lab_order_item_id?: string | null;
+    } | null
+): Prisma.chemotherapy_plan_order_investigationUncheckedCreateInput {
+
+    /* A row already ordered earlier keeps its ORDERED status / lab links when
+       the tab is saved again with the same (often stale) PLANNED row: the
+       status only changes through the explicit status endpoint. */
+    const incomingStatus = row.item_status ?? null;
+    const itemStatus = carried?.item_status === PLAN_INVESTIGATION_STATUS.ORDERED
+        && (!incomingStatus || incomingStatus === PLAN_INVESTIGATION_STATUS.PLANNED)
+        ? PLAN_INVESTIGATION_STATUS.ORDERED
+        : incomingStatus ?? PLAN_INVESTIGATION_STATUS.PLANNED;
+
+    return {
+        investigation_id: investigationId,
+        plan_order_id: planOrderId,
+        chemotherapy_plan_id: planId,
+        lab_test_id: row.investigation_category === PLAN_INVESTIGATION_CATEGORY.LAB ? row.lab_test_id || null : null,
+        investigation_name: row.investigation_name.trim(),
+        investigation_category: row.investigation_category,
+        investigation_type: row.investigation_type?.trim() || null,
+        source_medicine_ids: row.source_medicine_ids?.trim() || null,
+        source_drug_names: row.source_drug_names?.trim() || null,
+        source_test_text: row.source_test_text?.trim() || null,
+        monitoring_phase: row.monitoring_phase?.trim() || "BASELINE",
+        priority: row.priority?.trim() || "Normal",
+        target_date: row.target_date ? new Date(row.target_date) : null,
+        clinical_notes: row.clinical_notes?.trim() || null,
+        item_status: itemStatus,
+        lab_order_id: row.lab_order_id?.trim() || carried?.lab_order_id || null,
+        lab_order_item_id: row.lab_order_item_id?.trim() || carried?.lab_order_item_id || null,
+        display_order: index + 1,
+        normalized_key: normalizedInvestigationKey(row),
+        created_by: actingUserId
+    };
+
+}
+
 // A protocol's items as plan items - the plan's one-time baseline copy.
 function protocolPlanItems(protocol: {
     chemotherapy_regimen_protocol_items: {
@@ -269,24 +383,76 @@ function protocolPlanItems(protocol: {
 
 }
 
-// The plan's current cycle day order: on an open plan the first still
-// ORDERED day (by cycle, day) whose cycle isn't closed, else - and always
-// on a closed plan - the latest COMPLETED one. Orders come sorted by cycle,
-// day.
+// The plan's current cycle day order. On an open plan: the first still
+// ORDERED day (the one being ordered) whose cycle isn't closed, else the
+// latest IN_ADMINISTRATION day (being given) on an open cycle. Otherwise -
+// and always on a closed plan - the latest COMPLETED one. Orders come
+// sorted by cycle, day.
 function pickCurrentOrder<T extends { order_status: string; chemotherapy_cycle: { cycle_status: string | null } | null }>(
     orders: T[],
     planOpen: boolean
 ): T | null {
 
-    const pending = planOpen
-        ? orders.find((order) =>
-            order.order_status === PLAN_ORDER_STATUS.ORDERED &&
-            !CYCLE_TERMINAL_STATUSES.includes(order.chemotherapy_cycle?.cycle_status as CycleStatus))
+    const onOpenCycle = (order: T) =>
+        !CYCLE_TERMINAL_STATUSES.includes(order.chemotherapy_cycle?.cycle_status as CycleStatus);
+
+    const open = planOpen
+        ? orders.find((order) => order.order_status === PLAN_ORDER_STATUS.ORDERED && onOpenCycle(order))
+            ?? [...orders].reverse().find((order) => order.order_status === PLAN_ORDER_STATUS.IN_ADMINISTRATION && onOpenCycle(order))
         : undefined;
 
-    return pending
+    return open
         ?? [...orders].reverse().find((order) => order.order_status === PLAN_ORDER_STATUS.COMPLETED)
         ?? null;
+
+}
+
+// Today's date in IST (the hospital's timezone) for @db.Date columns.
+function istToday(): Date {
+
+    return parseDateOnly(getTodayInIST());
+
+}
+
+function addDays(date: Date, days: number): Date {
+
+    const next = new Date(date);
+    next.setUTCDate(next.getUTCDate() + days);
+
+    return next;
+
+}
+
+function toNumber(value: Prisma.Decimal | number | string | null | undefined): number | null {
+
+    if (value === null || value === undefined || value === "") {
+        return null;
+    }
+
+    const number = Number(value);
+
+    return Number.isFinite(number) ? number : null;
+
+}
+
+// The IST calendar date of a timestamp, as YYYY-MM-DD.
+function istDateOf(value: Date): string {
+
+    return new Date(value.getTime() + (5 * 60 + 30) * 60 * 1000).toISOString().slice(0, 10);
+
+}
+
+function dateOnly(value: Date | null | undefined): string | null {
+
+    return value ? value.toISOString().slice(0, 10) : null;
+
+}
+
+function personName(person: { first_name: string | null; last_name: string | null } | null | undefined): string | null {
+
+    const name = [person?.first_name, person?.last_name].filter(Boolean).join(" ").trim();
+
+    return name || null;
 
 }
 
@@ -316,6 +482,30 @@ function openPlanMessage(plan: {
 
 }
 
+// The adverse-event fields an edit may change (updateAdverseEvent).
+const ADVERSE_EVENT_TEXT_FIELDS = [
+    "adverse_event_category", "ctcae_grade", "reaction_grade", "severity",
+    "reaction_description", "medication_given", "doctor_action",
+    "nursing_action", "remarks"
+] as const satisfies readonly (keyof UpdateAdverseEventDto)[];
+
+const ADVERSE_EVENT_BOOLEAN_FIELDS = [
+    "nausea", "vomiting", "diarrhea", "constipation", "mucositis", "fever",
+    "fatigue", "neuropathy", "alopecia", "skin_rash", "anemia", "neutropenia",
+    "thrombocytopenia", "infection", "bleeding", "pain",
+    "treatment_interrupted", "treatment_stopped", "hospitalization_required",
+    "icu_required", "emergency_medication_given", "dose_modified",
+    "dose_reduced", "dose_delayed", "resolved"
+] as const satisfies readonly (keyof UpdateAdverseEventDto)[];
+
+// A cycle day's planned date from the plan's schedule (null when the plan
+// has none yet).
+const plannedDateOf = (
+    schedule: { cycle_number: number; cycle_day: number; planned_date: Date }[],
+    cycleNumber: number,
+    cycleDay: number
+) => schedule.find((row) => row.cycle_number === cycleNumber && row.cycle_day === cycleDay)?.planned_date ?? null;
+
 export class ChemotherapyService {
 
     private repository = new ChemotherapyRepository();
@@ -328,32 +518,73 @@ export class ChemotherapyService {
     // columns only - no schema change).
     // ---------------------------------------------------------------
 
-    private async resolveMedicineId(rawId?: string | null): Promise<string | null> {
+    private async resolveMedicineId(
+        rawId?: string | null,
+        meta?: { form?: string | null; brand?: string | null; genericName?: string | null; medicineName?: string | null; drugRole?: string | null }
+    ): Promise<string | null> {
         const raw = (rawId ?? "").trim();
         if (!raw) return null;
         const byId = await this.repository.findMedicineById(raw);
-        if (byId) return byId.medicine_id;
+        if (byId) {
+            if (
+                meta?.genericName &&
+                meta.genericName.trim() &&
+                meta.genericName.trim() !== (byId.generic_name || byId.medicine_name)
+            ) {
+                await this.catalogMedicineGeneric(byId.medicine_id, meta.genericName.trim(), { form: meta?.form, drugRole: meta?.drugRole }, "SYSTEM");
+            }
+            return byId.medicine_id;
+        }
         const byName = await this.repository.findMedicineByName(raw);
         if (byName) return byName.medicine_id;
-        const created = await this.repository.createMedicineFromTypedName(raw);
+        const created = await this.repository.createMedicineFromProtocol({
+            name: meta?.medicineName || raw,
+            genericName: meta?.genericName || raw,
+            form: meta?.form,
+            brand: meta?.brand,
+            drugRole: meta?.drugRole
+        });
         return created.medicine_id;
+    }
+
+    private async resolveItemGenericName(medicineId?: string | null): Promise<string | null> {
+        const id = (medicineId ?? "").trim();
+        if (!id) return null;
+        const medicine = await this.repository.findMedicineById(id);
+        return medicine?.generic_name ?? null;
     }
 
     private async resolveDtoMedicines(dto: any): Promise<void> {
         if (!dto || typeof dto !== "object") return;
         if (dto.medicine_id) {
-            dto.medicine_id = (await this.resolveMedicineId(dto.medicine_id)) ?? dto.medicine_id;
+            dto.medicine_id = (await this.resolveMedicineId(dto.medicine_id, {
+                form: dto.drug_type || dto.form,
+                brand: dto.drug_brand_name,
+                genericName: dto.generic_name,
+                medicineName: dto.medicine_name,
+                drugRole: dto.drug_role
+            })) ?? dto.medicine_id;
         }
         if (Array.isArray(dto.items)) {
             for (const item of dto.items) {
                 if (!item || typeof item !== "object") continue;
                 if (item.medicine_id) {
-                    item.medicine_id = (await this.resolveMedicineId(item.medicine_id)) ?? item.medicine_id;
+                    item.medicine_id = (await this.resolveMedicineId(item.medicine_id, {
+                        form: item.drug_type || item.form,
+                        brand: item.drug_brand_name,
+                        genericName: item.generic_name,
+                        medicineName: item.medicine_name,
+                        drugRole: item.drug_role
+                    })) ?? item.medicine_id;
                 }
                 if (Array.isArray(item.dilutions)) {
                     for (const d of item.dilutions) {
                         if (d && d.medicine_id) {
-                            d.medicine_id = (await this.resolveMedicineId(d.medicine_id)) ?? d.medicine_id;
+                            d.medicine_id = (await this.resolveMedicineId(d.medicine_id, {
+                                form: d.form,
+                                brand: d.drug_brand_name,
+                                drugRole: "DILUTION"
+                            })) ?? d.medicine_id;
                         }
                     }
                 }
@@ -362,14 +593,26 @@ export class ChemotherapyService {
         if (Array.isArray(dto.dilutions)) {
             for (const d of dto.dilutions) {
                 if (d && d.medicine_id) {
-                    d.medicine_id = (await this.resolveMedicineId(d.medicine_id)) ?? d.medicine_id;
+                    d.medicine_id = (await this.resolveMedicineId(d.medicine_id, {
+                        form: d.form,
+                        brand: d.drug_brand_name,
+                        genericName: (d as any).generic_name,
+                        medicineName: (d as any).medicine_name,
+                        drugRole: "DILUTION"
+                    })) ?? d.medicine_id;
                 }
             }
         }
         if (Array.isArray(dto.discharge_instructions)) {
             for (const ins of dto.discharge_instructions) {
                 if (ins && ins.medicine_id) {
-                    ins.medicine_id = (await this.resolveMedicineId(ins.medicine_id)) ?? ins.medicine_id;
+                    ins.medicine_id = (await this.resolveMedicineId(ins.medicine_id, {
+                        form: ins.drug_type || ins.form,
+                        brand: ins.drug_brand_name,
+                        genericName: ins.generic_name,
+                        medicineName: ins.medicine_name,
+                        drugRole: "DISCHARGE"
+                    })) ?? ins.medicine_id;
                 }
             }
         }
@@ -477,6 +720,72 @@ export class ChemotherapyService {
 
     }
 
+    async catalogMedicineGeneric(
+        medicineIdOrName: string,
+        customGenericName: string,
+        meta?: { form?: string | null; drugRole?: string | null },
+        actingUserId?: string
+    ) {
+        const raw = (medicineIdOrName || "").trim();
+        const cleanGenericName = (customGenericName || "").trim();
+        if (!cleanGenericName && !raw) {
+            throw new Error("Generic name or medicine name is required");
+        }
+        const finalGenericName = cleanGenericName || raw;
+
+        // Check if an existing medicine matches by ID or Name
+        let medicine = await this.repository.findMedicineById(raw);
+        if (!medicine) {
+            medicine = await this.repository.findMedicineByName(raw);
+        }
+
+        if (medicine) {
+            // Existing medicine case
+            let genericId = medicine.generic_id;
+            if (genericId && genericId !== "GEN_NOT_SPECIFIED") {
+                // 1. Update parent generic_master
+                await this.repository.updateGenericMasterName(genericId, finalGenericName);
+                // 2. Update ALL medicines in medicine_master sharing this generic_id
+                await this.repository.updateAllMedicinesByGenericId(genericId, finalGenericName);
+                // 3. Sync ALL child protocol tables connected via this generic_id
+                await this.repository.syncGenericNameAcrossAllChildTablesByGenericId(genericId, finalGenericName);
+            } else {
+                // Assign new/matched generic_id
+                const genRecord = await this.repository.findOrCreateGeneric(finalGenericName);
+                genericId = genRecord ? genRecord.generic_id : "GEN_NOT_SPECIFIED";
+                await this.repository.updateSingleMedicineGeneric(medicine.medicine_id, genericId, finalGenericName);
+                // Sync child tables for this medicine_id
+                await this.repository.syncMedicineGenericNameAcrossConnectedTables(medicine.medicine_id, finalGenericName);
+                if (genericId && genericId !== "GEN_NOT_SPECIFIED") {
+                    await this.repository.syncGenericNameAcrossAllChildTablesByGenericId(genericId, finalGenericName);
+                }
+            }
+
+            return {
+                medicine_id: medicine.medicine_id,
+                generic_id: genericId,
+                generic_name: finalGenericName,
+                dosage_form: medicine.dosage_form
+            };
+        }
+
+        // Brand New Typed Medicine case (not in DB yet)
+        const genRecord = await this.repository.findOrCreateGeneric(finalGenericName);
+        const createdMedicine = await this.repository.createMedicineFromProtocol({
+            name: raw,
+            genericName: finalGenericName,
+            form: meta?.form,
+            drugRole: meta?.drugRole
+        });
+
+        return {
+            medicine_id: createdMedicine.medicine_id,
+            generic_id: genRecord ? genRecord.generic_id : createdMedicine.generic_id,
+            generic_name: finalGenericName,
+            dosage_form: createdMedicine.dosage_form
+        };
+    }
+
     async listAllActiveMedicines() {
         return this.repository.listAllActiveMedicines();
     }
@@ -491,6 +800,10 @@ export class ChemotherapyService {
 
     async getProtocolFieldOptions() {
         return this.repository.getProtocolFieldOptions();
+    }
+
+    async getGenericFormsAndBrands() {
+        return this.repository.getGenericFormsAndBrands();
     }
 
     async listTreatmentIntents() {
@@ -537,6 +850,7 @@ export class ChemotherapyService {
                 protocol_id: protocolId,
                 protocol_item_id: itemId,
                 medicine_id: dilution.medicine_id ?? null,
+                generic_name: (dilution as any).generic_name ?? null,
                 drug_brand_name: dilution.drug_brand_name ?? null,
                 form: dilution.form ?? null,
                 dose: dilution.dose ?? null,
@@ -605,6 +919,7 @@ export class ChemotherapyService {
             const payload = {
                 protocol_id: protocolId,
                 medicine_id: instruction.medicine_id ?? null,
+                generic_name: instruction.generic_name ?? null,
                 drug_brand_name: instruction.drug_brand_name ?? null,
                 drug_sequence: instruction.drug_sequence ?? sequence,
                 drug_from: instruction.drug_from ?? null,
@@ -679,6 +994,7 @@ export class ChemotherapyService {
                 protocol_id: protocolId,
                 protocol_item_id: null,
                 medicine_id: dilution.medicine_id?.trim() || null,
+                generic_name: (dilution as any).generic_name ?? null,
                 drug_brand_name: dilution.drug_brand_name ?? null,
                 form: dilution.form ?? null,
                 dose: dilution.dose != null && String(dilution.dose).trim() !== "" ? Number(dilution.dose) : null,
@@ -812,10 +1128,13 @@ export class ChemotherapyService {
 
                 const itemId = await this.repository.generateRegimenProtocolItemId(tx);
 
+                const genericName = await this.resolveItemGenericName(item.medicine_id);
+
                 await this.repository.createRegimenProtocolItem(tx, {
                     protocol_item_id: itemId,
                     protocol_id: newProtocolId,
                     medicine_id: item.medicine_id,
+                    generic_name: genericName,
                     drug_role: item.drug_role ?? "PRIMARY",
                     drug_sequence: item.drug_sequence,
                     drug_type: item.drug_type ?? null,
@@ -992,6 +1311,7 @@ export class ChemotherapyService {
                 protocol_id: protocolId,
                 source_resource_id: instruction.source_resource_id ?? null,
                 medicine_id: instruction.medicine_id ?? null,
+                generic_name: instruction.generic_name ?? null,
                 drug_brand_name: instruction.drug_brand_name ?? null,
                 drug_sequence: instruction.drug_sequence ?? null,
                 drug_from: instruction.drug_from ?? null,
@@ -1050,6 +1370,7 @@ export class ChemotherapyService {
 
             await this.repository.updateDischargeInstruction(tx, dischargeInstructionId, {
                 medicine_id: instruction.medicine_id ?? null,
+                generic_name: instruction.generic_name !== undefined ? instruction.generic_name : undefined,
                 drug_brand_name: instruction.drug_brand_name ?? null,
                 drug_sequence: instruction.drug_sequence ?? null,
                 drug_from: instruction.drug_from ?? null,
@@ -1136,6 +1457,7 @@ export class ChemotherapyService {
                 protocol_item_id: itemId,
                 protocol_id: protocolId,
                 medicine_id: item.medicine_id,
+                generic_name: medicine.generic_name,
                 drug_role: item.drug_role ?? "PRIMARY",
                 drug_sequence: item.drug_sequence,
                 drug_type: item.drug_type ?? null,
@@ -1229,10 +1551,19 @@ export class ChemotherapyService {
             throw new Error("Protocol item not found on this protocol");
         }
 
+        /* Re-resolve generic_name when the medicine changes; otherwise keep the
+           value already stored on the item. */
+        const targetMedicineId = dto.medicine_id ?? item.medicine_id;
+        const genericName =
+            dto.medicine_id && dto.medicine_id !== item.medicine_id
+                ? await this.resolveItemGenericName(dto.medicine_id)
+                : item.generic_name ?? null;
+
         await prisma.$transaction(async (tx) => {
 
             const updated = {
-                medicine_id: dto.medicine_id ?? item.medicine_id,
+                medicine_id: targetMedicineId,
+                generic_name: genericName,
                 drug_role: dto.drug_role ?? item.drug_role,
                 drug_sequence: dto.drug_sequence ?? item.drug_sequence,
                 drug_type: dto.drug_type ?? item.drug_type,
@@ -1567,6 +1898,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
             const payload = {
                 medicine_id: item.medicine_id,
+                generic_name: (item as any).generic_name ?? null,
                 drug_role: item.drug_role ?? "PRIMARY",
                 drug_sequence: item.drug_sequence,
                 drug_type: item.drug_type ?? null,
@@ -3003,7 +3335,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             throw new Error("Chemotherapy plan not found");
         }
 
-        const [withOrders] = await this.withPlanOrders([plan]);
+        const [withOrders] = await this.withPlanOrders([plan], { withSchedule: true });
 
         return withOrders;
 
@@ -3017,14 +3349,29 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
     }
 
+    // The planned date of every cycle day (chemotherapy.schedule.ts). A
+    // failure here must not block reading the plan.
+    private async planSchedule(plan: unknown): Promise<PlanScheduleDay[]> {
+        try {
+            return await computePlanSchedule(prisma, plan as Parameters<typeof computePlanSchedule>[1]);
+        } catch (error: any) {
+            console.error("Failed to calculate the plan's cycle day dates:", error?.message ?? error);
+            return [];
+        }
+    }
+
     /*
      * Adds each plan's saved cycle day orders (headers, in cycle / day
      * order) and its current_order - the first ORDERED day, else the
-     * latest COMPLETED one - with that day's items and hydration. Readers
+     * latest IN_ADMINISTRATION one, else the latest COMPLETED one (see
+     * pickCurrentOrder) - with that day's items and hydration. Readers
      * (prescription, pharmacy slip, patient details) show current_order's
      * rows, falling back to the baseline chemotherapy_plan_items.
      */
-    private async withPlanOrders<T extends { chemotherapy_plan_id: string; treatment_status: string | null }>(plans: T[]) {
+    private async withPlanOrders<T extends { chemotherapy_plan_id: string; treatment_status: string | null }>(
+        plans: T[],
+        options: { withSchedule?: boolean } = {}
+    ) {
 
         if (plans.length === 0) {
             return [];
@@ -3051,15 +3398,29 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
         const currentOrders = currentIds.length > 0 ? await this.repository.findPlanOrdersWithRows(currentIds) : [];
 
-        return plans.map((plan) => {
+        // Single-plan reads get every cycle day's planned date; lists keep
+        // only the dates stored on the orders (no protocol lookup per plan).
+        const schedules = options.withSchedule
+            ? await Promise.all(plans.map((plan) => this.planSchedule(plan)))
+            : plans.map((): PlanScheduleDay[] => []);
 
-            const orders = ordersByPlan.get(plan.chemotherapy_plan_id) ?? [];
+        return plans.map((plan, index) => {
+
+            const schedule = schedules[index];
+            const withDate = <O extends { cycle_number: number; cycle_day: number; planned_date: Date | null }>(order: O) => ({
+                ...order,
+                planned_date: order.planned_date ?? plannedDateOf(schedule, order.cycle_number, order.cycle_day)
+            });
+            const orders = (ordersByPlan.get(plan.chemotherapy_plan_id) ?? []).map(withDate);
             const currentId = currentIdFor(plan);
+            const current = currentOrders.find((order) => order.plan_order_id === currentId);
 
             return {
                 ...plan,
                 plan_orders: orders,
-                current_order: currentOrders.find((order) => order.plan_order_id === currentId) ?? null
+                current_order: current ? withDate(current) : null,
+                // The planned date of every cycle day (chemotherapy.schedule.ts).
+                chemotherapy_plan_schedule: schedule
             };
 
         });
@@ -3102,9 +3463,58 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             return null;
         }
 
-        const [withOrders] = await this.withPlanOrders([plan]);
+        const [withOrders] = await this.withPlanOrders([plan], { withSchedule: true });
 
         return withOrders;
+
+    }
+
+    /**
+     * GET /chemotherapy/pharmacy-slips?encounter_no= - the visit's pharmacy
+     * slips (not CANCELLED) with their items, for the consultation Summary
+     * print. Branch-scoped like latest-for-patient: top-level admins see
+     * every branch, others their ACTIVE mappings (none -> empty list).
+     * One slip per cycle day order: the newest wins if several are open.
+     */
+    async getPharmacySlipsForEncounter(encounterNo: string, userId: string, role: string) {
+
+        const isTopLevelAdmin = TOP_LEVEL_ADMIN_ROLES.some(
+            (r) => r.toLowerCase() === String(role ?? "").toLowerCase()
+        );
+
+        let branchIds: string[] | null = null;
+
+        if (!isTopLevelAdmin) {
+
+            const mappings = await this.repository.findActiveBranchMappingsForUser(userId);
+
+            branchIds = mappings.map((m) => String(m.branch_id));
+
+            if (branchIds.length === 0) {
+                return [];
+            }
+
+        }
+
+        const slips = await this.repository.findPharmacySlipsByEncounter(encounterNo, branchIds);
+
+        // Newest first within a cycle day, so the first slip seen per order wins.
+        const seenOrders = new Set<string>();
+
+        return slips
+            .filter((slip) => {
+                const key = slip.plan_order_id ?? `${slip.cycle_number ?? ""}/${slip.cycle_day ?? ""}`;
+                if (seenOrders.has(key)) return false;
+                seenOrders.add(key);
+                return true;
+            })
+            .map((slip) => ({
+                ...slip,
+                pharmacy_slip_item: slip.pharmacy_slip_item.map((item) => ({
+                    ...item,
+                    quantity: item.quantity != null ? Number(item.quantity) : null
+                }))
+            }));
 
     }
 
@@ -3301,6 +3711,19 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
         }
 
         await prisma.$transaction(async (tx) => {
+
+            await this.repository.lockPlan(tx, planId);
+
+            // A closed course leaves no cycle day half administered.
+            if (PLAN_TERMINAL_STATUSES.includes(dto.status as PlanStatus)) {
+                await this.closeOpenAdministrationDays(
+                    tx,
+                    planId,
+                    undefined,
+                    `Plan ${dto.status.toLowerCase()}${dto.reason?.trim() ? `: ${dto.reason.trim()}` : ""}`,
+                    actingUserId
+                );
+            }
 
             await this.repository.updatePlan(tx, planId, {
                 treatment_status: dto.status,
@@ -3828,7 +4251,541 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
         const header = await this.repository.findPlanOrder(prisma, planId, cycleNumber, cycleDay);
 
-        return header ? this.repository.findPlanOrderWithRows(header.plan_order_id) : null;
+        const order = header ? await this.repository.findPlanOrderWithRows(header.plan_order_id) : null;
+
+        if (!order) {
+            return null;
+        }
+
+        return {
+            ...order,
+            planned_date: order.planned_date ?? plannedDateOf(await this.planSchedule(plan), cycleNumber, cycleDay)
+        };
+
+    }
+
+    // Suggests baseline lab / non-lab / tissue investigations for the medicines
+    // on a cycle-day order. Mappings were imported for curated drug ids, while
+    // existing protocols use legacy medicine ids, so an exact id match, the
+    // medicine name, and the generic name are all considered (longest name wins
+    // - e.g. Trastuzumab deruxtecan over Trastuzumab).
+    async getMedicineInvestigations(medicineIds: string[]) {
+
+        const ids = [...new Set(medicineIds.map((id) => id.trim()).filter(Boolean))];
+
+        if (ids.length === 0) {
+            return { lab: [], nonLab: [] };
+        }
+
+        const [medicines, labMappings, nonLabMappings] = await Promise.all([
+            this.repository.findActiveMedicinesByIds(ids),
+            this.repository.listDrugLabMonitoringMappings(),
+            this.repository.listDrugNonLabMappings()
+        ]);
+
+        const mappingMedicines = new Map<string, { medicine_id: string; medicine_name: string; generic_name: string | null }>();
+
+        for (const row of [...labMappings, ...nonLabMappings]) {
+            mappingMedicines.set(row.medicine_master.medicine_id, row.medicine_master);
+        }
+
+        const matchedByMedicine = new Map<string, { medicine_id: string; medicine_name: string; generic_name: string | null }>();
+
+        for (const medicine of medicines) {
+
+            let best: { medicine_id: string; medicine_name: string; generic_name: string | null } | null = null;
+            let bestScore = 0;
+
+            for (const mappingMedicine of mappingMedicines.values()) {
+                const score = scoreMedicineMatch(medicine, mappingMedicine);
+                if (score > bestScore) {
+                    best = mappingMedicine;
+                    bestScore = score;
+                }
+            }
+
+            if (best) {
+                matchedByMedicine.set(medicine.medicine_id, best);
+            }
+
+        }
+
+        const matchedMappingIds = new Set([...matchedByMedicine.values()].map((medicine) => medicine.medicine_id));
+
+        if (matchedMappingIds.size === 0) {
+            return { lab: [], nonLab: [] };
+        }
+
+        const lab = new Map<string, {
+            lab_test_id: string;
+            investigation_name: string;
+            investigation_category: string;
+            investigation_type: string | null;
+            test_code: string | null;
+            sample_type: string | null;
+            category_name: string | null;
+            source_test_text: string | null;
+            monitoring_phase: string;
+            priority: string;
+            item_status: string;
+            source_medicine_ids: Set<string>;
+            source_drug_names: Set<string>;
+        }>();
+
+        for (const row of labMappings) {
+
+            if (!matchedMappingIds.has(row.medicine_id)) {
+                continue;
+            }
+
+            const key = `${row.lab_test_id}:${row.monitoring_phase ?? "BASELINE"}`;
+            const current = lab.get(key) ?? {
+                lab_test_id: row.lab_test_id,
+                investigation_name: row.lab_test_master.test_name,
+                investigation_category: PLAN_INVESTIGATION_CATEGORY.LAB,
+                investigation_type: row.lab_test_master.sample_type ?? row.lab_test_master.lab_test_category?.category_name ?? null,
+                test_code: row.lab_test_master.test_code ?? null,
+                sample_type: row.lab_test_master.sample_type ?? null,
+                category_name: row.lab_test_master.lab_test_category?.category_name ?? null,
+                source_test_text: row.source_test_text ?? null,
+                monitoring_phase: row.monitoring_phase ?? "BASELINE",
+                priority: "Normal",
+                item_status: PLAN_INVESTIGATION_STATUS.PLANNED,
+                source_medicine_ids: new Set<string>(),
+                source_drug_names: new Set<string>()
+            };
+
+            current.source_medicine_ids.add(row.medicine_id);
+
+            for (const [targetId, mappingMedicine] of matchedByMedicine.entries()) {
+                if (mappingMedicine.medicine_id === row.medicine_id) {
+                    const target = medicines.find((medicine) => medicine.medicine_id === targetId);
+                    if (target) current.source_drug_names.add(target.medicine_name);
+                }
+            }
+
+            if (row.source_test_text) current.source_test_text = row.source_test_text;
+            lab.set(key, current);
+
+        }
+
+        const nonLab = new Map<string, {
+            investigation_name: string;
+            investigation_category: string;
+            investigation_type: string | null;
+            source_test_text: string | null;
+            monitoring_phase: string;
+            priority: string;
+            item_status: string;
+            source_medicine_ids: Set<string>;
+            source_drug_names: Set<string>;
+        }>();
+
+        for (const row of nonLabMappings) {
+
+            if (!matchedMappingIds.has(row.medicine_id)) {
+                continue;
+            }
+
+            const type = (row.investigation_type ?? "").toLowerCase();
+            const category = type.includes("tissue") || type.includes("molecular")
+                ? PLAN_INVESTIGATION_CATEGORY.TISSUE
+                : PLAN_INVESTIGATION_CATEGORY.NON_LAB;
+            const key = `${category}:${normalizedMedicineText(row.investigation_name)}`;
+            const current = nonLab.get(key) ?? {
+                investigation_name: row.investigation_name,
+                investigation_category: category,
+                investigation_type: row.investigation_type ?? null,
+                source_test_text: null,
+                monitoring_phase: "BASELINE",
+                priority: "Normal",
+                item_status: PLAN_INVESTIGATION_STATUS.PLANNED,
+                source_medicine_ids: new Set<string>(),
+                source_drug_names: new Set<string>()
+            };
+
+            current.source_medicine_ids.add(row.medicine_id);
+
+            for (const [targetId, mappingMedicine] of matchedByMedicine.entries()) {
+                if (mappingMedicine.medicine_id === row.medicine_id) {
+                    const target = medicines.find((medicine) => medicine.medicine_id === targetId);
+                    if (target) current.source_drug_names.add(target.medicine_name);
+                }
+            }
+
+            nonLab.set(key, current);
+
+        }
+
+        const serialize = <T extends { source_medicine_ids: Set<string>; source_drug_names: Set<string> }>(row: T) => ({
+            ...row,
+            source_medicine_ids: [...row.source_medicine_ids].join(","),
+            source_drug_names: [...row.source_drug_names].join(", "),
+            lab_test_id: (row as T & { lab_test_id?: string | null }).lab_test_id ?? null
+        });
+
+        return {
+            lab: [...lab.values()]
+                .map(serialize)
+                .sort((a, b) => a.investigation_name.localeCompare(b.investigation_name)),
+            nonLab: [...nonLab.values()]
+                .map(serialize)
+                .sort((a, b) => a.investigation_name.localeCompare(b.investigation_name))
+        };
+
+    }
+
+    // ---------------------------------------------------------------
+    // Import drug->monitoring mappings from an uploaded Excel file.
+    // Populates drug_lab_monitoring and drug_non_lab_investigation so the
+    // medicine-investigations endpoint can auto-suggest baseline lab tests
+    // and non-lab/tissue investigations for ordered medicines.
+    // ---------------------------------------------------------------
+    async importDrugMonitoringMappings(fileBuffer: Buffer, fileName: string) {
+
+        const workbook = XLSX.read(fileBuffer, { type: "buffer" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const raw = XLSX.utils.sheet_to_json<any>(worksheet, { header: 1 });
+
+        if (!raw || raw.length === 0) {
+            throw new Error("Excel sheet is empty.");
+        }
+
+        const headers = (raw[0] as any[]).map((h) => String(h ?? "").trim());
+        const normalize = (value?: string | null) =>
+            (value ?? "")
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, " ")
+                .trim();
+
+        const scoreTestMatch = (
+            target: { lab_test_id: string; test_name: string },
+            mappingName: string
+        ): number => {
+            const targetName = normalize(target.test_name);
+            const mapping = normalize(mappingName);
+            if (!mapping) return 0;
+            if (targetName === mapping) return 10000;
+            if (mapping.length >= 4 && targetName.includes(mapping))
+                return 2000 + mapping.length;
+            if (targetName.length >= 4 && mapping.includes(targetName))
+                return 1500 + targetName.length;
+            const tTokens = new Set(targetName.split(" ").filter(Boolean));
+            const mTokens = new Set(mapping.split(" ").filter(Boolean));
+            let overlap = 0;
+            for (const t of tTokens) if (mTokens.has(t)) overlap += 1;
+            return overlap > 0 ? overlap * 100 : 0;
+        };
+
+        const findBestLabTest = (
+            testName: string,
+            labTestByName: Map<string, { lab_test_id: string; test_name: string }>,
+            labTests: { lab_test_id: string; test_name: string }[]
+        ): { lab_test_id: string; test_name: string } | null => {
+            const key = normalize(testName);
+            if (key && labTestByName.has(key)) {
+                return labTestByName.get(key)!;
+            }
+            let best: { lab_test_id: string; test_name: string } | null = null;
+            let bestScore = 0;
+            for (const test of labTests) {
+                const score = scoreTestMatch(test, testName);
+                if (score > bestScore) {
+                    best = test;
+                    bestScore = score;
+                }
+            }
+            return bestScore >= 200 ? best : null;
+        };
+
+        const findColumn = (candidates: string[]): string | undefined => {
+            const normalized = headers.map((h) => normalize(h));
+            for (const candidate of candidates) {
+                const cn = normalize(candidate);
+                const exactIndex = normalized.findIndex((h) => h === cn);
+                if (exactIndex !== -1) return headers[exactIndex];
+                const containsIndex = normalized.findIndex(
+                    (h) => h.includes(cn) || cn.includes(h)
+                );
+                if (containsIndex !== -1) return headers[containsIndex];
+            }
+            return undefined;
+        };
+
+        const colMedicine = findColumn([
+            "medicine_name",
+            "medicine name",
+            "drug name",
+            "drug_name",
+        ]);
+        const colGeneric = findColumn(["generic_name", "generic name"]);
+        const colLabTest = findColumn([
+            "lab_test_name",
+            "lab test name",
+            "blood test",
+            "lab test",
+        ]);
+        const colPhase = findColumn([
+            "monitoring_phase",
+            "monitoring phase",
+            "phase",
+        ]);
+        const colInvestigation = findColumn([
+            "investigation_name",
+            "investigation name",
+            "non-lab investigation",
+            "other investigation",
+            "non lab investigation",
+        ]);
+        const colInvestigationType = findColumn([
+            "investigation_type",
+            "investigation type",
+            "type",
+        ]);
+        const colSourceText = findColumn([
+            "source_test_text",
+            "source test text",
+            "notes",
+            "remarks",
+        ]);
+
+        if (!colMedicine) {
+            throw new Error(
+                "No medicine name column found in Excel. Expected one of: medicine_name, medicine name, drug name, drug_name."
+            );
+        }
+
+        const medicineIdx = headers.indexOf(colMedicine);
+        const genericIdx = colGeneric ? headers.indexOf(colGeneric) : -1;
+        const labTestIdx = colLabTest ? headers.indexOf(colLabTest) : -1;
+        const phaseIdx = colPhase ? headers.indexOf(colPhase) : -1;
+        const investigationIdx = colInvestigation
+            ? headers.indexOf(colInvestigation)
+            : -1;
+        const investigationTypeIdx = colInvestigationType
+            ? headers.indexOf(colInvestigationType)
+            : -1;
+        const sourceTextIdx = colSourceText ? headers.indexOf(colSourceText) : -1;
+
+        const medicines = await prisma.medicine_master.findMany({
+            where: { is_active: true },
+            select: { medicine_id: true, medicine_name: true, generic_name: true },
+        });
+
+        const medicineByName = new Map(
+            medicines.map((m) => [normalize(m.medicine_name), m])
+        );
+        const medicineByGeneric = new Map(
+            medicines
+                .filter((m) => m.generic_name)
+                .map((m) => [normalize(m.generic_name)!, m])
+        );
+
+        const labTests = await prisma.lab_test_master.findMany({
+            where: { test_status: 1 },
+            select: { lab_test_id: true, test_name: true },
+        });
+        const labTestByName = new Map(
+            labTests.map((t) => [normalize(t.test_name), t])
+        );
+
+        const resolveMedicineId = (
+            medicineName: string | null,
+            genericName: string | null
+        ): string | null => {
+            const nameKey = normalize(medicineName);
+            const genericKey = normalize(genericName);
+            if (nameKey && medicineByName.has(nameKey)) {
+                return medicineByName.get(nameKey)!.medicine_id;
+            }
+            if (genericKey && medicineByGeneric.has(genericKey)) {
+                return medicineByGeneric.get(genericKey)!.medicine_id;
+            }
+            return null;
+        };
+
+        const resolveLabTestId = (
+            testName: string | null
+        ): string | null => {
+            if (!testName) return null;
+            const best = findBestLabTest(testName, labTestByName, labTests);
+            return best?.lab_test_id ?? null;
+        };
+
+        let rowsProcessed = 0;
+        let labMappingsUpserted = 0;
+        let nonLabMappingsUpserted = 0;
+        let medicinesUnmatched = 0;
+        let labTestsUnmatched = 0;
+        const unmatched: string[] = [];
+
+        for (const row of raw.slice(1) as any[]) {
+            const medicineName =
+                medicineIdx !== -1 ? row[medicineIdx] : null;
+            if (!medicineName || String(medicineName).trim() === "") {
+                continue;
+            }
+
+            rowsProcessed += 1;
+            const genericName =
+                genericIdx !== -1 ? row[genericIdx] : null;
+            const medicineId = resolveMedicineId(
+                String(medicineName),
+                genericName ? String(genericName) : null
+            );
+
+            if (!medicineId) {
+                medicinesUnmatched += 1;
+                unmatched.push(`Medicine not found: ${medicineName}`);
+                continue;
+            }
+
+            const labTestName =
+                labTestIdx !== -1 ? row[labTestIdx] : null;
+            // A cell may list several tests separated by ";" (e.g.
+            // "Pregnancy test; HBV screen; CBC"), so create one mapping
+            // per individual test.
+            const labTestsList = labTestName
+                ? String(labTestName).split(";").map((t) => t.trim()).filter(Boolean)
+                : [];
+            for (const singleLabTest of labTestsList) {
+                const labTestId = resolveLabTestId(singleLabTest);
+                if (!labTestId) {
+                    labTestsUnmatched += 1;
+                    unmatched.push(
+                        `Lab test not found for medicine ${medicineName}: ${singleLabTest}`
+                    );
+                    continue;
+                }
+                await prisma.drug_lab_monitoring.upsert({
+                    where: {
+                        medicine_id_lab_test_id_monitoring_phase: {
+                            medicine_id: medicineId,
+                            lab_test_id: labTestId,
+                            monitoring_phase:
+                                (phaseIdx !== -1
+                                    ? String(row[phaseIdx])
+                                    : "BASELINE"
+                                ).trim() || "BASELINE",
+                        },
+                    },
+                    update: {
+                        source_test_text:
+                            sourceTextIdx !== -1
+                                ? String(row[sourceTextIdx])
+                                : null,
+                        active_status: 1,
+                    },
+                    create: {
+                        monitoring_id: crypto.randomUUID(),
+                        medicine_id: medicineId,
+                        lab_test_id: labTestId,
+                        source_test_text:
+                            sourceTextIdx !== -1
+                                ? String(row[sourceTextIdx])
+                                : null,
+                        monitoring_phase:
+                            (phaseIdx !== -1
+                                ? String(row[phaseIdx])
+                                : "BASELINE"
+                            ).trim() || "BASELINE",
+                        active_status: 1,
+                    },
+                });
+                labMappingsUpserted += 1;
+            }
+
+            const investigationName =
+                investigationIdx !== -1 ? row[investigationIdx] : null;
+            if (investigationName && String(investigationName).trim() !== "") {
+                await prisma.drug_non_lab_investigation.upsert({
+                    where: {
+                        medicine_id_investigation_name: {
+                            medicine_id: medicineId,
+                            investigation_name: String(investigationName).trim(),
+                        },
+                    },
+                    update: {
+                        investigation_type:
+                            investigationTypeIdx !== -1
+                                ? String(row[investigationTypeIdx])
+                                : null,
+                        active_status: 1,
+                    },
+                    create: {
+                        investigation_id: crypto.randomUUID(),
+                        medicine_id: medicineId,
+                        investigation_name: String(investigationName).trim(),
+                        investigation_type:
+                            investigationTypeIdx !== -1
+                                ? String(row[investigationTypeIdx])
+                                : null,
+                        active_status: 1,
+                    },
+                });
+                nonLabMappingsUpserted += 1;
+            }
+        }
+
+        return {
+            fileName,
+            sheetName,
+            rowsProcessed,
+            labMappingsUpserted,
+            nonLabMappingsUpserted,
+            medicinesUnmatched,
+            labTestsUnmatched,
+            unmatched,
+        };
+    }
+
+    async updatePlanInvestigationStatus(
+        planId: string,
+        cycleNumber: number,
+        cycleDay: number,
+        dto: UpdatePlanInvestigationStatusDto,
+        actingUserId: string
+    ) {
+
+        const plan = await this.repository.findPlanForUpdate(prisma, planId);
+
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+
+        const order = await this.repository.findPlanOrder(prisma, planId, cycleNumber, cycleDay);
+
+        if (!order) {
+            throw new Error("Cycle day order not found");
+        }
+
+        if (order.order_status === PLAN_ORDER_STATUS.COMPLETED) {
+            throw new Error("This cycle day is already completed and can no longer be changed");
+        }
+
+        const updates = dto.updates ?? [];
+
+        if (updates.length === 0) {
+            return { updated: 0 };
+        }
+
+        if (updates.length > 100) {
+            throw new Error("Too many investigation updates (maximum 100)");
+        }
+
+        if (updates.some((update) => !update.investigation_id && !update.lab_test_id)) {
+            throw new Error("Each investigation update requires investigation_id or lab_test_id");
+        }
+
+        const updated = await this.repository.updatePlanOrderInvestigationStatus(
+            prisma,
+            order.plan_order_id,
+            updates,
+            actingUserId
+        );
+
+        return { updated };
 
     }
 
@@ -3853,8 +4810,31 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
         }
 
         const items = dto.items ?? [];
+        const saveInvestigations = Array.isArray(dto.investigations);
 
         await this.assertPlanItemDrugs(items);
+
+        if (saveInvestigations) {
+
+            const keys = new Set<string>();
+
+            for (const row of dto.investigations as PlanInvestigationRowDto[]) {
+
+                if (!row.investigation_name?.trim()) {
+                    throw new Error("Each investigation requires a name");
+                }
+
+                const key = normalizedInvestigationKey(row);
+
+                if (keys.has(key)) {
+                    throw new Error(`Duplicate investigation: ${row.investigation_name}`);
+                }
+
+                keys.add(key);
+
+            }
+
+        }
 
         if (dto.copied_from_order_id) {
 
@@ -3876,7 +4856,8 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 throw new Error(`This chemotherapy course is already ${lockedPlan?.treatment_status ?? "closed"} - start a new plan from Treatment Plan`);
             }
 
-            const cycles = await this.ensurePlanCycles(tx, lockedPlan, actingUserId);
+            const schedule = await computePlanSchedule(tx, lockedPlan);
+            const cycles = await this.ensurePlanCycles(tx, lockedPlan, actingUserId, schedule);
             const cycle = cycles.find((row) => row.cycle_number === cycleNumber);
 
             if (!cycle) {
@@ -3893,12 +4874,28 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 throw new Error(`Cycle ${cycleNumber} / Day ${cycleDay} is already completed and can no longer be changed`);
             }
 
+            if (existing?.order_status === PLAN_ORDER_STATUS.IN_ADMINISTRATION) {
+                throw new Error(`Cycle ${cycleNumber} / Day ${cycleDay} has been sent for administration and can no longer be changed`);
+            }
+
             const saveHydration = Array.isArray(dto.hydration);
 
             const header = {
                 ...(dto.encounter_no ? { encounter_no: dto.encounter_no } : {}),
                 ...(dto.copied_from_order_id ? { copied_from_order_id: dto.copied_from_order_id } : {}),
                 ...(saveHydration ? { hydration_saved: true } : {}),
+                ...(saveInvestigations ? { investigations_saved: true } : {}),
+                // Instructions left out (row edits, Discharge Medication
+                // re-save) keep what was saved; empty text clears them.
+                ...(dto.chemo_instructions !== undefined
+                    ? { chemo_instructions: dto.chemo_instructions?.trim() || null }
+                    : {}),
+                ...(dto.additional_notes !== undefined
+                    ? { additional_notes: dto.additional_notes?.trim() || null }
+                    : {}),
+                // The Start Date the doctor set for this cycle day (only this
+                // day moves); left out = the kept / calculated date.
+                ...(dto.planned_date ? { planned_date: new Date(dto.planned_date) } : {}),
                 ...(dto.dosing
                     ? {
                         dosing_height_cm: dto.dosing.height_cm ?? null,
@@ -3967,6 +4964,40 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
             }
 
+            if (saveInvestigations) {
+
+                const rows = dto.investigations as PlanInvestigationRowDto[];
+
+                /* The tab replaces its rows with the submitted list. Rows that
+                   were already ordered (status / lab links set by the order or
+                   Discharge flow) are matched by normalized_key so a re-save
+                   never drops an ORDERED investigation back to PLANNED. */
+                const carriedByKey = new Map(
+                    (await this.repository.listPlanOrderInvestigations(tx, planOrderId))
+                        .map((row) => [row.normalized_key, row])
+                );
+
+                await this.repository.deletePlanOrderInvestigations(tx, planOrderId);
+
+                const investigationIds = await generateIdBatch(tx, ID_ENTITY.PLAN_INVESTIGATION, rows.length);
+
+                for (const [index, row] of rows.entries()) {
+                    await this.repository.createPlanOrderInvestigation(
+                        tx,
+                        planInvestigationCreateData(
+                            planId,
+                            investigationIds[index],
+                            index,
+                            row,
+                            actingUserId,
+                            planOrderId,
+                            carriedByKey.get(normalizedInvestigationKey(row))
+                        )
+                    );
+                }
+
+            }
+
             await logAudit(tx, {
                 entity_type: "chemotherapy_plan_order",
                 entity_id: planOrderId,
@@ -3979,6 +5010,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                     cycle_day: cycleDay,
                     item_count: items.length,
                     hydration_count: saveHydration ? (dto.hydration as PlanHydrationRowDto[]).length : null,
+                    investigation_count: saveInvestigations ? (dto.investigations as PlanInvestigationRowDto[]).length : null,
                     copied_from_order_id: dto.copied_from_order_id ?? null,
                     encounter_no: dto.encounter_no ?? null
                 })
@@ -3993,11 +5025,14 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
     }
 
     /*
-     * Called when the consultation is submitted: completes the order(s)
-     * saved in this encounter. The plan moves PLANNED -> ACTIVE, the cycle
-     * PLANNED -> APPROVED -> IN_PROGRESS, and on the cycle's last
-     * medication day the cycle becomes COMPLETED; completed_cycles is then
-     * recounted and the plan is COMPLETED once every cycle is closed.
+     * Called when the consultation is submitted: sends the cycle day
+     * order(s) saved in this encounter for administration. Each becomes
+     * IN_ADMINISTRATION (read-only) with one PENDING administration row per
+     * tracked medicine; the plan moves PLANNED -> ACTIVE and the cycle
+     * PLANNED -> APPROVED -> IN_PROGRESS. The day itself is completed from
+     * the Administration tab (completeAdministrationDay) once every medicine
+     * is resolved. A day with no tracked medicine - or ordered on a cycle
+     * that has since closed - is completed right away, as before.
      * Calling it again for the same encounter changes nothing.
      */
     async completePlanOrders(planId: string, encounterNo: string, actingUserId: string) {
@@ -4028,6 +5063,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             const pending = orders.filter((order) => order.order_status === PLAN_ORDER_STATUS.ORDERED);
 
             const result = {
+                released_orders: [] as { plan_order_id: string; cycle_number: number; cycle_day: number; medicine_count: number }[],
                 completed_orders: [] as { plan_order_id: string; cycle_number: number; cycle_day: number }[],
                 completed_cycles: [] as number[],
                 plan_completed: false,
@@ -4043,6 +5079,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             }
 
             const now = new Date();
+            const treatmentDate = istToday();
 
             if (lockedPlan.treatment_status === PLAN_STATUS.PLANNED) {
 
@@ -4055,69 +5092,82 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                     performed_by: actingUserId,
                     patient_id: lockedPlan.patient_id,
                     branch_id: lockedPlan.branch_id,
-                    change_summary: summarizeStatusChange(PLAN_STATUS.PLANNED, PLAN_STATUS.ACTIVE, "First cycle day completed")
+                    change_summary: summarizeStatusChange(PLAN_STATUS.PLANNED, PLAN_STATUS.ACTIVE, "First cycle day ordered")
                 });
 
             }
 
             for (const order of pending) {
 
-                await this.repository.updatePlanOrder(tx, order.plan_order_id, {
-                    order_status: PLAN_ORDER_STATUS.COMPLETED,
-                    completed_at: now
-                });
-
-                result.completed_orders.push({ plan_order_id: order.plan_order_id, cycle_number: order.cycle_number, cycle_day: order.cycle_day });
-
+                const label = `Cycle ${order.cycle_number} / Day ${order.cycle_day}`;
                 const cycle = await this.repository.findCycleForUpdate(tx, order.chemotherapy_cycle_id);
+                const cycleOpen = !!cycle && !CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status as CycleStatus);
 
-                if (!cycle || CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status as CycleStatus)) {
-                    continue;
+                if (cycle && cycleOpen) {
+                    await this.advanceCycle(tx, lockedPlan, cycle, CYCLE_STATUS.IN_PROGRESS, actingUserId, now, `${label} ordered`);
                 }
 
-                // Walk the cycle forward through its legal transitions only.
-                const target: CycleStatus = order.cycle_day >= lastDay ? CYCLE_STATUS.COMPLETED : CYCLE_STATUS.IN_PROGRESS;
-                let status = cycle.cycle_status as CycleStatus;
-                const steps: CycleStatus[] = [];
+                const items = cycleOpen
+                    ? await this.repository.findOrderItemsForAdministration(tx, order.plan_order_id, ADMINISTERED_DRUG_ROLES)
+                    : [];
 
-                while (status !== target) {
+                if (items.length === 0) {
 
-                    const next = nextCycleStepTowards(status, target);
+                    await this.repository.updatePlanOrder(tx, order.plan_order_id, {
+                        order_status: PLAN_ORDER_STATUS.COMPLETED,
+                        completed_at: now
+                    });
 
-                    if (!next) {
-                        break;
+                    result.completed_orders.push({ plan_order_id: order.plan_order_id, cycle_number: order.cycle_number, cycle_day: order.cycle_day });
+
+                    if (cycleOpen && await this.closeCycleIfDone(tx, lockedPlan, order.chemotherapy_cycle_id, lastDay, actingUserId, now)) {
+                        result.completed_cycles.push(order.cycle_number);
                     }
 
-                    steps.push(next);
-                    status = next;
-
-                }
-
-                if (steps.length === 0) {
                     continue;
+
                 }
 
-                await this.repository.updateCycle(tx, cycle.chemotherapy_cycle_id, {
-                    cycle_status: status,
-                    updated_by: actingUserId,
-                    ...(steps.includes(CYCLE_STATUS.APPROVED) ? { physician_approved: true, approval_date: now } : {}),
-                    ...(!cycle.actual_date ? { actual_date: now } : {}),
-                    ...(status === CYCLE_STATUS.COMPLETED ? { cycle_completed: true, completion_date: now, completion_status: "COMPLETED" } : {})
+                const administrationIds = await generateIdBatch(tx, ID_ENTITY.ADMINISTRATION, items.length);
+
+                await this.repository.createAdministrations(tx, items.map((item, index) => ({
+                    administration_id: administrationIds[index],
+                    chemotherapy_cycle_id: order.chemotherapy_cycle_id,
+                    chemotherapy_plan_item_id: item.chemotherapy_plan_item_id,
+                    plan_order_id: order.plan_order_id,
+                    administration_day: order.cycle_day,
+                    administration_date: treatmentDate,
+                    administration_route: item.administration_route,
+                    infusion_rate: item.infusion_rate,
+                    infusion_duration_minutes: item.infusion_duration_minutes,
+                    administration_status: ADMINISTRATION_STATUS.PENDING,
+                    created_by: actingUserId
+                })));
+
+                await this.repository.updatePlanOrder(tx, order.plan_order_id, {
+                    order_status: PLAN_ORDER_STATUS.IN_ADMINISTRATION
                 });
 
                 await logAudit(tx, {
-                    entity_type: "chemotherapy_cycle",
-                    entity_id: cycle.chemotherapy_cycle_id,
+                    entity_type: "chemotherapy_plan_order",
+                    entity_id: order.plan_order_id,
                     action: AUDIT_ACTION.STATUS_CHANGE,
                     performed_by: actingUserId,
                     patient_id: lockedPlan.patient_id,
                     branch_id: lockedPlan.branch_id,
-                    change_summary: summarizeStatusChange(cycle.cycle_status ?? CYCLE_STATUS.PLANNED, status, `Cycle ${order.cycle_number} / Day ${order.cycle_day} completed`)
+                    change_summary: summarizeStatusChange(
+                        PLAN_ORDER_STATUS.ORDERED,
+                        PLAN_ORDER_STATUS.IN_ADMINISTRATION,
+                        `${label} sent for administration (${items.length} medicine${items.length === 1 ? "" : "s"})`
+                    )
                 });
 
-                if (status === CYCLE_STATUS.COMPLETED) {
-                    result.completed_cycles.push(order.cycle_number);
-                }
+                result.released_orders.push({
+                    plan_order_id: order.plan_order_id,
+                    cycle_number: order.cycle_number,
+                    cycle_day: order.cycle_day,
+                    medicine_count: items.length
+                });
 
             }
 
@@ -4132,6 +5182,151 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
     }
 
+    // Walks a cycle forward to target through its legal transitions only
+    // (PLANNED -> APPROVED -> IN_PROGRESS -> COMPLETED), stamping approval,
+    // start and completion. A completed cycle that has a successor records
+    // the next cycle's due date (start + cycle interval) on both rows.
+    // Returns the status reached.
+    private async advanceCycle(
+        tx: Prisma.TransactionClient,
+        plan: { chemotherapy_plan_id: string; patient_id: string; branch_id: string; planned_cycles: number; cycle_interval_days: number | null },
+        cycle: { chemotherapy_cycle_id: string; cycle_number: number; cycle_status: string | null; actual_date: Date | null; cycle_interval_days: number | null },
+        target: CycleStatus,
+        actingUserId: string,
+        now: Date,
+        note: string
+    ): Promise<CycleStatus> {
+
+        const from = (cycle.cycle_status ?? CYCLE_STATUS.PLANNED) as CycleStatus;
+        let status = from;
+        const steps: CycleStatus[] = [];
+
+        while (status !== target) {
+
+            const next = nextCycleStepTowards(status, target);
+
+            if (!next) {
+                break;
+            }
+
+            steps.push(next);
+            status = next;
+
+        }
+
+        if (steps.length === 0) {
+            return status;
+        }
+
+        const startDate = cycle.actual_date ?? istToday();
+        const interval = cycle.cycle_interval_days ?? plan.cycle_interval_days ?? 0;
+        const nextCycleDate = status === CYCLE_STATUS.COMPLETED && interval > 0 && cycle.cycle_number < plan.planned_cycles
+            ? addDays(startDate, interval)
+            : null;
+
+        await this.repository.updateCycle(tx, cycle.chemotherapy_cycle_id, {
+            cycle_status: status,
+            updated_by: actingUserId,
+            ...(steps.includes(CYCLE_STATUS.APPROVED) ? { physician_approved: true, approval_date: now } : {}),
+            ...(!cycle.actual_date ? { actual_date: startDate } : {}),
+            ...(status === CYCLE_STATUS.COMPLETED
+                ? {
+                    cycle_completed: true,
+                    completion_date: now,
+                    completion_status: "COMPLETED",
+                    ...(nextCycleDate ? { next_cycle_date: nextCycleDate } : {})
+                }
+                : {})
+        });
+
+        if (nextCycleDate) {
+
+            const successor = (await this.repository.findAllCyclesForPlan(tx, plan.chemotherapy_plan_id)).find((row) =>
+                row.cycle_number === cycle.cycle_number + 1 &&
+                row.active_status === 1 &&
+                !CYCLE_TERMINAL_STATUSES.includes(row.cycle_status as CycleStatus));
+
+            if (successor) {
+                await this.repository.updateCycle(tx, successor.chemotherapy_cycle_id, { next_cycle_date: nextCycleDate, updated_by: actingUserId });
+            }
+
+        }
+
+        await logAudit(tx, {
+            entity_type: "chemotherapy_cycle",
+            entity_id: cycle.chemotherapy_cycle_id,
+            action: AUDIT_ACTION.STATUS_CHANGE,
+            performed_by: actingUserId,
+            patient_id: plan.patient_id,
+            branch_id: plan.branch_id,
+            change_summary: summarizeStatusChange(from, status, note)
+        });
+
+        return status;
+
+    }
+
+    // A cycle closes once none of its days is still being administered and
+    // a COMPLETED order covers its last medication day - whichever of its
+    // days completes last. Returns true when this call closed it.
+    private async closeCycleIfDone(
+        tx: Prisma.TransactionClient,
+        plan: { chemotherapy_plan_id: string; patient_id: string; branch_id: string; planned_cycles: number; cycle_interval_days: number | null },
+        cycleId: string,
+        lastDay: number,
+        actingUserId: string,
+        now: Date
+    ): Promise<boolean> {
+
+        const cycle = await this.repository.findCycleForUpdate(tx, cycleId);
+
+        if (!cycle || CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status as CycleStatus)) {
+            return false;
+        }
+
+        const orders = await this.repository.findPlanOrdersForCycle(tx, cycleId);
+
+        const stillOpen = orders.some((order) => order.order_status === PLAN_ORDER_STATUS.IN_ADMINISTRATION);
+        const lastDayDone = orders.some((order) => order.order_status === PLAN_ORDER_STATUS.COMPLETED && order.cycle_day >= lastDay);
+
+        if (stillOpen || !lastDayDone) {
+            return false;
+        }
+
+        const status = await this.advanceCycle(tx, plan, cycle, CYCLE_STATUS.COMPLETED, actingUserId, now, `Cycle ${cycle.cycle_number} completed`);
+
+        return status === CYCLE_STATUS.COMPLETED;
+
+    }
+
+    // Closing a cycle or the whole plan by status change: its days still in
+    // administration are completed, their PENDING medicines recorded as
+    // CANCELLED with the closing reason.
+    private async closeOpenAdministrationDays(
+        tx: Prisma.TransactionClient,
+        planId: string,
+        cycleId: string | undefined,
+        reason: string,
+        actingUserId: string
+    ) {
+
+        const open = await this.repository.findPlanOrdersByStatus(tx, planId, PLAN_ORDER_STATUS.IN_ADMINISTRATION, cycleId);
+
+        if (open.length === 0) {
+            return;
+        }
+
+        await this.repository.cancelPendingAdministrations(tx, open.map((order) => order.plan_order_id), reason, actingUserId);
+
+        for (const order of open) {
+            await this.repository.updatePlanOrder(tx, order.plan_order_id, {
+                order_status: PLAN_ORDER_STATUS.COMPLETED,
+                completed_at: new Date()
+            });
+        }
+
+    }
+
     // Creates the plan's cycle rows 1..planned_cycles (PLANNED, dated from
     // the start date by the cycle interval) the first time they're needed,
     // re-activating any earlier row and retiring untouched PLANNED rows
@@ -4139,7 +5334,8 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
     private async ensurePlanCycles(
         tx: Prisma.TransactionClient,
         plan: { chemotherapy_plan_id: string; planned_cycles: number; cycle_interval_days: number | null; treatment_start_date: Date },
-        actingUserId: string
+        actingUserId: string,
+        schedule: { cycle_number: number; cycle_day: number; planned_date: Date }[] = []
     ) {
 
         const existing = await this.repository.findAllCyclesForPlan(tx, plan.chemotherapy_plan_id);
@@ -4151,8 +5347,13 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
             if (!row) {
 
-                const plannedDate = new Date(plan.treatment_start_date);
-                plannedDate.setUTCDate(plannedDate.getUTCDate() + (number - 1) * interval);
+                // The cycle starts on its scheduled Day 1 (older plans
+                // without a schedule: start + (cycle - 1) x interval).
+                const scheduledDayOne = schedule.find((day) => day.cycle_number === number && day.cycle_day === 1);
+                const plannedDate = scheduledDayOne ? new Date(scheduledDayOne.planned_date) : new Date(plan.treatment_start_date);
+                if (!scheduledDayOne) {
+                    plannedDate.setUTCDate(plannedDate.getUTCDate() + (number - 1) * interval);
+                }
 
                 await this.repository.createCycle(tx, {
                     chemotherapy_cycle_id: await this.repository.generateCycleId(tx),
@@ -4207,7 +5408,13 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
         const closed = cycles.filter((cycle) => CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status as CycleStatus)).length;
 
         const isOpen = !PLAN_TERMINAL_STATUSES.includes(plan.treatment_status as PlanStatus);
-        const planCompleted = isOpen && closed >= plan.planned_cycles;
+
+        // A course with a cycle day still being administered stays open.
+        const inAdministration = isOpen && closed >= plan.planned_cycles
+            ? (await this.repository.findPlanOrdersByStatus(tx, planId, PLAN_ORDER_STATUS.IN_ADMINISTRATION)).length
+            : 0;
+
+        const planCompleted = isOpen && closed >= plan.planned_cycles && inAdministration === 0;
 
         await this.repository.updatePlan(tx, planId, {
             completed_cycles: completed,
@@ -4236,10 +5443,19 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
     }
 
-    // A cycle's last medication day: the source protocol's highest item
-    // day (administration_day ?? cycle_day ?? 1), as the Chemotherapy
-    // Order tab lists them; else its no_of_days; else the plan's baseline.
+    // A cycle's last medication day: the highest of its medication days.
     private async lastMedicationDay(plan: { chemotherapy_plan_id: string; source_protocol_id: string | null }) {
+
+        const days = await this.medicationDays(plan);
+
+        return days[days.length - 1] ?? 1;
+
+    }
+
+    // A cycle's medication days, ascending: the source protocol's item days
+    // (administration_day ?? cycle_day ?? 1), as the Chemotherapy Order tab
+    // lists them; else 1..no_of_days; else the plan's baseline item days.
+    private async medicationDays(plan: { chemotherapy_plan_id: string; source_protocol_id: string | null }) {
 
         const protocol = plan.source_protocol_id
             ? await this.repository.findRegimenProtocolById(plan.source_protocol_id)
@@ -4250,20 +5466,22 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             return Number.isFinite(day) && day > 0 ? day : 1;
         };
 
+        const distinct = (days: number[]) => [...new Set(days)].sort((a, b) => a - b);
+
         const protocolDays = (protocol?.chemotherapy_regimen_protocol_items ?? []).map(itemDay);
 
         if (protocolDays.length > 0) {
-            return Math.max(...protocolDays);
+            return distinct(protocolDays);
         }
 
         if (protocol?.no_of_days && protocol.no_of_days > 0) {
-            return protocol.no_of_days;
+            return Array.from({ length: protocol.no_of_days }, (_, index) => index + 1);
         }
 
         const baseline = await this.repository.findPlanById(plan.chemotherapy_plan_id);
         const baselineDays = (baseline?.chemotherapy_plan_items ?? []).map(itemDay);
 
-        return baselineDays.length > 0 ? Math.max(...baselineDays) : 1;
+        return baselineDays.length > 0 ? distinct(baselineDays) : [1];
 
     }
 
@@ -4319,6 +5537,10 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
         if (order?.order_status === PLAN_ORDER_STATUS.COMPLETED) {
             throw new Error(`Cycle ${order.cycle_number} / Day ${order.cycle_day} is already completed - its drugs can't be ${action}`);
+        }
+
+        if (order?.order_status === PLAN_ORDER_STATUS.IN_ADMINISTRATION) {
+            throw new Error(`Cycle ${order.cycle_number} / Day ${order.cycle_day} has been sent for administration - its drugs can't be ${action}`);
         }
 
     }
@@ -4474,7 +5696,27 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
         await prisma.$transaction(async (tx) => {
 
+            await this.repository.lockPlan(tx, cycle.chemotherapy_plan_id);
+
+            // Re-read under the plan lock: the cycle may have closed since.
+            const lockedCycle = await this.repository.findCycleForUpdate(tx, cycleId);
+
+            if (!lockedCycle || lockedCycle.cycle_status !== cycle.cycle_status) {
+                throw new Error(`Cycle ${cycle.cycle_number} changed to ${lockedCycle?.cycle_status ?? "another status"} meanwhile - reload and try again`);
+            }
+
             const now = new Date();
+
+            // A closed cycle leaves none of its days half administered.
+            if (dto.status === CYCLE_STATUS.COMPLETED || dto.status === CYCLE_STATUS.CANCELLED) {
+                await this.closeOpenAdministrationDays(
+                    tx,
+                    cycle.chemotherapy_plan_id,
+                    cycleId,
+                    `Cycle ${dto.status.toLowerCase()}${dto.reason?.trim() ? `: ${dto.reason.trim()}` : ""}`,
+                    actingUserId
+                );
+            }
 
             await this.repository.updateCycle(tx, cycleId, {
                 cycle_status: dto.status,
@@ -4542,6 +5784,11 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
             if (order && order.chemotherapy_cycle_id !== cycleId) {
                 throw new Error(`This drug was ordered for Cycle ${order.cycle_number} / Day ${order.cycle_day}, not this cycle`);
+            }
+
+            // Submitted days are tracked on the Administration sheet.
+            if (order && await this.repository.countAdministrationsForOrder(prisma, order.plan_order_id) > 0) {
+                throw new Error(`Cycle ${order.cycle_number} / Day ${order.cycle_day} is tracked on the administration sheet - update the drug's status there`);
             }
 
         }
@@ -4632,6 +5879,489 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
     }
 
     // ---------------------------------------------------------------
+    // Administration sheet - a cycle day's medicines and their status
+    // (PENDING -> GIVEN / SKIPPED / CANCELLED). Once none is PENDING the
+    // day is completed from the patient's Administration tab, which closes
+    // its order, then its cycle on the last medication day, then the course.
+    // ---------------------------------------------------------------
+
+    /*
+     * The sheet for one cycle day: the requested one, else the day being
+     * administered (oldest first), else the day being ordered, else the
+     * latest completed one. Also carries the cycle progress, completed
+     * cycles and the plan's post-treatment medicines the tab shows.
+     */
+    async getAdministrationSheet(planId: string, selection: { cycle_number?: number; cycle_day?: number } = {}) {
+
+        const plan = await this.repository.findPlanById(planId);
+
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+
+        const [orders, medicationDays, dischargeItems] = await Promise.all([
+            this.repository.listPlanOrders([planId]),
+            this.medicationDays(plan),
+            this.repository.findPlanDischargeItems(planId)
+        ]);
+
+        const lastDay = medicationDays[medicationDays.length - 1] ?? 1;
+        const planOpen = !PLAN_TERMINAL_STATUSES.includes(plan.treatment_status as PlanStatus);
+        const cycles = plan.chemotherapy_cycle.filter((cycle) => cycle.cycle_number <= plan.planned_cycles);
+        const cycleClosed = (cycleId: string) => CYCLE_TERMINAL_STATUSES.includes(
+            cycles.find((cycle) => cycle.chemotherapy_cycle_id === cycleId)?.cycle_status as CycleStatus
+        );
+
+        const wantsDay = Boolean(selection.cycle_number && selection.cycle_day);
+        const requested = wantsDay
+            ? orders.find((order) => order.cycle_number === selection.cycle_number && order.cycle_day === selection.cycle_day)
+            : undefined;
+
+        if (wantsDay && !requested) {
+            throw new Error(`No order has been saved for Cycle ${selection.cycle_number} / Day ${selection.cycle_day}`);
+        }
+
+        const day = requested
+            ?? orders.find((order) => order.order_status === PLAN_ORDER_STATUS.IN_ADMINISTRATION)
+            ?? (planOpen
+                ? orders.find((order) => order.order_status === PLAN_ORDER_STATUS.ORDERED && !cycleClosed(order.chemotherapy_cycle_id))
+                : undefined)
+            ?? [...orders].reverse().find((order) => order.order_status === PLAN_ORDER_STATUS.COMPLETED)
+            ?? null;
+
+        const roleRank = (role: string | null) => {
+            const rank = ADMINISTERED_DRUG_ROLES.indexOf(role ?? "");
+            return rank === -1 ? ADMINISTERED_DRUG_ROLES.length : rank;
+        };
+
+        type SheetDrug = {
+            chemotherapy_plan_item_id: string;
+            drug_role: string;
+            drug_sequence: number;
+            drug_name: string | null;
+            protocol_dose: Prisma.Decimal | null;
+            protocol_dose_unit: string | null;
+            calculated_dose: Prisma.Decimal | null;
+            calculated_dose_unit: string | null;
+            administration_route: string | null;
+            dilution_solution: string | null;
+            dilution_volume: string | null;
+            infusion_rate: string | null;
+            infusion_type: string | null;
+            infusion_duration_minutes: number | null;
+            frequency: string | null;
+            timing_relative_to_primary: string | null;
+            administration_detail: string | null;
+            remarks: string | null;
+            medicine_master: { medicine_name: string; brand_name: string | null; generic_name: string | null } | null;
+        };
+
+        const drugFields = (item: SheetDrug) => ({
+            chemotherapy_plan_item_id: item.chemotherapy_plan_item_id,
+            drug_role: item.drug_role,
+            drug_sequence: item.drug_sequence,
+            drug_name: item.medicine_master?.medicine_name || item.medicine_master?.generic_name || item.drug_name || "Unnamed drug",
+            brand_name: item.medicine_master?.brand_name ?? null,
+            generic_name: item.medicine_master?.generic_name ?? null,
+            protocol_dose: toNumber(item.protocol_dose),
+            protocol_dose_unit: item.protocol_dose_unit,
+            calculated_dose: toNumber(item.calculated_dose),
+            calculated_dose_unit: item.calculated_dose_unit,
+            administration_route: item.administration_route,
+            dilution_solution: item.dilution_solution,
+            dilution_volume: item.dilution_volume,
+            infusion_rate: item.infusion_rate,
+            infusion_type: item.infusion_type,
+            infusion_duration_minutes: item.infusion_duration_minutes,
+            frequency: item.frequency,
+            timing_relative_to_primary: item.timing_relative_to_primary,
+            administration_detail: item.administration_detail,
+            item_remarks: item.remarks
+        });
+
+        const rows = day ? await this.repository.listAdministrationsForOrders([day.plan_order_id]) : [];
+
+        // A day without rows is a draft (its medicines will start PENDING)
+        // or a day completed before administration was tracked.
+        const items = rows.length > 0
+            ? rows.map((row) => ({
+                ...drugFields(row.chemotherapy_plan_items),
+                administration_id: row.administration_id as string | null,
+                status: (row.administration_status ?? ADMINISTRATION_STATUS.PENDING) as string,
+                status_reason: row.status_reason,
+                remarks: row.remarks,
+                administered_by: row.administered_by,
+                administered_by_name: personName(row.employees_chemotherapy_administration_administered_byToemployees),
+                given_at: row.administration_end_time,
+                updated_at: row.updated_at
+            }))
+            : day
+                ? (await this.repository.findPlanOrderItems(day.plan_order_id))
+                    .filter((item) => ADMINISTERED_DRUG_ROLES.includes(item.drug_role))
+                    .map((item) => ({
+                        ...drugFields(item),
+                        administration_id: null as string | null,
+                        status: day.order_status === PLAN_ORDER_STATUS.COMPLETED ? "NOT_RECORDED" : ADMINISTRATION_STATUS.PENDING as string,
+                        status_reason: null as string | null,
+                        remarks: null as string | null,
+                        administered_by: null as string | null,
+                        administered_by_name: null as string | null,
+                        given_at: null as Date | null,
+                        updated_at: null as Date | null
+                    }))
+                : [];
+
+        items.sort((a, b) => roleRank(a.drug_role) - roleRank(b.drug_role) || a.drug_sequence - b.drug_sequence);
+
+        const count = (status: string) => items.filter((item) => item.status === status).length;
+
+        const summary = {
+            total: items.length,
+            pending: count(ADMINISTRATION_STATUS.PENDING),
+            given: count(ADMINISTRATION_STATUS.GIVEN),
+            skipped: count(ADMINISTRATION_STATUS.SKIPPED),
+            cancelled: count(ADMINISTRATION_STATUS.CANCELLED)
+        };
+
+        const today = getTodayInIST();
+        const inAdministration = day?.order_status === PLAN_ORDER_STATUS.IN_ADMINISTRATION;
+
+        const treatmentStatus = !day
+            ? null
+            : day.order_status === PLAN_ORDER_STATUS.ORDERED
+                ? "AWAITING_ORDER"
+                : day.order_status === PLAN_ORDER_STATUS.COMPLETED
+                    ? "COMPLETED"
+                    : summary.pending === summary.total
+                        ? "NOT_STARTED"
+                        : "IN_PROGRESS";
+
+        const treatmentDate = rows.length > 0
+            ? dateOnly(rows[0].administration_date)
+            : day?.completed_at ?? day?.created_at
+                ? istDateOf((day.completed_at ?? day.created_at) as Date)
+                : null;
+
+        // What completing this day would close, for the confirmation.
+        const cycleOrders = day ? orders.filter((order) => order.chemotherapy_cycle_id === day.chemotherapy_cycle_id) : [];
+        const othersOpen = cycleOrders.some((order) =>
+            order.plan_order_id !== day?.plan_order_id && order.order_status === PLAN_ORDER_STATUS.IN_ADMINISTRATION);
+        const isLastDay = !!day && day.cycle_day >= lastDay;
+        const closesCycle = inAdministration && !othersOpen && (isLastDay || cycleOrders.some((order) =>
+            order.order_status === PLAN_ORDER_STATUS.COMPLETED && order.cycle_day >= lastDay));
+        const closedCycleCount = cycles.filter((cycle) => CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status as CycleStatus)).length;
+        const otherDaysOpen = orders.some((order) =>
+            order.plan_order_id !== day?.plan_order_id && order.order_status === PLAN_ORDER_STATUS.IN_ADMINISTRATION);
+        const closesCourse = closesCycle && !otherDaysOpen && closedCycleCount + 1 >= plan.planned_cycles;
+
+        const dayCycle = day ? cycles.find((cycle) => cycle.chemotherapy_cycle_id === day.chemotherapy_cycle_id) ?? null : null;
+
+        // The cycle being treated: the shown day's while it is open, else
+        // the next one still to be treated.
+        const currentCycle = dayCycle && !CYCLE_TERMINAL_STATUSES.includes(dayCycle.cycle_status as CycleStatus)
+            ? dayCycle
+            : cycles.find((cycle) => !CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status as CycleStatus)) ?? null;
+
+        const currentCycleOrders = currentCycle
+            ? orders.filter((order) => order.chemotherapy_cycle_id === currentCycle.chemotherapy_cycle_id)
+            : [];
+        const completedDays = currentCycleOrders.filter((order) => order.order_status === PLAN_ORDER_STATUS.COMPLETED);
+        const lastCompletedDay = Math.max(0, ...completedDays.map((order) => order.cycle_day));
+        const openDay = day && currentCycle && day.chemotherapy_cycle_id === currentCycle.chemotherapy_cycle_id && day.order_status !== PLAN_ORDER_STATUS.COMPLETED
+            ? day.cycle_day
+            : null;
+        const currentDay = openDay
+            ?? medicationDays.find((medicationDay) => medicationDay > lastCompletedDay)
+            ?? medicationDays[medicationDays.length - 1]
+            ?? 1;
+
+        const successor = currentCycle
+            ? cycles.find((cycle) => cycle.cycle_number === currentCycle.cycle_number + 1) ?? null
+            : null;
+        const started = currentCycleOrders.some((order) => order.order_status !== PLAN_ORDER_STATUS.ORDERED);
+        const interval = currentCycle?.cycle_interval_days ?? plan.cycle_interval_days ?? 0;
+
+        // An upcoming cycle shows when it is due; a running one when the next is.
+        const nextCycleDate = !currentCycle || !planOpen
+            ? null
+            : !started
+                ? currentCycle.next_cycle_date ?? currentCycle.rescheduled_date ?? currentCycle.planned_date
+                : successor
+                    ? successor.next_cycle_date
+                        ?? (currentCycle.actual_date && interval > 0 ? addDays(currentCycle.actual_date, interval) : null)
+                        ?? successor.rescheduled_date
+                        ?? successor.planned_date
+                    : null;
+
+        const protocolName = plan.chemotherapy_regimen_protocol?.regimen_name ?? plan.protocol_name ?? plan.regimen_name;
+
+        const administeredBy = [...new Set(items
+            .filter((item) => item.status === ADMINISTRATION_STATUS.GIVEN && item.administered_by_name)
+            .map((item) => item.administered_by_name as string))];
+
+        return {
+            today,
+            plan: {
+                chemotherapy_plan_id: plan.chemotherapy_plan_id,
+                regimen_name: plan.regimen_name,
+                protocol_name: protocolName,
+                treatment_status: plan.treatment_status,
+                planned_cycles: plan.planned_cycles,
+                completed_cycles: plan.completed_cycles ?? 0,
+                cycle_interval_days: plan.cycle_interval_days,
+                doctor_name: personName(plan.employees)
+            },
+            medication_days: medicationDays,
+            day: day
+                ? {
+                    plan_order_id: day.plan_order_id,
+                    chemotherapy_cycle_id: day.chemotherapy_cycle_id,
+                    cycle_number: day.cycle_number,
+                    cycle_day: day.cycle_day,
+                    order_status: day.order_status,
+                    cycle_status: dayCycle?.cycle_status ?? null,
+                    physician_approved: dayCycle?.physician_approved ?? false,
+                    treatment_date: treatmentDate,
+                    completed_at: day.completed_at,
+                    chemo_instructions: day.chemo_instructions,
+                    additional_notes: day.additional_notes,
+                    is_last_day: isLastDay,
+                    closes_cycle: closesCycle,
+                    closes_course: closesCourse,
+                    can_update: inAdministration && planOpen && !cycleClosed(day.chemotherapy_cycle_id),
+                    can_complete: inAdministration && summary.total > 0 && summary.pending === 0,
+                    treatment_status: treatmentStatus,
+                    administered_by: administeredBy,
+                    summary,
+                    items
+                }
+                : null,
+            pending_alert: inAdministration && summary.pending > 0 && treatmentDate && today >= treatmentDate
+                ? { level: today === treatmentDate ? "TODAY" : "OVERDUE", pending: summary.pending, treatment_date: treatmentDate }
+                : null,
+            cycle_days: (day ? cycleOrders : currentCycleOrders).map((order) => ({
+                plan_order_id: order.plan_order_id,
+                cycle_number: order.cycle_number,
+                cycle_day: order.cycle_day,
+                order_status: order.order_status
+            })),
+            current_cycle: currentCycle
+                ? {
+                    chemotherapy_cycle_id: currentCycle.chemotherapy_cycle_id,
+                    cycle_number: currentCycle.cycle_number,
+                    cycle_status: currentCycle.cycle_status,
+                    current_day: currentDay,
+                    completed_days: completedDays.length,
+                    total_days: medicationDays.length,
+                    started,
+                    next_cycle_number: started ? successor?.cycle_number ?? null : currentCycle.cycle_number,
+                    next_cycle_date: dateOnly(nextCycleDate)
+                }
+                : null,
+            previous_cycles: cycles
+                .filter((cycle) => CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status as CycleStatus))
+                .sort((a, b) => b.cycle_number - a.cycle_number)
+                .map((cycle) => ({
+                    chemotherapy_cycle_id: cycle.chemotherapy_cycle_id,
+                    cycle_number: cycle.cycle_number,
+                    cycle_status: cycle.cycle_status,
+                    completion_date: cycle.completion_date ? istDateOf(cycle.completion_date) : dateOnly(cycle.actual_date),
+                    protocol_name: protocolName
+                })),
+            post_medications: dischargeItems.map((item) => ({
+                chemotherapy_plan_item_id: item.chemotherapy_plan_item_id,
+                drug_name: item.medicine_master?.medicine_name || item.medicine_master?.generic_name || item.drug_name || "Unnamed drug",
+                brand_name: item.medicine_master?.brand_name ?? null,
+                protocol_dose: toNumber(item.protocol_dose),
+                protocol_dose_unit: item.protocol_dose_unit,
+                administration_route: item.administration_route,
+                frequency: item.frequency,
+                duration: item.duration,
+                remarks: item.remarks
+            }))
+        };
+
+    }
+
+    // One medicine's status on a day that is being administered. Statuses
+    // stay correctable (back to PENDING too) until the day is completed.
+    async updateAdministrationStatus(
+        administrationId: string,
+        dto: UpdateAdministrationStatusDto,
+        actingUserId: string,
+        actingEmployeeId: string | null
+    ) {
+
+        const status = String(dto.status ?? "").trim().toUpperCase() as AdministrationStatus;
+
+        if (!ADMINISTRATION_STATUSES.includes(status)) {
+            throw new Error(`status must be one of: ${ADMINISTRATION_STATUSES.join(", ")}`);
+        }
+
+        const needsReason = ADMINISTRATION_REASON_REQUIRED.includes(status);
+        const reason = dto.reason?.trim() || null;
+        const remarks = dto.remarks?.trim() || null;
+
+        if (needsReason && !reason) {
+            throw new Error(`A reason is required to mark a medicine ${status.toLowerCase()}`);
+        }
+
+        const existing = await this.repository.findAdministrationById(prisma, administrationId);
+
+        if (!existing || existing.active_status !== 1) {
+            throw new Error("Administration record not found");
+        }
+
+        if (!existing.chemotherapy_plan_order) {
+            throw new Error("This administration record is not part of a cycle day's administration sheet");
+        }
+
+        const planId = existing.chemotherapy_plan_order.chemotherapy_plan_id;
+        const { cycle_number: cycleNumber, cycle_day: cycleDay } = existing.chemotherapy_plan_order;
+        const label = `Cycle ${cycleNumber} / Day ${cycleDay}`;
+
+        await prisma.$transaction(async (tx) => {
+
+            await this.repository.lockPlan(tx, planId);
+
+            // Re-read under the plan lock: the day may have been completed meanwhile.
+            const row = await this.repository.findAdministrationById(tx, administrationId);
+            const order = row?.chemotherapy_plan_order;
+
+            if (!row || !order) {
+                throw new Error("Administration record not found");
+            }
+
+            if (order.order_status === PLAN_ORDER_STATUS.COMPLETED) {
+                throw new Error(`${label} is already completed - its administration record is locked`);
+            }
+
+            if (order.order_status !== PLAN_ORDER_STATUS.IN_ADMINISTRATION) {
+                throw new Error(`${label} has not been sent for administration yet`);
+            }
+
+            const plan = await this.repository.findPlanForUpdate(tx, planId);
+
+            if (!plan || PLAN_TERMINAL_STATUSES.includes(plan.treatment_status as PlanStatus)) {
+                throw new Error(`This chemotherapy course is already ${plan?.treatment_status ?? "closed"}`);
+            }
+
+            const cycle = await this.repository.findCycleForUpdate(tx, order.chemotherapy_cycle_id);
+
+            if (!cycle || CYCLE_TERMINAL_STATUSES.includes(cycle.cycle_status as CycleStatus)) {
+                throw new Error(`Cycle ${cycleNumber} is already ${cycle?.cycle_status ?? "closed"}`);
+            }
+
+            const item = await this.repository.findPlanItemById(row.chemotherapy_plan_item_id);
+            const given = status === ADMINISTRATION_STATUS.GIVEN;
+
+            await this.repository.updateAdministration(tx, administrationId, {
+                administration_status: status,
+                status_reason: needsReason ? reason : null,
+                remarks: needsReason ? remarks : null,
+                administered_by: given ? actingEmployeeId : null,
+                administration_end_time: given ? new Date() : null,
+                administered_dose: given ? (item?.calculated_dose ?? item?.protocol_dose ?? null) : null,
+                administered_dose_unit: given ? (item?.calculated_dose_unit ?? item?.protocol_dose_unit ?? null) : null,
+                infusion_completed: given,
+                updated_by: actingUserId
+            });
+
+            await logAudit(tx, {
+                entity_type: "chemotherapy_administration",
+                entity_id: administrationId,
+                action: AUDIT_ACTION.STATUS_CHANGE,
+                performed_by: actingUserId,
+                patient_id: plan.patient_id,
+                branch_id: plan.branch_id,
+                change_summary: summarizeStatusChange(row.administration_status ?? ADMINISTRATION_STATUS.PENDING, status, reason)
+            });
+
+        }, { timeout: 30000 });
+
+        return this.getAdministrationSheet(planId, { cycle_number: cycleNumber, cycle_day: cycleDay });
+
+    }
+
+    // Completes a cycle day once none of its medicines is PENDING: the order
+    // becomes COMPLETED, the cycle closes when this settles its last
+    // medication day, and the course when that was its last open cycle.
+    // Repeating it for a completed day changes nothing.
+    async completeAdministrationDay(planId: string, cycleNumber: number, cycleDay: number, actingUserId: string) {
+
+        const plan = await this.repository.findPlanForUpdate(prisma, planId);
+
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+
+        const lastDay = await this.lastMedicationDay(plan);
+        const label = `Cycle ${cycleNumber} / Day ${cycleDay}`;
+
+        const outcome = await prisma.$transaction(async (tx) => {
+
+            await this.repository.lockPlan(tx, planId);
+
+            const lockedPlan = await this.repository.findPlanForUpdate(tx, planId);
+            const order = await this.repository.findPlanOrder(tx, planId, cycleNumber, cycleDay);
+
+            if (!lockedPlan || !order) {
+                throw new Error(`No order has been saved for ${label}`);
+            }
+
+            const result = { day_completed: false, cycle_completed: false, plan_completed: false };
+
+            if (order.order_status === PLAN_ORDER_STATUS.COMPLETED) {
+                return result;
+            }
+
+            if (order.order_status !== PLAN_ORDER_STATUS.IN_ADMINISTRATION) {
+                throw new Error(`${label} has not been sent for administration yet - submit its consultation first`);
+            }
+
+            if (PLAN_TERMINAL_STATUSES.includes(lockedPlan.treatment_status as PlanStatus)) {
+                throw new Error(`This chemotherapy course is already ${lockedPlan.treatment_status}`);
+            }
+
+            const pending = await this.repository.countPendingAdministrations(tx, order.plan_order_id);
+
+            if (pending > 0) {
+                throw new Error(`${pending} medicine${pending === 1 ? " is" : "s are"} still pending - mark each as Given, Skipped or Cancelled first`);
+            }
+
+            const now = new Date();
+
+            await this.repository.updatePlanOrder(tx, order.plan_order_id, {
+                order_status: PLAN_ORDER_STATUS.COMPLETED,
+                completed_at: now
+            });
+
+            await logAudit(tx, {
+                entity_type: "chemotherapy_plan_order",
+                entity_id: order.plan_order_id,
+                action: AUDIT_ACTION.STATUS_CHANGE,
+                performed_by: actingUserId,
+                patient_id: lockedPlan.patient_id,
+                branch_id: lockedPlan.branch_id,
+                change_summary: summarizeStatusChange(PLAN_ORDER_STATUS.IN_ADMINISTRATION, PLAN_ORDER_STATUS.COMPLETED, `${label} administration completed`)
+            });
+
+            result.day_completed = true;
+            result.cycle_completed = await this.closeCycleIfDone(tx, lockedPlan, order.chemotherapy_cycle_id, lastDay, actingUserId, now);
+
+            const recount = await this.recountPlanCycles(tx, planId, actingUserId);
+
+            result.plan_completed = recount.planCompleted;
+
+            return result;
+
+        }, { timeout: 30000 });
+
+        return { ...outcome, sheet: await this.getAdministrationSheet(planId) };
+
+    }
+
+    // ---------------------------------------------------------------
     // Vitals / adverse events / lab reviews / followups - append-only,
     // no cycle-status gating (they can legitimately be recorded before,
     // during, or after a cycle - e.g. a follow-up visit happens well after
@@ -4713,12 +6443,29 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
         return this.repository.listVitalsForCycle(cycleId);
     }
 
-    async recordAdverseEvent(cycleId: string, dto: RecordAdverseEventDto, actingUserId: string) {
+    async recordAdverseEvent(cycleId: string, dto: RecordAdverseEventDto, actingUserId: string, actingEmployeeId: string | null = null) {
 
         const { plan } = await this.getCyclePlanContext(cycleId);
 
         if (!dto.adverse_event_name?.trim()) {
             throw new Error("adverse_event_name is required");
+        }
+
+        // The cycle day the event belongs to must be a day of this cycle;
+        // its day number comes from the order itself.
+        let cycleDay: number | null = null;
+        if (dto.plan_order_id) {
+            const order = await this.repository.findPlanOrderById(prisma, dto.plan_order_id);
+            if (!order || order.chemotherapy_cycle_id !== cycleId) {
+                throw new Error("Cycle day order not found");
+            }
+            cycleDay = order.cycle_day;
+        }
+
+        const eventDate = dto.event_date ? new Date(dto.event_date) : new Date();
+        const resolutionDate = dto.resolution_date ? new Date(dto.resolution_date) : null;
+        if (resolutionDate && resolutionDate.toISOString().slice(0, 10) < eventDate.toISOString().slice(0, 10)) {
+            throw new Error("resolution_date cannot be before the event date");
         }
 
         return prisma.$transaction(async (tx) => {
@@ -4728,7 +6475,9 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             const created = await this.repository.createAdverseEvent(tx, {
                 adverse_event_id: id,
                 chemotherapy_cycle_id: cycleId,
-                event_date: dto.event_date ? new Date(dto.event_date) : new Date(),
+                plan_order_id: dto.plan_order_id ?? null,
+                cycle_day: cycleDay,
+                event_date: eventDate,
                 adverse_event_name: dto.adverse_event_name,
                 adverse_event_category: dto.adverse_event_category ?? null,
                 nausea: dto.nausea ?? false,
@@ -4764,11 +6513,13 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 delay_days: dto.delay_days ?? null,
                 doctor_action: dto.doctor_action ?? null,
                 nursing_action: dto.nursing_action ?? null,
-                physician_id: dto.physician_id ?? null,
-                // reported_by FKs to employees.employee_id - see recordVitals' note.
-                reported_by: dto.reported_by ?? null,
+                // Defaults: the plan's treating doctor, and the signed-in
+                // employee as the reporter (both FK employees.employee_id -
+                // see recordVitals' note on actingUserId).
+                physician_id: dto.physician_id ?? plan?.employee_id ?? null,
+                reported_by: dto.reported_by ?? actingEmployeeId ?? null,
                 resolved: dto.resolved ?? false,
-                resolution_date: dto.resolution_date ? new Date(dto.resolution_date) : null,
+                resolution_date: resolutionDate,
                 remarks: dto.remarks ?? null,
                 created_by: actingUserId
             });
@@ -4780,7 +6531,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 performed_by: actingUserId,
                 patient_id: plan?.patient_id,
                 branch_id: plan?.branch_id,
-                change_summary: summarizeCreate({ chemotherapy_cycle_id: cycleId, adverse_event_name: dto.adverse_event_name, ctcae_grade: dto.ctcae_grade ?? null })
+                change_summary: summarizeCreate({ chemotherapy_cycle_id: cycleId, cycle_day: cycleDay, adverse_event_name: dto.adverse_event_name, ctcae_grade: dto.ctcae_grade ?? null })
             });
 
             return created;
@@ -4792,6 +6543,123 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
     async listAdverseEvents(cycleId: string) {
         await this.getCycle(cycleId);
         return this.repository.listAdverseEventsForCycle(cycleId);
+    }
+
+    // An active adverse event and its plan (for audit context).
+    private async getActiveAdverseEvent(adverseEventId: string) {
+
+        const event = await this.repository.findAdverseEventById(adverseEventId);
+
+        if (!event || event.active_status !== 1) {
+            throw new Error("Adverse event not found");
+        }
+
+        const { plan } = await this.getCyclePlanContext(event.chemotherapy_cycle_id);
+
+        return { event, plan };
+
+    }
+
+    // Edits a recorded adverse event (e.g. marking an ongoing event
+    // resolved). Only the fields sent are changed; the cycle day and the
+    // linked physician / reporter stay as recorded.
+    async updateAdverseEvent(adverseEventId: string, dto: UpdateAdverseEventDto, actingUserId: string) {
+
+        const { event, plan } = await this.getActiveAdverseEvent(adverseEventId);
+
+        const changes: Record<string, any> = {};
+
+        if (dto.adverse_event_name !== undefined) {
+            const name = (dto.adverse_event_name ?? "").trim();
+            if (!name) {
+                throw new Error("adverse_event_name cannot be blank");
+            }
+            changes.adverse_event_name = name;
+        }
+
+        for (const field of ADVERSE_EVENT_TEXT_FIELDS) {
+            if (dto[field] !== undefined) changes[field] = dto[field] ?? null;
+        }
+
+        for (const field of ADVERSE_EVENT_BOOLEAN_FIELDS) {
+            if (dto[field] !== undefined) changes[field] = dto[field] ?? false;
+        }
+
+        if (dto.reduction_percentage !== undefined) changes.reduction_percentage = dto.reduction_percentage ?? null;
+        if (dto.delay_days !== undefined) changes.delay_days = dto.delay_days ?? null;
+        if (dto.event_date) changes.event_date = new Date(dto.event_date);
+        if (dto.resolution_date !== undefined) {
+            changes.resolution_date = dto.resolution_date ? new Date(dto.resolution_date) : null;
+        }
+
+        // An event that is not resolved has no resolution date.
+        const resolved = changes.resolved ?? event.resolved;
+        if (!resolved && (changes.resolution_date ?? event.resolution_date)) {
+            changes.resolution_date = null;
+        }
+
+        const eventDate: Date = changes.event_date ?? event.event_date;
+        const resolutionDate: Date | null = changes.resolution_date !== undefined ? changes.resolution_date : event.resolution_date;
+        if (resolutionDate && resolutionDate.toISOString().slice(0, 10) < eventDate.toISOString().slice(0, 10)) {
+            throw new Error("resolution_date cannot be before the event date");
+        }
+
+        const summary = diffFields(event, changes);
+        if (summary === "{}") {
+            return event;
+        }
+
+        return prisma.$transaction(async (tx) => {
+
+            const updated = await this.repository.updateAdverseEvent(tx, adverseEventId, {
+                ...changes,
+                updated_by: actingUserId
+            });
+
+            await logAudit(tx, {
+                entity_type: "chemotherapy_adverse_event",
+                entity_id: adverseEventId,
+                action: AUDIT_ACTION.UPDATE,
+                performed_by: actingUserId,
+                patient_id: plan?.patient_id,
+                branch_id: plan?.branch_id,
+                change_summary: summary
+            });
+
+            return updated;
+
+        });
+
+    }
+
+    // Removes an adverse event entered in error (soft delete, with the
+    // reason kept in the audit log).
+    async removeAdverseEvent(adverseEventId: string, reason: string, actingUserId: string) {
+
+        const { event, plan } = await this.getActiveAdverseEvent(adverseEventId);
+
+        await prisma.$transaction(async (tx) => {
+
+            await this.repository.deactivateAdverseEvent(tx, adverseEventId, actingUserId);
+
+            await logAudit(tx, {
+                entity_type: "chemotherapy_adverse_event",
+                entity_id: adverseEventId,
+                action: AUDIT_ACTION.DEACTIVATE,
+                performed_by: actingUserId,
+                patient_id: plan?.patient_id,
+                branch_id: plan?.branch_id,
+                change_summary: summarizeCreate({
+                    adverse_event_name: event.adverse_event_name,
+                    cycle_day: event.cycle_day,
+                    reason: reason.trim()
+                })
+            });
+
+        });
+
+        return { adverse_event_id: adverseEventId };
+
     }
 
     async recordLabReview(cycleId: string, dto: RecordLabReviewDto, actingUserId: string) {

@@ -7,6 +7,9 @@ exports.LabOrderItemService = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const lab_order_item_repository_1 = require("./lab-order-item.repository");
 const repository = new lab_order_item_repository_1.LabOrderItemRepository();
+// target_date arrives as an ISO date string ("2026-10-10"); the DATE column
+// needs a Date (Prisma rejects a bare date string). Absent = leave unchanged,
+// empty/null = clear it.
 const toTargetDateData = (target_date) => target_date !== undefined
     ? { target_date: target_date ? new Date(target_date) : null }
     : {};
@@ -50,8 +53,9 @@ class LabOrderItemService {
             net_amount
         });
     }
-    async getAll() {
-        return repository.findAll();
+    /* The latest items - all, or a patient's / one visit's (appointment). */
+    async getAll(filters = {}) {
+        return repository.findAll(filters);
     }
     async getById(lab_order_item_id) {
         const item = await repository.findById(lab_order_item_id);

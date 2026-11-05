@@ -7,6 +7,9 @@ import {
 
 const repository = new LabOrderItemRepository();
 
+// target_date arrives as an ISO date string ("2026-10-10"); the DATE column
+// needs a Date (Prisma rejects a bare date string). Absent = leave unchanged,
+// empty/null = clear it.
 const toTargetDateData = (target_date?: string | null) =>
     target_date !== undefined
         ? { target_date: target_date ? new Date(target_date) : null }
@@ -67,8 +70,9 @@ export class LabOrderItemService {
 
     }
 
-    async getAll() {
-        return repository.findAll();
+    /* The latest items - all, or a patient's / one visit's (appointment). */
+    async getAll(filters: { patientId?: string; appointmentId?: string } = {}) {
+        return repository.findAll(filters);
     }
 
     async getById(lab_order_item_id: string) {
@@ -110,7 +114,7 @@ export class LabOrderItemService {
 
     }
 
-    async generateBarcodes(items: { lab_order_item_id: string; barcode: string; sample_type?: string }[]) {
+    async generateBarcodes(items: { lab_order_item_id: string; barcode: string; sample_type?: string; collection_datetime?: string | Date }[]) {
         return repository.generateBarcodes(items);
     }
 

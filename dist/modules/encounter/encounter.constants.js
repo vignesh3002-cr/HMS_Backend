@@ -7,4 +7,4 @@ exports.ENCOUNTER_STATUS = {
 };
 exports.ENCOUNTER_STATUS_VALUES = Object.values(exports.ENCOUNTER_STATUS);
 exports.ENCOUNTER_TYPE_DEFAULT = "OPD";
-exports.ENCOUNTER_TYPE_IPD = "IPD";
+exports.ENCOUNTER_TYPE_IPD = "Inpatient (IPD)";

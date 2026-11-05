@@ -8,6 +8,11 @@ function actingUserId(req: Request): string {
     return (req as any).user?.user_id || "SYSTEM";
 }
 
+// The signed-in user's employee record (null for accounts without one).
+function actingEmployeeId(req: Request): string | null {
+    return (req as any).user?.employee_id || null;
+}
+
 const CHEMO_TABLES = [
     "chemotherapy_plan", "chemotherapy_plan_items", "chemotherapy_cycle",
     "chemotherapy_administration", "chemotherapy_adverse_event",
@@ -33,7 +38,11 @@ const CONSTRAINT_MESSAGES: Record<string, string> = {
     uq_open_chemo_plan_per_patient: "This patient already has an open chemotherapy plan. A new plan can be started once its last cycle day is completed, or after it is discontinued or cancelled.",
     chk_plan_items_drug: "Each drug needs a medicine from the list or a typed drug name.",
     uq_plan_order_cycle_day: "This cycle day's order was just saved from another screen - reload and try again.",
-    chk_plan_order_cycle_day: "Cycle and day must be at least 1."
+    chk_plan_order_cycle_day: "Cycle and day must be at least 1.",
+    chk_plan_order_status: "This cycle day's order status is not supported by the database yet - apply the latest chemotherapy SQL migration.",
+    uq_chemo_admin_order_item: "This medicine already has an administration record for this cycle day - reload and try again.",
+    chk_chemo_admin_status: "Administration status must be Pending, Given, Skipped or Cancelled.",
+    chk_chemo_admin_reason: "A reason is required to skip or cancel a medicine."
 };
 
 function handleError(res: Response, error: any) {
@@ -193,6 +202,19 @@ export class ChemotherapyController {
 
     }
 
+    async getGenericFormsAndBrands(req: Request, res: Response) {
+
+        try {
+
+            const data = await service.getGenericFormsAndBrands();
+            return res.json({ success: true, message: "Generic forms and brands fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
     async listTreatmentIntents(req: Request, res: Response) {
 
         try {
@@ -204,6 +226,27 @@ export class ChemotherapyController {
             return handleError(res, error);
         }
 
+    }
+
+    async catalogMedicineGeneric(req: Request, res: Response) {
+        try {
+            const { medicineId } = req.params;
+            const { medicineIdOrName, genericName, form, drugRole } = req.body;
+            const rawIdentifier = (medicineId || medicineIdOrName || genericName || "").trim();
+            const gName = (genericName || rawIdentifier).trim();
+            if (!rawIdentifier) {
+                return res.status(400).json({ success: false, message: "Medicine name or generic name is required" });
+            }
+            const data = await service.catalogMedicineGeneric(
+                rawIdentifier,
+                gName,
+                { form, drugRole },
+                actingUserId(req)
+            );
+            return res.json({ success: true, message: "Generic cataloged successfully", data });
+        } catch (error: any) {
+            return handleError(res, error);
+        }
     }
 
     async getMedicinesByCancerTypeAndSubtype(req: Request, res: Response) {
@@ -762,6 +805,39 @@ export class ChemotherapyController {
 
     }
 
+    async getPharmacySlips(req: Request, res: Response) {
+
+        try {
+
+            const encounterNo = String(req.query.encounter_no ?? "").trim();
+
+            if (!encounterNo) {
+                return res.status(400).json({
+                    success: false,
+                    message: "encounter_no is required"
+                });
+            }
+
+            const user = (req as any).user;
+
+            const slips = await service.getPharmacySlipsForEncounter(
+                encounterNo,
+                user?.user_id,
+                user?.role
+            );
+
+            return res.json({
+                success: true,
+                message: "Pharmacy slips fetched successfully",
+                data: slips
+            });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
     async updatePlan(req: Request, res: Response) {
 
         try {
@@ -884,6 +960,75 @@ export class ChemotherapyController {
 
     }
 
+    async getMedicineInvestigations(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            const raw = req.query.medicine_ids;
+            const medicineIds = (Array.isArray(raw) ? raw.join(",") : String(raw ?? ""))
+                .split(",")
+                .map((id) => id.trim())
+                .filter(Boolean);
+
+            const data = await service.getMedicineInvestigations(medicineIds);
+            return res.json({ success: true, message: "Medicine investigations fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+    }
+
+    async importMedicineInvestigations(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            if (!req.file) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Excel file is required",
+                });
+            }
+
+            const data = await service.importDrugMonitoringMappings(
+                req.file.buffer,
+                req.file.originalname
+            );
+            return res.json({
+                success: true,
+                message: "Medicine monitoring mappings imported successfully",
+                data,
+            });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+    }
+
+    async updatePlanInvestigationStatus(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            const data = await service.updatePlanInvestigationStatus(
+                req.params.planId as string,
+                Number(req.params.cycleNumber),
+                Number(req.params.cycleDay),
+                req.body,
+                actingUserId(req)
+            );
+            return res.json({ success: true, message: "Investigation status updated successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
     async savePlanOrder(req: Request, res: Response) {
 
         try {
@@ -912,7 +1057,7 @@ export class ChemotherapyController {
             if (!checkValidation(req, res)) return;
 
             const data = await service.completePlanOrders(req.params.planId as string, req.body.encounter_no, actingUserId(req));
-            return res.json({ success: true, message: "Cycle day order completed successfully", data });
+            return res.json({ success: true, message: "Cycle day order submitted successfully", data });
 
         } catch (error: any) {
             return handleError(res, error);
@@ -1139,6 +1284,72 @@ export class ChemotherapyController {
 
     }
 
+    async getAdministrationSheet(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            const data = await service.getAdministrationSheet(req.params.planId as string, {
+                cycle_number: req.query.cycle_number ? Number(req.query.cycle_number) : undefined,
+                cycle_day: req.query.cycle_day ? Number(req.query.cycle_day) : undefined
+            });
+            return res.json({ success: true, message: "Administration sheet fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async updateAdministrationStatus(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            const data = await service.updateAdministrationStatus(
+                req.params.administrationId as string,
+                req.body,
+                actingUserId(req),
+                actingEmployeeId(req)
+            );
+            return res.json({ success: true, message: "Administration status updated successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async completeAdministrationDay(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            const data = await service.completeAdministrationDay(
+                req.params.planId as string,
+                Number(req.params.cycleNumber),
+                Number(req.params.cycleDay),
+                actingUserId(req)
+            );
+            return res.json({
+                success: true,
+                message: data.plan_completed
+                    ? "Cycle day completed - the chemotherapy course is completed"
+                    : data.cycle_completed
+                        ? "Cycle day completed - the cycle is completed"
+                        : "Cycle day completed successfully",
+                data
+            });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
     async listAdministrations(req: Request, res: Response) {
 
         try {
@@ -1190,7 +1401,12 @@ export class ChemotherapyController {
 
             if (!checkValidation(req, res)) return;
 
-            const data = await service.recordAdverseEvent(req.params.cycleId as string, req.body, actingUserId(req));
+            const data = await service.recordAdverseEvent(
+                req.params.cycleId as string,
+                req.body,
+                actingUserId(req),
+                actingEmployeeId(req)
+            );
             return res.status(201).json({ success: true, message: "Adverse event recorded successfully", data });
 
         } catch (error: any) {
@@ -1205,6 +1421,36 @@ export class ChemotherapyController {
 
             const data = await service.listAdverseEvents(req.params.cycleId as string);
             return res.json({ success: true, message: "Adverse events fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async updateAdverseEvent(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            const data = await service.updateAdverseEvent(req.params.adverseEventId as string, req.body, actingUserId(req));
+            return res.json({ success: true, message: "Adverse event updated successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async removeAdverseEvent(req: Request, res: Response) {
+
+        try {
+
+            if (!checkValidation(req, res)) return;
+
+            const data = await service.removeAdverseEvent(req.params.adverseEventId as string, req.body.reason, actingUserId(req));
+            return res.json({ success: true, message: "Adverse event removed successfully", data });
 
         } catch (error: any) {
             return handleError(res, error);

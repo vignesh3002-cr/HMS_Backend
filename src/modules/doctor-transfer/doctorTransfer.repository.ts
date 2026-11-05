@@ -693,6 +693,7 @@ export class DoctorTransferRepository {
             branchId,
             patientId,
             status,
+            priority,
             page = 1,
             limit = 10
         } = query;
@@ -702,6 +703,7 @@ export class DoctorTransferRepository {
         if (branchId) where.branch_id = branchId;
         if (patientId) where.patient_id = patientId;
         if (status) where.status = status;
+        if (priority) where.priority = priority;
 
         const [entries, total] = await Promise.all([
 

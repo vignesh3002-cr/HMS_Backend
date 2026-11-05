@@ -12,7 +12,9 @@ import {
     reportIdValidation,
     addMolecularTestValidation,
     updateMolecularTestValidation,
-    molecularTestIdValidation
+    molecularTestIdValidation,
+    syncEncounterImmunizationsValidation,
+    syncEncounterPastTreatmentsValidation
 } from "./consultation.validation";
 
 const router = Router();
@@ -98,6 +100,13 @@ router.get(
     controller.getDietTypes.bind(controller)
 );
 
+router.get(
+    "/masters/relative-types",
+    authenticate,
+    authorize("encounter.read"),
+    controller.getRelativeTypes.bind(controller)
+);
+
 // ---------------- Personal history ----------------
 
 router.get(
@@ -117,6 +126,13 @@ router.put(
 );
 
 // ---------------- Encounter reports ----------------
+
+router.get(
+    "/patients/:patientId/reports",
+    authenticate,
+    authorize("encounter.read"),
+    controller.getReportsByPatient.bind(controller)
+);
 
 router.get(
     "/encounters/:encounterNo/reports",
@@ -182,6 +198,42 @@ router.delete(
     authorize("encounter.update"),
     molecularTestIdValidation,
     controller.removeMolecularTest.bind(controller)
+);
+
+// ---------------- Encounter immunizations ----------------
+
+router.get(
+    "/encounters/:encounterNo/immunizations",
+    authenticate,
+    authorize("encounter.read"),
+    getPersonalHistoryValidation,
+    controller.getEncounterImmunizations.bind(controller)
+);
+
+router.put(
+    "/encounters/:encounterNo/immunizations",
+    authenticate,
+    authorize("encounter.update"),
+    syncEncounterImmunizationsValidation,
+    controller.syncEncounterImmunizations.bind(controller)
+);
+
+// ---------------- Encounter past history treatments ----------------
+
+router.get(
+    "/encounters/:encounterNo/past-treatments",
+    authenticate,
+    authorize("encounter.read"),
+    getPersonalHistoryValidation,
+    controller.getEncounterPastTreatments.bind(controller)
+);
+
+router.put(
+    "/encounters/:encounterNo/past-treatments",
+    authenticate,
+    authorize("encounter.update"),
+    syncEncounterPastTreatmentsValidation,
+    controller.syncEncounterPastTreatments.bind(controller)
 );
 
 export default router;

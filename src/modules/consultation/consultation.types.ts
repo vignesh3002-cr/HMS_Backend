@@ -12,12 +12,44 @@ export interface CreateCustomMasterDTO {
 
 }
 
+export interface DrugConsumptionItem {
+
+    code: string;
+    name: string;
+    others?: string;
+    /* Optional duration (value + day/week/month/year unit) and Command(s),
+       stored inside the drug_consumption JSON. */
+    duration_value?: number | null;
+    duration_unit?: string | null;
+    commands?: string | null;
+
+}
+
 export interface PersonalHistoryPayload {
 
     immunization?: { code: string; name: string; others?: string }[] | null;
-    drug_consumption?: { code: string; name: string; others?: string }[] | null;
+    drug_consumption?: DrugConsumptionItem[] | null;
     diet_type?: string | null;
+    family_history?: FamilyHistoryPayload | null;
 
+}
+
+export type FamilyHistoryStatus = "PRESENT" | "NOT_PRESENT";
+
+export interface FamilyHistoryEntry {
+    // 1st / 2nd / 3rd (kept as text so a hand-typed value never fails a save).
+    degree: string;
+    // Master relative type name or a value typed by hand.
+    relative_type: string;
+    // Free text; a relative may have several conditions comma-separated.
+    condition?: string | null;
+    age_at_diagnosis?: string | null;
+    remarks?: string | null;
+}
+
+export interface FamilyHistoryPayload {
+    status: FamilyHistoryStatus;
+    entries: FamilyHistoryEntry[];
 }
 
 export interface EncounterMolecularTestDTO {
@@ -27,6 +59,45 @@ export interface EncounterMolecularTestDTO {
     test_date?: string | null; // YYYY-MM-DD
     result?: string | null;
     impression?: string | null;
+
+}
+
+export interface EncounterImmunizationDTO {
+
+    // The selected value as shown in the form (master name or typed text).
+    immunization_name: string;
+    // immunization_master code when it is a master entry; null for "Others".
+    immunization_code?: string | null;
+    immunization_date?: string | null; // YYYY-MM-DD
+    response?: string | null;
+
+}
+
+export interface EncounterImmunizationSyncDTO {
+
+    // Full set of selected immunizations for the encounter; rows missing from
+    // this list are removed on sync.
+    rows: EncounterImmunizationDTO[];
+
+}
+
+export interface EncounterPastTreatmentDTO {
+
+    // The selected Treatment Type as shown in the form (master name).
+    treatment_type: string;
+    // treatment_type_master code when it is a master entry.
+    treatment_type_code?: string | null;
+    treatment_date?: string | null; // YYYY-MM-DD
+    note?: string | null;
+    treatment_response?: string | null;
+
+}
+
+export interface EncounterPastTreatmentSyncDTO {
+
+    // Full set of selected treatment types for the encounter; rows missing
+    // from this list are removed on sync.
+    rows: EncounterPastTreatmentDTO[];
 
 }
 

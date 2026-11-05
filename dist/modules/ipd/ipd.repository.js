@@ -13,6 +13,29 @@ const idGenerator_1 = require("../../utils/idGenerator");
  * through the provided tx client so row policies + the admission vlog
  * sequence stay consistent within the same transaction.
  */
+// Bed fields shown alongside an admission -- status + reservation so the
+// roster can tell a reserved bed from a merely requested one.
+const admissionBedSelect = {
+    bed_id: true,
+    bed_number: true,
+    bed_type: true,
+    status: true,
+    reserved_admission_id: true,
+    reserved_until: true,
+};
+// Name fields shown for the duty doctor / nurse on the roster and timeline.
+const careTeamEmployeeSelect = {
+    employee_id: true,
+    first_name: true,
+    middle_name: true,
+    last_name: true,
+    specialization: true,
+    designation: true,
+};
+function aliasAdmissionEmployee(row) {
+    const { employees_admission_employee_idToemployees: employees, ...rest } = row;
+    return { ...rest, employees };
+}
 class IpdRepository {
     // ------------------------------------------------------------------ wards
     async findWardById(wardId) {
@@ -127,6 +150,23 @@ class IpdRepository {
                 ward_master: {
                     select: { ward_id: true, ward_name: true, branch_id: true },
                 },
+                // Current occupant, for the bed board.
+                admission: {
+                    where: { status: "ADMITTED" },
+                    select: {
+                        admission_id: true,
+                        ip_number: true,
+                        admission_date: true,
+                        patient_bio_data: {
+                            select: {
+                                patient_id: true,
+                                patient_first_name: true,
+                                patient_last_name: true,
+                                patient_gender: true,
+                            },
+                        },
+                    },
+                },
             },
         });
     }
@@ -159,9 +199,68 @@ class IpdRepository {
             where: { bed_id: bedId },
             data: {
                 status,
+                // Reservation fields only mean something while RESERVED;
+                // every other transition drops them (use reserveBed to set).
+                reserved_admission_id: null,
+                reserved_until: null,
                 updated_by: updatedBy,
                 updated_at: new Date(),
                 ...(remarks !== undefined ? { remarks } : {}),
+            },
+        });
+    }
+    async reserveBed(tx, bedId, admissionId, reservedUntil, updatedBy) {
+        return tx.bed_master.update({
+            where: { bed_id: bedId },
+            data: {
+                status: "RESERVED",
+                reserved_admission_id: admissionId,
+                reserved_until: reservedUntil,
+                updated_by: updatedBy,
+                updated_at: new Date(),
+            },
+        });
+    }
+    /*
+     * Returns every bed RESERVED for these admissions (except keepBedId) to
+     * AVAILABLE. The status guard means a bed that has meanwhile been
+     * admitted into is never touched.
+     */
+    async releaseReservations(tx, admissionIds, updatedBy, keepBedId) {
+        if (admissionIds.length === 0)
+            return { count: 0 };
+        return tx.bed_master.updateMany({
+            where: {
+                status: "RESERVED",
+                reserved_admission_id: { in: admissionIds },
+                ...(keepBedId ? { bed_id: { not: keepBedId } } : {}),
+            },
+            data: {
+                status: "AVAILABLE",
+                reserved_admission_id: null,
+                reserved_until: null,
+                updated_by: updatedBy,
+                updated_at: new Date(),
+            },
+        });
+    }
+    async findReservationHolders(admissionIds) {
+        if (admissionIds.length === 0)
+            return [];
+        return prisma_1.default.admission.findMany({
+            where: { admission_id: { in: admissionIds } },
+            select: {
+                admission_id: true,
+                ip_number: true,
+                admission_date: true,
+                patient_bio_data: {
+                    select: {
+                        patient_id: true,
+                        patient_first_name: true,
+                        patient_last_name: true,
+                        patient_gender: true,
+                    },
+                },
             },
         });
     }
@@ -196,7 +295,7 @@ class IpdRepository {
                 department_master: {
                     select: { department_id: true, department_name: true },
                 },
-                employees: {
+                employees_admission_employee_idToemployees: {
                     select: {
                         employee_id: true,
                         first_name: true,
@@ -205,17 +304,19 @@ class IpdRepository {
                         specialization: true,
                     },
                 },
+                assigned_doctor: { select: careTeamEmployeeSelect },
+                assigned_nurse: { select: careTeamEmployeeSelect },
                 ward_master: {
                     select: { ward_id: true, ward_name: true },
                 },
                 bed_master: {
-                    select: { bed_id: true, bed_number: true, bed_type: true },
+                    select: admissionBedSelect,
                 },
                 admission_transfer_log: {
                     orderBy: { transferred_at: "desc" },
                 },
             },
-        });
+        }).then((row) => (row ? aliasAdmissionEmployee(row) : row));
     }
     async findAdmissionByAppointmentId(appointmentId) {
         return prisma_1.default.admission.findFirst({
@@ -232,7 +333,7 @@ class IpdRepository {
                 },
                 branch: { select: { branch_id: true, branch_name: true } },
                 ward_master: { select: { ward_id: true, ward_name: true } },
-                bed_master: { select: { bed_id: true, bed_number: true } },
+                bed_master: { select: admissionBedSelect },
                 admission_transfer_log: {
                     orderBy: { transferred_at: "desc" },
                 },
@@ -240,7 +341,7 @@ class IpdRepository {
         });
     }
     async listAdmissions(filter) {
-        const { branchId, status, wardId, patientId, date, search, page = 1, limit = 10 } = filter;
+        const { branchId, assignedTo, status, wardId, patientId, date, search, page = 1, limit = 10 } = filter;
         // Status arrives as a single value or a comma-separated list (the IPD
         // filter panel's Status field is a multiselect, same as OPD's).
         const statusList = status
@@ -273,6 +374,21 @@ class IpdRepository {
             ...(wardId ? { ward_id: wardId } : {}),
             ...(patientId ? { patient_id: patientId } : {}),
             ...(dateStart && dateEnd ? { admission_date: { gte: dateStart, lt: dateEnd } } : {}),
+            // Consultant, duty doctor or nurse. Its own AND entry so it can't
+            // collide with the search OR below.
+            ...(assignedTo
+                ? {
+                    AND: [
+                        {
+                            OR: [
+                                { employee_id: assignedTo },
+                                { current_assigned_doctor_id: assignedTo },
+                                { current_nurse_id: assignedTo },
+                            ],
+                        },
+                    ],
+                }
+                : {}),
             ...(search
                 ? {
                     OR: [
@@ -308,15 +424,17 @@ class IpdRepository {
                     department_master: {
                         select: { department_id: true, department_name: true },
                     },
-                    employees: {
+                    employees_admission_employee_idToemployees: {
                         select: {
                             employee_id: true,
                             first_name: true,
                             last_name: true,
                         },
                     },
+                    assigned_doctor: { select: careTeamEmployeeSelect },
+                    assigned_nurse: { select: careTeamEmployeeSelect },
                     ward_master: { select: { ward_id: true, ward_name: true } },
-                    bed_master: { select: { bed_id: true, bed_number: true } },
+                    bed_master: { select: admissionBedSelect },
                 },
                 orderBy,
                 skip: (page - 1) * limit,
@@ -329,7 +447,7 @@ class IpdRepository {
             page,
             limit,
             totalPages: Math.ceil(total / limit),
-            admissions,
+            admissions: admissions.map(aliasAdmissionEmployee),
         };
     }
     async createAdmission(tx, data) {
@@ -340,7 +458,15 @@ class IpdRepository {
          * Row-level lock on the bed row so two concurrent admit requests
          * cannot both read AVAILABLE and double-assign the same bed.
          */
-        return tx.$queryRawUnsafe(`SELECT bed_id, status FROM public.bed_master WHERE bed_id = $1 FOR UPDATE`, bedId);
+        return tx.$queryRawUnsafe(`SELECT bed_id, status, reserved_admission_id, reserved_until FROM public.bed_master WHERE bed_id = $1 FOR UPDATE`, bedId);
+    }
+    async lockPatientForAdmission(tx, patientId) {
+        /*
+         * Row-level lock on the patient so two concurrent admit requests for
+         * the same patient (into different beds) are serialized and the
+         * second one sees the first one's ADMITTED row.
+         */
+        return tx.$queryRawUnsafe(`SELECT patient_id FROM public.patient_bio_data WHERE patient_id = $1 FOR UPDATE`, patientId);
     }
     async updateAdmission(admissionId, data) {
         return prisma_1.default.admission.update({ where: { admission_id: admissionId }, data });
@@ -355,16 +481,27 @@ class IpdRepository {
     async createTransferLog(tx, data) {
         return tx.admission_transfer_log.create({ data });
     }
-    async updateEncounterDischarge(tx, encounterNo, dischargeDate) {
+    async updateEncounterDischarge(tx, encounterNo, dischargeDate, closedBy) {
         return tx.encounter.update({
             where: { encounter_no: encounterNo },
-            data: { status: "CLOSED", closed_at: dischargeDate, checkout_time: dischargeDate },
+            data: { status: "CLOSED", closed_at: dischargeDate, checkout_time: dischargeDate, closed_by: closedBy },
         });
     }
     async updateAppointmentCompleted(tx, appointmentId) {
         return tx.appointment_history.update({
             where: { appointment_id: appointmentId },
             data: { status: "COMPLETED" },
+        });
+    }
+    /*
+     * Closes the admission's active care-team rows (end of stay). The roster
+     * pointers on the admission are cleared by the caller's own admission
+     * update, in the same transaction.
+     */
+    async closeActiveCareTeam(tx, admissionId, endedAt, endReason) {
+        return tx.admission_care_team.updateMany({
+            where: { admission_id: admissionId, is_active: true },
+            data: { is_active: false, end_time: endedAt, end_reason: endReason },
         });
     }
     async generateAdmissionId(tx) {
@@ -396,7 +533,7 @@ class IpdRepository {
                 department_master: {
                     select: { department_id: true, department_name: true },
                 },
-                employees: {
+                employees_admission_employee_idToemployees: {
                     select: {
                         employee_id: true,
                         first_name: true,
@@ -405,17 +542,19 @@ class IpdRepository {
                         specialization: true,
                     },
                 },
+                assigned_doctor: { select: careTeamEmployeeSelect },
+                assigned_nurse: { select: careTeamEmployeeSelect },
                 ward_master: {
                     select: { ward_id: true, ward_name: true },
                 },
                 bed_master: {
-                    select: { bed_id: true, bed_number: true, bed_type: true },
+                    select: admissionBedSelect,
                 },
                 admission_transfer_log: {
                     orderBy: { transferred_at: "desc" },
                 },
             },
-        });
+        }).then((row) => (row ? aliasAdmissionEmployee(row) : row));
     }
 }
 exports.IpdRepository = IpdRepository;

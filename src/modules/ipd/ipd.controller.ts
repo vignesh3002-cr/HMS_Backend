@@ -1,8 +1,12 @@
 import { Request, Response } from "express";
 import { validationResult } from "express-validator";
 import { IpdService } from "./ipd.service";
+import { DaycareService } from "./ipd.daycare.service";
+import { CareTeamService } from "./ipd.care-team.service";
 
 const service = new IpdService();
+const daycareService = new DaycareService(service);
+const careTeamService = new CareTeamService(service);
 
 export class IpdController {
 
@@ -22,9 +26,9 @@ export class IpdController {
 
             }
 
-            const createdBy = (req as any).user?.role || "SYSTEM";
+            const actor = (req as any).user;
 
-            const admission = await service.createAdmission(req.body, createdBy);
+            const admission = await service.createAdmission(req.body, actor.user_id, actor);
 
             return res.status(201).json({
                 success: true,
@@ -34,7 +38,7 @@ export class IpdController {
 
         } catch (error: any) {
 
-            return res.status(400).json({
+            return res.status(error.status || 400).json({
                 success: false,
                 message: error.message
             });
@@ -59,7 +63,11 @@ export class IpdController {
 
             }
 
+            const assignedToMe = String(req.query.assignedToMe ?? "") === "true";
+            const actor = (req as any).user;
+
             const admissions = await service.listAdmissions({
+                assignedTo: assignedToMe ? await service.resolveActorEmployeeId(actor) : undefined,
                 branchId: req.query.branchId as string,
                 status: req.query.status as string,
                 wardId: req.query.wardId as string,
@@ -93,8 +101,9 @@ export class IpdController {
 
         try {
 
-            const admission = await service.getAdmissionByIpNumber(
-                (req.params.ipNumber || req.params.id) as string
+            const admission = await service.getAdmissionForActor(
+                (req.params.ipNumber || req.params.id) as string,
+                (req as any).user
             );
 
             return res.json({
@@ -105,7 +114,7 @@ export class IpdController {
 
         } catch (error: any) {
 
-            return res.status(404).json({
+            return res.status(error.status || 404).json({
                 success: false,
                 message: error.message
             });
@@ -130,12 +139,10 @@ export class IpdController {
 
             }
 
-            const updatedBy = (req as any).user?.role || "SYSTEM";
-
             const admission = await service.updateAdmission(
                 req.params.id as string,
                 req.body,
-                updatedBy
+                (req as any).user
             );
 
             return res.json({
@@ -146,7 +153,99 @@ export class IpdController {
 
         } catch (error: any) {
 
-            return res.status(400).json({
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async listDischargeTypes(_req: Request, res: Response) {
+
+        try {
+
+            const types = await service.listDischargeTypes();
+
+            return res.json({ success: true, data: types });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async addDischargeType(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const type = await service.addDischargeType(
+                req.body.type_name,
+                (req as any).user?.user_id
+            );
+
+            return res.status(201).json({ success: true, data: type });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async saveDischargeDetails(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const admission = await service.saveDischargeDetails(
+                req.params.id as string,
+                (req as any).user,
+                req.body
+            );
+
+            return res.json({
+                success: true,
+                message: "Discharge details saved",
+                data: admission
+            });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
                 success: false,
                 message: error.message
             });
@@ -171,11 +270,9 @@ export class IpdController {
 
             }
 
-            const closedBy = (req as any).user?.role || "SYSTEM";
-
             const admission = await service.dischargeAdmission(
                 req.params.id as string,
-                closedBy,
+                (req as any).user,
                 req.body
             );
 
@@ -187,7 +284,7 @@ export class IpdController {
 
         } catch (error: any) {
 
-            return res.status(400).json({
+            return res.status(error.status || 400).json({
                 success: false,
                 message: error.message
             });
@@ -212,14 +309,12 @@ export class IpdController {
 
             }
 
-            const transferredBy = (req as any).user?.role || "SYSTEM";
-
             const result = await service.transferAdmission(
                 req.params.id as string,
                 req.body.targetWardId as string,
                 req.body.targetBedId as string,
                 req.body.reason as string,
-                transferredBy
+                (req as any).user
             );
 
             return res.json({
@@ -230,7 +325,262 @@ export class IpdController {
 
         } catch (error: any) {
 
-            return res.status(400).json({
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async admitAdmission(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const admission = await service.admitPlanned(
+                req.params.id as string,
+                (req as any).user,
+                req.body
+            );
+
+            return res.json({
+                success: true,
+                message: "Patient admitted successfully",
+                data: admission
+            });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async cancelAdmission(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const admission = await service.cancelPlanned(
+                req.params.id as string,
+                (req as any).user,
+                req.body?.reason
+            );
+
+            return res.json({
+                success: true,
+                message: "Admission request cancelled",
+                data: admission
+            });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async markNoShow(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const admission = await service.markNoShow(
+                req.params.id as string,
+                (req as any).user,
+                req.body?.reason
+            );
+
+            return res.json({
+                success: true,
+                message: "Admission request marked as no-show",
+                data: admission
+            });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async reserveBed(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const admission = await service.reserveBed(
+                req.params.id as string,
+                (req as any).user,
+                req.body
+            );
+
+            return res.json({
+                success: true,
+                message: "Bed reserved",
+                data: admission
+            });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async releaseReservation(req: Request, res: Response) {
+
+        try {
+
+            const admission = await service.releaseReservation(
+                req.params.id as string,
+                (req as any).user
+            );
+
+            return res.json({
+                success: true,
+                message: "Bed reservation released",
+                data: admission
+            });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async bookDaycare(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const admission = await daycareService.book(req.body, (req as any).user);
+
+            return res.status(201).json({
+                success: true,
+                message: "Daycare booked",
+                data: admission
+            });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async getDaycareOccupancy(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const occupancy = await service.getDaycareOccupancy(
+                req.query.wardId as string,
+                req.query.date as string,
+                (req as any).user
+            );
+
+            return res.json({
+                success: true,
+                data: occupancy
+            });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
                 success: false,
                 message: error.message
             });
@@ -366,7 +716,7 @@ export class IpdController {
 
         } catch (error: any) {
 
-            return res.status(400).json({
+            return res.status(error.status || 400).json({
                 success: false,
                 message: error.message
             });
@@ -401,7 +751,7 @@ export class IpdController {
 
         } catch (error: any) {
 
-            return res.status(400).json({
+            return res.status(error.status || 400).json({
                 success: false,
                 message: error.message
             });
@@ -436,7 +786,7 @@ export class IpdController {
 
         } catch (error: any) {
 
-            return res.status(400).json({
+            return res.status(error.status || 400).json({
                 success: false,
                 message: error.message
             });
@@ -471,7 +821,7 @@ export class IpdController {
 
         } catch (error: any) {
 
-            return res.status(400).json({
+            return res.status(error.status || 400).json({
                 success: false,
                 message: error.message
             });
@@ -511,13 +861,145 @@ export class IpdController {
 
         } catch (error: any) {
 
-            return res.status(400).json({
+            return res.status(error.status || 400).json({
                 success: false,
                 message: error.message
             });
 
         }
 
+    }
+
+    async getCareTeam(req: Request, res: Response) {
+
+        try {
+
+            const careTeam = await careTeamService.getCareTeam(
+                req.params.id as string,
+                (req as any).user
+            );
+
+            return res.json({
+                success: true,
+                message: "Care team fetched successfully",
+                data: careTeam
+            });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async allocateCareTeam(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const careTeam = await careTeamService.allocate(
+                req.params.id as string,
+                req.body,
+                (req as any).user
+            );
+
+            return res.json({
+                success: true,
+                message: "Care team updated successfully",
+                data: careTeam
+            });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async bulkAllocateCareTeam(req: Request, res: Response) {
+
+        try {
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+
+                return res.status(400).json({
+                    success: false,
+                    message: errors.array()[0].msg,
+                    errors: errors.array()
+                });
+
+            }
+
+            const result = await careTeamService.bulkAllocate(req.body, (req as any).user);
+
+            return res.json({
+                success: true,
+                message: "Ward care team updated successfully",
+                data: result
+            });
+
+        } catch (error: any) {
+
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async deleteWard(req: Request, res: Response) {
+        try {
+            const ward = await service.deleteWard(req.params.wardId as string, (req as any).user);
+            return res.json({
+                success: true,
+                message: "Ward deactivated successfully",
+                data: ward
+            });
+        } catch (error: any) {
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+
+    async deleteBed(req: Request, res: Response) {
+        try {
+            const bed = await service.deleteBed(req.params.bedId as string, (req as any).user);
+            return res.json({
+                success: true,
+                message: "Bed deactivated successfully",
+                data: bed
+            });
+        } catch (error: any) {
+            return res.status(error.status || 400).json({
+                success: false,
+                message: error.message
+            });
+        }
     }
 
 }

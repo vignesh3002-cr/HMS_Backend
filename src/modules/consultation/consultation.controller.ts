@@ -140,6 +140,14 @@ export class ConsultationController {
         }
     }
 
+    async getRelativeTypes(req: Request, res: Response) {
+        try {
+            return res.json({ success: true, message: "Relative types fetched successfully", data: service.listRelativeTypes() });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
     // ---------------- Personal history ----------------
 
     async getPersonalHistory(req: Request, res: Response) {
@@ -171,6 +179,15 @@ export class ConsultationController {
     }
 
     // ---------------- Encounter reports ----------------
+
+    async getReportsByPatient(req: Request, res: Response) {
+        try {
+            const data = await service.listReportsByPatient(req.params.patientId as string);
+            return res.json({ success: true, message: "Reports fetched successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
 
     async getReports(req: Request, res: Response) {
         try {
@@ -277,6 +294,66 @@ export class ConsultationController {
 
             const data = await service.removeMolecularTest(req.params.encounterMolecularTestId as string);
             return res.json({ success: true, message: "Molecular test removed successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
+    // ---------------- Encounter immunizations ----------------
+
+    async getEncounterImmunizations(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.listEncounterImmunizations(req.params.encounterNo as string);
+            return res.json({ success: true, message: "Immunizations fetched successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
+    async syncEncounterImmunizations(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.syncEncounterImmunizations(
+                req.params.encounterNo as string,
+                req.body,
+                actingUserId(req)
+            );
+            return res.json({ success: true, message: "Immunizations saved successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
+    // ---------------- Encounter past history treatments ----------------
+
+    async getEncounterPastTreatments(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.listEncounterPastTreatments(req.params.encounterNo as string);
+            return res.json({ success: true, message: "Past treatments fetched successfully", data });
+        } catch (err: any) {
+            return handleError(res, err);
+        }
+    }
+
+    async syncEncounterPastTreatments(req: Request, res: Response) {
+        try {
+            const error = firstError(req);
+            if (error) return res.status(400).json({ success: false, message: error });
+
+            const data = await service.syncEncounterPastTreatments(
+                req.params.encounterNo as string,
+                req.body,
+                actingUserId(req)
+            );
+            return res.json({ success: true, message: "Past treatments saved successfully", data });
         } catch (err: any) {
             return handleError(res, err);
         }

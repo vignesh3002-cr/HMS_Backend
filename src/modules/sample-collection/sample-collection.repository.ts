@@ -8,9 +8,13 @@ import {
 class SampleCollectionRepository {
 
     async create(data: CreateSampleCollectionDto) {
-        const sample_collection_id = await generateId(prisma, "SAMPLE_COLLECTION");
-        return prisma.sample_collection.create({
-            data: { sample_collection_id, ...data }
+        // Generate and insert in one transaction so a failed insert rolls the
+        // sequence back too, instead of burning an id and drifting behind data.
+        return prisma.$transaction(async (tx) => {
+            const sample_collection_id = await generateId(tx, "SAMPLE_COLLECTION");
+            return tx.sample_collection.create({
+                data: { sample_collection_id, ...data }
+            });
         });
     }
 

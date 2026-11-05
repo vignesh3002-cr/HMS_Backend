@@ -3,6 +3,8 @@ export interface RegimenProtocolDilutionInput {
     protocol_dilution_id?: string;
     source_resource_id?: string | null;
     medicine_id?: string | null;
+    medicine_name?: string | null;
+    generic_name?: string | null;
     drug_brand_name?: string | null;
     form?: string | null;
     dose?: number | null;
@@ -20,6 +22,8 @@ export interface RegimenProtocolDischargeInstructionInput {
     discharge_instruction_id?: string;
     source_resource_id?: string | null;
     medicine_id?: string | null;
+    medicine_name?: string | null;
+    generic_name?: string | null;
     drug_brand_name?: string | null;
     drug_sequence?: number | null;
     drug_from?: string | null;
@@ -35,6 +39,9 @@ export interface RegimenProtocolDischargeInstructionInput {
 }
 
 export interface RegimenProtocolItemDto {
+
+    medicine_name?: string | null;
+    generic_name?: string | null;
 
     medicine_id: string;
     drug_role?: "PRIMARY" | "PREMEDICATION" | "POSTMEDICATION" | "SUPPORTIVE";
@@ -62,6 +69,8 @@ export interface RegimenProtocolItemDto {
 }
 
 export interface UpdateRegimenProtocolItemDto {
+  medicine_name?: string | null;
+  generic_name?: string | null;
   medicine_id?: string;
   drug_role?: "PRIMARY" | "PREMEDICATION" | "POSTMEDICATION" | "SUPPORTIVE";
   drug_sequence?: number;
@@ -448,12 +457,50 @@ export interface PlanHydrationRowDto {
 
 }
 
+export type PlanInvestigationCategory = "LAB" | "NON_LAB" | "TISSUE";
+export type PlanInvestigationStatus = "PLANNED" | "ORDERED" | "CANCELLED";
+
+// A plan order's investigations (Chemotherapy Order > Investigations),
+// replaced as a whole by the cycle-day order save.
+export interface PlanInvestigationRowDto {
+
+    investigation_id?: string | null;
+    lab_test_id?: string | null;
+    investigation_name: string;
+    investigation_category: PlanInvestigationCategory;
+    investigation_type?: string | null;
+    source_medicine_ids?: string | null;
+    source_drug_names?: string | null;
+    source_test_text?: string | null;
+    monitoring_phase?: string | null;
+    priority?: string | null;
+    target_date?: string | null;
+    clinical_notes?: string | null;
+    item_status?: PlanInvestigationStatus | null;
+    lab_order_id?: string | null;
+    lab_order_item_id?: string | null;
+
+}
+
+export interface UpdatePlanInvestigationStatusDto {
+
+    updates: {
+        investigation_id?: string | null;
+        lab_test_id?: string | null;
+        item_status: PlanInvestigationStatus;
+        lab_order_id?: string | null;
+        lab_order_item_id?: string | null;
+    }[];
+
+}
+
 // PUT /plans/:planId/orders/:cycle/:day - one cycle day's full order.
-// hydration left out = that day's hydration is left untouched.
+// hydration / investigations left out = those rows are left untouched.
 export interface SavePlanOrderDto {
 
     items: PlanItemInputDto[];
     hydration?: PlanHydrationRowDto[] | null;
+    investigations?: PlanInvestigationRowDto[] | null;
     dosing?: {
         height_cm?: number | null;
         weight_kg?: number | null;
@@ -463,6 +510,13 @@ export interface SavePlanOrderDto {
     } | null;
     encounter_no?: string | null;
     copied_from_order_id?: string | null;
+    // The Chemotherapy Order's "Post Chemo Instructions" / "Additional
+    // Notes"; left out = left untouched, empty = cleared.
+    chemo_instructions?: string | null;
+    additional_notes?: string | null;
+    // The cycle day's planned date (YYYY-MM-DD) from the Chemotherapy
+    // Order's Start Date; moves only this day. Left out = unchanged.
+    planned_date?: string | null;
 
 }
 
@@ -531,6 +585,16 @@ export interface RecordAdministrationDto {
 
 }
 
+// One medicine's status on an IN_ADMINISTRATION cycle day. reason is
+// required for SKIPPED / CANCELLED.
+export interface UpdateAdministrationStatusDto {
+
+    status: string;
+    reason?: string | null;
+    remarks?: string | null;
+
+}
+
 export interface RecordVitalsDto {
 
     vital_stage?: string | null;
@@ -558,6 +622,10 @@ export interface RecordVitalsDto {
 
 export interface RecordAdverseEventDto {
 
+    // The cycle day the event belongs to (its chemotherapy_plan_order row);
+    // cycle_day is taken from that order, not trusted from the client.
+    plan_order_id?: string | null;
+    cycle_day?: number | null;
     event_date?: string | null;
     adverse_event_name: string;
     adverse_event_category?: string | null;
@@ -601,6 +669,12 @@ export interface RecordAdverseEventDto {
     remarks?: string | null;
 
 }
+
+// Editing an adverse event: any recorded field except the cycle day it
+// belongs to and the people linked when it was recorded.
+export type UpdateAdverseEventDto = Partial<
+    Omit<RecordAdverseEventDto, "plan_order_id" | "cycle_day" | "physician_id" | "reported_by">
+>;
 
 export interface RecordLabReviewDto {
 

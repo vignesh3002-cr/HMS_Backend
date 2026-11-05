@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EncounterService = void 0;
 const client_1 = require("@prisma/client");
+const crypto_1 = require("crypto");
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const encounter_repository_1 = require("./encounter.repository");
 const encounter_constants_1 = require("./encounter.constants");
@@ -66,6 +67,34 @@ class EncounterService {
          */
         const existingEncounter = await repository.findEncounterByAppointmentId(data.appointment_id);
         if (existingEncounter) {
+            /*
+             * Recording vitals before the doctor's check-in already opens
+             * the visit's encounter. Checking in then only moves the
+             * appointment into consultation - left SCHEDULED it is never
+             * counted as checked in, and the nightly sweep turns it into
+             * NO_SHOW.
+             */
+            const awaitingConsultation = [
+                appointment_constants_1.APPOINTMENT_STATUS.SCHEDULED,
+                appointment_constants_1.APPOINTMENT_STATUS.RESCHEDULED,
+                appointment_constants_1.APPOINTMENT_STATUS.CHECKED_IN
+            ];
+            if (awaitingConsultation.includes(appointment.status ?? "")) {
+                return prisma_1.default.$transaction(async (tx) => {
+                    await repository.updateAppointmentStatus(tx, appointment.appointment_id, appointment_constants_1.APPOINTMENT_STATUS.IN_CONSULTATION);
+                    await tx.appointment_notification.create({
+                        data: {
+                            notification_id: await (0, idGenerator_1.generateId)(tx, "NOTIFICATION"),
+                            appointment_id: appointment.appointment_id,
+                            channel: "IN_APP",
+                            notification_type: "CHECKIN",
+                            recipient: doctor.employee_id,
+                            status: "UNREAD"
+                        }
+                    });
+                    return existingEncounter;
+                });
+            }
             throw new Error("Encounter already exists for this appointment");
         }
         try {
@@ -126,7 +155,7 @@ class EncounterService {
         if (patient.patient_active !== "Active") {
             throw new Error("Patient is inactive");
         }
-        const doctor = admission.employees;
+        const doctor = admission.employees_admission_employee_idToemployees;
         if (!doctor || !doctor.employee_id) {
             throw new Error("Doctor not found");
         }
@@ -259,15 +288,57 @@ class EncounterService {
                 ? Math.round((finalWeight / Math.pow(finalHeight / 100, 2)) * 10) / 10
                 : null;
         }
-        return repository.updateEncounter(encounterNo, {
+        // ── Inpatient (IPD) vitals history logging ──
+        let vitalsLogUpdate = undefined;
+        if (existing.encounter_type === encounter_constants_1.ENCOUNTER_TYPE_IPD) {
+            const hasAnyVital = [
+                data.systolic_bp,
+                data.diastolic_bp,
+                data.pulse,
+                data.respiratory_rate,
+                data.spo2,
+                data.temperature,
+                data.height,
+                data.weight,
+                data.blood_sugar,
+                data.pain_score,
+            ].some((v) => v !== undefined && v !== null);
+            if (hasAnyVital) {
+                const entry = {
+                    entry_id: (0, crypto_1.randomUUID)(),
+                    recorded_at: new Date().toISOString(),
+                    recorded_by: data.updatedBy ?? null,
+                    systolic_bp: data.systolic_bp ?? null,
+                    diastolic_bp: data.diastolic_bp ?? null,
+                    pulse: data.pulse ?? null,
+                    respiratory_rate: data.respiratory_rate ?? null,
+                    spo2: data.spo2 ?? null,
+                    temperature: data.temperature ?? null,
+                    height: data.height ?? null,
+                    weight: data.weight ?? null,
+                    bmi: bmi ?? null,
+                    blood_sugar: data.blood_sugar ?? null,
+                    pain_score: data.pain_score ?? null,
+                    remarks: data.remarks ?? null,
+                };
+                const existingLog = Array.isArray(existing.vitals_log)
+                    ? existing.vitals_log
+                    : [];
+                vitalsLogUpdate = [...existingLog, entry];
+            }
+        }
+        const updated = await repository.updateEncounter(encounterNo, {
             chief_complaint: data.chief_complaint,
             symptoms: data.symptoms,
             diagnosis_id: data.diagnosis_id,
             clinical_notes: data.clinical_notes,
             advice: data.advice,
-            follow_up_date: data.follow_up_date
-                ? new Date(data.follow_up_date)
-                : undefined,
+            // null clears the date; left out keeps it.
+            follow_up_date: data.follow_up_date === null
+                ? null
+                : data.follow_up_date
+                    ? new Date(data.follow_up_date)
+                    : undefined,
             history_of_present_illness: data.history_of_present_illness,
             cns_examination: data.cns_examination,
             cvs_examination: data.cvs_examination,
@@ -303,8 +374,19 @@ class EncounterService {
             spo2: data.spo2,
             blood_sugar: data.blood_sugar,
             pain_score: data.pain_score,
-            ...(bmi !== undefined ? { BMI: bmi } : {})
+            ...(bmi !== undefined ? { BMI: bmi } : {}),
+            ...(vitalsLogUpdate !== undefined ? { vitals_log: vitalsLogUpdate } : {})
         });
+        // An inpatient encounter's Next Visit Date (Follow Up step) is the
+        // stay's review date -- one source, so the discharge details,
+        // admin popup and History tab always show the same date.
+        if (data.follow_up_date) {
+            await prisma_1.default.admission.updateMany({
+                where: { encounter_no: encounterNo, status: "ADMITTED" },
+                data: { review_date: new Date(data.follow_up_date), updated_at: new Date() },
+            });
+        }
+        return updated;
     }
     async closeEncounter(encounterNo, closedBy) {
         const existing = await repository.getEncounterByNumber(encounterNo);
@@ -313,6 +395,19 @@ class EncounterService {
         }
         if (existing.status !== encounter_constants_1.ENCOUNTER_STATUS.OPEN) {
             throw new Error("Encounter is already closed");
+        }
+        /*
+         * An admitted patient's IPD encounter stays open for the whole stay
+         * and is closed by IPD discharge (which records discharge type and
+         * summary and releases the bed). Closing it here used to discharge
+         * the patient silently, so it is refused instead.
+         */
+        const activeAdmission = await prisma_1.default.admission.findFirst({
+            where: { encounter_no: encounterNo, status: ipd_types_1.IPD_STATUS.ADMITTED },
+            select: { ip_number: true },
+        });
+        if (activeAdmission) {
+            throw new Error(`This encounter belongs to admitted patient IP ${activeAdmission.ip_number}. Discharge the patient from In-Patient Admissions instead.`);
         }
         return prisma_1.default.$transaction(async (tx) => {
             const closedAt = new Date();
@@ -325,37 +420,82 @@ class EncounterService {
             if (existing.appointment_id) {
                 await repository.updateAppointmentStatus(tx, existing.appointment_id, appointment_constants_1.APPOINTMENT_STATUS.COMPLETED);
             }
-            // IPD discharge hook: if encounter has an associated active admission, close the IPD stay and release the bed
-            const associatedAdmission = await tx.admission.findFirst({
-                where: {
-                    OR: [
-                        { encounter_no: encounterNo },
-                        ...(existing.appointment_id ? [{ appointment_id: existing.appointment_id }] : [])
-                    ],
-                    status: "ADMITTED"
-                }
-            });
-            if (associatedAdmission) {
-                await tx.admission.update({
-                    where: { admission_id: associatedAdmission.admission_id },
-                    data: {
-                        status: "DISCHARGED",
-                        discharge_date: closedAt,
-                        updated_by: closedBy
-                    }
-                });
-                if (associatedAdmission.bed_id) {
-                    await tx.bed_master.update({
-                        where: { bed_id: associatedAdmission.bed_id },
-                        data: {
-                            status: "AVAILABLE",
-                            updated_by: closedBy,
-                            updated_at: closedAt
-                        }
-                    });
-                }
-            }
             return encounter;
+        });
+    }
+    async updateVitalsLogEntry(encounterNo, entryId, data) {
+        const existing = await repository.getEncounterByNumber(encounterNo);
+        if (!existing) {
+            throw new Error("Encounter not found");
+        }
+        const logs = Array.isArray(existing.vitals_log) ? existing.vitals_log : [];
+        const idx = logs.findIndex((e) => (e.entry_id ?? e.recorded_at) === entryId);
+        if (idx === -1) {
+            throw new Error("Vitals entry not found");
+        }
+        const finalHeight = data.height !== undefined ? data.height : logs[idx].height;
+        const finalWeight = data.weight !== undefined ? data.weight : logs[idx].weight;
+        const bmi = finalHeight && finalWeight && Number(finalHeight) > 0
+            ? Math.round((Number(finalWeight) / Math.pow(Number(finalHeight) / 100, 2)) * 10) / 10
+            : null;
+        logs[idx] = {
+            ...logs[idx],
+            ...(data.systolic_bp !== undefined ? { systolic_bp: data.systolic_bp } : {}),
+            ...(data.diastolic_bp !== undefined ? { diastolic_bp: data.diastolic_bp } : {}),
+            ...(data.pulse !== undefined ? { pulse: data.pulse } : {}),
+            ...(data.respiratory_rate !== undefined ? { respiratory_rate: data.respiratory_rate } : {}),
+            ...(data.spo2 !== undefined ? { spo2: data.spo2 } : {}),
+            ...(data.temperature !== undefined ? { temperature: data.temperature } : {}),
+            ...(data.height !== undefined ? { height: data.height } : {}),
+            ...(data.weight !== undefined ? { weight: data.weight } : {}),
+            ...(data.blood_sugar !== undefined ? { blood_sugar: data.blood_sugar } : {}),
+            ...(data.pain_score !== undefined ? { pain_score: data.pain_score } : {}),
+            ...(data.remarks !== undefined ? { remarks: data.remarks } : {}),
+            bmi,
+            updated_at: new Date().toISOString(),
+            updated_by: data.updatedBy ?? null,
+        };
+        // Sort to find newest entry and sync flat columns
+        const sorted = [...logs].sort((a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime());
+        const latest = sorted[0];
+        return repository.updateEncounter(encounterNo, {
+            vitals_log: logs,
+            systolic_bp: latest.systolic_bp ?? null,
+            diastolic_bp: latest.diastolic_bp ?? null,
+            pulse: latest.pulse ?? null,
+            temperature: latest.temperature ?? null,
+            spo2: latest.spo2 ?? null,
+            respiratory_rate: latest.respiratory_rate ?? null,
+            height: latest.height ?? null,
+            weight: latest.weight ?? null,
+            blood_sugar: latest.blood_sugar ?? null,
+            pain_score: latest.pain_score ?? null,
+            BMI: latest.bmi ?? null,
+        });
+    }
+    async deleteVitalsLogEntry(encounterNo, entryId) {
+        const existing = await repository.getEncounterByNumber(encounterNo);
+        if (!existing) {
+            throw new Error("Encounter not found");
+        }
+        const logs = Array.isArray(existing.vitals_log) ? existing.vitals_log : [];
+        const filtered = logs.filter((e) => (e.entry_id ?? e.recorded_at) !== entryId);
+        // Sort remaining entries to find newest (or empty)
+        const sorted = [...filtered].sort((a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime());
+        const latest = sorted[0] || {};
+        return repository.updateEncounter(encounterNo, {
+            vitals_log: filtered,
+            systolic_bp: latest.systolic_bp ?? null,
+            diastolic_bp: latest.diastolic_bp ?? null,
+            pulse: latest.pulse ?? null,
+            temperature: latest.temperature ?? null,
+            spo2: latest.spo2 ?? null,
+            respiratory_rate: latest.respiratory_rate ?? null,
+            height: latest.height ?? null,
+            weight: latest.weight ?? null,
+            blood_sugar: latest.blood_sugar ?? null,
+            pain_score: latest.pain_score ?? null,
+            BMI: latest.bmi ?? null,
         });
     }
 }

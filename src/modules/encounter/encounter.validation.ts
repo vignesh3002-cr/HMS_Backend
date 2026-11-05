@@ -55,7 +55,7 @@ export const updateEncounterValidation = [
     body("notes").optional().isString(),
 
     body("follow_up_date")
-        .optional()
+        .optional({ nullable: true })
         .isISO8601()
         .withMessage("Follow-up date must be a valid date (YYYY-MM-DD)"),
 
@@ -68,7 +68,8 @@ export const updateEncounterValidation = [
     body("respiratory_rate").optional().isInt({ min: 0 }),
     body("spo2").optional().isInt({ min: 0, max: 100 }),
     body("blood_sugar").optional().isFloat({ min: 0 }),
-    body("pain_score").optional().isInt({ min: 0, max: 10 })
+    body("pain_score").optional().isInt({ min: 0, max: 10 }),
+    body("remarks").optional({ nullable: true }).isString()
 
 ];
 

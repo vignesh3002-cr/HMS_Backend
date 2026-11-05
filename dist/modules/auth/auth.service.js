@@ -108,6 +108,36 @@ class AuthService {
         await this.authRepository.updateKpiPreferences(userId, value);
         return validated;
     }
+    async getKpiUsage(userId) {
+        const user = await this.authRepository.findUserById(userId);
+        if (!user?.kpi_usage) {
+            return {};
+        }
+        const usage = {};
+        for (const pair of user.kpi_usage.split(",")) {
+            const [id, count] = pair.split(":");
+            const trimmedId = id?.trim();
+            const parsed = Number(count);
+            if (trimmedId && AuthService.ALLOWED_KPI_IDS.has(trimmedId) && Number.isFinite(parsed) && parsed > 0) {
+                usage[trimmedId] = Math.floor(parsed);
+            }
+        }
+        return usage;
+    }
+    async saveKpiUsage(userId, usage) {
+        const validated = {};
+        for (const id of this.validateKpiIds(Object.keys(usage))) {
+            const count = Math.floor(Number(usage[id]));
+            if (Number.isFinite(count) && count > 0) {
+                validated[id] = count;
+            }
+        }
+        const value = Object.keys(validated).length > 0
+            ? Object.entries(validated).map(([id, count]) => `${id}:${count}`).join(",")
+            : null;
+        await this.authRepository.updateKpiUsage(userId, value);
+        return validated;
+    }
     async login(username, password, rememberMe) {
         const user = await this.authRepository.findUserByUsername(username);
         if (!user) {
@@ -135,16 +165,20 @@ class AuthService {
             throw new Error("Email address not found");
         }
         const otp = (0, crypto_1.randomInt)(100000, 999999).toString();
-        const otpId = await (0, idGenerator_1.generateId)(prisma_1.default, "LOGIN_OTP");
         const expiry = new Date(Date.now() + 5 * 60 * 1000);
-        await prisma_1.default.login_otp.create({
-            data: {
-                otp_id: otpId,
-                user_id: user.user_id,
-                user_type: user.role_type === "PATIENT" ? "PATIENT" : "EMPLOYEE",
-                otp_code: otp,
-                expires_at: expiry
-            }
+        // Generate and insert in one transaction: if the insert fails the id is
+        // not consumed, keeping id_sequences aligned with the data.
+        await prisma_1.default.$transaction(async (tx) => {
+            const id = await (0, idGenerator_1.generateId)(tx, "LOGIN_OTP");
+            await tx.login_otp.create({
+                data: {
+                    otp_id: id,
+                    user_id: user.user_id,
+                    user_type: user.role_type === "PATIENT" ? "PATIENT" : "EMPLOYEE",
+                    otp_code: otp,
+                    expires_at: expiry
+                }
+            });
         });
         await (0, mail_1.sendOtpEmail)(email, otp);
         return {

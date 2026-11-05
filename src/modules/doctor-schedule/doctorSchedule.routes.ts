@@ -1,9 +1,28 @@
 import { Router } from "express";
 import { authenticate } from "../auth/auth.middleware";
+import { authorizeScheduleChange } from "../../middleware/authorize";
+import prisma from "../../config/prisma";
 
 import { doctorScheduleController } from "./doctorSchedule.controller";
 
 const router = Router();
+
+// Writes: only admins, or the doctor acting on their OWN schedule.
+const byBodyEmployee = authorizeScheduleChange((req) =>
+    String(req.body?.employee_id ?? "")
+);
+const byParamEmployee = authorizeScheduleChange((req) =>
+    String(req.params?.employeeId ?? "")
+);
+const byChangeRecord = authorizeScheduleChange(async (req) => {
+    const changeId = String(req.params?.changeId ?? "");
+    if (!/^\d+$/.test(changeId)) return "";
+    const change = await prisma.doctor_schedule_change.findUnique({
+        where: { change_id: BigInt(changeId) },
+        select: { employee_id: true },
+    });
+    return change?.employee_id ?? "";
+});
 
 /**
  * Create ADD / OVERRIDE / CANCEL schedule change
@@ -13,6 +32,7 @@ const router = Router();
 router.post(
     "/change",
     authenticate,
+    byBodyEmployee,
     doctorScheduleController.createScheduleChange
 );
 
@@ -37,6 +57,7 @@ router.get(
 router.patch(
     "/recurring/toggle",
     authenticate,
+    byBodyEmployee,
     doctorScheduleController.toggleRecurringDay
 );
 
@@ -49,6 +70,7 @@ router.patch(
 router.post(
     "/recurring/slot/:employeeId",
     authenticate,
+    byParamEmployee,
     doctorScheduleController.createRecurringSlot
 );
 
@@ -60,6 +82,7 @@ router.post(
 router.delete(
     "/recurring/slot/:employeeId/:scheduleId",
     authenticate,
+    byParamEmployee,
     doctorScheduleController.deleteRecurringSlot
 );
 
@@ -71,6 +94,7 @@ router.delete(
 router.put(
     "/recurring/slot/:employeeId/:scheduleId",
     authenticate,
+    byParamEmployee,
     doctorScheduleController.updateRecurringSlot
 );
 
@@ -104,6 +128,7 @@ router.get(
 router.patch(
     "/change/:changeId",
     authenticate,
+    byChangeRecord,
     doctorScheduleController.updateScheduleChange
 );
 
@@ -115,6 +140,7 @@ router.patch(
 router.patch(
     "/change/:changeId/cancel",
     authenticate,
+    byChangeRecord,
     doctorScheduleController.cancelScheduleChange
 );
 

@@ -166,10 +166,11 @@ router.post(
     controller.addTnmStage.bind(controller)
 );
 
+// Also reachable from the inpatient discharge card / nurse discharge popup.
 router.post(
     "/reference/disease-statuses",
     authenticate,
-    addReferenceAccess,
+    authorizeAny("oncology.diagnosis.create", "oncology.diagnosis.update", "admission.discharge_details", "admission.discharge"),
     addDiseaseStatusValidation,
     controller.addDiseaseStatus.bind(controller)
 );

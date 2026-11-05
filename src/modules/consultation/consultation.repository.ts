@@ -185,6 +185,16 @@ export class ConsultationRepository {
 
     }
 
+    async findReportsByPatient(patientId: string) {
+
+        return prisma.encounter_report.findMany({
+            where: { encounter: { patient_id: patientId } },
+            include: { lab_test_master: true },
+            orderBy: { report_completed_date: { sort: "desc", nulls: "last" } }
+        });
+
+    }
+
     async findReportById(encounterReportId: string) {
 
         return prisma.encounter_report.findUnique({ where: { encounter_report_id: encounterReportId } });
@@ -256,6 +266,37 @@ export class ConsultationRepository {
     async deleteMolecularTest(encounterMolecularTestId: string) {
 
         return prisma.encounter_molecular_test.delete({ where: { encounter_molecular_test_id: encounterMolecularTestId } });
+
+    }
+
+    // ---------------- Encounter immunizations ----------------
+
+    async findEncounterImmunizations(encounterNo: string) {
+
+        return prisma.encounter_immunization.findMany({
+            where: { encounter_no: encounterNo },
+            orderBy: { created_at: "asc" }
+        });
+
+    }
+
+    async createEncounterImmunization(data: Prisma.encounter_immunizationUncheckedCreateInput) {
+
+        return prisma.encounter_immunization.create({ data });
+
+    }
+
+    async updateEncounterImmunization(id: bigint, data: Prisma.encounter_immunizationUncheckedUpdateInput) {
+
+        return prisma.encounter_immunization.update({ where: { id }, data });
+
+    }
+
+    async deleteEncounterImmunizations(ids: bigint[]) {
+
+        if (ids.length === 0) return { count: 0 };
+
+        return prisma.encounter_immunization.deleteMany({ where: { id: { in: ids } } });
 
     }
 

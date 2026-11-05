@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { validationResult } from "express-validator";
+import { Prisma } from "@prisma/client";
 import { PrescriptionService } from "./prescription.service";
 
 const service = new PrescriptionService();
@@ -30,6 +31,19 @@ export class PrescriptionController {
             });
 
         } catch (error: any) {
+
+            // A generated-id collision is a retryable data problem, not bad
+            // input - report it as a conflict instead of a generic 400.
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === "P2002"
+            ) {
+                return res.status(409).json({
+                    success: false,
+                    code: "DUPLICATE_ID",
+                    message: "The record could not be saved because an identifier was already in use. Please retry."
+                });
+            }
 
             return res.status(400).json({
                 success: false,

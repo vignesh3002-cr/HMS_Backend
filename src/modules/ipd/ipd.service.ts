@@ -1,5 +1,9 @@
+import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { generateId } from "../../utils/idGenerator";
+import { TOP_LEVEL_ADMIN_ROLES } from "../../permissions/roles";
+import { EncounterRepository } from "../encounter/encounter.repository";
+import { ENCOUNTER_STATUS, ENCOUNTER_TYPE_IPD } from "../encounter/encounter.constants";
 import { IPDRepository, IpdRepository } from "./ipd.repository";
 import {
     CreateAdmissionDTO,
@@ -7,14 +11,276 @@ import {
     UpdateWardDTO,
     UpdateBedDTO,
     AdmissionSearchQuery,
+    DaycareBookingDTO,
+    IpdActor,
     IPD_STATUS,
     BED_STATUS,
 } from "./ipd.types";
-import { ADMISSION_TYPE, IPD_STATUS_VALUES } from "./ipd.constants";
+import {
+    ADMISSION_TYPE,
+    CARE_TEAM_END_REASON,
+    DISCHARGE_TYPE,
+    IPD_STATUS_VALUES,
+    IST_OFFSET_MS,
+    MANUAL_BED_STATUSES,
+    PATIENT_STATUS_AT_DISCHARGE,
+    PATIENT_STATUS_AT_DISCHARGE_VALUES,
+    RESERVATION_MAX_DAYS_AHEAD,
+} from "./ipd.constants";
+
+const encounterRepository = new EncounterRepository();
+
+const httpError = (message: string, status: number) => {
+    const err: any = new Error(message);
+    err.status = status;
+    return err;
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** yyyy-MM-dd of the given instant in IST. */
+const istDateString = (at: Date) =>
+    new Date(at.getTime() + IST_OFFSET_MS).toISOString().slice(0, 10);
+
+/** The UTC instant at which an IST calendar day (yyyy-MM-dd) begins. */
+const startOfIstDay = (istDate: string) =>
+    new Date(Date.parse(`${istDate}T00:00:00.000Z`) - IST_OFFSET_MS);
+
+/** Whole days from IST date `from` to IST date `to` (negative if earlier). */
+const istDayDiff = (from: string, to: string) =>
+    Math.round((Date.parse(`${to}T00:00:00.000Z`) - Date.parse(`${from}T00:00:00.000Z`)) / DAY_MS);
+
+/** UTC instant of an IST date (yyyy-MM-dd) + time (HH:mm). */
+const istSlotToUtc = (istDate: string, time: string) => {
+    const t = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(String(time ?? "").trim());
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(istDate ?? "")) || !t) {
+        throw new Error("A valid date and time slot are required");
+    }
+    return new Date(
+        Date.parse(`${istDate}T${t[1].padStart(2, "0")}:${t[2]}:00.000Z`) - IST_OFFSET_MS
+    );
+};
+
+// Emergency admissions are admitted on the spot and may start without a
+// doctor / department (assigned afterwards from the IPD list).
+const isEmergencyType = (admissionType?: string | null) =>
+    String(admissionType ?? "").trim().toUpperCase() === ADMISSION_TYPE.EMERGENCY;
+
+interface DaycareSlot {
+    admission_id: string;
+    ip_number: string;
+    status: string;
+    start: Date;
+    end: Date;
+}
+
+/*
+ * Most daycare sessions running at the same moment within [start, end) --
+ * concurrency can only rise at a session start, so checking the window start
+ * and every session start inside it is enough.
+ */
+const peakDaycareOverlap = (slots: DaycareSlot[], start: Date, end: Date) => {
+    const overlapping = slots.filter((s) => s.start < end && s.end > start);
+    const instants = [start, ...overlapping.map((s) => s.start).filter((t) => t > start && t < end)];
+    return instants.reduce(
+        (peak, t) => Math.max(peak, overlapping.filter((s) => s.start <= t && s.end > t).length),
+        0
+    );
+};
 
 export class IpdService {
 
     constructor(private readonly ipdRepository: IPDRepository = new IpdRepository()) {}
+
+    /*
+     * Record-level branch isolation for admission writes. branchScope only
+     * validates a branch passed in the query/header (and picks one for
+     * multi-branch users), so it can't vouch for a branch_id in the body or
+     * for the branch of an existing admission -- this checks the record's own
+     * branch against the caller's ACTIVE mappings instead.
+     */
+    async assertBranchAccess(actor: IpdActor, branchId: string) {
+
+        const isTopLevelAdmin = TOP_LEVEL_ADMIN_ROLES.some(
+            (r) => r.toLowerCase() === String(actor.role ?? "").toLowerCase()
+        );
+        if (isTopLevelAdmin) {
+            return;
+        }
+
+        const mapping = await prisma.user_branch_mapping.findFirst({
+            where: { user_id: actor.user_id, branch_id: branchId, status: 1 },
+            select: { branch_id: true },
+        });
+        if (!mapping) {
+            throw httpError("Forbidden. You don't have access to this branch.", 403);
+        }
+
+    }
+
+    /*
+     * The partial unique indexes on admission (one ADMITTED row per patient,
+     * one per bed) are the final guard against double admission; turn their
+     * violation into the same message the pre-checks give.
+     */
+    private rethrowAdmissionConflict(error: any): never {
+
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+            // The index name sits in a different meta field depending on the
+            // engine/driver adapter, so match on the whole meta payload.
+            if (JSON.stringify(error.meta ?? {}).includes("uq_admission_bed_admitted")) {
+                throw new Error("Selected bed is not available");
+            }
+            throw new Error("Patient is already admitted");
+        }
+        throw error;
+
+    }
+
+    /*
+     * The IPD encounter of an admission, inside the caller's admit
+     * transaction, so a patient can never end up ADMITTED (bed occupied)
+     * without an encounter. One visit keeps one encounter: an admission
+     * made for an appointment (e.g. a Daycare booking) reuses the
+     * appointment's open encounter when the doctor's consultation already
+     * opened it; otherwise the new encounter is linked to the appointment so
+     * the doctor's check-in reuses it instead of opening a second one.
+     */
+    private async openIpEncounter(
+        tx: Prisma.TransactionClient,
+        admission: {
+            admission_id: string;
+            patient_id: string;
+            branch_id: string;
+            department_id: string | null;
+            appointment_id?: string | null;
+        },
+        // null for an emergency admitted before a doctor is assigned.
+        employeeId: string | null,
+        createdBy: string
+    ) {
+
+        const appointmentEncounter = admission.appointment_id
+            ? await tx.encounter.findFirst({
+                where: { appointment_id: admission.appointment_id, patient_id: admission.patient_id },
+                select: { encounter_no: true, status: true, encounter_type: true },
+            })
+            : null;
+
+        if (appointmentEncounter?.status === ENCOUNTER_STATUS.OPEN) {
+
+            if (appointmentEncounter.encounter_type !== ENCOUNTER_TYPE_IPD) {
+                await tx.encounter.update({
+                    where: { encounter_no: appointmentEncounter.encounter_no },
+                    data: { encounter_type: ENCOUNTER_TYPE_IPD },
+                });
+            }
+
+            return appointmentEncounter.encounter_no;
+
+        }
+
+        const encounterNo = await encounterRepository.generateEncounterNumber(tx);
+
+        await encounterRepository.createEncounter(tx, {
+            createdBy,
+            encounter_no: encounterNo,
+            patient_id: admission.patient_id,
+            branch_id: admission.branch_id,
+            department_id: admission.department_id,
+            employee_id: employeeId,
+            // A closed encounter already holds this appointment (the column
+            // is unique), so only an appointment without one is linked.
+            ...(admission.appointment_id && !appointmentEncounter
+                ? { appointment_id: admission.appointment_id }
+                : {}),
+            encounter_type: ENCOUNTER_TYPE_IPD,
+            status: ENCOUNTER_STATUS.OPEN,
+        });
+
+        return encounterNo;
+
+    }
+
+    /*
+     * Authoritative "one active admission per patient" check, run under the
+     * patient row lock so concurrent admits are serialized.
+     */
+    private async assertPatientNotAdmitted(
+        tx: Prisma.TransactionClient,
+        patientId: string,
+        excludeAdmissionId?: string
+    ) {
+
+        await this.ipdRepository.lockPatientForAdmission(tx, patientId);
+
+        const existingAdmission = await tx.admission.findFirst({
+            where: {
+                patient_id: patientId,
+                status: IPD_STATUS.ADMITTED,
+                ...(excludeAdmissionId ? { admission_id: { not: excludeAdmissionId } } : {}),
+            },
+        });
+
+        if (existingAdmission) {
+            throw new Error(
+                `Patient is already admitted with IP Number ${existingAdmission.ip_number}`
+            );
+        }
+
+    }
+
+    /*
+     * Locks the bed row and confirms it is free. Shared by admit, direct
+     * admission, reserve and transfer. A bed RESERVED for this same admission
+     * (excludeAdmissionId) counts as free for it; reserved for anyone else,
+     * it doesn't.
+     */
+    private async claimBed(
+        tx: Prisma.TransactionClient,
+        bedId: string,
+        excludeAdmissionId?: string,
+        unavailableMessage = "Selected bed is not available"
+    ) {
+
+        const locked = await this.ipdRepository.lockBedForAdmission(tx, bedId);
+        const bed = locked?.[0];
+
+        const reservedForThis =
+            bed?.status === BED_STATUS.RESERVED &&
+            !!excludeAdmissionId &&
+            bed.reserved_admission_id === excludeAdmissionId;
+
+        // A hold past its reserved_until is as good as released -- the
+        // nightly pg_cron sweep tidies it, but nobody has to wait for it.
+        const reservationLapsed =
+            bed?.status === BED_STATUS.RESERVED &&
+            !!bed.reserved_until &&
+            new Date(bed.reserved_until).getTime() < Date.now();
+
+        if (bed && reservationLapsed) {
+            bed.status = BED_STATUS.AVAILABLE;
+        }
+
+        if (bed?.status === BED_STATUS.RESERVED && !reservedForThis) {
+            throw new Error("That bed is reserved for another planned admission");
+        }
+        if (!bed || (bed.status !== BED_STATUS.AVAILABLE && !reservedForThis)) {
+            throw new Error(unavailableMessage);
+        }
+
+        const heldBy = await tx.admission.findFirst({
+            where: {
+                bed_id: bedId,
+                status: IPD_STATUS.ADMITTED,
+                ...(excludeAdmissionId ? { admission_id: { not: excludeAdmissionId } } : {}),
+            },
+        });
+        if (heldBy) {
+            throw new Error(`Bed is already occupied by IP ${heldBy.ip_number}`);
+        }
+
+    }
 
     async validateAdmissionContext(data: {
         branchId: string;
@@ -22,16 +288,18 @@ export class IpdService {
         employeeId?: string | null;
         wardId?: string | null;
         bedId?: string | null;
+        /** Emergency: doctor / department may be missing (still validated if given). */
+        allowUnassigned?: boolean;
     }) {
 
-        const { branchId, departmentId, employeeId, wardId, bedId } = data;
+        const { branchId, departmentId, employeeId, wardId, bedId, allowUnassigned = false } = data;
 
         if (departmentId) {
             const department = await this.ipdRepository.findDepartmentById(departmentId);
             if (!department) {
                 throw new Error("Department not found");
             }
-        } else {
+        } else if (!allowUnassigned) {
             throw new Error("Department is required");
         }
 
@@ -56,7 +324,7 @@ export class IpdService {
             if (!mapping) {
                 throw new Error("Doctor is not assigned to the selected branch");
             }
-        } else {
+        } else if (!allowUnassigned) {
             throw new Error("Attending doctor is required");
         }
 
@@ -68,12 +336,18 @@ export class IpdService {
             if (ward.branch_id !== branchId) {
                 throw new Error("Ward does not belong to the selected branch");
             }
+            if (ward.active_status !== 1) {
+                throw new Error("Ward is inactive");
+            }
         }
 
         if (bedId) {
             const bed = await this.ipdRepository.findBedById(bedId);
             if (!bed) {
                 throw new Error("Bed not found");
+            }
+            if (bed.active_status !== 1) {
+                throw new Error("Bed is inactive");
             }
             if (bed.branch_id !== branchId) {
                 throw new Error("Selected bed does not belong to the selected branch");
@@ -85,7 +359,11 @@ export class IpdService {
 
     }
 
-    async createAdmission(data: CreateAdmissionDTO, createdBy: string) {
+    /*
+     * actor is passed for user-facing requests so the body's branch_id is
+     * checked against the caller's branches; internal callers omit it.
+     */
+    async createAdmission(data: CreateAdmissionDTO, createdBy: string, actor?: IpdActor) {
 
         const cleanId = (val?: any): string | null => {
             if (val === null || val === undefined) return null;
@@ -138,13 +416,29 @@ export class IpdService {
             throw new Error("Branch is inactive");
         }
 
+        if (actor) {
+            await this.assertBranchAccess(actor, branchId);
+        }
+
+        const isEmergency = isEmergencyType(data.admission_type);
+
+        // Emergency = admitted on the spot into a chosen bed, never planned.
+        if (isEmergency && status !== IPD_STATUS.ADMITTED) {
+            throw new Error("An emergency admission is admitted immediately -- choose a ward and bed");
+        }
+
         await this.validateAdmissionContext({
             branchId,
             departmentId,
             employeeId,
             wardId,
             bedId,
+            allowUnassigned: isEmergency,
         });
+
+        if (status !== IPD_STATUS.PLANNED && status !== IPD_STATUS.ADMITTED) {
+            throw new Error("A new admission must be PLANNED or ADMITTED");
+        }
 
         if (status === IPD_STATUS.ADMITTED) {
 
@@ -155,93 +449,85 @@ export class IpdService {
                 throw new Error("Bed is required for admission");
             }
 
-            const preBed = await this.ipdRepository.findBedById(bedId);
-            if (preBed && preBed.status !== BED_STATUS.AVAILABLE) {
-                throw new Error("Selected bed is not available");
-            }
-
-            const existingAdmission = await prisma.admission.findFirst({
-                where: {
-                    patient_id: patientId,
-                    status: IPD_STATUS.ADMITTED,
-                },
-            });
-
-            if (existingAdmission) {
-                throw new Error(
-                    `Patient is already admitted with IP Number ${existingAdmission.ip_number}`
-                );
-            }
-
         }
 
-        return await prisma.$transaction(async (tx) => {
+        let createdIpNumber: string;
 
-            /*
-             * Authoritative availability check under a row-level lock so two
-             * concurrent admit requests cannot both assign the same bed.
-             */
-            if (status === IPD_STATUS.ADMITTED && bedId) {
-                const locked = await this.ipdRepository.lockBedForAdmission(tx, bedId);
-                if (!locked?.[0] || locked[0].status !== BED_STATUS.AVAILABLE) {
-                    throw new Error("Selected bed is not available");
+        try {
+
+            createdIpNumber = await prisma.$transaction(async (tx) => {
+
+                /*
+                 * Authoritative patient + bed checks under row-level locks so
+                 * concurrent admits can neither double-admit the patient nor
+                 * double-assign the bed.
+                 */
+                if (status === IPD_STATUS.ADMITTED && bedId) {
+                    await this.assertPatientNotAdmitted(tx, patientId);
+                    await this.claimBed(tx, bedId);
                 }
-                const heldBy = await tx.admission.findFirst({
-                    where: {
-                        bed_id: bedId,
-                        status: IPD_STATUS.ADMITTED,
-                    },
+
+                const ipNumber = await this.ipdRepository.generateAdmissionId(tx);
+                const admissionId = ipNumber;
+
+                const admission = await this.ipdRepository.createAdmission(tx, {
+                    admission_id: admissionId,
+                    ip_number: ipNumber,
+                    patient_id: patientId,
+                    appointment_id: appointmentId ?? undefined,
+                    encounter_no: encounterNo ?? undefined,
+                    branch_id: branchId,
+                    department_id: departmentId ?? undefined,
+                    employee_id: employeeId ?? undefined,
+                    admission_type: data.admission_type || (data.is_daycare ? ADMISSION_TYPE.DAYCARE : ADMISSION_TYPE.REGULAR),
+                    provisional_diagnosis: data.provisional_diagnosis?.trim() || undefined,
+                    ward_id: wardId ?? undefined,
+                    bed_id: bedId ?? undefined,
+                    is_daycare: data.is_daycare ?? false,
+                    payment_mode: data.payment_mode?.trim() || undefined,
+                    insurance_provider: data.insurance_provider?.trim() || undefined,
+                    insurance_policy_no: data.insurance_policy_no?.trim() || undefined,
+                    expected_stay_days: data.expected_stay_days !== undefined
+                        ? Number(data.expected_stay_days)
+                        : undefined,
+                    advance_amount: data.advance_amount !== undefined
+                        ? Number(data.advance_amount)
+                        : undefined,
+                    // An emergency is admitted now, whatever date was sent.
+                    admission_date: isEmergency
+                        ? new Date()
+                        : data.admission_date
+                            ? new Date(data.admission_date)
+                            : undefined,
+                    status,
+                    created_by: createdBy,
                 });
-                if (heldBy) {
-                    throw new Error(`Bed is already occupied by IP ${heldBy.ip_number}`);
+
+                if (status === IPD_STATUS.ADMITTED && bedId) {
+                    await this.ipdRepository.markBedStatus(
+                        tx,
+                        bedId,
+                        BED_STATUS.OCCUPIED,
+                        createdBy
+                    );
+
+                    // A direct admission gets its encounter in the same
+                    // transaction, exactly like admitting a planned one.
+                    if (!encounterNo) {
+                        const newEncounterNo = await this.openIpEncounter(tx, admission, employeeId, createdBy);
+                        await this.ipdRepository.updateAdmissionTx(tx, admissionId, { encounter_no: newEncounterNo });
+                    }
                 }
-            }
 
-            const ipNumber = await this.ipdRepository.generateAdmissionId(tx);
-            const admissionId = ipNumber;
+                return ipNumber;
 
-            const admission = await this.ipdRepository.createAdmission(tx, {
-                admission_id: admissionId,
-                ip_number: ipNumber,
-                patient_id: patientId,
-                appointment_id: appointmentId ?? undefined,
-                encounter_no: encounterNo ?? undefined,
-                branch_id: branchId,
-                department_id: departmentId ?? undefined,
-                employee_id: employeeId ?? undefined,
-                admission_type: data.admission_type || (data.is_daycare ? ADMISSION_TYPE.DAYCARE : ADMISSION_TYPE.REGULAR),
-                provisional_diagnosis: data.provisional_diagnosis?.trim() || undefined,
-                ward_id: wardId ?? undefined,
-                bed_id: bedId ?? undefined,
-                is_daycare: data.is_daycare ?? false,
-                payment_mode: data.payment_mode?.trim() || undefined,
-                insurance_provider: data.insurance_provider?.trim() || undefined,
-                insurance_policy_no: data.insurance_policy_no?.trim() || undefined,
-                expected_stay_days: data.expected_stay_days !== undefined
-                    ? Number(data.expected_stay_days)
-                    : undefined,
-                advance_amount: data.advance_amount !== undefined
-                    ? Number(data.advance_amount)
-                    : undefined,
-                admission_date: data.admission_date
-                    ? new Date(data.admission_date)
-                    : undefined,
-                status,
-                created_by: createdBy,
             });
 
-            if (status === IPD_STATUS.ADMITTED && bedId) {
-                await this.ipdRepository.markBedStatus(
-                    tx,
-                    bedId,
-                    BED_STATUS.OCCUPIED,
-                    createdBy
-                );
-            }
+        } catch (error) {
+            this.rethrowAdmissionConflict(error);
+        }
 
-            return admission;
-
-        });
+        return this.getAdmissionByIpNumber(createdIpNumber);
 
     }
 
@@ -252,6 +538,7 @@ export class IpdService {
 
         return this.ipdRepository.listAdmissions({
             branchId: filter.branchId,
+            assignedTo: filter.assignedTo,
             status: filter.status,
             wardId: filter.wardId,
             patientId: filter.patientId,
@@ -265,6 +552,24 @@ export class IpdService {
 
     }
 
+    /*
+     * The caller's employee_id for "my patients": the token carries it, but
+     * fall back to the user's employee row for older tokens. A user with no
+     * employee record matches nothing (never everything).
+     */
+    async resolveActorEmployeeId(actor: IpdActor): Promise<string> {
+
+        if (actor.employee_id) return actor.employee_id;
+
+        const employee = await prisma.employees.findUnique({
+            where: { user_id: actor.user_id },
+            select: { employee_id: true },
+        });
+
+        return employee?.employee_id ?? "__none__";
+
+    }
+
     async getAdmissionByIpNumber(ipNumber: string) {
 
         let admission = await this.ipdRepository.getAdmissionByIpNumber(ipNumber);
@@ -274,54 +579,133 @@ export class IpdService {
         }
 
         if (!admission) {
-            throw new Error("Admission not found");
+            throw httpError("Admission not found", 404);
         }
 
         return admission;
 
     }
 
-    async updateAdmission(id: string, data: UpdateAdmissionDTO, updatedBy?: string) {
+    /*
+     * Same lookup for a user-facing request, plus branch isolation and the
+     * display name of whoever last changed it (updated_by holds a user_id;
+     * "SYSTEM" -- the nightly sweep -- resolves to null).
+     */
+    async getAdmissionForActor(ipNumber: string, actor: IpdActor) {
 
-        const existing = await this.getAdmissionByIpNumber(id);
+        const admission = await this.getAdmissionByIpNumber(ipNumber);
 
-        if (!existing) {
-            throw new Error("Admission not found");
+        await this.assertBranchAccess(actor, admission.branch_id);
+
+        return {
+            ...admission,
+            updated_by_name: await this.resolveUserName(admission.updated_by),
+            discharge_details_by_name: await this.resolveUserName(admission.discharge_details_by),
+        };
+
+    }
+
+    private async resolveUserName(userId: string | null | undefined) {
+
+        if (!userId || userId === "SYSTEM") return null;
+
+        const user = await prisma.user_table.findUnique({
+            where: { user_id: userId },
+            select: {
+                username: true,
+                employees: { select: { first_name: true, last_name: true } },
+            },
+        });
+
+        const fullName = [user?.employees?.first_name, user?.employees?.last_name]
+            .filter(Boolean)
+            .join(" ");
+
+        return fullName || user?.username || userId;
+
+    }
+
+    /*
+     * Edits the details of a PLANNED or ADMITTED admission. Status changes,
+     * moving an admitted patient and discharge details each have their own
+     * endpoint (admit / cancel / transfer / discharge) because they move the
+     * bed and the encounter along with them -- a generic PATCH must never do
+     * that, or a bed can be left OCCUPIED with nobody in it.
+     */
+    async updateAdmission(id: string, data: UpdateAdmissionDTO, actor: IpdActor) {
+
+        const existing = await this.getAdmissionForActor(id, actor);
+
+        if (existing.status !== IPD_STATUS.PLANNED && existing.status !== IPD_STATUS.ADMITTED) {
+            throw new Error(`A ${existing.status.toLowerCase()} admission can't be edited`);
         }
 
-        const cleanId = (val?: any) => (val && String(val).trim().length > 0 ? String(val).trim() : null);
+        if (data.status !== undefined && data.status !== existing.status) {
+            throw new Error("Status can't be changed here -- use Admit, Cancel, Transfer or Discharge");
+        }
 
-        const status = data.status && IPD_STATUS_VALUES.includes(data.status)
-            ? data.status
-            : existing.status;
+        if (
+            data.discharge_date !== undefined ||
+            data.discharge_type !== undefined ||
+            data.discharge_summary !== undefined ||
+            data.discharge_advice !== undefined ||
+            data.review_date !== undefined ||
+            data.discharge_disease_status !== undefined ||
+            data.patient_status_at_discharge !== undefined
+        ) {
+            throw new Error("Discharge details can only be recorded through Discharge");
+        }
+
+        const isAdmitted = existing.status === IPD_STATUS.ADMITTED;
+
+        const cleanId = (val?: any) => (val && String(val).trim().length > 0 ? String(val).trim() : null);
 
         const wardId = data.ward_id !== undefined ? cleanId(data.ward_id) : cleanId(existing.ward_id);
         const bedId = data.bed_id !== undefined ? cleanId(data.bed_id) : cleanId(existing.bed_id);
         const departmentId = data.department_id !== undefined ? cleanId(data.department_id) : cleanId(existing.department_id);
         const employeeId = data.employee_id !== undefined ? cleanId(data.employee_id) : cleanId(existing.employee_id);
 
-        if (existing.status === IPD_STATUS.ADMITTED &&
-            (wardId !== cleanId(existing.ward_id) || bedId !== cleanId(existing.bed_id))) {
+        const locationChanged =
+            wardId !== cleanId(existing.ward_id) || bedId !== cleanId(existing.bed_id);
+
+        const doctorChanged =
+            departmentId !== cleanId(existing.department_id) ||
+            employeeId !== cleanId(existing.employee_id);
+
+        // A daycare request booked with a doctor slot: its date, time, doctor,
+        // ward and duration were capacity-checked together with that slot, so
+        // they can only change by cancelling and booking again. The bed (and
+        // payment / diagnosis details) stay editable.
+        if (!isAdmitted && existing.is_daycare && existing.appointment_id) {
+            const fixedFieldChanged =
+                data.admission_date !== undefined ||
+                (data.ward_id !== undefined && wardId !== cleanId(existing.ward_id)) ||
+                doctorChanged ||
+                (data.expected_stay_days !== undefined &&
+                    Number(data.expected_stay_days) !== Number(existing.expected_stay_days)) ||
+                data.is_daycare === false ||
+                (data.admission_type !== undefined && data.admission_type !== existing.admission_type);
+
+            if (fixedFieldChanged) {
+                throw new Error(
+                    "The date, time, doctor, ward and duration of a daycare booking are fixed -- cancel it and book again to change them"
+                );
+            }
+        }
+
+        if (isAdmitted && locationChanged) {
             throw new Error("Use transfer to move an admitted patient to another ward or bed");
         }
 
-        if (departmentId !== cleanId(existing.department_id) || employeeId !== cleanId(existing.employee_id)) {
-            await this.validateAdmissionContext({
-                branchId: existing.branch_id,
-                departmentId,
-                employeeId,
-            });
+        if (isAdmitted && data.admission_date !== undefined) {
+            throw new Error("Admission time is recorded when the patient is admitted and can't be edited");
         }
 
-        if (status === IPD_STATUS.ADMITTED) {
+        // For a PLANNED admission ward/bed are only a request -- no bed is
+        // held, so only their existence, branch and active state are checked.
+        const contextChanged = locationChanged || doctorChanged;
 
-            if (!wardId) {
-                throw new Error("Ward is required for admission");
-            }
-            if (!bedId) {
-                throw new Error("Bed is required for admission");
-            }
-
+        if (contextChanged) {
             await this.validateAdmissionContext({
                 branchId: existing.branch_id,
                 departmentId,
@@ -329,110 +713,864 @@ export class IpdService {
                 wardId,
                 bedId,
             });
+        }
 
-            const bed = await this.ipdRepository.findBedById(bedId);
-            if (bed && bedId !== cleanId(existing.bed_id) && bed.status !== BED_STATUS.AVAILABLE) {
-                throw new Error("Selected bed is not available");
+        await prisma.$transaction(async (tx) => {
+
+            // Moving a planned request off its reserved bed gives that bed
+            // back -- the new bed is only a request until reserved again.
+            if (!isAdmitted && locationChanged) {
+                await this.ipdRepository.releaseReservations(
+                    tx,
+                    [existing.admission_id],
+                    actor.user_id,
+                    bedId ?? undefined
+                );
             }
 
-        } else if (wardId || bedId) {
-
-            await this.validateAdmissionContext({
-                branchId: existing.branch_id,
-                departmentId,
-                employeeId,
-                wardId,
-                bedId,
-            });
-
-        }
-
-        const updateData: any = {
-            ...data,
-            updated_by: updatedBy ?? data.updated_by,
-        };
-
-        updateData.ward_id = wardId ?? undefined;
-        updateData.bed_id = bedId ?? undefined;
-        if (data.department_id !== undefined) {
-            updateData.department_id = departmentId ?? undefined;
-        }
-        if (data.employee_id !== undefined) {
-            updateData.employee_id = employeeId ?? undefined;
-        }
-        if (data.admission_date !== undefined) {
-            updateData.admission_date = new Date(data.admission_date);
-        }
-        updateData.status = status;
-
-        const needsBedOccupancy =
-            status === IPD_STATUS.ADMITTED &&
-            bedId &&
-            (bedId !== cleanId(existing.bed_id) || existing.status !== IPD_STATUS.ADMITTED);
-
-        return await prisma.$transaction(async (tx) => {
-
-            if (needsBedOccupancy) {
-                const locked = await this.ipdRepository.lockBedForAdmission(tx, bedId);
-                if (!locked?.[0] || locked[0].status !== BED_STATUS.AVAILABLE) {
-                    throw new Error("Selected bed is not available");
-                }
-                const heldBy = await tx.admission.findFirst({
-                    where: {
-                        bed_id: bedId,
-                        status: IPD_STATUS.ADMITTED,
-                        admission_id: { not: existing.admission_id },
-                    },
+            // Assigning / changing the doctor of an admitted patient (e.g. an
+            // emergency admitted without one) moves their open IPD encounter
+            // with it, so the doctor sees the patient in their list.
+            if (isAdmitted && doctorChanged && existing.encounter_no) {
+                await tx.encounter.update({
+                    where: { encounter_no: existing.encounter_no },
+                    data: { employee_id: employeeId, department_id: departmentId },
                 });
-                if (heldBy) {
-                    throw new Error(`Bed is already occupied by IP ${heldBy.ip_number}`);
-                }
             }
 
-            const updated = await this.ipdRepository.updateAdmissionTx(
-                tx,
-                existing.admission_id,
-                updateData
-            );
+            // Explicit whitelist: spreading the request body here would let a
+            // PATCH rewrite patient_id, branch_id, encounter_no, ...
+            await this.ipdRepository.updateAdmissionTx(tx, existing.admission_id, {
+                ...(data.department_id !== undefined ? { department_id: departmentId } : {}),
+                ...(data.employee_id !== undefined ? { employee_id: employeeId } : {}),
+                ...(data.ward_id !== undefined ? { ward_id: wardId } : {}),
+                ...(data.bed_id !== undefined ? { bed_id: bedId } : {}),
+                ...(data.admission_date !== undefined ? { admission_date: new Date(data.admission_date) } : {}),
+                admission_type: data.admission_type,
+                payment_mode: data.payment_mode,
+                insurance_provider: data.insurance_provider,
+                insurance_policy_no: data.insurance_policy_no,
+                expected_stay_days: data.expected_stay_days,
+                advance_amount: data.advance_amount,
+                provisional_diagnosis: data.provisional_diagnosis,
+                is_daycare: data.is_daycare,
+                updated_by: actor.user_id,
+                updated_at: new Date(),
+            });
 
-            if (needsBedOccupancy) {
+        });
+
+        return this.getAdmissionByIpNumber(existing.admission_id);
+
+    }
+
+    /*
+     * PLANNED -> ADMITTED in one transaction: binds and occupies the bed,
+     * stamps the actual admission time and opens the IPD encounter, so a
+     * failure at any step leaves the request exactly as it was. ward_id /
+     * bed_id override the requested ones (e.g. the requested bed was taken).
+     */
+    async admitPlanned(
+        id: string,
+        actor: IpdActor,
+        data: { ward_id?: string; bed_id?: string } = {}
+    ) {
+
+        const existing = await this.getAdmissionForActor(id, actor);
+
+        if (existing.status !== IPD_STATUS.PLANNED) {
+            throw new Error(`Only a planned admission can be admitted (this one is ${existing.status})`);
+        }
+
+        const wardId = data.ward_id?.trim() || existing.ward_id;
+        const bedId = data.bed_id?.trim() || existing.bed_id;
+
+        if (!wardId || !bedId) {
+            throw new Error("Select a ward and bed before admitting");
+        }
+
+        const patient = await prisma.patient_bio_data.findUnique({
+            where: { patient_id: existing.patient_id },
+            select: { patient_active: true },
+        });
+
+        if (!patient || patient.patient_active !== "Active") {
+            throw new Error("Patient is inactive");
+        }
+
+        await this.validateAdmissionContext({
+            branchId: existing.branch_id,
+            departmentId: existing.department_id,
+            employeeId: existing.employee_id,
+            wardId,
+            bedId,
+            allowUnassigned: isEmergencyType(existing.admission_type),
+        });
+
+        try {
+
+            await prisma.$transaction(async (tx) => {
+
+                await this.assertPatientNotAdmitted(tx, existing.patient_id, existing.admission_id);
+
+                // Re-read under the patient lock: a double click or a
+                // concurrent cancel of this same request is caught here.
+                const current = await tx.admission.findUnique({
+                    where: { admission_id: existing.admission_id },
+                    select: { status: true, encounter_no: true },
+                });
+                if (current?.status !== IPD_STATUS.PLANNED) {
+                    throw new Error("This admission request has already been admitted or cancelled");
+                }
+
+                await this.claimBed(tx, bedId, existing.admission_id);
+
+                const admittedAt = new Date();
+
+                const encounterNo = current.encounter_no
+                    ?? await this.openIpEncounter(tx, existing, existing.employee_id ?? null, actor.user_id);
+
+                await this.ipdRepository.updateAdmissionTx(tx, existing.admission_id, {
+                    status: IPD_STATUS.ADMITTED,
+                    ward_id: wardId,
+                    bed_id: bedId,
+                    admission_date: admittedAt,
+                    encounter_no: encounterNo,
+                    updated_by: actor.user_id,
+                    updated_at: admittedAt,
+                });
+
                 await this.ipdRepository.markBedStatus(
                     tx,
                     bedId,
                     BED_STATUS.OCCUPIED,
-                    updatedBy
+                    actor.user_id
                 );
+
+                // Admitted into a different bed than the one held for this
+                // request: hand the reserved one back.
+                await this.ipdRepository.releaseReservations(
+                    tx,
+                    [existing.admission_id],
+                    actor.user_id,
+                    bedId
+                );
+
+            });
+
+        } catch (error) {
+            this.rethrowAdmissionConflict(error);
+        }
+
+        return this.getAdmissionByIpNumber(existing.admission_id);
+
+    }
+
+    /*
+     * Holds a bed for a PLANNED admission until the end of its planned day
+     * (IST). Only for requests dated within RESERVATION_MAX_DAYS_AHEAD, so a
+     * booking weeks out can't sit on an empty bed. One bed per request:
+     * reserving another bed gives the previous one back.
+     */
+    async reserveBed(
+        id: string,
+        actor: IpdActor,
+        data: { ward_id?: string; bed_id?: string } = {}
+    ) {
+
+        const existing = await this.getAdmissionForActor(id, actor);
+
+        if (existing.status !== IPD_STATUS.PLANNED) {
+            throw new Error(`Only a planned admission can hold a bed (this one is ${existing.status})`);
+        }
+
+        const wardId = data.ward_id?.trim() || existing.ward_id;
+        const bedId = data.bed_id?.trim() || existing.bed_id;
+
+        if (!wardId || !bedId) {
+            throw new Error("Select a ward and bed to reserve");
+        }
+
+        const todayIst = istDateString(new Date());
+        const plannedIst = istDateString(new Date(existing.admission_date));
+        const daysAhead = istDayDiff(todayIst, plannedIst);
+
+        if (daysAhead > RESERVATION_MAX_DAYS_AHEAD) {
+            throw new Error(
+                `A bed can be reserved at most ${RESERVATION_MAX_DAYS_AHEAD} day(s) before the planned date (${plannedIst})`
+            );
+        }
+
+        // Held until the end of the planned day -- or of today, if the
+        // request is already overdue (it may still be admitted in the grace
+        // period before it turns NO_SHOW).
+        const reservedUntil = startOfIstDay(daysAhead < 0 ? todayIst : plannedIst);
+        reservedUntil.setTime(reservedUntil.getTime() + DAY_MS);
+
+        await this.validateAdmissionContext({
+            branchId: existing.branch_id,
+            departmentId: existing.department_id,
+            employeeId: existing.employee_id,
+            wardId,
+            bedId,
+            allowUnassigned: isEmergencyType(existing.admission_type),
+        });
+
+        await prisma.$transaction(async (tx) => {
+
+            // Same lock order as admit (patient, then bed), so reserving and
+            // admitting the same request are serialized.
+            await this.ipdRepository.lockPatientForAdmission(tx, existing.patient_id);
+
+            const current = await tx.admission.findUnique({
+                where: { admission_id: existing.admission_id },
+                select: { status: true },
+            });
+            if (current?.status !== IPD_STATUS.PLANNED) {
+                throw new Error("This admission request has already been admitted or cancelled");
             }
 
-            return updated;
+            await this.claimBed(tx, bedId, existing.admission_id);
+
+            await this.ipdRepository.releaseReservations(
+                tx,
+                [existing.admission_id],
+                actor.user_id,
+                bedId
+            );
+
+            await this.ipdRepository.reserveBed(
+                tx,
+                bedId,
+                existing.admission_id,
+                reservedUntil,
+                actor.user_id
+            );
+
+            await this.ipdRepository.updateAdmissionTx(tx, existing.admission_id, {
+                ward_id: wardId,
+                bed_id: bedId,
+                updated_by: actor.user_id,
+                updated_at: new Date(),
+            });
+
+        });
+
+        return this.getAdmissionByIpNumber(existing.admission_id);
+
+    }
+
+    async releaseReservation(id: string, actor: IpdActor) {
+
+        const existing = await this.getAdmissionForActor(id, actor);
+
+        const result = await prisma.$transaction((tx) =>
+            this.ipdRepository.releaseReservations(tx, [existing.admission_id], actor.user_id)
+        );
+
+        if (result.count === 0) {
+            throw new Error("This admission has no bed reserved");
+        }
+
+        return this.getAdmissionByIpNumber(existing.admission_id);
+
+    }
+
+    async cancelPlanned(id: string, actor: IpdActor, reason?: string) {
+
+        return this.closePlanned(id, actor, IPD_STATUS.CANCELLED, reason);
+
+    }
+
+    async markNoShow(id: string, actor: IpdActor, reason?: string) {
+
+        return this.closePlanned(id, actor, IPD_STATUS.NO_SHOW, reason);
+
+    }
+
+    /*
+     * PLANNED -> CANCELLED / NO_SHOW, giving back any bed the request held.
+     * Takes the patient lock like admit does, and the status guard in the
+     * WHERE means a request that was admitted meanwhile is never closed.
+     */
+    private async closePlanned(
+        id: string,
+        actor: IpdActor,
+        status: typeof IPD_STATUS.CANCELLED | typeof IPD_STATUS.NO_SHOW,
+        reason?: string
+    ) {
+
+        const existing = await this.getAdmissionForActor(id, actor);
+
+        const verb = status === IPD_STATUS.CANCELLED ? "cancelled" : "marked as no-show";
+
+        if (existing.status !== IPD_STATUS.PLANNED) {
+            throw new Error(`Only a planned admission can be ${verb} (this one is ${existing.status})`);
+        }
+
+        if (
+            status === IPD_STATUS.NO_SHOW &&
+            istDayDiff(istDateString(new Date()), istDateString(new Date(existing.admission_date))) > 0
+        ) {
+            throw new Error("A planned admission can't be marked as no-show before its planned date");
+        }
+
+        await prisma.$transaction(async (tx) => {
+
+            await this.ipdRepository.lockPatientForAdmission(tx, existing.patient_id);
+
+            const result = await tx.admission.updateMany({
+                where: { admission_id: existing.admission_id, status: IPD_STATUS.PLANNED },
+                data: {
+                    status,
+                    cancellation_reason: reason?.trim() || null,
+                    updated_by: actor.user_id,
+                    updated_at: new Date(),
+                },
+            });
+
+            if (result.count === 0) {
+                throw new Error("This admission request has already been admitted or cancelled");
+            }
+
+            await this.ipdRepository.releaseReservations(tx, [existing.admission_id], actor.user_id);
+
+            // A daycare request and its doctor slot live and die together.
+            if (existing.appointment_id) {
+                await tx.appointment_history.updateMany({
+                    where: {
+                        appointment_id: existing.appointment_id,
+                        status: { in: ["SCHEDULED", "RESCHEDULED"] },
+                    },
+                    data:
+                        status === IPD_STATUS.CANCELLED
+                            ? {
+                                status: "CANCELLED",
+                                cancel_reason: (reason?.trim() || `Daycare request ${existing.ip_number} cancelled`).slice(0, 100),
+                                cancelled_at: new Date(),
+                                cancelled_by: actor.user_id,
+                                notification_status: "NOT_REQUIRED",
+                            }
+                            : { status: "NO_SHOW", notification_status: "NOT_REQUIRED" },
+                });
+            }
+
+        });
+
+        return this.getAdmissionByIpNumber(existing.admission_id);
+
+    }
+
+    /*
+     * The other direction: an appointment was cancelled / marked no-show, so
+     * the PLANNED daycare request booked with it follows (and gives back any
+     * bed it held). Runs in the appointment update's own transaction.
+     */
+    async closePlannedForAppointment(
+        tx: Prisma.TransactionClient,
+        appointmentId: string,
+        status: typeof IPD_STATUS.CANCELLED | typeof IPD_STATUS.NO_SHOW,
+        reason: string | undefined,
+        updatedBy: string
+    ) {
+
+        const linked = await tx.admission.findMany({
+            where: { appointment_id: appointmentId, status: IPD_STATUS.PLANNED },
+            select: { admission_id: true },
+        });
+
+        if (linked.length === 0) return 0;
+
+        const ids = linked.map((a) => a.admission_id);
+
+        const result = await tx.admission.updateMany({
+            where: { admission_id: { in: ids }, status: IPD_STATUS.PLANNED },
+            data: {
+                status,
+                cancellation_reason:
+                    reason?.trim() ||
+                    (status === IPD_STATUS.CANCELLED ? "Linked appointment cancelled" : "Linked appointment marked no-show"),
+                updated_by: updatedBy,
+                updated_at: new Date(),
+            },
+        });
+
+        await this.ipdRepository.releaseReservations(tx, ids, updatedBy);
+
+        return result.count;
+
+    }
+
+    /** The PLANNED daycare request booked with this appointment, if any. */
+    async findPlannedDaycareForAppointment(appointmentId: string) {
+
+        return prisma.admission.findFirst({
+            where: { appointment_id: appointmentId, status: IPD_STATUS.PLANNED, is_daycare: true },
+            select: { ip_number: true },
+        });
+
+    }
+
+    // ---------------------------------------------------------------- daycare
+
+    /** Beds of a ward that can take a daycare patient (active, not under maintenance). */
+    private async countDaycareCapacity(client: Prisma.TransactionClient | typeof prisma, wardId: string) {
+
+        return client.bed_master.count({
+            where: {
+                ward_id: wardId,
+                active_status: 1,
+                status: { not: BED_STATUS.MAINTENANCE },
+            },
+        });
+
+    }
+
+    /*
+     * Daycare sessions (planned or running) in a ward that touch one IST day.
+     * A session runs from admission_date for expected_stay_days; one without a
+     * duration is assumed to run to the end of that day.
+     */
+    private async daycareSlotsForDay(
+        client: Prisma.TransactionClient | typeof prisma,
+        wardId: string,
+        istDate: string
+    ): Promise<DaycareSlot[]> {
+
+        const dayStart = startOfIstDay(istDate);
+        const dayEnd = new Date(dayStart.getTime() + DAY_MS);
+
+        const rows = await client.admission.findMany({
+            where: {
+                ward_id: wardId,
+                is_daycare: true,
+                status: { in: [IPD_STATUS.PLANNED, IPD_STATUS.ADMITTED] },
+                admission_date: { lt: dayEnd },
+            },
+            select: {
+                admission_id: true,
+                ip_number: true,
+                status: true,
+                admission_date: true,
+                expected_stay_days: true,
+            },
+        });
+
+        return rows
+            .map((r) => {
+                const start = new Date(r.admission_date);
+                const stay = Number(r.expected_stay_days) || 0;
+                const end = stay > 0
+                    ? new Date(start.getTime() + stay * DAY_MS)
+                    : new Date(startOfIstDay(istDateString(start)).getTime() + DAY_MS);
+                return { admission_id: r.admission_id, ip_number: r.ip_number, status: r.status, start, end };
+            })
+            .filter((s) => s.end > dayStart);
+
+    }
+
+    /** Capacity and booked sessions of a daycare ward on one IST day (booking form). */
+    async getDaycareOccupancy(wardId: string, istDate: string, actor: IpdActor) {
+
+        const ward = await this.ipdRepository.findWardById(wardId);
+        if (!ward) {
+            throw httpError("Ward not found", 404);
+        }
+
+        await this.assertBranchAccess(actor, ward.branch_id);
+
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(istDate ?? ""))) {
+            throw new Error("A valid date (yyyy-MM-dd) is required");
+        }
+
+        const [capacity, slots] = await Promise.all([
+            this.countDaycareCapacity(prisma, wardId),
+            this.daycareSlotsForDay(prisma, wardId, istDate),
+        ]);
+
+        return {
+            ward_id: wardId,
+            date: istDate,
+            capacity,
+            bookings: slots.map((s) => ({
+                ip_number: s.ip_number,
+                status: s.status,
+                start: s.start.toISOString(),
+                end: s.end.toISOString(),
+            })),
+        };
+
+    }
+
+    /*
+     * Step 1 of a daycare booking (DaycareService.book): under the ward row
+     * lock, check the ward still has a free place for the whole session and
+     * create the PLANNED daycare request. The caller then books the doctor's
+     * slot and links it -- or discards this request if that fails.
+     */
+    async createDaycareRequest(data: DaycareBookingDTO, actor: IpdActor) {
+
+        const clean = (val?: any): string | null => {
+            const str = val === null || val === undefined ? "" : String(val).trim();
+            return str.length > 0 ? str : null;
+        };
+
+        const patientId = clean(data.patient_id);
+        const branchId = clean(data.branch_id);
+        const departmentId = clean(data.department_id);
+        const employeeId = clean(data.employee_id);
+        const wardId = clean(data.ward_id);
+        const bedId = clean(data.bed_id);
+
+        if (!patientId) throw new Error("Patient is required");
+        if (!branchId) throw new Error("Branch is required");
+        if (!wardId) throw new Error("Ward is required for a daycare booking");
+
+        const stay = Number(data.expected_stay_days);
+        if (!(stay > 0) || stay > 1) {
+            throw new Error("Daycare duration must be more than 0 and at most 24 hours");
+        }
+
+        const start = istSlotToUtc(data.appointment_date, data.appointment_time);
+        const end = new Date(start.getTime() + stay * DAY_MS);
+
+        const patient = await prisma.patient_bio_data.findUnique({
+            where: { patient_id: patientId },
+            select: { patient_active: true },
+        });
+        if (!patient) throw new Error("Patient not found");
+        if (patient.patient_active !== "Active") throw new Error("Patient is inactive");
+
+        const branch = await prisma.branch.findUnique({ where: { branch_id: branchId } });
+        if (!branch) throw new Error("Branch not found");
+        if (branch.branch_status !== "Active") throw new Error("Branch is inactive");
+
+        await this.assertBranchAccess(actor, branchId);
+
+        await this.validateAdmissionContext({ branchId, departmentId, employeeId, wardId, bedId });
+
+        return prisma.$transaction(async (tx) => {
+
+            // Serializes daycare bookings per ward, so two desks can't both
+            // take the last place.
+            await tx.$queryRawUnsafe(
+                `SELECT ward_id FROM public.ward_master WHERE ward_id = $1 FOR UPDATE`,
+                wardId
+            );
+
+            const capacity = await this.countDaycareCapacity(tx, wardId);
+            if (capacity === 0) {
+                throw new Error("This ward has no usable beds for daycare");
+            }
+
+            const slots = await this.daycareSlotsForDay(tx, wardId, data.appointment_date);
+            if (peakDaycareOverlap(slots, start, end) >= capacity) {
+                throw new Error("The ward is full for this time -- pick another slot or ward");
+            }
+
+            const ipNumber = await this.ipdRepository.generateAdmissionId(tx);
+
+            await this.ipdRepository.createAdmission(tx, {
+                admission_id: ipNumber,
+                ip_number: ipNumber,
+                patient_id: patientId,
+                branch_id: branchId,
+                department_id: departmentId ?? undefined,
+                employee_id: employeeId ?? undefined,
+                admission_type: ADMISSION_TYPE.DAYCARE,
+                is_daycare: true,
+                provisional_diagnosis: data.provisional_diagnosis?.trim() || undefined,
+                ward_id: wardId,
+                bed_id: bedId ?? undefined,
+                payment_mode: data.payment_mode?.trim() || undefined,
+                expected_stay_days: stay,
+                advance_amount: data.advance_amount !== undefined ? Number(data.advance_amount) : undefined,
+                admission_date: start,
+                status: IPD_STATUS.PLANNED,
+                created_by: actor.user_id,
+            });
+
+            return ipNumber;
 
         });
 
     }
 
+    async linkDaycareAppointment(admissionId: string, appointmentId: string) {
+
+        return prisma.admission.update({
+            where: { admission_id: admissionId },
+            data: { appointment_id: appointmentId },
+        });
+
+    }
+
+    /** Undoes step 1 when booking the doctor's slot failed (never shown to anyone). */
+    async discardDaycareRequest(admissionId: string) {
+
+        return prisma.admission.deleteMany({
+            where: { admission_id: admissionId, status: IPD_STATUS.PLANNED, appointment_id: null },
+        });
+
+    }
+
+    /*
+     * Normalizes and validates the clinical discharge fields (shared by the
+     * doctor's save and the nurse's direct discharge). Review date has to
+     * fall on or after `reference` (today for a save, the discharge moment
+     * for a discharge); DECEASED forces the patient status and drops the
+     * review date.
+     */
+    private normalizeClinicalDischarge(
+        data: {
+            discharge_type?: string;
+            discharge_summary?: string;
+            discharge_advice?: string;
+            review_date?: string | Date;
+            discharge_disease_status?: string;
+            patient_status_at_discharge?: string;
+        } | undefined,
+        reference: Date
+    ) {
+
+        const isDeceased = data?.discharge_type === DISCHARGE_TYPE.DECEASED;
+
+        let reviewDate: Date | null = null;
+        if (data?.review_date && !isDeceased) {
+            reviewDate = new Date(data.review_date);
+            if (Number.isNaN(reviewDate.getTime())) {
+                throw new Error("Invalid review date");
+            }
+            // Compare by calendar day (IST) -- a review "today" is fine.
+            if (istDateString(reviewDate) < istDateString(reference)) {
+                throw new Error("Review date must be on or after the discharge date");
+            }
+        }
+
+        const patientStatus = isDeceased
+            ? PATIENT_STATUS_AT_DISCHARGE.DECEASED
+            : data?.patient_status_at_discharge || null;
+
+        if (patientStatus && !PATIENT_STATUS_AT_DISCHARGE_VALUES.includes(patientStatus)) {
+            throw new Error("Invalid patient status at discharge");
+        }
+
+        return {
+            discharge_type: data?.discharge_type || null,
+            discharge_summary: data?.discharge_summary?.trim() || null,
+            discharge_advice: data?.discharge_advice?.trim() || null,
+            discharge_disease_status: data?.discharge_disease_status?.trim() || null,
+            patient_status_at_discharge: patientStatus,
+            review_date: reviewDate,
+        };
+
+    }
+
+    /*
+     * Discharge Type dropdown options (discharge_type_master), shared by the
+     * whole hospital. type_code is what admission.discharge_type stores.
+     */
+    async listDischargeTypes() {
+
+        return prisma.discharge_type_master.findMany({
+            where: { active_status: 1 },
+            orderBy: [{ display_order: "asc" }, { id: "asc" }],
+            select: { discharge_type_id: true, type_code: true, type_name: true },
+        });
+
+    }
+
+    /*
+     * "Others" + free text: adds the value for everyone (id from
+     * id_sequences). Typing an existing one (same name or code, any case)
+     * returns it -- re-activating it if it was switched off.
+     */
+    async addDischargeType(typeName: string, actorId: string) {
+
+        const name = typeName.trim().replace(/\s+/g, " ");
+        const code = name.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+
+        if (!code) {
+            throw new Error("Discharge type must contain letters or numbers");
+        }
+
+        const existing = await prisma.discharge_type_master.findFirst({
+            where: {
+                OR: [
+                    { type_code: code },
+                    { type_name: { equals: name, mode: "insensitive" } },
+                ],
+            },
+        });
+
+        if (existing) {
+            if (existing.active_status !== 1) {
+                await prisma.discharge_type_master.update({
+                    where: { id: existing.id },
+                    data: { active_status: 1, updated_at: new Date() },
+                });
+            }
+            return {
+                discharge_type_id: existing.discharge_type_id,
+                type_code: existing.type_code,
+                type_name: existing.type_name,
+            };
+        }
+
+        return prisma.$transaction(async (tx) => {
+            const last = await tx.discharge_type_master.aggregate({ _max: { display_order: true } });
+            const created = await tx.discharge_type_master.create({
+                data: {
+                    discharge_type_id: await generateId(tx, "DISCHARGE_TYPE"),
+                    type_code: code,
+                    type_name: name,
+                    display_order: (last._max.display_order ?? 0) + 1,
+                    created_by: actorId,
+                },
+            });
+            return {
+                discharge_type_id: created.discharge_type_id,
+                type_code: created.type_code,
+                type_name: created.type_name,
+            };
+        });
+
+    }
+
+    /* The discharge type must be an active option of the master. */
+    private async assertDischargeType(code?: string | null) {
+
+        if (!code) return;
+
+        const found = await prisma.discharge_type_master.findFirst({
+            where: { type_code: code, active_status: 1 },
+            select: { id: true },
+        });
+
+        if (!found) {
+            throw new Error("Invalid discharge type");
+        }
+
+    }
+
+    /*
+     * The doctor's clinical discharge details (Discharge Medication step).
+     * Saved on the admission while it stays ADMITTED -- no bed, status or
+     * encounter change. Only for an inpatient stay: the admission's
+     * encounter must be an IPD one. Editable until the patient is
+     * discharged; an admin can confirm the discharge once these exist.
+     */
+    async saveDischargeDetails(
+        id: string,
+        actor: IpdActor,
+        data: {
+            discharge_type?: string;
+            discharge_summary?: string;
+            discharge_advice?: string;
+            review_date?: string | Date;
+            discharge_disease_status?: string;
+            patient_status_at_discharge?: string;
+        }
+    ) {
+
+        const existing = await this.getAdmissionForActor(id, actor);
+
+        if (existing.status !== IPD_STATUS.ADMITTED) {
+            throw new Error("Discharge details can only be saved for an admitted patient");
+        }
+
+        if (!data?.discharge_type) {
+            throw new Error("Discharge type is required");
+        }
+
+        const encounter = existing.encounter_no
+            ? await prisma.encounter.findUnique({
+                where: { encounter_no: existing.encounter_no },
+                select: { encounter_type: true, follow_up_date: true },
+            })
+            : null;
+        if (encounter?.encounter_type !== ENCOUNTER_TYPE_IPD) {
+            throw new Error("This admission has no inpatient (IPD) encounter");
+        }
+
+        await this.assertDischargeType(data.discharge_type);
+        // The review date is the Follow Up step's Next Visit Date (kept in
+        // sync on the admission by EncounterService) -- not entered here.
+        const fields = this.normalizeClinicalDischarge({ ...data, review_date: undefined }, new Date());
+        const followUp = encounter.follow_up_date ?? existing.review_date ?? null;
+        fields.review_date = fields.discharge_type === DISCHARGE_TYPE.DECEASED || !followUp ? null : new Date(followUp);
+
+        await this.ipdRepository.updateAdmissionTx(prisma as any, existing.admission_id, {
+            ...fields,
+            discharge_details_by: actor.user_id,
+            discharge_details_at: new Date(),
+            updated_by: actor.user_id,
+            updated_at: new Date(),
+        });
+
+        return this.getAdmissionForActor(existing.admission_id, actor);
+
+    }
+
+    /*
+     * Finalizes a discharge: status DISCHARGED, discharge time stamped by
+     * the server (never entered), bed to CLEANING, IPD encounter closed,
+     * and the stay recorded on the patient's history.
+     *
+     * - Admin roles: only after the doctor saved the discharge details;
+     *   those saved values are used and any clinical fields in the request
+     *   are ignored.
+     * - NURSE: may discharge directly (e.g. deceased) -- clinical fields in
+     *   the request are used, falling back to anything already saved.
+     */
     async dischargeAdmission(
         id: string,
-        closedBy: string,
+        actor: IpdActor,
         data?: {
             discharge_type?: string;
             discharge_summary?: string;
             discharge_date?: string | Date;
+            discharge_advice?: string;
+            review_date?: string | Date;
+            discharge_disease_status?: string;
+            patient_status_at_discharge?: string;
         }
     ) {
 
-        const existing = await this.getAdmissionByIpNumber(id);
-
-        if (!existing) {
-            throw new Error("Admission not found");
-        }
+        const existing = await this.getAdmissionForActor(id, actor);
 
         if (existing.status !== IPD_STATUS.ADMITTED) {
             throw new Error("Admission is not currently active");
         }
 
-        const dischargeDate = data?.discharge_date
-            ? new Date(data.discharge_date)
-            : new Date();
+        const closedBy = actor.user_id;
+        const dischargeDate = new Date();
+        const isNurse = String(actor.role ?? "").toUpperCase() === "NURSE";
+
+        let clinical: Record<string, unknown> = {};
+
+        if (isNurse) {
+            const merged = {
+                discharge_type: data?.discharge_type ?? existing.discharge_type ?? undefined,
+                discharge_summary: data?.discharge_summary ?? existing.discharge_summary ?? undefined,
+                discharge_advice: data?.discharge_advice ?? existing.discharge_advice ?? undefined,
+                review_date: data?.review_date ?? existing.review_date ?? undefined,
+                discharge_disease_status:
+                    data?.discharge_disease_status ?? existing.discharge_disease_status ?? undefined,
+                patient_status_at_discharge:
+                    data?.patient_status_at_discharge ?? existing.patient_status_at_discharge ?? undefined,
+            };
+            if (data?.discharge_type) await this.assertDischargeType(data.discharge_type);
+            clinical = this.normalizeClinicalDischarge(merged, dischargeDate);
+        } else if (!existing.discharge_details_at) {
+            throw new Error("Doctor has not completed the discharge details yet");
+        }
+
+        const doctorName = [existing.employees?.first_name, existing.employees?.last_name]
+            .filter(Boolean)
+            .join(" ");
+        const summaryForHistory =
+            (clinical.discharge_summary as string | null | undefined) ?? existing.discharge_summary ?? null;
 
         return await prisma.$transaction(async (tx) => {
 
@@ -440,19 +1578,30 @@ export class IpdService {
                 tx,
                 existing.admission_id,
                 {
+                    ...clinical,
                     status: IPD_STATUS.DISCHARGED,
                     discharge_date: dischargeDate,
-                    discharge_type: data?.discharge_type,
-                    discharge_summary: data?.discharge_summary,
+                    // The stay is over: nobody is on duty for this admission any more.
+                    current_assigned_doctor_id: null,
+                    current_nurse_id: null,
                     updated_by: closedBy,
+                    updated_at: dischargeDate,
                 }
             );
 
+            await this.ipdRepository.closeActiveCareTeam(
+                tx,
+                existing.admission_id,
+                dischargeDate,
+                CARE_TEAM_END_REASON.DISCHARGE
+            );
+
+            // The vacated bed needs turning over before the next patient.
             if (existing.bed_id) {
                 await this.ipdRepository.markBedStatus(
                     tx,
                     existing.bed_id,
-                    BED_STATUS.AVAILABLE,
+                    BED_STATUS.CLEANING,
                     closedBy
                 );
             }
@@ -461,7 +1610,8 @@ export class IpdService {
                 await this.ipdRepository.updateEncounterDischarge(
                     tx,
                     existing.encounter_no,
-                    dischargeDate
+                    dischargeDate,
+                    closedBy
                 );
             }
 
@@ -470,6 +1620,51 @@ export class IpdService {
                     tx,
                     existing.appointment_id
                 );
+            }
+
+            /*
+             * Record the stay on the patient's history: the latest history
+             * row dated within this stay (e.g. the one the inpatient visit's
+             * prescription created), or a new one if there is none.
+             */
+            const historyFields = {
+                admitted: "Yes",
+                admission_date: existing.admission_date,
+                discharge_date: dischargeDate,
+                ward: existing.ward_master?.ward_name ?? null,
+                bed: existing.bed_master?.bed_number ?? null,
+                discharge_summary: summaryForHistory,
+                treating_doctor_name: doctorName || null,
+                visit_status: "DISCHARGED",
+                updated_by: closedBy,
+                updated_at: dischargeDate,
+            };
+
+            const stayStart = startOfIstDay(istDateString(new Date(existing.admission_date)));
+            const historyRow = await tx.patient_history.findFirst({
+                where: { patient_id: existing.patient_id, visit_date: { gte: stayStart } },
+                orderBy: { id: "desc" },
+                select: { patient_history_id: true },
+            });
+
+            if (historyRow) {
+                await tx.patient_history.update({
+                    where: { patient_history_id: historyRow.patient_history_id },
+                    data: historyFields,
+                });
+            } else {
+                await tx.patient_history.create({
+                    data: {
+                        ...historyFields,
+                        patient_history_id: await generateId(tx, "PATIENT_HISTORY"),
+                        patient_id: existing.patient_id,
+                        branch_id: existing.branch_id,
+                        department_id: existing.department_id,
+                        employee_id: existing.employee_id,
+                        visit_type: ENCOUNTER_TYPE_IPD,
+                        visit_date: dischargeDate,
+                    },
+                });
             }
 
             return updated;
@@ -482,94 +1677,101 @@ export class IpdService {
         id: string,
         targetWardId: string,
         targetBedId: string,
-        reason?: string,
-        transferredBy?: string
+        reason: string | undefined,
+        actor: IpdActor
     ) {
 
-        const existing = await this.getAdmissionByIpNumber(id);
-
-        if (!existing) {
-            throw new Error("Admission not found");
-        }
+        const existing = await this.getAdmissionForActor(id, actor);
 
         if (existing.status !== IPD_STATUS.ADMITTED) {
             throw new Error("Cannot transfer a patient who is not currently admitted");
+        }
+
+        if (targetBedId === existing.bed_id) {
+            throw new Error("Patient is already in this bed");
         }
 
         const targetWard = await this.ipdRepository.findWardById(targetWardId);
         if (!targetWard) {
             throw new Error("Target ward not found");
         }
+        if (targetWard.branch_id !== existing.branch_id) {
+            throw new Error("Target ward belongs to a different branch");
+        }
+        if (targetWard.active_status !== 1) {
+            throw new Error("Target ward is inactive");
+        }
 
         const targetBed = await this.ipdRepository.findBedById(targetBedId);
         if (!targetBed) {
             throw new Error("Target bed not found");
         }
+        if (targetBed.ward_id !== targetWardId) {
+            throw new Error("Target bed does not belong to the selected ward");
+        }
+        if (targetBed.active_status !== 1) {
+            throw new Error("Target bed is inactive");
+        }
         if (targetBed.status !== BED_STATUS.AVAILABLE) {
             throw new Error("Target bed is not available");
         }
 
-        return await prisma.$transaction(async (tx) => {
+        const transferredBy = actor.user_id;
 
-            const locked = await this.ipdRepository.lockBedForAdmission(tx, targetBedId);
-            if (!locked?.[0] || locked[0].status !== BED_STATUS.AVAILABLE) {
-                throw new Error("Target bed is not available");
-            }
+        try {
 
-            const heldBy = await tx.admission.findFirst({
-                where: {
-                    bed_id: targetBedId,
-                    status: IPD_STATUS.ADMITTED,
-                    admission_id: { not: existing.admission_id },
-                },
-            });
-            if (heldBy) {
-                throw new Error(`Target bed is already occupied by IP ${heldBy.ip_number}`);
-            }
+            return await prisma.$transaction(async (tx) => {
 
-            if (existing.bed_id) {
+                await this.claimBed(tx, targetBedId, existing.admission_id, "Target bed is not available");
+
+                // The vacated bed needs turning over before the next patient.
+                if (existing.bed_id) {
+                    await this.ipdRepository.markBedStatus(
+                        tx,
+                        existing.bed_id,
+                        BED_STATUS.CLEANING,
+                        transferredBy
+                    );
+                }
+
                 await this.ipdRepository.markBedStatus(
                     tx,
-                    existing.bed_id,
-                    BED_STATUS.AVAILABLE,
+                    targetBedId,
+                    BED_STATUS.OCCUPIED,
                     transferredBy
                 );
-            }
 
-            await this.ipdRepository.markBedStatus(
-                tx,
-                targetBedId,
-                BED_STATUS.OCCUPIED,
-                transferredBy
-            );
+                const transferLogId = await this.ipdRepository.generateId(
+                    tx,
+                    "ADMISSION_TRANSFER"
+                );
 
-            const transferLogId = await this.ipdRepository.generateId(
-                tx,
-                "ADMISSION_TRANSFER"
-            );
+                await this.ipdRepository.createTransferLog(tx, {
+                    transfer_log_id: transferLogId,
+                    admission_id: existing.admission_id,
+                    from_ward_id: existing.ward_id ?? undefined,
+                    from_bed_id: existing.bed_id ?? undefined,
+                    to_ward_id: targetWardId,
+                    to_bed_id: targetBedId,
+                    reason: reason,
+                    transferred_by: transferredBy,
+                });
 
-            await this.ipdRepository.createTransferLog(tx, {
-                transfer_log_id: transferLogId,
-                admission_id: existing.admission_id,
-                from_ward_id: existing.ward_id ?? undefined,
-                from_bed_id: existing.bed_id ?? undefined,
-                to_ward_id: targetWardId,
-                to_bed_id: targetBedId,
-                reason: reason,
-                transferred_by: transferredBy,
+                return await this.ipdRepository.updateAdmissionTx(
+                    tx,
+                    existing.admission_id,
+                    {
+                        ward_id: targetWardId,
+                        bed_id: targetBedId,
+                        updated_by: transferredBy,
+                    }
+                );
+
             });
 
-            return await this.ipdRepository.updateAdmissionTx(
-                tx,
-                existing.admission_id,
-                {
-                    ward_id: targetWardId,
-                    bed_id: targetBedId,
-                    updated_by: transferredBy,
-                }
-            );
-
-        });
+        } catch (error) {
+            this.rethrowAdmissionConflict(error);
+        }
 
     }
 
@@ -624,9 +1826,32 @@ export class IpdService {
 
     }
 
+    /*
+     * Beds with who is in them (occupant) and who they are held for
+     * (reserved_for) -- what the bed board renders.
+     */
     async listBeds(wardId?: string, branchId?: string) {
 
-        return this.ipdRepository.listBeds(wardId, branchId);
+        const beds = await this.ipdRepository.listBeds(wardId, branchId);
+
+        const holderIds = [
+            ...new Set(
+                beds
+                    .filter((b) => b.status === BED_STATUS.RESERVED && b.reserved_admission_id)
+                    .map((b) => b.reserved_admission_id as string)
+            ),
+        ];
+        const holders = await this.ipdRepository.findReservationHolders(holderIds);
+        const holderById = new Map(holders.map((h) => [h.admission_id, h]));
+
+        return beds.map(({ admission, ...bed }) => ({
+            ...bed,
+            occupant: admission ?? null,
+            reserved_for:
+                bed.status === BED_STATUS.RESERVED && bed.reserved_admission_id
+                    ? holderById.get(bed.reserved_admission_id) ?? null
+                    : null,
+        }));
 
     }
 
@@ -638,6 +1863,8 @@ export class IpdService {
         total_beds?: number;
         tariff?: number;
     }, user?: any) {
+        await this.assertBranchAccess(user, data.branch_id);
+
         const existing = await this.ipdRepository.findWardByBranchAndName(data.branch_id, data.ward_name);
         if (existing) {
             throw new Error(`Ward '${data.ward_name}' already exists in this branch`);
@@ -665,6 +1892,8 @@ export class IpdService {
         if (!ward) {
             throw new Error("Ward not found");
         }
+
+        await this.assertBranchAccess(user, ward.branch_id);
 
         if (data.ward_name && data.ward_name.trim().toLowerCase() !== ward.ward_name.toLowerCase()) {
             const duplicate = await this.ipdRepository.findWardByBranchAndName(ward.branch_id, data.ward_name.trim());
@@ -714,7 +1943,18 @@ export class IpdService {
             throw new Error("Ward not found");
         }
 
-        const branch_id = data.branch_id || ward.branch_id;
+        // A bed always lives in its ward's branch.
+        if (data.branch_id && data.branch_id !== ward.branch_id) {
+            throw new Error("Ward does not belong to the selected branch");
+        }
+        const branch_id = ward.branch_id;
+
+        await this.assertBranchAccess(user, branch_id);
+
+        // RESERVED / OCCUPIED only ever come from the admission flows.
+        if (data.status && !(MANUAL_BED_STATUSES as readonly string[]).includes(data.status)) {
+            throw new Error(`A new bed can only start as one of: ${MANUAL_BED_STATUSES.join(", ")}`);
+        }
 
         const existingBed = await this.ipdRepository.findBedByWardAndNumber(data.ward_id, data.bed_number);
         if (existingBed) {
@@ -755,8 +1995,14 @@ export class IpdService {
             throw new Error("Bed not found");
         }
 
+        await this.assertBranchAccess(user, bed.branch_id);
+
         if (bed.status === BED_STATUS.OCCUPIED) {
             throw new Error("Bed is currently occupied by an admitted patient and cannot be edited");
+        }
+
+        if (bed.status === BED_STATUS.RESERVED) {
+            throw new Error("Bed is reserved for a planned admission -- release the reservation before editing it");
         }
 
         const oldWardId = bed.ward_id;
@@ -768,6 +2014,8 @@ export class IpdService {
             if (!targetWard) {
                 throw new Error("Target ward not found");
             }
+            // Moving a bed into another ward needs access to that ward's branch too.
+            await this.assertBranchAccess(user, targetWard.branch_id);
             newWardId = data.ward_id;
             newBranchId = targetWard.branch_id;
         }
@@ -830,8 +2078,8 @@ export class IpdService {
 
     async updateBedStatus(bedId: string, status: string, user?: any, remarks?: string) {
 
-        if (status !== BED_STATUS.AVAILABLE && status !== BED_STATUS.MAINTENANCE) {
-            throw new Error(`Status must be one of: ${BED_STATUS.AVAILABLE}, ${BED_STATUS.MAINTENANCE}`);
+        if (!(MANUAL_BED_STATUSES as readonly string[]).includes(status)) {
+            throw new Error(`Status must be one of: ${MANUAL_BED_STATUSES.join(", ")}`);
         }
 
         const bed = await this.ipdRepository.findBedById(bedId);
@@ -839,14 +2087,95 @@ export class IpdService {
             throw new Error("Bed not found");
         }
 
-        if (bed.status === BED_STATUS.OCCUPIED) {
-            throw new Error("Bed is currently occupied by an admitted patient and cannot be changed manually");
+        await this.assertBranchAccess(user, bed.branch_id);
+
+        return prisma.$transaction(async (tx) => {
+
+            // Checked under the row lock, so a concurrent admit / reserve
+            // can't be overwritten by a manual status change.
+            const locked = await this.ipdRepository.lockBedForAdmission(tx, bedId);
+            const current = locked?.[0]?.status;
+            const reservedUntil = locked?.[0]?.reserved_until;
+            const reservationLapsed = !!reservedUntil && new Date(reservedUntil).getTime() < Date.now();
+
+            if (current === BED_STATUS.OCCUPIED) {
+                throw new Error("Bed is currently occupied by an admitted patient and cannot be changed manually");
+            }
+            if (current === BED_STATUS.RESERVED && !reservationLapsed) {
+                throw new Error("Bed is reserved for a planned admission -- release the reservation first");
+            }
+
+            return this.ipdRepository.markBedStatus(tx, bedId, status, user?.user_id || "SYSTEM", remarks);
+
+        });
+
+    }
+
+    async deleteWard(wardId: string, user?: any) {
+        const ward = await this.ipdRepository.findWardById(wardId);
+        if (!ward) {
+            throw new Error("Ward not found");
+        }
+
+        await this.assertBranchAccess(user, ward.branch_id);
+
+        const admittedCount = await prisma.admission.count({
+            where: { ward_id: wardId, status: IPD_STATUS.ADMITTED },
+        });
+        if (admittedCount > 0) {
+            throw new Error("Cannot delete a ward with currently admitted patients");
+        }
+
+        const activeBedCount = await this.ipdRepository.countBedsInWard(wardId);
+        if (activeBedCount > 0) {
+            throw new Error("Cannot delete a ward that still has active beds -- reassign or delete its beds first");
         }
 
         return prisma.$transaction(async (tx) => {
-            return this.ipdRepository.markBedStatus(tx, bedId, status, user?.user_id || "SYSTEM", remarks);
+            return tx.ward_master.update({
+                where: { ward_id: wardId },
+                data: {
+                    active_status: 0,
+                    updated_by: user?.user_id || "SYSTEM",
+                    updated_at: new Date(),
+                },
+            });
         });
+    }
 
+    async deleteBed(bedId: string, user?: any) {
+        const bed = await this.ipdRepository.findBedById(bedId);
+        if (!bed) {
+            throw new Error("Bed not found");
+        }
+
+        await this.assertBranchAccess(user, bed.branch_id);
+
+        if (bed.status === BED_STATUS.OCCUPIED) {
+            throw new Error("Cannot delete an occupied bed");
+        }
+
+        if (bed.status === BED_STATUS.RESERVED) {
+            throw new Error("Cannot delete a bed reserved for a planned admission");
+        }
+
+        const activeAdmissionCount = await prisma.admission.count({
+            where: { bed_id: bedId, status: IPD_STATUS.ADMITTED },
+        });
+        if (activeAdmissionCount > 0) {
+            throw new Error("Cannot delete a bed with active admissions");
+        }
+
+        return prisma.$transaction(async (tx) => {
+            return tx.bed_master.update({
+                where: { bed_id: bedId },
+                data: {
+                    active_status: 0,
+                    updated_by: user?.user_id || "SYSTEM",
+                    updated_at: new Date(),
+                },
+            });
+        });
     }
 
 }

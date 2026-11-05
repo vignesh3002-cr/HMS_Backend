@@ -1,7 +1,8 @@
 import { Router } from "express";
+import multer from "multer";
 import { ChemotherapyController } from "./chemotherapy.controller";
 import { authenticate } from "../auth/auth.middleware";
-import { authorize } from "../../middleware/authorize";
+import { authorize, authorizeAny } from "../../middleware/authorize";
 import {
     previewPlanValidation,
     createPlanValidation,
@@ -18,6 +19,9 @@ import {
     replacePlanItemsValidation,
     planOrderParamValidation,
     savePlanOrderValidation,
+    medicineInvestigationsValidation,
+    importMedicineInvestigationsValidation,
+    planInvestigationStatusValidation,
     completePlanOrdersValidation,
     createCycleValidation,
     cycleStatusValidation,
@@ -25,6 +29,8 @@ import {
     recordAdministrationValidation,
     recordVitalsValidation,
     recordAdverseEventValidation,
+    updateAdverseEventValidation,
+    removeAdverseEventValidation,
     recordLabReviewValidation,
     recordFollowupValidation,
     cycleIdParamValidation,
@@ -49,11 +55,27 @@ import {
     addPersonalizedProtocolDilutionValidation,
     updatePersonalizedProtocolDilutionValidation,
     removePersonalizedProtocolDilutionValidation,
-    createPersonalizedProtocolVersionValidation
+    createPersonalizedProtocolVersionValidation,
+    administrationSheetValidation,
+    administrationStatusValidation,
+    completeAdministrationDayValidation
 } from "./chemotherapy.validation";
 
 const router = Router();
 const controller = new ChemotherapyController();
+
+// Memory storage for Excel file uploads (kept in memory, streamed to Prisma).
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
+    fileFilter: (_req, file, cb) => {
+        const allowed = [
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+            "application/vnd.ms-excel", // .xls
+        ];
+        cb(null, allowed.includes(file.mimetype));
+    },
+});
 
 // ---------------- Regimen protocols ----------------
 // Registered before "/plans/:planId" etc. so "/regimen-protocols" and its
@@ -201,10 +223,12 @@ router.get(
     controller.getDischargeMedicinesForProtocol.bind(controller)
 );
 
+// Read-only: anyone who can see a plan (e.g. the nurse administering it)
+// can view the protocol it was built from.
 router.get(
     "/regimen-protocols/:protocolId",
     authenticate,
-    authorize("chemo.protocol.read"),
+    authorizeAny("chemo.protocol.read", "chemo.plan.read"),
     getRegimenProtocolValidation,
     controller.getRegimenProtocol.bind(controller)
 );
@@ -246,6 +270,23 @@ router.get(
 );
 
 router.get(
+    "/medicine-investigations",
+    authenticate,
+    authorizeAny("chemo.plan.read", "chemo.plan.update"),
+    medicineInvestigationsValidation,
+    controller.getMedicineInvestigations.bind(controller)
+);
+
+router.post(
+    "/medicine-investigations/import",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    importMedicineInvestigationsValidation,
+    upload.single("file"),
+    controller.importMedicineInvestigations.bind(controller)
+);
+
+router.get(
     "/protocol-field-options",
     authenticate,
     authorize("chemo.protocol.read"),
@@ -253,10 +294,31 @@ router.get(
 );
 
 router.get(
+    "/forms-and-brands",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    controller.getGenericFormsAndBrands.bind(controller)
+);
+
+router.get(
     "/treatment-intents",
     authenticate,
     authorize("chemo.protocol.read"),
     controller.listTreatmentIntents.bind(controller)
+);
+
+router.post(
+    "/medicines/catalog-generic",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    controller.catalogMedicineGeneric.bind(controller)
+);
+
+router.patch(
+    "/medicines/:medicineId/generic",
+    authenticate,
+    authorize("chemo.protocol.manage"),
+    controller.catalogMedicineGeneric.bind(controller)
 );
 
 router.post(
@@ -353,6 +415,14 @@ router.get(
     authenticate,
     authorize("chemo.plan.read"),
     controller.getLatestPlanForPatient.bind(controller)
+);
+
+// A visit's pharmacy slips (?encounter_no=) for the Summary print.
+router.get(
+    "/pharmacy-slips",
+    authenticate,
+    authorize("chemo.plan.read"),
+    controller.getPharmacySlips.bind(controller)
 );
 
 router.get(
@@ -501,6 +571,14 @@ router.put(
     controller.savePlanOrder.bind(controller)
 );
 
+router.patch(
+    "/plans/:planId/orders/:cycleNumber/:cycleDay/investigations/status",
+    authenticate,
+    authorize("chemo.plan.update"),
+    planInvestigationStatusValidation,
+    controller.updatePlanInvestigationStatus.bind(controller)
+);
+
 // ---------------- Cycles ----------------
 
 router.post(
@@ -561,6 +639,34 @@ router.get(
     controller.listAdministrations.bind(controller)
 );
 
+// ---------------- Administration sheet (per cycle day) ----------------
+// Nurses record administration (chemo.administration.record); doctors may
+// too through chemo.cycle.manage.
+
+router.get(
+    "/plans/:planId/administration",
+    authenticate,
+    authorize("chemo.plan.read"),
+    administrationSheetValidation,
+    controller.getAdministrationSheet.bind(controller)
+);
+
+router.patch(
+    "/administration/:administrationId/status",
+    authenticate,
+    authorizeAny("chemo.administration.record", "chemo.cycle.manage"),
+    administrationStatusValidation,
+    controller.updateAdministrationStatus.bind(controller)
+);
+
+router.post(
+    "/plans/:planId/orders/:cycleNumber/:cycleDay/administration/complete",
+    authenticate,
+    authorizeAny("chemo.administration.record", "chemo.cycle.manage"),
+    completeAdministrationDayValidation,
+    controller.completeAdministrationDay.bind(controller)
+);
+
 // ---------------- Vitals ----------------
 
 router.post(
@@ -595,6 +701,22 @@ router.get(
     authorize("chemo.plan.read"),
     cycleIdParamValidation,
     controller.listAdverseEvents.bind(controller)
+);
+
+router.put(
+    "/adverse-events/:adverseEventId",
+    authenticate,
+    authorize("chemo.adverse_event.record"),
+    updateAdverseEventValidation,
+    controller.updateAdverseEvent.bind(controller)
+);
+
+router.delete(
+    "/adverse-events/:adverseEventId",
+    authenticate,
+    authorize("chemo.adverse_event.record"),
+    removeAdverseEventValidation,
+    controller.removeAdverseEvent.bind(controller)
 );
 
 // ---------------- Lab review ----------------

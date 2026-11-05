@@ -4,6 +4,7 @@ import { generateId } from "../../utils/idGenerator";
 
 import {
     CreateLabOrderDto,
+    LabOrderFilters,
     UpdateLabOrderDto
 } from "./lab-order-types";
 
@@ -12,14 +13,17 @@ class LabOrderService {
     async create(data: CreateLabOrderDto) {
 
         // Resolve patient history: accept patient_history_id directly or
-        // resolve it from the patient's most recent visit (patient_id).
+        // resolve it from the order's appointment (the visit it belongs to),
+        // falling back to the patient's most recent visit.
         let patient_history_id = data.patient_history_id;
 
         if (!patient_history_id && data.patient_id) {
 
-            const history = await repository.findMostRecentPatientHistory(
-                data.patient_id
-            );
+            const history =
+                (data.appointment_id
+                    ? await repository.findPatientHistoryByAppointment(data.appointment_id)
+                    : null) ??
+                (await repository.findMostRecentPatientHistory(data.patient_id));
 
             if (history) {
 
@@ -135,9 +139,9 @@ class LabOrderService {
 
     }
 
-    async getAll() {
+    async getAll(filters: LabOrderFilters = {}) {
 
-        return repository.findAll();
+        return repository.findAll(filters);
 
     }
 

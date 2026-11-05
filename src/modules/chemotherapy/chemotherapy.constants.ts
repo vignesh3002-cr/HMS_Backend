@@ -37,11 +37,34 @@ export const PLAN_TERMINAL_STATUSES: PlanStatus[] = [
 // (enforced by the uq_open_chemo_plan_per_patient partial index too).
 export const OPEN_PLAN_STATUSES: PlanStatus[] = [PLAN_STATUS.PLANNED, PLAN_STATUS.ACTIVE];
 
-// A cycle day's saved order: ORDERED until its consultation is submitted.
+// A cycle day's saved order: ORDERED (editable) until its consultation is
+// submitted, then IN_ADMINISTRATION (read-only, one administration row per
+// medicine), then COMPLETED once every medicine is resolved and the day is
+// completed from the Administration tab. Unlike the rest of this module,
+// order_status IS DB-constrained (chk_plan_order_status).
 export const PLAN_ORDER_STATUS = {
     ORDERED: "ORDERED",
+    IN_ADMINISTRATION: "IN_ADMINISTRATION",
     COMPLETED: "COMPLETED"
 } as const;
+
+// A medicine on an IN_ADMINISTRATION day starts PENDING; the day can only be
+// completed once each one is GIVEN, SKIPPED or CANCELLED (the latter two
+// with a reason). DB-constrained for rows linked to an order.
+export const ADMINISTRATION_STATUS = {
+    PENDING: "PENDING",
+    GIVEN: "GIVEN",
+    SKIPPED: "SKIPPED",
+    CANCELLED: "CANCELLED"
+} as const;
+
+export type AdministrationStatus = typeof ADMINISTRATION_STATUS[keyof typeof ADMINISTRATION_STATUS];
+
+export const ADMINISTRATION_STATUSES: AdministrationStatus[] = Object.values(ADMINISTRATION_STATUS);
+
+export const ADMINISTRATION_REASON_REQUIRED: AdministrationStatus[] = [
+    ADMINISTRATION_STATUS.SKIPPED, ADMINISTRATION_STATUS.CANCELLED
+];
 
 export const CYCLE_STATUS = {
     PLANNED: "PLANNED",
@@ -92,11 +115,36 @@ export const DRUG_ROLE = {
     DILUTION: "DILUTION"
 } as const;
 
+// The cycle day order's drugs whose administration is tracked. DILUTION rows
+// are the diluent a drug is prepared in; DISCHARGE (post-treatment) drugs
+// are plan-level take-home medicines.
+export const ADMINISTERED_DRUG_ROLES: string[] = [
+    DRUG_ROLE.PREMEDICATION, DRUG_ROLE.PRIMARY, DRUG_ROLE.SUPPORTIVE
+];
+
+export const PLAN_INVESTIGATION_CATEGORY = {
+    LAB: "LAB",
+    NON_LAB: "NON_LAB",
+    TISSUE: "TISSUE"
+} as const;
+
+export const PLAN_INVESTIGATION_STATUS = {
+    PLANNED: "PLANNED",
+    ORDERED: "ORDERED",
+    CANCELLED: "CANCELLED"
+} as const;
+
+// Adverse events are graded on the CTCAE 1-5 scale (also used for an
+// infusion reaction's grade); severity is the matching plain-language label.
+export const ADVERSE_EVENT_GRADES = ["1", "2", "3", "4", "5"];
+export const ADVERSE_EVENT_SEVERITIES = ["Mild", "Moderate", "Severe", "Life-threatening", "Fatal"];
+
 export const ID_ENTITY = {
     PLAN: "CHEMOTHERAPY_PLAN",
     PLAN_ITEM: "CHEMOTHERAPY_PLAN_ITEM",
     PLAN_HYDRATION: "CHEMOTHERAPY_PLAN_HYDRATION",
     PLAN_ORDER: "CHEMOTHERAPY_PLAN_ORDER",
+    PLAN_INVESTIGATION: "CHEMOTHERAPY_PLAN_INVESTIGATION",
     CYCLE: "CHEMOTHERAPY_CYCLE",
     ADMINISTRATION: "CHEMOTHERAPY_ADMINISTRATION",
     ADVERSE_EVENT: "CHEMOTHERAPY_ADVERSE_EVENT",

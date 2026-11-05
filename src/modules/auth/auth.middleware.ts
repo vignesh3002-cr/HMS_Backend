@@ -11,18 +11,32 @@ export type AuthRequest = Request & {
   isSelfAccess?: boolean;
 };
 
-export const authenticate: RequestHandler = async (req, res, next) => {
-
-  const authReq = req as AuthRequest;
+/*
+ * Shared body for authenticate / authenticateAllowQueryToken: resolve a
+ * token, verify it, and enforce the same role checks either way. The two
+ * exports differ only in where they're willing to find the token -- both
+ * reject (401/403) on anything missing or invalid, never fall through to
+ * an unauthenticated request the way the old patient-document flexAuth did.
+ */
+const runAuthentication = async (
+  req: AuthRequest,
+  res: Parameters<RequestHandler>[1],
+  next: Parameters<RequestHandler>[2],
+  allowQueryToken: boolean
+) => {
 
   try {
 
     // Prefer the Authorization header over the cookie - the frontend keeps
     // the header in sync on every request, whereas a stale/expired "token"
     // cookie from an earlier session can otherwise shadow a fresh login.
+    // allowQueryToken additionally accepts ?token=... for routes opened
+    // directly by the browser (an <img>/<a> can't set a header) -- only the
+    // document view/download routes use that variant.
     const token =
-      authReq.headers.authorization?.split(" ")[1] ||
-      authReq.cookies?.token;
+      req.headers.authorization?.split(" ")[1] ||
+      req.cookies?.token ||
+      (allowQueryToken && typeof req.query.token === "string" ? req.query.token : undefined);
 
 
     if (!token) {
@@ -39,10 +53,10 @@ export const authenticate: RequestHandler = async (req, res, next) => {
     );
 
 
-    authReq.user = decoded;
+    req.user = decoded;
 
     // Check if role is allowed to login
-    const userRole = String(authReq.user?.role ?? "").toLowerCase();
+    const userRole = String(req.user?.role ?? "").toLowerCase();
     const isAllowed = LOGIN_ENABLED_ROLES.some((r) => r.toLowerCase() === userRole);
 
     if (!isAllowed) {
@@ -56,7 +70,7 @@ export const authenticate: RequestHandler = async (req, res, next) => {
     // Roles with no config row (not yet seeded) are treated as active so this
     // never locks everyone out by default.
     const roleConfig = await prisma.role_id_config.findUnique({
-      where: { role_type: String(authReq.user?.role ?? "") },
+      where: { role_type: String(req.user?.role ?? "") },
     });
 
     if (roleConfig && !roleConfig.is_active) {
@@ -79,3 +93,16 @@ export const authenticate: RequestHandler = async (req, res, next) => {
   }
 
 };
+
+export const authenticate: RequestHandler = (req, res, next) =>
+  runAuthentication(req as AuthRequest, res, next, false);
+
+/*
+ * Same checks as authenticate, plus a ?token= query param fallback for
+ * routes a browser opens directly (document view/download via <img src> or
+ * <a href>, which can't attach an Authorization header). Unlike the old
+ * patient-document flexAuth, a missing or invalid token here still gets
+ * rejected -- it never silently proceeds unauthenticated.
+ */
+export const authenticateAllowQueryToken: RequestHandler = (req, res, next) =>
+  runAuthentication(req as AuthRequest, res, next, true);

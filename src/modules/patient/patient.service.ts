@@ -138,6 +138,15 @@ export class PatientService {
                         : null,
                     referral_notes: data.patient_type === "Referral"
                         ? (data.referral_notes?.trim() || null)
+                        : null,
+                    referral_address: data.patient_type === "Referral"
+                        ? (data.referral_address?.trim() || null)
+                        : null,
+                    referral_mail: data.patient_type === "Referral"
+                        ? (data.referral_mail?.trim() || null)
+                        : null,
+                    referral_branch_name: data.patient_type === "Referral"
+                        ? (data.referral_branch_name?.trim() || null)
                         : null
 
                 }
@@ -294,12 +303,24 @@ export class PatientService {
                     referral_notes: data.patient_type === "Referral"
                         ? (data.referral_notes?.trim() || null)
                         : null,
+                    referral_address: data.patient_type === "Referral"
+                        ? (data.referral_address?.trim() || null)
+                        : null,
+                    referral_mail: data.patient_type === "Referral"
+                        ? (data.referral_mail?.trim() || null)
+                        : null,
+                    referral_branch_name: data.patient_type === "Referral"
+                        ? (data.referral_branch_name?.trim() || null)
+                        : null,
                 }
                 : {
                     ...(data.referral_type !== undefined ? { referral_type: data.referral_type?.trim() || null } : {}),
                     ...(data.referred_by !== undefined ? { referred_by: data.referred_by?.trim() || null } : {}),
                     ...(data.referral_contact !== undefined ? { referral_contact: data.referral_contact?.trim() || null } : {}),
                     ...(data.referral_notes !== undefined ? { referral_notes: data.referral_notes?.trim() || null } : {}),
+                    ...(data.referral_address !== undefined ? { referral_address: data.referral_address?.trim() || null } : {}),
+                    ...(data.referral_mail !== undefined ? { referral_mail: data.referral_mail?.trim() || null } : {}),
+                    ...(data.referral_branch_name !== undefined ? { referral_branch_name: data.referral_branch_name?.trim() || null } : {}),
                 }),
 
             branch: data.branch_id
@@ -336,6 +357,7 @@ export class PatientService {
         let branchId = data.branchId;
         let departmentId = data.departmentId;
         let employeeId = data.employeeId;
+        let appointmentStatus: string | null = null;
 
         if (data.appointmentId) {
             const appointment = await prisma.appointment_history.findUnique({
@@ -344,8 +366,10 @@ export class PatientService {
                     branch_id: true,
                     department_id: true,
                     employee_id: true,
+                    status: true,
                 }
             });
+            appointmentStatus = appointment?.status ?? null;
 
             if (appointment) {
                 branchId ??= appointment.branch_id ?? undefined;
@@ -398,6 +422,16 @@ export class PatientService {
                         user_id: createdBy,
                     }
                 });
+
+                /* Vitals are taken with the patient present: the visit has
+                   started, so a still-booked appointment is checked in (the
+                   doctor's check-in then moves it into consultation). */
+                if (data.appointmentId && (appointmentStatus === "SCHEDULED" || appointmentStatus === "RESCHEDULED")) {
+                    await tx.appointment_history.update({
+                        where: { appointment_id: data.appointmentId },
+                        data: { status: "CHECKED_IN" }
+                    });
+                }
             }
 
             // Per-field fill: only write fields that are still empty on the encounter

@@ -25,7 +25,7 @@ class DoctorScheduleController {
             const bypassHeader = (req.headers['x-bypass-pending-transfer'] || '').toString().toLowerCase();
             const bypass = bypassHeader === 'true';
             const authUser = (req as any).user || {};
-            const isAdmin = ['HEAD_ADMIN','SUPER_ADMIN','BRANCH_ADMIN'].includes(authUser.role_type?.toUpperCase());
+            const isAdmin = ['HEAD_ADMIN','SUPER_ADMIN','BRANCH_ADMIN'].includes(String(authUser.role ?? '').toUpperCase());
             const result = await doctorScheduleService.createScheduleChange(
                 payload,
                 bypass && isAdmin

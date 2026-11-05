@@ -44,6 +44,9 @@ exports.updateLabOrderValidation = [
     (0, express_validator_1.body)("provisional_diagnosis")
         .optional()
         .isString(),
+    (0, express_validator_1.body)("lab_description")
+        .optional({ nullable: true })
+        .isString(),
     (0, express_validator_1.body)("order_status")
         .optional()
         .isIn([

@@ -41,7 +41,10 @@ export class LabOrderItemController {
 
         try {
 
-            const items = await service.getAll();
+            const items = await service.getAll({
+                patientId: (req.query.patientId as string | undefined) || undefined,
+                appointmentId: (req.query.appointmentId as string | undefined) || undefined
+            });
 
             return res.json({
                 success: true,

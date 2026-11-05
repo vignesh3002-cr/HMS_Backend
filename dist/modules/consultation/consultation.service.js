@@ -120,6 +120,9 @@ class ConsultationService {
     listDietTypes() {
         return consultation_constants_1.DIET_TYPES;
     }
+    listRelativeTypes() {
+        return consultation_constants_1.RELATIVE_TYPES;
+    }
     listMolecularTestOptions() {
         return consultation_constants_1.MOLECULAR_TESTS;
     }
@@ -143,7 +146,14 @@ class ConsultationService {
                 : (payload.immunization === null ? client_1.Prisma.JsonNull : payload.immunization),
             drug_consumption: payload.drug_consumption === undefined
                 ? undefined
-                : (payload.drug_consumption === null ? client_1.Prisma.JsonNull : payload.drug_consumption),
+                : (payload.drug_consumption === null
+                    ? client_1.Prisma.JsonNull
+                    : payload.drug_consumption),
+            family_history: payload.family_history === undefined
+                ? undefined
+                : (payload.family_history === null
+                    ? client_1.Prisma.JsonNull
+                    : payload.family_history),
             diet_type: payload.diet_type === undefined ? undefined : payload.diet_type
         };
         if (existing) {
@@ -157,7 +167,12 @@ class ConsultationService {
             personal_history_id: newId,
             encounter_no: encounterNo,
             immunization: payload.immunization == null ? client_1.Prisma.JsonNull : payload.immunization,
-            drug_consumption: payload.drug_consumption == null ? client_1.Prisma.JsonNull : payload.drug_consumption,
+            drug_consumption: payload.drug_consumption == null
+                ? client_1.Prisma.JsonNull
+                : payload.drug_consumption,
+            family_history: payload.family_history == null
+                ? client_1.Prisma.JsonNull
+                : payload.family_history,
             diet_type: payload.diet_type ?? null,
             created_by: actingUserId
         });
@@ -169,6 +184,9 @@ class ConsultationService {
             throw new Error("Encounter not found");
         }
         return repository.findReportsByEncounter(encounterNo);
+    }
+    async listReportsByPatient(patientId) {
+        return repository.findReportsByPatient(patientId);
     }
     async addReport(encounterNo, dto, actingUserId) {
         const encounter = await repository.findEncounterByNumber(encounterNo);
@@ -282,6 +300,134 @@ class ConsultationService {
         }
         await repository.deleteMolecularTest(encounterMolecularTestId);
         return { encounter_molecular_test_id: encounterMolecularTestId };
+    }
+    // ---------------- Encounter immunizations ----------------
+    // Consultation > Personal History > Immunization: one row per selected
+    // immunization per visit (date + response), related to the encounter.
+    async listEncounterImmunizations(encounterNo) {
+        const encounter = await repository.findEncounterByNumber(encounterNo);
+        if (!encounter) {
+            throw new Error("Encounter not found");
+        }
+        return repository.findEncounterImmunizations(encounterNo);
+    }
+    async syncEncounterImmunizations(encounterNo, payload, actingUserId) {
+        const encounter = await repository.findEncounterByNumber(encounterNo);
+        if (!encounter) {
+            throw new Error("Encounter not found");
+        }
+        // Drop blank names and de-duplicate by lowercased name, so a value
+        // can never collide with the (encounter_no, lower(name)) unique index.
+        const incoming = new Map();
+        for (const row of payload.rows ?? []) {
+            const name = (row.immunization_name ?? "").trim();
+            if (!name)
+                continue;
+            incoming.set(name.toLowerCase(), { ...row, immunization_name: name });
+        }
+        return prisma_1.default.$transaction(async (tx) => {
+            const existing = await tx.encounter_immunization.findMany({ where: { encounter_no: encounterNo } });
+            const toDelete = existing.filter((row) => !incoming.has(row.immunization_name.toLowerCase()));
+            if (toDelete.length > 0) {
+                await tx.encounter_immunization.deleteMany({ where: { id: { in: toDelete.map((row) => row.id) } } });
+            }
+            const byName = new Map(existing.map((row) => [row.immunization_name.toLowerCase(), row]));
+            for (const [key, row] of incoming) {
+                const match = byName.get(key);
+                const data = {
+                    immunization_code: row.immunization_code ?? null,
+                    immunization_date: row.immunization_date ? new Date(row.immunization_date) : null,
+                    response: row.response ?? null
+                };
+                if (match) {
+                    await tx.encounter_immunization.update({
+                        where: { id: match.id },
+                        data: { ...data, updated_at: new Date() }
+                    });
+                }
+                else {
+                    await tx.encounter_immunization.create({
+                        data: {
+                            encounter_immunization_id: await (0, idGenerator_1.generateId)(tx, "ENCOUNTER_IMMUNIZATION"),
+                            encounter_no: encounterNo,
+                            immunization_name: row.immunization_name,
+                            ...data,
+                            created_by: actingUserId
+                        }
+                    });
+                }
+            }
+            return tx.encounter_immunization.findMany({
+                where: { encounter_no: encounterNo },
+                orderBy: { created_at: "asc" }
+            });
+        });
+    }
+    // ---------------- Encounter past history treatments ----------------
+    // Consultation > Past History: one row per selected Treatment Type per
+    // visit (date + brief note + treatment response), related to the encounter.
+    async listEncounterPastTreatments(encounterNo) {
+        const encounter = await repository.findEncounterByNumber(encounterNo);
+        if (!encounter) {
+            throw new Error("Encounter not found");
+        }
+        return prisma_1.default.encounter_past_treatment.findMany({
+            where: { encounter_no: encounterNo },
+            orderBy: { created_at: "asc" }
+        });
+    }
+    async syncEncounterPastTreatments(encounterNo, payload, actingUserId) {
+        const encounter = await repository.findEncounterByNumber(encounterNo);
+        if (!encounter) {
+            throw new Error("Encounter not found");
+        }
+        // Drop blank names and de-duplicate by lowercased name, so a value
+        // can never collide with the (encounter_no, lower(name)) unique index.
+        const incoming = new Map();
+        for (const row of payload.rows ?? []) {
+            const name = (row.treatment_type ?? "").trim();
+            if (!name)
+                continue;
+            incoming.set(name.toLowerCase(), { ...row, treatment_type: name });
+        }
+        return prisma_1.default.$transaction(async (tx) => {
+            const existing = await tx.encounter_past_treatment.findMany({ where: { encounter_no: encounterNo } });
+            const toDelete = existing.filter((row) => !incoming.has(row.treatment_type.toLowerCase()));
+            if (toDelete.length > 0) {
+                await tx.encounter_past_treatment.deleteMany({ where: { id: { in: toDelete.map((row) => row.id) } } });
+            }
+            const byName = new Map(existing.map((row) => [row.treatment_type.toLowerCase(), row]));
+            for (const [key, row] of incoming) {
+                const match = byName.get(key);
+                const data = {
+                    treatment_type_code: row.treatment_type_code ?? null,
+                    treatment_date: row.treatment_date ? new Date(row.treatment_date) : null,
+                    note: row.note ?? null,
+                    treatment_response: row.treatment_response ?? null
+                };
+                if (match) {
+                    await tx.encounter_past_treatment.update({
+                        where: { id: match.id },
+                        data: { ...data, updated_at: new Date() }
+                    });
+                }
+                else {
+                    await tx.encounter_past_treatment.create({
+                        data: {
+                            encounter_past_treatment_id: await (0, idGenerator_1.generateId)(tx, "ENCOUNTER_PAST_TREATMENT"),
+                            encounter_no: encounterNo,
+                            treatment_type: row.treatment_type,
+                            ...data,
+                            created_by: actingUserId
+                        }
+                    });
+                }
+            }
+            return tx.encounter_past_treatment.findMany({
+                where: { encounter_no: encounterNo },
+                orderBy: { created_at: "asc" }
+            });
+        });
     }
     async removeReport(encounterReportId) {
         const existing = await repository.findReportById(encounterReportId);

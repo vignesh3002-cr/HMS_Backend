@@ -1,5 +1,5 @@
 import { body, param, query } from "express-validator";
-import { PLAN_STATUS, CYCLE_STATUS, DRUG_ROLE } from "./chemotherapy.constants";
+import { PLAN_STATUS, CYCLE_STATUS, DRUG_ROLE, ADVERSE_EVENT_GRADES, ADVERSE_EVENT_SEVERITIES, PLAN_INVESTIGATION_CATEGORY, PLAN_INVESTIGATION_STATUS } from "./chemotherapy.constants";
 
 export const previewPlanValidation = [
 
@@ -567,6 +567,26 @@ export const planOrderParamValidation = [
 
 ];
 
+const planInvestigationRowRules = (prefix: string) => [
+
+    body(`${prefix}investigation_id`).optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body(`${prefix}lab_test_id`).optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body(`${prefix}investigation_name`).isString().notEmpty().isLength({ max: 200 }),
+    body(`${prefix}investigation_category`).isIn(Object.values(PLAN_INVESTIGATION_CATEGORY)),
+    body(`${prefix}investigation_type`).optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body(`${prefix}source_medicine_ids`).optional({ nullable: true }).isString().isLength({ max: 500 }),
+    body(`${prefix}source_drug_names`).optional({ nullable: true }).isString().isLength({ max: 500 }),
+    body(`${prefix}source_test_text`).optional({ nullable: true }).isString().isLength({ max: 300 }),
+    body(`${prefix}monitoring_phase`).optional({ nullable: true }).isString().isLength({ max: 50 }),
+    body(`${prefix}priority`).optional({ nullable: true }).isString().isLength({ max: 20 }),
+    body(`${prefix}target_date`).optional({ nullable: true }).isISO8601().withMessage("target_date must be a date (YYYY-MM-DD)"),
+    body(`${prefix}clinical_notes`).optional({ nullable: true }).isString(),
+    body(`${prefix}item_status`).optional({ nullable: true }).isIn(Object.values(PLAN_INVESTIGATION_STATUS)),
+    body(`${prefix}lab_order_id`).optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body(`${prefix}lab_order_item_id`).optional({ nullable: true }).isString().isLength({ max: 100 })
+
+];
+
 export const savePlanOrderValidation = [
 
     ...planOrderParamValidation,
@@ -574,6 +594,8 @@ export const savePlanOrderValidation = [
     ...planItemListRules("items.*."),
     body("hydration").optional({ nullable: true }).isArray().withMessage("hydration must be an array"),
     ...hydrationRowRules("hydration.*."),
+    body("investigations").optional({ nullable: true }).isArray().withMessage("investigations must be an array"),
+    ...planInvestigationRowRules("investigations.*."),
     body("dosing").optional({ nullable: true }).isObject(),
     body("dosing.height_cm").optional({ nullable: true }).isFloat({ min: 0 }),
     body("dosing.weight_kg").optional({ nullable: true }).isFloat({ min: 0 }),
@@ -581,7 +603,37 @@ export const savePlanOrderValidation = [
     body("dosing.serum_creatinine").optional({ nullable: true }).isFloat({ min: 0 }),
     body("dosing.crcl").optional({ nullable: true }).isFloat({ min: 0 }),
     body("encounter_no").optional({ nullable: true }).isString().isLength({ max: 100 }),
-    body("copied_from_order_id").optional({ nullable: true }).isString().isLength({ max: 100 })
+    body("copied_from_order_id").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("chemo_instructions").optional({ nullable: true }).isString().withMessage("chemo_instructions must be text"),
+    body("additional_notes").optional({ nullable: true }).isString().withMessage("additional_notes must be text"),
+    body("planned_date").optional({ nullable: true }).isISO8601().withMessage("planned_date must be a date (YYYY-MM-DD)")
+
+];
+
+export const medicineInvestigationsValidation = [
+
+    query("medicine_ids").isString().notEmpty().withMessage("medicine_ids is required"),
+    query("medicine_ids").custom((value) => {
+        const ids = String(value).split(",").map((id) => id.trim()).filter(Boolean);
+        if (ids.length === 0 || ids.length > 100) {
+            throw new Error("medicine_ids must contain between 1 and 100 ids");
+        }
+        return true;
+    })
+
+];
+
+export const importMedicineInvestigationsValidation = [];
+
+export const planInvestigationStatusValidation = [
+
+    ...planOrderParamValidation,
+    body("updates").isArray().withMessage("updates must be an array"),
+    body("updates.*.investigation_id").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("updates.*.lab_test_id").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("updates.*.item_status").isIn(Object.values(PLAN_INVESTIGATION_STATUS)),
+    body("updates.*.lab_order_id").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("updates.*.lab_order_item_id").optional({ nullable: true }).isString().isLength({ max: 100 })
 
 ];
 
@@ -661,6 +713,39 @@ export const recordAdministrationValidation = [
 
 ];
 
+export const administrationSheetValidation = [
+
+    param("planId").notEmpty(),
+    query("cycle_number").optional().isInt({ min: 1 }).withMessage("cycle_number must be at least 1"),
+    query("cycle_day").optional().isInt({ min: 1 }).withMessage("cycle_day must be at least 1")
+
+];
+
+export const administrationStatusValidation = [
+
+    param("administrationId").notEmpty(),
+    body("status")
+        .isString()
+        .customSanitizer((value: string) => value.trim().toUpperCase())
+        .isIn(["PENDING", "GIVEN", "SKIPPED", "CANCELLED"])
+        .withMessage("status must be one of: PENDING, GIVEN, SKIPPED, CANCELLED"),
+    body("reason")
+        .if(body("status").isIn(["SKIPPED", "CANCELLED"]))
+        .isString()
+        .trim()
+        .notEmpty()
+        .withMessage("A reason is required to skip or cancel a medicine"),
+    body("reason").optional({ nullable: true }).isString().isLength({ max: 500 }).withMessage("Reason must be at most 500 characters"),
+    body("remarks").optional({ nullable: true }).isString().isLength({ max: 500 }).withMessage("Remarks must be at most 500 characters")
+
+];
+
+export const completeAdministrationDayValidation = [
+
+    ...planOrderParamValidation
+
+];
+
 export const recordVitalsValidation = [
 
     param("cycleId").notEmpty(),
@@ -672,13 +757,64 @@ export const recordVitalsValidation = [
 
 ];
 
+const ADVERSE_EVENT_FLAGS = [
+    "nausea", "vomiting", "diarrhea", "constipation", "mucositis", "fever",
+    "fatigue", "neuropathy", "alopecia", "skin_rash", "anemia", "neutropenia",
+    "thrombocytopenia", "infection", "bleeding", "pain",
+    "treatment_interrupted", "treatment_stopped", "hospitalization_required",
+    "icu_required", "emergency_medication_given", "dose_modified",
+    "dose_reduced", "dose_delayed", "resolved"
+];
+
+// Field rules shared by recording and editing an adverse event (the name's
+// required-ness differs, so it is added by each list).
+const adverseEventFieldRules = [
+    body("adverse_event_category").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("event_date").optional({ nullable: true }).isISO8601(),
+    body("resolution_date").optional({ nullable: true }).isISO8601(),
+    body("ctcae_grade").optional({ nullable: true })
+        .isIn(ADVERSE_EVENT_GRADES).withMessage("ctcae_grade must be 1 to 5"),
+    body("reaction_grade").optional({ nullable: true })
+        .isIn(ADVERSE_EVENT_GRADES).withMessage("reaction_grade must be 1 to 5"),
+    body("severity").optional({ nullable: true })
+        .isIn(ADVERSE_EVENT_SEVERITIES).withMessage(`severity must be one of: ${ADVERSE_EVENT_SEVERITIES.join(", ")}`),
+    ...ADVERSE_EVENT_FLAGS.map((flag) => body(flag).optional({ nullable: true }).isBoolean()),
+    body("reduction_percentage").optional({ nullable: true }).isFloat({ min: 0, max: 100 }),
+    body("delay_days").optional({ nullable: true }).isInt({ min: 0 })
+];
+
 export const recordAdverseEventValidation = [
 
     param("cycleId").notEmpty(),
-    body("adverse_event_name").notEmpty().withMessage("adverse_event_name is required"),
-    body("event_date").optional({ nullable: true }).isISO8601(),
-    body("resolution_date").optional({ nullable: true }).isISO8601(),
-    body("reduction_percentage").optional({ nullable: true }).isFloat({ min: 0, max: 100 })
+    body("adverse_event_name")
+        .trim()
+        .notEmpty().withMessage("adverse_event_name is required")
+        .isLength({ max: 100 }).withMessage("adverse_event_name must be at most 100 characters"),
+    body("plan_order_id").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("cycle_day").optional({ nullable: true }).isInt({ min: 1 }),
+    ...adverseEventFieldRules
+
+];
+
+export const updateAdverseEventValidation = [
+
+    param("adverseEventId").notEmpty().withMessage("adverseEventId is required"),
+    body("adverse_event_name")
+        .optional()
+        .trim()
+        .notEmpty().withMessage("adverse_event_name cannot be blank")
+        .isLength({ max: 100 }).withMessage("adverse_event_name must be at most 100 characters"),
+    ...adverseEventFieldRules
+
+];
+
+export const removeAdverseEventValidation = [
+
+    param("adverseEventId").notEmpty().withMessage("adverseEventId is required"),
+    body("reason")
+        .trim()
+        .notEmpty().withMessage("A reason is required to remove an adverse event")
+        .isLength({ max: 500 }).withMessage("reason must be at most 500 characters")
 
 ];
 

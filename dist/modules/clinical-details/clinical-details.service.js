@@ -258,6 +258,7 @@ class ClinicalDetailsService {
                 symptom_id: data.symptomId,
                 severity: data.severity,
                 duration_days: data.durationDays,
+                duration_unit: data.durationUnit,
                 onset_date: data.onsetDate ? new Date(data.onsetDate) : null,
                 clinical_notes: data.clinicalNotes,
                 status: clinical_details_constants_1.ENCOUNTER_SYMPTOM_STATUS.ACTIVE,
@@ -287,6 +288,7 @@ class ClinicalDetailsService {
             return repository.updateEncounterSymptom(tx, encounterNo, symptomId, {
                 severity: data.severity,
                 duration_days: data.durationDays,
+                duration_unit: data.durationUnit,
                 onset_date: data.onsetDate ? new Date(data.onsetDate) : null,
                 clinical_notes: data.clinicalNotes,
                 status: data.status,
@@ -330,6 +332,8 @@ class ClinicalDetailsService {
                 allergy_id: data.allergyId,
                 reaction: data.reaction,
                 severity: data.severity,
+                duration_value: data.durationValue,
+                duration_unit: data.durationUnit,
                 status: data.status ?? clinical_details_constants_1.ALLERGY_STATUS.ACTIVE,
                 identified_by: identifiedBy,
                 identified_at_encounter_no: data.identifiedAtEncounterNo,
@@ -361,6 +365,8 @@ class ClinicalDetailsService {
             return repository.updatePatientAllergy(tx, recordId, {
                 reaction: data.reaction,
                 severity: data.severity,
+                duration_value: data.durationValue,
+                duration_unit: data.durationUnit,
                 status: data.status,
                 clinical_notes: data.clinicalNotes,
                 updated_by: updatedBy,
@@ -404,6 +410,8 @@ class ClinicalDetailsService {
                 comorbidity_id: comorbidityId,
                 status: data.status ?? clinical_details_constants_1.COMORBIDITY_STATUS.ACTIVE,
                 onset_date: data.onsetDate ? new Date(data.onsetDate) : null,
+                duration_value: data.durationValue,
+                duration_unit: data.durationUnit,
                 identified_by: identifiedBy,
                 identified_at_encounter_no: data.identifiedAtEncounterNo,
                 clinical_notes: data.clinicalNotes,
@@ -434,6 +442,8 @@ class ClinicalDetailsService {
             return repository.updatePatientComorbidity(tx, recordId, {
                 status: data.status,
                 onset_date: data.onsetDate ? new Date(data.onsetDate) : null,
+                duration_value: data.durationValue,
+                duration_unit: data.durationUnit,
                 clinical_notes: data.clinicalNotes,
                 updated_by: updatedBy,
             });

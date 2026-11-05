@@ -11,4 +11,3 @@ ALTER TABLE public.lab_order_item
     ADD COLUMN IF NOT EXISTS target_date    DATE;
 
 COMMIT;
-

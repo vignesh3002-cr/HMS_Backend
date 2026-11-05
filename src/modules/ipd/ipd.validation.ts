@@ -2,10 +2,55 @@ import { body, param, query } from "express-validator";
 import {
     IPD_STATUS_VALUES,
     ADMISSION_TYPE_VALUES,
-    DISCHARGE_TYPE_VALUES,
-    PAYMENT_MODE_VALUES
+    PAYMENT_MODE_VALUES,
+    PATIENT_STATUS_AT_DISCHARGE_VALUES
 } from "./ipd.constants";
-import { BED_STATUS } from "./ipd.types";
+import { MANUAL_BED_STATUSES, CARE_TEAM_BULK_MAX } from "./ipd.constants";
+
+const careTeamFields = [
+
+    // null clears the role; an omitted field leaves it unchanged.
+    body("assigned_doctor_id").optional({ values: "null" }).isString().notEmpty(),
+    body("nurse_id").optional({ values: "null" }).isString().notEmpty(),
+    body("roster_override").optional().isBoolean().withMessage("roster_override must be true or false"),
+    body("handover_notes")
+        .optional({ values: "falsy" })
+        .isString()
+        .isLength({ max: 2000 })
+        .withMessage("Handover notes must be at most 2000 characters"),
+
+];
+
+export const allocateCareTeamValidation = [
+
+    param("id")
+        .notEmpty()
+        .withMessage("Admission ID or IP number is required"),
+
+    ...careTeamFields,
+
+];
+
+export const bulkAllocateCareTeamValidation = [
+
+    body("ward_id").notEmpty().withMessage("Ward is required"),
+    body("branch_id").notEmpty().withMessage("Branch is required"),
+    body("admission_ids")
+        .isArray({ min: 1, max: CARE_TEAM_BULK_MAX })
+        .withMessage(`Select between 1 and ${CARE_TEAM_BULK_MAX} admissions`),
+    body("admission_ids.*").isString().notEmpty(),
+
+    ...careTeamFields,
+
+];
+
+export const getCareTeamValidation = [
+
+    param("id")
+        .notEmpty()
+        .withMessage("Admission ID or IP number is required"),
+
+];
 
 export const createAdmissionValidation = [
 
@@ -65,7 +110,9 @@ export const updateAdmissionValidation = [
         .optional()
         .isISO8601()
         .withMessage("Discharge date must be a valid date"),
-    body("discharge_type").optional().isIn(DISCHARGE_TYPE_VALUES),
+    // Any active row of discharge_type_master (checked in the service) --
+    // the built-ins plus values added through "Others".
+    body("discharge_type").optional().isString().isLength({ max: 100 }),
     body("discharge_summary").optional().isString(),
     body("status").optional().isIn(IPD_STATUS_VALUES),
 
@@ -77,9 +124,39 @@ export const dischargeAdmissionValidation = [
         .notEmpty()
         .withMessage("Admission ID or IP number is required"),
 
-    body("discharge_type").optional().isIn(DISCHARGE_TYPE_VALUES),
+    // Any active row of discharge_type_master (checked in the service) --
+    // the built-ins plus values added through "Others".
+    body("discharge_type").optional().isString().isLength({ max: 100 }),
     body("discharge_summary").optional().isString(),
     body("discharge_date").optional().isISO8601(),
+    body("discharge_advice").optional().isString(),
+    body("review_date").optional().isISO8601(),
+    // Free text, same denormalized pattern as oncology_staging_detail's --
+    // not validated against disease_status_master (see ipd.service.ts).
+    body("discharge_disease_status").optional().isString(),
+    body("patient_status_at_discharge").optional().isIn(PATIENT_STATUS_AT_DISCHARGE_VALUES),
+
+];
+
+export const saveDischargeDetailsValidation = [
+
+    param("id")
+        .notEmpty()
+        .withMessage("Admission ID or IP number is required"),
+
+    body("discharge_type")
+        .notEmpty()
+        .withMessage("Discharge type is required")
+        .bail()
+        .isString()
+        .isLength({ max: 100 }),
+    body("discharge_summary").optional({ values: "falsy" }).isString(),
+    body("discharge_advice").optional({ values: "falsy" }).isString(),
+    body("review_date").optional({ values: "falsy" }).isISO8601(),
+    body("discharge_disease_status").optional({ values: "falsy" }).isString(),
+    body("patient_status_at_discharge")
+        .optional({ values: "falsy" })
+        .isIn(PATIENT_STATUS_AT_DISCHARGE_VALUES),
 
 ];
 
@@ -98,6 +175,68 @@ export const transferAdmissionValidation = [
         .withMessage("Target bed is required"),
 
     body("reason").optional().isString(),
+
+];
+
+export const admitAdmissionValidation = [
+
+    param("id")
+        .notEmpty()
+        .withMessage("Admission ID or IP number is required"),
+
+    body("ward_id").optional().isString(),
+    body("bed_id").optional().isString(),
+
+];
+
+// Reserve takes the same optional ward/bed override as admit.
+export const reserveBedValidation = admitAdmissionValidation;
+
+// Cancel / no-show of a planned admission, with an optional reason.
+export const closePlannedValidation = [
+
+    param("id")
+        .notEmpty()
+        .withMessage("Admission ID or IP number is required"),
+
+    body("reason")
+        .optional()
+        .isString()
+        .isLength({ max: 500 })
+        .withMessage("Reason must be at most 500 characters"),
+
+];
+
+// Daycare booking: doctor slot + PLANNED daycare admission (ward required,
+// bed optional, session length more than 0 and at most 1 day).
+export const createDaycareValidation = [
+
+    body("patient_id").notEmpty().withMessage("Patient is required"),
+    body("branch_id").notEmpty().withMessage("Branch is required"),
+    body("department_id").notEmpty().withMessage("Department is required"),
+    body("employee_id").notEmpty().withMessage("Doctor is required"),
+    body("ward_id").notEmpty().withMessage("Ward is required for a daycare booking"),
+    body("bed_id").optional().isString(),
+    body("appointment_date")
+        .notEmpty().withMessage("Date is required")
+        .isISO8601().withMessage("Date must be a valid date"),
+    body("appointment_time")
+        .notEmpty().withMessage("Time slot is required")
+        .matches(/^\d{1,2}:\d{2}(:\d{2})?$/).withMessage("Time slot must be HH:mm"),
+    body("expected_stay_days")
+        .isFloat({ gt: 0, max: 1 })
+        .withMessage("Daycare duration must be more than 0 and at most 24 hours"),
+    body("payment_mode").optional().isString(),
+    body("advance_amount").optional().isFloat({ min: 0 }),
+    body("provisional_diagnosis").optional().isString(),
+    body("reason_for_visit").optional().isString(),
+
+];
+
+export const daycareOccupancyValidation = [
+
+    query("wardId").notEmpty().withMessage("Ward is required"),
+    query("date").isISO8601().withMessage("Date must be a valid date (yyyy-MM-dd)"),
 
 ];
 
@@ -123,6 +262,8 @@ export const getAdmissionsValidation = [
     query("patientId").optional().isString(),
     query("date").optional().isISO8601().withMessage("Date must be a valid date (yyyy-MM-dd)"),
     query("search").optional().isString(),
+    // Only admissions the caller is the consultant / duty doctor / nurse of.
+    query("assignedToMe").optional().isBoolean(),
     query("sortField").optional().isIn(IPD_SORT_FIELDS),
     query("sortDirection").optional().isIn(["asc", "desc"]),
 
@@ -191,10 +332,22 @@ export const updateBedStatusValidation = [
     body("status")
         .notEmpty()
         .withMessage("Status is required")
-        .isIn([BED_STATUS.AVAILABLE, BED_STATUS.MAINTENANCE])
-        .withMessage(`Status must be one of: ${BED_STATUS.AVAILABLE}, ${BED_STATUS.MAINTENANCE}`),
+        .isIn([...MANUAL_BED_STATUSES])
+        .withMessage(`Status must be one of: ${MANUAL_BED_STATUSES.join(", ")}`),
 
     body("remarks").optional().trim().isString(),
 
 ];
 
+
+export const addDischargeTypeValidation = [
+
+    body("type_name")
+        .trim()
+        .notEmpty()
+        .withMessage("Discharge type is required")
+        .bail()
+        .isLength({ max: 100 })
+        .withMessage("Discharge type must be at most 100 characters"),
+
+];

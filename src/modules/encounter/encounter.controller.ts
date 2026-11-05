@@ -278,7 +278,10 @@ export class EncounterController {
 
             const encounter = await service.updateEncounter(
                 req.params.encounterNo as string,
-                req.body
+                {
+                    ...req.body,
+                    updatedBy: req.body.updatedBy ?? (req as any).user?.user_id ?? (req as any).user?.employee_id,
+                }
             );
 
             return res.json({
@@ -320,6 +323,59 @@ export class EncounterController {
             return res.status(400).json({
                 success: false,
                 message: error.message
+            });
+
+        }
+
+    }
+
+    async updateVitalsLogEntry(req: Request, res: Response) {
+
+        try {
+
+            const encounterNo = req.params.encounterNo as string;
+            const entryId = req.params.entryId as string;
+            const updated = await service.updateVitalsLogEntry(encounterNo, entryId, {
+                ...req.body,
+                updatedBy: req.body.updatedBy ?? (req as any).user?.user_id ?? (req as any).user?.employee_id,
+            });
+
+            return res.json({
+                success: true,
+                message: "Vitals entry updated successfully",
+                data: updated,
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message,
+            });
+
+        }
+
+    }
+
+    async deleteVitalsLogEntry(req: Request, res: Response) {
+
+        try {
+
+            const encounterNo = req.params.encounterNo as string;
+            const entryId = req.params.entryId as string;
+            const updated = await service.deleteVitalsLogEntry(encounterNo, entryId);
+
+            return res.json({
+                success: true,
+                message: "Vitals entry deleted successfully",
+                data: updated,
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message,
             });
 
         }

@@ -118,10 +118,12 @@ class DoctorLeaveRepository {
             leaves
         };
     }
-    async findActiveAppointmentsInRange(tx, employeeId, dateFrom, dateTo) {
+    async findActiveAppointmentsInRange(tx, employeeId, dateFrom, dateTo, branchId) {
         return tx.appointment_history.findMany({
             where: {
                 employee_id: employeeId,
+                // Leave is branch-agnostic; a schedule CANCEL only affects its own branch.
+                ...(branchId ? { branch_id: branchId } : {}),
                 appointment_date: {
                     gte: new Date(`${dateFrom}T00:00:00.000Z`),
                     lte: new Date(`${dateTo}T23:59:59.999Z`)

@@ -27,7 +27,7 @@ export class DoctorTransferController {
             const bypassHeader = (req.headers['x-bypass-pending-transfer'] || '').toString().toLowerCase();
             const bypassPending = bypassHeader === 'true';
             const authUser = (req as any).user || {};
-            const isAdmin = ['HEAD_ADMIN','SUPER_ADMIN','BRANCH_ADMIN'].includes(authUser.role_type?.toUpperCase());
+            const isAdmin = ['HEAD_ADMIN','SUPER_ADMIN','BRANCH_ADMIN'].includes(String(authUser.role ?? '').toUpperCase());
 
             const result = await service.initiateTransfer(
                 req.params.employeeId as string,
@@ -160,6 +160,7 @@ export class DoctorTransferController {
                 branchId: req.query.branchId as string,
                 patientId: req.query.patientId as string,
                 status: req.query.status as string,
+                priority: req.query.priority as string,
                 page: Number(req.query.page || 1),
                 limit: Number(req.query.limit || 10)
             });

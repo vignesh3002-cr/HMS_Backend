@@ -146,6 +146,17 @@ function computeIcdCascade(
 
 }
 
+// The Diagnosis form selections column: absent = untouched, null = cleared.
+function formStateOrUndefined(value: Record<string, unknown> | null | undefined): Prisma.InputJsonValue | typeof Prisma.JsonNull | undefined {
+
+    if (value === undefined) {
+        return undefined;
+    }
+
+    return value === null ? Prisma.JsonNull : (value as Prisma.InputJsonValue);
+
+}
+
 function jsonOrUndefined(value: string[] | null | undefined): Prisma.InputJsonValue | typeof Prisma.JsonNull | undefined {
 
     if (value === undefined) {
@@ -1010,6 +1021,7 @@ export class OncologyService {
                 score: dto.score ?? null,
                 score_system: dto.score_system ?? null,
                 notes: dto.notes ?? null,
+                form_state: formStateOrUndefined(dto.form_state) ?? Prisma.JsonNull,
                 performance_status: dto.performance_status ?? null,
                 // Default to whoever actually saw the patient in the
                 // qualifying encounter, unless the caller explicitly names
@@ -1178,20 +1190,24 @@ export class OncologyService {
                 staging_system: cascade.staging_system
             } : {}),
             ...(dto.histopathology !== undefined ? { histopathology: dto.histopathology?.trim() || null } : {}),
-            ...(dto.clinical_stage !== undefined && dto.clinical_stage !== null ? { clinical_stage: dto.clinical_stage } : {}),
-            ...(dto.t_stage !== undefined && dto.t_stage !== null ? { t_stage: dto.t_stage } : {}),
-            ...(dto.n_stage !== undefined && dto.n_stage !== null ? { n_stage: dto.n_stage } : {}),
-            ...(dto.m_stage !== undefined && dto.m_stage !== null ? { m_stage: dto.m_stage } : {}),
+            // The diagnosis text fields: absent = untouched, null / "" =
+            // cleared (a value unticked in the Diagnosis step), matching the
+            // merged values validated above.
+            ...(dto.clinical_stage !== undefined ? { clinical_stage: dto.clinical_stage || null } : {}),
+            ...(dto.t_stage !== undefined ? { t_stage: dto.t_stage || null } : {}),
+            ...(dto.n_stage !== undefined ? { n_stage: dto.n_stage || null } : {}),
+            ...(dto.m_stage !== undefined ? { m_stage: dto.m_stage || null } : {}),
             ...(dto.metastasis_sites !== undefined ? { metastasis_sites: jsonOrUndefined(dto.metastasis_sites) } : {}),
-            ...(dto.laterality !== undefined && dto.laterality !== null ? { laterality: dto.laterality } : {}),
-            ...(dto.pre_diagnosis !== undefined && dto.pre_diagnosis !== null ? { pre_diagnosis: dto.pre_diagnosis } : {}),
-            ...(dto.disease_status !== undefined && dto.disease_status !== null ? { disease_status: dto.disease_status } : {}),
-            ...(dto.site !== undefined && dto.site !== null ? { site: dto.site } : {}),
-            ...(dto.grade !== undefined && dto.grade !== null ? { grade: dto.grade } : {}),
-            ...(dto.grade_system !== undefined && dto.grade_system !== null ? { grade_system: dto.grade_system } : {}),
+            ...(dto.laterality !== undefined ? { laterality: dto.laterality || null } : {}),
+            ...(dto.pre_diagnosis !== undefined ? { pre_diagnosis: dto.pre_diagnosis || null } : {}),
+            ...(dto.disease_status !== undefined ? { disease_status: dto.disease_status || null } : {}),
+            ...(dto.site !== undefined ? { site: dto.site || null } : {}),
+            ...(dto.grade !== undefined ? { grade: dto.grade || null } : {}),
+            ...(dto.grade_system !== undefined ? { grade_system: dto.grade_system || null } : {}),
             ...(dto.score !== undefined ? { score: dto.score || null } : {}),
             ...(dto.score_system !== undefined ? { score_system: dto.score_system || null } : {}),
             ...(dto.notes !== undefined ? { notes: dto.notes || null } : {}),
+            ...(dto.form_state !== undefined ? { form_state: formStateOrUndefined(dto.form_state) } : {}),
             ...(dto.performance_status !== undefined && dto.performance_status !== null ? { performance_status: dto.performance_status } : {}),
             ...(dto.employee_id !== undefined && dto.employee_id !== null ? { employee_id: dto.employee_id } : {}),
             ...(dto.branch_id !== undefined && dto.branch_id !== null ? { branch_id: dto.branch_id } : {})
@@ -1218,8 +1234,12 @@ export class OncologyService {
 
             await this.repository.upsertDerivedFields(tx, stagingDetailId, derivedPersistPayload(derived));
 
+            // form_state is the form's UI snapshot of the same values; the
+            // clinical columns already carry the audited changes.
+            const { form_state: _formState, ...auditedStagingChanges } = stagingChanges;
+
             const auditChanges = {
-                ...stagingChanges,
+                ...auditedStagingChanges,
                 ...(additionalCancers ? { additional_cancers: additionalCancers } : {}),
                 ...(dto.ihc ?? {}),
                 ...(dto.molecular ?? {})

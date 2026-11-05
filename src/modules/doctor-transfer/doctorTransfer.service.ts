@@ -1587,7 +1587,7 @@ if (dto.old_branch_id) {
 
         if (dto.action === "ASSIGN") {
 
-            if (queue.status !== RESCHEDULE_QUEUE_STATUS.PENDING) {
+            if (queue.status !== RESCHEDULE_QUEUE_STATUS.PENDING && queue.status !== RESCHEDULE_QUEUE_STATUS.ASSIGNED) {
                 throw new Error(`Cannot assign a slot to a reschedule request that is already ${queue.status}`);
             }
 

@@ -18,10 +18,12 @@ router.get("/masters/treatment-types", auth_middleware_1.authenticate, (0, autho
 router.post("/masters/treatment-types/custom", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), consultation_validation_1.createCustomMasterValidation, controller.createCustomTreatmentType.bind(controller));
 router.get("/masters/molecular-tests", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), controller.getMolecularTestOptions.bind(controller));
 router.get("/masters/diet-types", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), controller.getDietTypes.bind(controller));
+router.get("/masters/relative-types", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), controller.getRelativeTypes.bind(controller));
 // ---------------- Personal history ----------------
 router.get("/encounters/:encounterNo/personal-history", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), consultation_validation_1.getPersonalHistoryValidation, controller.getPersonalHistory.bind(controller));
 router.put("/encounters/:encounterNo/personal-history", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), consultation_validation_1.upsertPersonalHistoryValidation, controller.upsertPersonalHistory.bind(controller));
 // ---------------- Encounter reports ----------------
+router.get("/patients/:patientId/reports", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), controller.getReportsByPatient.bind(controller));
 router.get("/encounters/:encounterNo/reports", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), consultation_validation_1.getPersonalHistoryValidation, controller.getReports.bind(controller));
 router.post("/encounters/:encounterNo/reports", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), consultation_validation_1.addReportValidation, controller.addReport.bind(controller));
 router.put("/reports/:encounterReportId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), consultation_validation_1.updateReportValidation, controller.updateReport.bind(controller));
@@ -31,4 +33,10 @@ router.get("/encounters/:encounterNo/molecular-tests", auth_middleware_1.authent
 router.post("/encounters/:encounterNo/molecular-tests", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), consultation_validation_1.addMolecularTestValidation, controller.addMolecularTest.bind(controller));
 router.put("/molecular-tests/:encounterMolecularTestId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), consultation_validation_1.updateMolecularTestValidation, controller.updateMolecularTest.bind(controller));
 router.delete("/molecular-tests/:encounterMolecularTestId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), consultation_validation_1.molecularTestIdValidation, controller.removeMolecularTest.bind(controller));
+// ---------------- Encounter immunizations ----------------
+router.get("/encounters/:encounterNo/immunizations", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), consultation_validation_1.getPersonalHistoryValidation, controller.getEncounterImmunizations.bind(controller));
+router.put("/encounters/:encounterNo/immunizations", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), consultation_validation_1.syncEncounterImmunizationsValidation, controller.syncEncounterImmunizations.bind(controller));
+// ---------------- Encounter past history treatments ----------------
+router.get("/encounters/:encounterNo/past-treatments", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), consultation_validation_1.getPersonalHistoryValidation, controller.getEncounterPastTreatments.bind(controller));
+router.put("/encounters/:encounterNo/past-treatments", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), consultation_validation_1.syncEncounterPastTreatmentsValidation, controller.syncEncounterPastTreatments.bind(controller));
 exports.default = router;

@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.planIdParamValidation = exports.cycleIdParamValidation = exports.recordFollowupValidation = exports.recordLabReviewValidation = exports.recordAdverseEventValidation = exports.recordVitalsValidation = exports.recordAdministrationValidation = exports.updateCycleValidation = exports.cycleStatusValidation = exports.createCycleValidation = exports.updatePlanItemValidation = exports.addPlanItemValidation = exports.planHydrationValidation = exports.completePlanOrdersValidation = exports.savePlanOrderValidation = exports.planOrderParamValidation = exports.replacePlanItemsValidation = exports.planDischargeItemParamValidation = exports.planDischargeParamValidation = exports.updatePlanDischargeMedicineValidation = exports.addPlanDischargeMedicineValidation = exports.listPlansValidation = exports.planStatusValidation = exports.updatePlanValidation = exports.createPlanValidation = exports.updateRegimenProtocolItemValidation = exports.removeDischargeInstructionValidation = exports.updateDischargeInstructionValidation = exports.addDischargeInstructionValidation = exports.addRegimenProtocolItemValidation = exports.createPersonalizedProtocolVersionValidation = exports.removePersonalizedProtocolDilutionValidation = exports.updatePersonalizedProtocolDilutionValidation = exports.addPersonalizedProtocolDilutionValidation = exports.removePersonalizedProtocolDayValidation = exports.updatePersonalizedProtocolDayValidation = exports.addPersonalizedProtocolDayValidation = exports.removePersonalizedProtocolItemValidation = exports.updatePersonalizedProtocolItemValidation = exports.addPersonalizedProtocolItemValidation = exports.updatePersonalizedProtocolValidation = exports.personalizeRegimenProtocolValidation = exports.protocolIdParamValidation = exports.updateRegimenProtocolValidation = exports.createRegimenProtocolValidation = exports.getRegimenProtocolValidation = exports.listRegimenProtocolsValidation = exports.previewPlanValidation = void 0;
+exports.recordAdverseEventValidation = exports.recordVitalsValidation = exports.completeAdministrationDayValidation = exports.administrationStatusValidation = exports.administrationSheetValidation = exports.recordAdministrationValidation = exports.updateCycleValidation = exports.cycleStatusValidation = exports.createCycleValidation = exports.updatePlanItemValidation = exports.addPlanItemValidation = exports.planHydrationValidation = exports.completePlanOrdersValidation = exports.planInvestigationStatusValidation = exports.importMedicineInvestigationsValidation = exports.medicineInvestigationsValidation = exports.savePlanOrderValidation = exports.planOrderParamValidation = exports.replacePlanItemsValidation = exports.planDischargeItemParamValidation = exports.planDischargeParamValidation = exports.updatePlanDischargeMedicineValidation = exports.addPlanDischargeMedicineValidation = exports.listPlansValidation = exports.planStatusValidation = exports.updatePlanValidation = exports.createPlanValidation = exports.updateRegimenProtocolItemValidation = exports.removeDischargeInstructionValidation = exports.updateDischargeInstructionValidation = exports.addDischargeInstructionValidation = exports.addRegimenProtocolItemValidation = exports.createPersonalizedProtocolVersionValidation = exports.removePersonalizedProtocolDilutionValidation = exports.updatePersonalizedProtocolDilutionValidation = exports.addPersonalizedProtocolDilutionValidation = exports.removePersonalizedProtocolDayValidation = exports.updatePersonalizedProtocolDayValidation = exports.addPersonalizedProtocolDayValidation = exports.removePersonalizedProtocolItemValidation = exports.updatePersonalizedProtocolItemValidation = exports.addPersonalizedProtocolItemValidation = exports.updatePersonalizedProtocolValidation = exports.personalizeRegimenProtocolValidation = exports.protocolIdParamValidation = exports.updateRegimenProtocolValidation = exports.createRegimenProtocolValidation = exports.getRegimenProtocolValidation = exports.listRegimenProtocolsValidation = exports.previewPlanValidation = void 0;
+exports.planIdParamValidation = exports.cycleIdParamValidation = exports.recordFollowupValidation = exports.recordLabReviewValidation = exports.removeAdverseEventValidation = exports.updateAdverseEventValidation = void 0;
 const express_validator_1 = require("express-validator");
 const chemotherapy_constants_1 = require("./chemotherapy.constants");
 exports.previewPlanValidation = [
@@ -461,12 +462,31 @@ exports.planOrderParamValidation = [
     (0, express_validator_1.param)("cycleNumber").isInt({ min: 1 }).withMessage("Cycle must be at least 1"),
     (0, express_validator_1.param)("cycleDay").isInt({ min: 1 }).withMessage("Day must be at least 1")
 ];
+const planInvestigationRowRules = (prefix) => [
+    (0, express_validator_1.body)(`${prefix}investigation_id`).optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)(`${prefix}lab_test_id`).optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)(`${prefix}investigation_name`).isString().notEmpty().isLength({ max: 200 }),
+    (0, express_validator_1.body)(`${prefix}investigation_category`).isIn(Object.values(chemotherapy_constants_1.PLAN_INVESTIGATION_CATEGORY)),
+    (0, express_validator_1.body)(`${prefix}investigation_type`).optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)(`${prefix}source_medicine_ids`).optional({ nullable: true }).isString().isLength({ max: 500 }),
+    (0, express_validator_1.body)(`${prefix}source_drug_names`).optional({ nullable: true }).isString().isLength({ max: 500 }),
+    (0, express_validator_1.body)(`${prefix}source_test_text`).optional({ nullable: true }).isString().isLength({ max: 300 }),
+    (0, express_validator_1.body)(`${prefix}monitoring_phase`).optional({ nullable: true }).isString().isLength({ max: 50 }),
+    (0, express_validator_1.body)(`${prefix}priority`).optional({ nullable: true }).isString().isLength({ max: 20 }),
+    (0, express_validator_1.body)(`${prefix}target_date`).optional({ nullable: true }).isISO8601().withMessage("target_date must be a date (YYYY-MM-DD)"),
+    (0, express_validator_1.body)(`${prefix}clinical_notes`).optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)(`${prefix}item_status`).optional({ nullable: true }).isIn(Object.values(chemotherapy_constants_1.PLAN_INVESTIGATION_STATUS)),
+    (0, express_validator_1.body)(`${prefix}lab_order_id`).optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)(`${prefix}lab_order_item_id`).optional({ nullable: true }).isString().isLength({ max: 100 })
+];
 exports.savePlanOrderValidation = [
     ...exports.planOrderParamValidation,
     (0, express_validator_1.body)("items").isArray().withMessage("items must be an array"),
     ...planItemListRules("items.*."),
     (0, express_validator_1.body)("hydration").optional({ nullable: true }).isArray().withMessage("hydration must be an array"),
     ...hydrationRowRules("hydration.*."),
+    (0, express_validator_1.body)("investigations").optional({ nullable: true }).isArray().withMessage("investigations must be an array"),
+    ...planInvestigationRowRules("investigations.*."),
     (0, express_validator_1.body)("dosing").optional({ nullable: true }).isObject(),
     (0, express_validator_1.body)("dosing.height_cm").optional({ nullable: true }).isFloat({ min: 0 }),
     (0, express_validator_1.body)("dosing.weight_kg").optional({ nullable: true }).isFloat({ min: 0 }),
@@ -474,7 +494,30 @@ exports.savePlanOrderValidation = [
     (0, express_validator_1.body)("dosing.serum_creatinine").optional({ nullable: true }).isFloat({ min: 0 }),
     (0, express_validator_1.body)("dosing.crcl").optional({ nullable: true }).isFloat({ min: 0 }),
     (0, express_validator_1.body)("encounter_no").optional({ nullable: true }).isString().isLength({ max: 100 }),
-    (0, express_validator_1.body)("copied_from_order_id").optional({ nullable: true }).isString().isLength({ max: 100 })
+    (0, express_validator_1.body)("copied_from_order_id").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)("chemo_instructions").optional({ nullable: true }).isString().withMessage("chemo_instructions must be text"),
+    (0, express_validator_1.body)("additional_notes").optional({ nullable: true }).isString().withMessage("additional_notes must be text"),
+    (0, express_validator_1.body)("planned_date").optional({ nullable: true }).isISO8601().withMessage("planned_date must be a date (YYYY-MM-DD)")
+];
+exports.medicineInvestigationsValidation = [
+    (0, express_validator_1.query)("medicine_ids").isString().notEmpty().withMessage("medicine_ids is required"),
+    (0, express_validator_1.query)("medicine_ids").custom((value) => {
+        const ids = String(value).split(",").map((id) => id.trim()).filter(Boolean);
+        if (ids.length === 0 || ids.length > 100) {
+            throw new Error("medicine_ids must contain between 1 and 100 ids");
+        }
+        return true;
+    })
+];
+exports.importMedicineInvestigationsValidation = [];
+exports.planInvestigationStatusValidation = [
+    ...exports.planOrderParamValidation,
+    (0, express_validator_1.body)("updates").isArray().withMessage("updates must be an array"),
+    (0, express_validator_1.body)("updates.*.investigation_id").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)("updates.*.lab_test_id").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)("updates.*.item_status").isIn(Object.values(chemotherapy_constants_1.PLAN_INVESTIGATION_STATUS)),
+    (0, express_validator_1.body)("updates.*.lab_order_id").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)("updates.*.lab_order_item_id").optional({ nullable: true }).isString().isLength({ max: 100 })
 ];
 exports.completePlanOrdersValidation = [
     (0, express_validator_1.param)("planId").notEmpty(),
@@ -528,6 +571,30 @@ exports.recordAdministrationValidation = [
     (0, express_validator_1.body)("administered_dose").optional({ nullable: true }).isFloat({ min: 0 }),
     (0, express_validator_1.body)("infusion_duration_minutes").optional({ nullable: true }).isInt({ min: 0 })
 ];
+exports.administrationSheetValidation = [
+    (0, express_validator_1.param)("planId").notEmpty(),
+    (0, express_validator_1.query)("cycle_number").optional().isInt({ min: 1 }).withMessage("cycle_number must be at least 1"),
+    (0, express_validator_1.query)("cycle_day").optional().isInt({ min: 1 }).withMessage("cycle_day must be at least 1")
+];
+exports.administrationStatusValidation = [
+    (0, express_validator_1.param)("administrationId").notEmpty(),
+    (0, express_validator_1.body)("status")
+        .isString()
+        .customSanitizer((value) => value.trim().toUpperCase())
+        .isIn(["PENDING", "GIVEN", "SKIPPED", "CANCELLED"])
+        .withMessage("status must be one of: PENDING, GIVEN, SKIPPED, CANCELLED"),
+    (0, express_validator_1.body)("reason")
+        .if((0, express_validator_1.body)("status").isIn(["SKIPPED", "CANCELLED"]))
+        .isString()
+        .trim()
+        .notEmpty()
+        .withMessage("A reason is required to skip or cancel a medicine"),
+    (0, express_validator_1.body)("reason").optional({ nullable: true }).isString().isLength({ max: 500 }).withMessage("Reason must be at most 500 characters"),
+    (0, express_validator_1.body)("remarks").optional({ nullable: true }).isString().isLength({ max: 500 }).withMessage("Remarks must be at most 500 characters")
+];
+exports.completeAdministrationDayValidation = [
+    ...exports.planOrderParamValidation
+];
 exports.recordVitalsValidation = [
     (0, express_validator_1.param)("cycleId").notEmpty(),
     (0, express_validator_1.body)("blood_pressure_systolic").optional({ nullable: true }).isInt({ min: 0, max: 300 }),
@@ -536,12 +603,55 @@ exports.recordVitalsValidation = [
     (0, express_validator_1.body)("spo2").optional({ nullable: true }).isInt({ min: 0, max: 100 }),
     (0, express_validator_1.body)("pain_score").optional({ nullable: true }).isInt({ min: 0, max: 10 })
 ];
-exports.recordAdverseEventValidation = [
-    (0, express_validator_1.param)("cycleId").notEmpty(),
-    (0, express_validator_1.body)("adverse_event_name").notEmpty().withMessage("adverse_event_name is required"),
+const ADVERSE_EVENT_FLAGS = [
+    "nausea", "vomiting", "diarrhea", "constipation", "mucositis", "fever",
+    "fatigue", "neuropathy", "alopecia", "skin_rash", "anemia", "neutropenia",
+    "thrombocytopenia", "infection", "bleeding", "pain",
+    "treatment_interrupted", "treatment_stopped", "hospitalization_required",
+    "icu_required", "emergency_medication_given", "dose_modified",
+    "dose_reduced", "dose_delayed", "resolved"
+];
+// Field rules shared by recording and editing an adverse event (the name's
+// required-ness differs, so it is added by each list).
+const adverseEventFieldRules = [
+    (0, express_validator_1.body)("adverse_event_category").optional({ nullable: true }).isString().isLength({ max: 100 }),
     (0, express_validator_1.body)("event_date").optional({ nullable: true }).isISO8601(),
     (0, express_validator_1.body)("resolution_date").optional({ nullable: true }).isISO8601(),
-    (0, express_validator_1.body)("reduction_percentage").optional({ nullable: true }).isFloat({ min: 0, max: 100 })
+    (0, express_validator_1.body)("ctcae_grade").optional({ nullable: true })
+        .isIn(chemotherapy_constants_1.ADVERSE_EVENT_GRADES).withMessage("ctcae_grade must be 1 to 5"),
+    (0, express_validator_1.body)("reaction_grade").optional({ nullable: true })
+        .isIn(chemotherapy_constants_1.ADVERSE_EVENT_GRADES).withMessage("reaction_grade must be 1 to 5"),
+    (0, express_validator_1.body)("severity").optional({ nullable: true })
+        .isIn(chemotherapy_constants_1.ADVERSE_EVENT_SEVERITIES).withMessage(`severity must be one of: ${chemotherapy_constants_1.ADVERSE_EVENT_SEVERITIES.join(", ")}`),
+    ...ADVERSE_EVENT_FLAGS.map((flag) => (0, express_validator_1.body)(flag).optional({ nullable: true }).isBoolean()),
+    (0, express_validator_1.body)("reduction_percentage").optional({ nullable: true }).isFloat({ min: 0, max: 100 }),
+    (0, express_validator_1.body)("delay_days").optional({ nullable: true }).isInt({ min: 0 })
+];
+exports.recordAdverseEventValidation = [
+    (0, express_validator_1.param)("cycleId").notEmpty(),
+    (0, express_validator_1.body)("adverse_event_name")
+        .trim()
+        .notEmpty().withMessage("adverse_event_name is required")
+        .isLength({ max: 100 }).withMessage("adverse_event_name must be at most 100 characters"),
+    (0, express_validator_1.body)("plan_order_id").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)("cycle_day").optional({ nullable: true }).isInt({ min: 1 }),
+    ...adverseEventFieldRules
+];
+exports.updateAdverseEventValidation = [
+    (0, express_validator_1.param)("adverseEventId").notEmpty().withMessage("adverseEventId is required"),
+    (0, express_validator_1.body)("adverse_event_name")
+        .optional()
+        .trim()
+        .notEmpty().withMessage("adverse_event_name cannot be blank")
+        .isLength({ max: 100 }).withMessage("adverse_event_name must be at most 100 characters"),
+    ...adverseEventFieldRules
+];
+exports.removeAdverseEventValidation = [
+    (0, express_validator_1.param)("adverseEventId").notEmpty().withMessage("adverseEventId is required"),
+    (0, express_validator_1.body)("reason")
+        .trim()
+        .notEmpty().withMessage("A reason is required to remove an adverse event")
+        .isLength({ max: 500 }).withMessage("reason must be at most 500 characters")
 ];
 exports.recordLabReviewValidation = [
     (0, express_validator_1.param)("cycleId").notEmpty()

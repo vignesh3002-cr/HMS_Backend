@@ -50,5 +50,31 @@ class NotificationController {
             });
         }
     }
+    async getLabNotifications(req, res) {
+        try {
+            return res.json({
+                success: true,
+                message: "Lab notifications fetched successfully",
+                data: {
+                    notifications: [],
+                    total: 0,
+                    unreadCount: 0,
+                    statCount: 0
+                }
+            });
+        }
+        catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+    async markAllLabRead(req, res) {
+        return res.json({
+            success: true,
+            message: "All lab notifications marked as read"
+        });
+    }
 }
 exports.NotificationController = NotificationController;
