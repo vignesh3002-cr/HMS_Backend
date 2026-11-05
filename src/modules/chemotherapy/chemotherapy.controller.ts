@@ -107,7 +107,8 @@ export class ChemotherapyController {
                 subtype_id: req.query.subtype_id as string | undefined,
                 cancer_type_ids: csv(req.query.cancer_type_ids),
                 subtype_ids: csv(req.query.subtype_ids),
-                organization_id: (req as any).user?.hospital_id ?? null
+                organization_id: (req as any).user?.hospital_id ?? null,
+                include_details: req.query.include_details === "true" || req.query.include_details === "1"
             });
 
             return res.json({ success: true, message: "Regimen protocols fetched successfully", data });

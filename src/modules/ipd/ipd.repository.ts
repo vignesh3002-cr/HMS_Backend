@@ -31,15 +31,21 @@ const careTeamEmployeeSelect = {
     designation: true,
 } as const;
 
-// The schema names the admitting-doctor relation `employees_admission_employee_idToemployees`.
-// Callers and API consumers read it as `employees`, so re-attach it under that key.
-type AdmissionEmployeeRelation = "employees_admission_employee_idToemployees";
-
-function aliasAdmissionEmployee<T extends Record<AdmissionEmployeeRelation, unknown>>(
-    row: T
-): Omit<T, AdmissionEmployeeRelation> & { employees: T[AdmissionEmployeeRelation] } {
-    const { employees_admission_employee_idToemployees: employees, ...rest } = row;
-    return { ...rest, employees };
+// Re-attach Prisma's foreign-key generated relation names under frontend-friendly keys.
+function aliasAdmissionEmployee(row: any): any {
+    if (!row) return row;
+    const {
+        employees_admission_employee_idToemployees: employees,
+        employees_admission_current_assigned_doctor_idToemployees: assigned_doctor,
+        employees_admission_current_nurse_idToemployees: assigned_nurse,
+        ...rest
+    } = row;
+    return {
+        ...rest,
+        employees: employees || null,
+        assigned_doctor: assigned_doctor || null,
+        assigned_nurse: assigned_nurse || null,
+    };
 }
 
 export class IpdRepository {
@@ -412,8 +418,8 @@ export class IpdRepository {
                         specialization: true,
                     },
                 },
-                assigned_doctor: { select: careTeamEmployeeSelect },
-                assigned_nurse: { select: careTeamEmployeeSelect },
+                employees_admission_current_assigned_doctor_idToemployees: { select: careTeamEmployeeSelect },
+                employees_admission_current_nurse_idToemployees: { select: careTeamEmployeeSelect },
                 ward_master: {
                     select: { ward_id: true, ward_name: true },
                 },
@@ -564,8 +570,8 @@ export class IpdRepository {
                             last_name: true,
                         },
                     },
-                    assigned_doctor: { select: careTeamEmployeeSelect },
-                    assigned_nurse: { select: careTeamEmployeeSelect },
+                    employees_admission_current_assigned_doctor_idToemployees: { select: careTeamEmployeeSelect },
+                    employees_admission_current_nurse_idToemployees: { select: careTeamEmployeeSelect },
                     ward_master: { select: { ward_id: true, ward_name: true } },
                     bed_master: { select: admissionBedSelect },
                 },
@@ -769,8 +775,8 @@ export class IpdRepository {
                         specialization: true,
                     },
                 },
-                assigned_doctor: { select: careTeamEmployeeSelect },
-                assigned_nurse: { select: careTeamEmployeeSelect },
+                employees_admission_current_assigned_doctor_idToemployees: { select: careTeamEmployeeSelect },
+                employees_admission_current_nurse_idToemployees: { select: careTeamEmployeeSelect },
                 ward_master: {
                     select: { ward_id: true, ward_name: true },
                 },

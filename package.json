@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "predev": "node scripts/check-deps.js",
     "dev": "ts-node src/server.ts",
+    "prebuild": "node scripts/check-deps.js",
     "build": "tsc",
     "start": "node dist/server.js",
     "db:seed": "ts-node prisma/seed.ts",
@@ -26,9 +28,11 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.10.0",
+    "@types/compression": "^1.8.1",
     "@types/multer": "^2.3.0",
     "approve": "^0.0.12",
     "bcrypt": "^6.0.0",
+    "compression": "^1.8.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -36,7 +40,7 @@
     "express-validator": "^7.3.2",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.5.0",
-    "nodemailer": "^9.0.3",
+    "nodemailer": "^10.3.1",
     "openai": "^7.17.0",
     "scripts": "^0.1.0",
     "xlsx": "^0.18.5"
@@ -56,7 +60,7 @@
   "allowScripts": {
     "bcrypt@6.0.0": true,
     "scripts@0.1.0": true,
-    "@prisma/engines@7.9.0": true,
-    "prisma@7.9.0": true
+    "@prisma/engines@7.10.0": true,
+    "prisma@7.10.0": true
   }
 }
