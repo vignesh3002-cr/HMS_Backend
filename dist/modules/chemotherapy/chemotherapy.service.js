@@ -337,6 +337,13 @@ class ChemotherapyService {
         });
         return created.medicine_id;
     }
+    async resolveItemGenericName(medicineId) {
+        const id = (medicineId ?? "").trim();
+        if (!id)
+            return null;
+        const medicine = await this.repository.findMedicineById(id);
+        return medicine?.generic_name ?? null;
+    }
     async resolveDtoMedicines(dto) {
         if (!dto || typeof dto !== "object")
             return;
@@ -775,11 +782,12 @@ class ChemotherapyService {
                     continue;
                 }
                 const itemId = await this.repository.generateRegimenProtocolItemId(tx);
+                const genericName = await this.resolveItemGenericName(item.medicine_id);
                 await this.repository.createRegimenProtocolItem(tx, {
                     protocol_item_id: itemId,
                     protocol_id: newProtocolId,
                     medicine_id: item.medicine_id,
-                    generic_name: item.generic_name ?? null,
+                    generic_name: genericName,
                     drug_role: item.drug_role ?? "PRIMARY",
                     drug_sequence: item.drug_sequence,
                     drug_type: item.drug_type ?? null,
@@ -1008,7 +1016,7 @@ class ChemotherapyService {
                 protocol_item_id: itemId,
                 protocol_id: protocolId,
                 medicine_id: item.medicine_id,
-                generic_name: item.generic_name ?? null,
+                generic_name: medicine.generic_name,
                 drug_role: item.drug_role ?? "PRIMARY",
                 drug_sequence: item.drug_sequence,
                 drug_type: item.drug_type ?? null,
@@ -1078,10 +1086,16 @@ class ChemotherapyService {
         if (!item || item.protocol_id !== protocolId) {
             throw new Error("Protocol item not found on this protocol");
         }
+        /* Re-resolve generic_name when the medicine changes; otherwise keep the
+           value already stored on the item. */
+        const targetMedicineId = dto.medicine_id ?? item.medicine_id;
+        const genericName = dto.medicine_id && dto.medicine_id !== item.medicine_id
+            ? await this.resolveItemGenericName(dto.medicine_id)
+            : item.generic_name ?? null;
         await prisma_1.default.$transaction(async (tx) => {
             const updated = {
-                medicine_id: dto.medicine_id ?? item.medicine_id,
-                generic_name: dto.generic_name !== undefined ? dto.generic_name : item.generic_name,
+                medicine_id: targetMedicineId,
+                generic_name: genericName,
                 drug_role: dto.drug_role ?? item.drug_role,
                 drug_sequence: dto.drug_sequence ?? item.drug_sequence,
                 drug_type: dto.drug_type ?? item.drug_type,

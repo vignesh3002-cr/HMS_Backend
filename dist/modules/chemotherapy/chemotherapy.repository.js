@@ -39,6 +39,18 @@ class ChemotherapyRepository {
             }
         }
     };
+    protocolSummaryInclude = {
+        cancer_types: { select: { cancer_type_id: true, cancer_type: true } },
+        cancer_subtypes: { select: { subtype_id: true, subtype_name: true } },
+        // @ts-ignore
+        chemotherapy_protocol_cancers: {
+            where: { active_status: 1 },
+            include: {
+                cancer_types: { select: { cancer_type_id: true, cancer_type: true } },
+                cancer_subtypes: { select: { subtype_id: true, subtype_name: true } }
+            }
+        }
+    };
     async listRegimenProtocols(filters) {
         // Generic protocols are globally available. Personalized protocols
         // are only ever shown to their owning organization (organization_id
@@ -60,7 +72,7 @@ class ChemotherapyRepository {
                 // others (which dropped the cancer-type filter entirely).
                 AND: [visibility, ...(cancerMatch ? [cancerMatch] : [])]
             },
-            include: this.protocolInclude,
+            include: filters.include_details ? this.protocolInclude : this.protocolSummaryInclude,
             orderBy: { regimen_code: "asc" }
         });
     }
