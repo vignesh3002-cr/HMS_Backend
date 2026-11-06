@@ -29,6 +29,32 @@ const getTransporter = () => {
   return transporter;
 };
 
+export interface SendMailOptions {
+  to: string;
+  subject: string;
+  text: string;
+}
+
+/**
+ * Sends an arbitrary mail over the shared SMTP transporter.
+ * Throws when SMTP is not configured or the send fails so callers can
+ * surface the real reason to the user (never fails silently).
+ */
+export const sendMail = async ({ to, subject, text }: SendMailOptions) => {
+  if (!isSmtpConfigured()) {
+    throw new Error(
+      "Email service is not configured on the server (set MAIL_HOST/MAIL_USER/MAIL_PASS)."
+    );
+  }
+
+  await getTransporter().sendMail({
+    from: process.env.MAIL_FROM || process.env.MAIL_USER,
+    to,
+    subject,
+    text,
+  });
+};
+
 export const sendOtpEmail = async (
   to: string,
   otp: string
