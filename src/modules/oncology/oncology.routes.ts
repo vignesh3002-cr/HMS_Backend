@@ -17,7 +17,8 @@ import {
     addGradeValidation,
     addScoreValidation,
     addTnmStageValidation,
-    addDiseaseStatusValidation
+    addDiseaseStatusValidation,
+    getCancerScoreValidation
 } from "./oncology.validation";
 
 const router = Router();
@@ -62,6 +63,30 @@ router.get(
     authorize("oncology.reference.read"),
     getCancerSubtypesValidation,
     controller.getCancerScores.bind(controller)
+);
+
+router.get(
+    "/reference/scores/:scoreId/variables",
+    authenticate,
+    authorize("oncology.reference.read"),
+    getCancerScoreValidation,
+    controller.getCancerScoreVariables.bind(controller)
+);
+
+router.get(
+    "/reference/scores/:scoreId/groups",
+    authenticate,
+    authorize("oncology.reference.read"),
+    getCancerScoreValidation,
+    controller.getCancerScoreGroups.bind(controller)
+);
+
+router.get(
+    "/reference/scores/:scoreId",
+    authenticate,
+    authorize("oncology.reference.read"),
+    getCancerScoreValidation,
+    controller.getCancerScoreDetail.bind(controller)
 );
 
 // The Investigation Results tests (tumour markers etc.) of a cancer type.

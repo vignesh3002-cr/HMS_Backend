@@ -14,6 +14,12 @@ export const getCancerSubtypesValidation = [
 
 ];
 
+export const getCancerScoreValidation = [
+
+    param("scoreId").notEmpty()
+
+];
+
 export const getStagingReferenceValidation = [
 
     query("cancer_type_id").notEmpty().withMessage("cancer_type_id is required")
@@ -76,6 +82,10 @@ export const createStagingDetailValidation = [
     body("grade_system").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Grade system must be 100 characters or fewer"),
     body("score").optional({ nullable: true }).isString(),
     body("score_system").optional({ nullable: true }).isString(),
+    body("score_variables").optional({ nullable: true }).isObject().withMessage("score_variables must be an object"),
+    body("score_result").optional({ nullable: true }).isString(),
+    body("risk_group").optional({ nullable: true }).isString().isLength({ max: 200 }).withMessage("Risk group must be 200 characters or fewer"),
+    body("score_points").optional({ nullable: true }).isDecimal().withMessage("score_points must be a decimal number"),
     body("pre_diagnosis").optional({ nullable: true }).isString(),
     body("disease_status").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Disease Status must be 100 characters or fewer"),
     body("notes").optional({ nullable: true }).isString(),
@@ -118,6 +128,10 @@ export const updateStagingDetailValidation = [
     body("grade_system").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Grade system must be 100 characters or fewer"),
     body("score").optional({ nullable: true }).isString(),
     body("score_system").optional({ nullable: true }).isString(),
+    body("score_variables").optional({ nullable: true }).isObject().withMessage("score_variables must be an object"),
+    body("score_result").optional({ nullable: true }).isString(),
+    body("risk_group").optional({ nullable: true }).isString().isLength({ max: 200 }).withMessage("Risk group must be 200 characters or fewer"),
+    body("score_points").optional({ nullable: true }).isDecimal().withMessage("score_points must be a decimal number"),
     body("pre_diagnosis").optional({ nullable: true }).isString(),
     body("disease_status").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Disease Status must be 100 characters or fewer"),
     body("notes").optional({ nullable: true }).isString(),

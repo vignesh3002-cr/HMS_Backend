@@ -17,6 +17,7 @@
     "db:seed:comorbidities": "ts-node prisma/seedComorbidityMaster.ts",
     "db:seed:consultation": "ts-node prisma/seedConsultation.ts",
     "db:seed:cancer-scores": "ts-node prisma/seedCancerScores.ts",
+    "db:seed:score-master": "ts-node prisma/seedScoreMaster.ts",
     "db:seed:drug-monitoring": "ts-node prisma/seedDrugMonitoringMappings.ts"
   },
   "keywords": [],

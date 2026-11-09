@@ -174,6 +174,45 @@ export class OncologyController {
 
     }
 
+    async getCancerScoreVariables(req: Request, res: Response) {
+
+        try {
+
+            const data = await service.listCancerScoreVariables(req.params.scoreId as string);
+            return res.json({ success: true, message: "Score variables fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async getCancerScoreGroups(req: Request, res: Response) {
+
+        try {
+
+            const data = await service.listCancerScoreGroups(req.params.scoreId as string);
+            return res.json({ success: true, message: "Score groups fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async getCancerScoreDetail(req: Request, res: Response) {
+
+        try {
+
+            const data = await service.getCancerScoreDetail(req.params.scoreId as string);
+            return res.json({ success: true, message: "Score detail fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
     async getInvestigationParameters(req: Request, res: Response) {
 
         try {

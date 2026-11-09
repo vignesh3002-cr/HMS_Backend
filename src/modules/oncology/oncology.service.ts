@@ -287,6 +287,53 @@ export class OncologyService {
 
     }
 
+    async listCancerScoreVariables(scoreId: string) {
+
+        return this.repository.findCancerScoreVariablesByScoreId(scoreId);
+
+    }
+
+    async listCancerScoreGroups(scoreId: string) {
+
+        return this.repository.findCancerScoreGroupsByScoreId(scoreId);
+
+    }
+
+    async getCancerScoreDetail(scoreId: string) {
+
+        const score = await this.repository.findCancerScoreById(scoreId);
+
+        if (!score) {
+            throw new Error("Score not found");
+        }
+
+        const [variables, groups] = await Promise.all([
+            this.repository.findCancerScoreVariablesByScoreId(scoreId),
+            this.repository.findCancerScoreGroupsByScoreId(scoreId),
+        ]);
+
+        return {
+            score_id: score.score_id,
+            score_name: score.score_system,
+            cancer_type_id: score.cancer_type_id,
+            applies_to: score.applies_to,
+            purpose: score.score_rule,
+            when_to_record: null,
+            method: score.input_type,
+            range: null,
+            risk_groups: null,
+            status: score.active_status === 1 ? "Current" : null,
+            reference: null,
+            developer_note: null,
+            variables: variables.length,
+            auto_filled: variables.filter((v) => v.auto_filled).length,
+            auto_fill_percent: null,
+            variables_list: variables,
+            groups,
+        };
+
+    }
+
     async listTnmStages(cancerTypeId: string) {
 
         await this.requireCancerType(cancerTypeId);
@@ -1206,6 +1253,10 @@ export class OncologyService {
             ...(dto.grade_system !== undefined ? { grade_system: dto.grade_system || null } : {}),
             ...(dto.score !== undefined ? { score: dto.score || null } : {}),
             ...(dto.score_system !== undefined ? { score_system: dto.score_system || null } : {}),
+            ...(dto.score_variables !== undefined ? { score_variables: formStateOrUndefined(dto.score_variables) } : {}),
+            ...(dto.score_result !== undefined ? { score_result: dto.score_result || null } : {}),
+            ...(dto.risk_group !== undefined ? { risk_group: dto.risk_group || null } : {}),
+            ...(dto.score_points !== undefined && dto.score_points !== null ? { score_points: dto.score_points } : {}),
             ...(dto.notes !== undefined ? { notes: dto.notes || null } : {}),
             ...(dto.form_state !== undefined ? { form_state: formStateOrUndefined(dto.form_state) } : {}),
             ...(dto.performance_status !== undefined && dto.performance_status !== null ? { performance_status: dto.performance_status } : {}),

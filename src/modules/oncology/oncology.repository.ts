@@ -163,6 +163,30 @@ export class OncologyRepository {
 
     }
 
+    async findCancerScoreVariablesByScoreId(scoreId: string) {
+
+        return prisma.cancer_score_variable.findMany({
+            where: { score_id: scoreId, active_status: 1 },
+            orderBy: { display_order: "asc" }
+        });
+
+    }
+
+    async findCancerScoreGroupsByScoreId(scoreId: string) {
+
+        return prisma.cancer_score_group.findMany({
+            where: { score_id: scoreId, active_status: 1 },
+            orderBy: { sort_order: "asc" }
+        });
+
+    }
+
+    async findCancerScoreById(scoreId: string) {
+
+        return prisma.cancer_score.findUnique({ where: { score_id: scoreId } });
+
+    }
+
     // T / N / M values doctors added for a cancer type, on top of the AJCC
     // values the staging criteria name.
     async findTnmStagesByType(cancerTypeId: string) {
