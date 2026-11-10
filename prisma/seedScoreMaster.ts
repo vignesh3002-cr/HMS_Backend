@@ -23,7 +23,7 @@ type CatRow = {
     developerNote: string | null;
     variablesCount: number | null;
     autoFilledCount: number | null;
-    autoFillPercent: number | null;
+    autoFillPercent: string | null;
 };
 
 type VarRow = {
@@ -48,78 +48,135 @@ type GroupRow = {
 const toStr = (v: any): string | null => (v == null || v === "" ? null : String(v));
 const toNum = (v: any): number | null => (v == null || v === "" ? null : Number(v));
 
-const sheetRows = (name: string): any[][] => {
-    const ws = XLSX.readFile(EXCEL_PATH).Sheets[name];
-    return XLSX.utils.sheet_to_json(ws, { header: 1 });
+const workbook = XLSX.readFile(EXCEL_PATH);
+const sheetRows = (name: string): any[][] =>
+    XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1 });
+
+/*
+ * The Excel master names 48 disease-specific cancer types. The EMR already
+ * has 22 broader types (CT001–CT024). We keep those and add the 16 types
+ * that have no broad equivalent, then map every Excel type onto exactly one
+ * EMR type. This makes all 78 catalogue scores reachable without duplicating
+ * existing cancer types or changing their IDs.
+ */
+const TYPE_MAP: Record<string, string> = {
+    "Breast": "Breast",
+    "Lung – NSCLC": "Lung",
+    "Lung – SCLC / NEC": "Lung",
+    "Colorectal": "Colorectal",
+    "Gastric / GEJ": "Gastric / GEJ",
+    "Oesophageal": "Esophageal",
+    "Pancreatic": "Pancreatic",
+    "Biliary tract": "Biliary tract",
+    "Hepatocellular (HCC)": "Liver",
+    "Ovarian (epithelial)": "Ovarian",
+    "Endometrial": "Endometrial",
+    "Cervical": "Cervical",
+    "Vulva": "Vulva",
+    "Vagina": "Vagina",
+    "Prostate": "Prostate",
+    "Bladder / Urothelial": "Bladder",
+    "Renal (RCC)": "Kidney",
+    "Penile": "Penile",
+    "Head & Neck SCC": "Head & Neck",
+    "Thyroid": "Thyroid",
+    "Melanoma": "Melanoma",
+    "Merkel cell carcinoma": "Merkel cell carcinoma",
+    "GIST": "GIST",
+    "Soft-tissue sarcoma": "Soft-tissue sarcoma",
+    "Osteosarcoma / bone tumours": "Osteosarcoma / bone tumours",
+    "Ewing sarcoma": "Ewing sarcoma",
+    "Rhabdomyosarcoma": "Rhabdomyosarcoma",
+    "CNS – Glioma": "CNS",
+    "CNS – Medulloblastoma / embryonal": "CNS",
+    "Neuroendocrine tumour (GEP-NET / NEC)": "Neuroendocrine tumour (GEP-NET / NEC)",
+    "Germ cell tumour": "Germ Cell Tumour",
+    "Gestational trophoblastic neoplasia": "Gestational Trophoblastic Neoplasia",
+    "Mesothelioma": "Mesothelioma",
+    "Thymic epithelial tumour": "Thymic epithelial tumour",
+    "Carcinoma of unknown primary": "Carcinoma of unknown primary",
+    "Neuroblastoma": "Neuroblastoma",
+    "Wilms tumour": "Wilms tumour",
+    "DLBCL / High-grade B-cell": "Lymphoma",
+    "Hodgkin lymphoma": "Lymphoma",
+    "Mantle cell lymphoma": "Lymphoma",
+    "Follicular / Marginal-zone (indolent B-NHL)": "Lymphoma",
+    "T-cell / NK-cell lymphoma (PTCL, ALCL)": "Lymphoma",
+    "Multiple myeloma / plasma cell": "Myeloma",
+    "Waldenström / Lymphoplasmacytic": "Myeloma",
+    "Acute myeloid leukaemia": "Leukemia",
+    "Acute lymphoblastic leukaemia / LBL": "Leukemia",
+    "CLL / SLL": "Leukemia",
+    "CML / MPN / MDS": "Leukemia",
 };
 
-const cleanTypeName = (name: string): string => name.trim();
+const NEW_TYPE_NAMES = Array.from(new Set(Object.values(TYPE_MAP))).filter(
+    (name) => ![
+        "Breast", "Lung", "Colorectal", "Gastric / GEJ", "Esophageal",
+        "Pancreatic", "Liver", "Ovarian", "Endometrial", "Cervical",
+        "Prostate", "Bladder", "Kidney", "Head & Neck", "Thyroid",
+        "Melanoma", "CNS", "Germ Cell Tumour",
+        "Gestational Trophoblastic Neoplasia", "Lymphoma", "Myeloma",
+        "Leukemia",
+    ].includes(name)
+);
+
+const excelTypeToDb = (name: string): string | null =>
+    TYPE_MAP[name.trim()] ?? null;
+
+async function ensureCancerTypes(): Promise<Map<string, string>> {
+    const existing = await prisma.cancer_types.findMany();
+    const byName = new Map<string, string>(
+        existing
+            .filter((row) => row.cancer_type_id)
+            .map((row) => [row.cancer_type, row.cancer_type_id as string])
+    );
+
+    let nextNumber =
+        Math.max(
+            0,
+            ...existing
+                .map((row) => Number((row.cancer_type_id ?? "").replace(/^CT0*/, "")))
+                .filter((value) => Number.isFinite(value))
+        ) + 1;
+
+    for (const name of NEW_TYPE_NAMES) {
+        if (byName.has(name)) continue;
+        const cancerTypeId = `CT${String(nextNumber).padStart(3, "0")}`;
+        await prisma.cancer_types.create({
+            data: {
+                cancer_type_id: cancerTypeId,
+                cancer_type: name,
+                staging_system: null,
+                active_status: 1,
+            },
+        });
+        byName.set(name, cancerTypeId);
+        nextNumber++;
+        console.log(`  + cancer type ${cancerTypeId} ${name}`);
+    }
+
+    return byName;
+}
 
 async function main() {
     console.log("=== Seeding score master from EMR_Risk_Prognostic_Scores.xlsx ===");
 
+    const typeByName = await ensureCancerTypes();
+
     const catalogueRaw = sheetRows("Score_Catalogue");
     const variablesRaw = sheetRows("Score_Variables");
     const groupsRaw = sheetRows("Score_Groups");
+    const mapRaw = sheetRows("Cancer_Score_Map");
 
-    // Resolve cancer type names -> cancer_type_id.
-    const types = await prisma.cancer_types.findMany({ where: { active_status: 1 } });
-    const typeByName = new Map(types.map((t) => [t.cancer_type, t.cancer_type_id]));
-    const missingTypes = new Set<string>();
-
-    // Excel cancer type names -> short DB cancer_type names (cancer_types table
-    // holds broad groups; Excel holds 48 disease-specific types). Best-effort
-    // mapping so a score is offered under its primary cancer type.
-    const TYPE_ALIASES: Record<string, string> = {
-        "Breast": "Breast",
-        "Lung – NSCLC": "Lung",
-        "Lung – SCLC / NEC": "Lung",
-        "Colorectal": "Colorectal",
-        "Gastric / GEJ": "Gastric / GEJ",
-        "Oesophageal": "Esophageal",
-        "Pancreatic": "Pancreatic",
-        "Hepatocellular (HCC)": "Liver",
-        "Ovarian (epithelial)": "Ovarian",
-        "Endometrial": "Endometrial",
-        "Cervical": "Cervical",
-        "Prostate": "Prostate",
-        "Bladder / Urothelial": "Bladder",
-        "Renal (RCC)": "Kidney",
-        "Head & Neck SCC": "Head & Neck",
-        "Thyroid": "Thyroid",
-        "Melanoma": "Melanoma",
-        "CNS – Glioma": "CNS",
-        "CNS – Medulloblastoma / embryonal": "CNS",
-        "Germ cell tumour": "Germ Cell Tumour",
-        "Gestational trophoblastic neoplasia": "Gestational Trophoblastic Neoplasia",
-        "DLBCL / High-grade B-cell": "Lymphoma",
-        "Hodgkin lymphoma": "Lymphoma",
-        "Mantle cell lymphoma": "Lymphoma",
-        "Follicular / Marginal-zone (indolent B-NHL)": "Lymphoma",
-        "T-cell / NK-cell lymphoma (PTCL, ALCL)": "Lymphoma",
-        "Multiple myeloma / plasma cell": "Myeloma",
-        "Waldenström / Lymphoplasmacytic": "Myeloma",
-        "Acute myeloid leukaemia": "Leukemia",
-        "Acute lymphoblastic leukaemia / LBL": "Leukemia",
-        "CLL / SLL": "Leukemia",
-        "CML / MPN / MDS": "Leukemia",
-    };
-
-    const resolveTypeId = (name: string): string | null => {
-        const alias = TYPE_ALIASES[name] ?? name;
-        const id = typeByName.get(cleanTypeName(alias));
-        if (!id) missingTypes.add(name);
-        return id ?? null;
-    };
-
-    // --- Score_Catalogue -> cancer_score (one row per score_id) ---
+    // --- Score_Catalogue -> cancer_score ---
     const catalogue = new Map<string, CatRow>();
     for (let i = 1; i < catalogueRaw.length; i++) {
         const r = catalogueRaw[i];
         if (!r || !r[0]) continue;
         const scoreId = String(r[0]).trim();
         const typesCsv = toStr(r[2]) ?? "";
-        const cancerTypes = typesCsv.split(",").map(cleanTypeName).filter(Boolean);
+        const cancerTypes = typesCsv.split(",").map((name: string) => name.trim()).filter(Boolean);
         catalogue.set(scoreId, {
             scoreId,
             name: toStr(r[1]) ?? "",
@@ -134,26 +191,63 @@ async function main() {
             developerNote: toStr(r[10]),
             variablesCount: toNum(r[11]),
             autoFilledCount: toNum(r[12]),
-            autoFillPercent: toNum(r[13]),
+            autoFillPercent: toStr(r[13]),
         });
+    }
+
+    // --- Cancer_Score_Map -> score <-> cancer type links ---
+    const scoreTypes = new Map<string, string[]>();
+    for (let i = 1; i < mapRaw.length; i++) {
+        const r = mapRaw[i];
+        if (!r || !r[0] || !r[1]) continue;
+        const dbType = excelTypeToDb(String(r[0]));
+        if (!dbType) {
+            console.warn(`  map row skipped: unknown cancer type "${r[0]}"`);
+            continue;
+        }
+        const scoreId = String(r[1]).trim();
+        const list = scoreTypes.get(scoreId) ?? [];
+        if (!list.includes(dbType)) list.push(dbType);
+        scoreTypes.set(scoreId, list);
     }
 
     let scoreAdded = 0;
     let scoreUpdated = 0;
+    let order = 0;
     for (const [scoreId, cat] of catalogue) {
-        const typeId = cat.cancerTypes.length > 0 ? resolveTypeId(cat.cancerTypes[0]) : null;
-        if (!typeId) {
+        order++;
+        const mapped = scoreTypes.get(scoreId) ?? [];
+        const primaryType =
+            mapped[0] ??
+            excelTypeToDb(cat.cancerTypes[0] ?? "") ??
+            null;
+        if (!primaryType) {
             console.warn(`  skip cancer_score ${scoreId} "${cat.name}" - no resolvable cancer type`);
             continue;
         }
+        const primaryTypeId = typeByName.get(primaryType);
+        if (!primaryTypeId) {
+            console.warn(`  skip cancer_score ${scoreId} - type "${primaryType}" has no id`);
+            continue;
+        }
+
         const data = {
-            cancer_type_id: typeId,
+            cancer_type_id: primaryTypeId,
             score_system: cat.name,
             score_value: cat.name,
             input_type: cat.method,
             score_rule: `${cat.purpose ?? ""} ${cat.whenToRecord ?? ""}`.trim() || null,
-            applies_to: cat.cancerTypes.join(", "),
+            applies_to: mapped.join(", ").slice(0, 150) || null,
             subtype_keywords: null,
+            display_order: order,
+            purpose: cat.purpose,
+            when_to_record: cat.whenToRecord,
+            score_range: cat.range,
+            risk_groups: cat.riskGroups,
+            score_status: cat.status,
+            score_reference: cat.reference,
+            developer_note: cat.developerNote,
+            auto_fill_percent: cat.autoFillPercent,
             active_status: 1,
         };
         const exists = await prisma.cancer_score.findUnique({ where: { score_id: scoreId } });
@@ -164,7 +258,25 @@ async function main() {
             await prisma.cancer_score.create({ data: { score_id: scoreId, ...data } });
             scoreAdded++;
         }
+
+        // Replace this score's cancer-type links with the current map.
+        const linkedTypes = mapped.length > 0 ? mapped : [primaryType];
+        await prisma.cancer_score_cancer_types.deleteMany({ where: { score_id: scoreId } });
+        for (const typeName of linkedTypes) {
+            const typeId = typeByName.get(typeName);
+            if (!typeId) continue;
+            await prisma.cancer_score_cancer_types.create({
+                data: { score_id: scoreId, cancer_type_id: typeId },
+            });
+        }
     }
+
+    // Hide legacy generic scores (the broad SCST... rows) from the picker.
+    const catalogueIds = [...catalogue.keys()];
+    const hidden = await prisma.cancer_score.updateMany({
+        where: { score_id: { notIn: catalogueIds } },
+        data: { active_status: 0 },
+    });
 
     // --- Score_Variables -> cancer_score_variable ---
     const variablesByScore = new Map<string, VarRow[]>();
@@ -187,8 +299,12 @@ async function main() {
         variablesByScore.set(scoreId, list);
     }
 
-    let varCreated = 0;
-    let varMatched = 0;
+    await prisma.cancer_score_variable.updateMany({
+        where: { score_id: { in: catalogueIds } },
+        data: { active_status: 0 },
+    });
+
+    let varCount = 0;
     for (const [scoreId, vars] of variablesByScore) {
         for (const [idx, row] of vars.entries()) {
             const scoreVariableId = `SCVR-${scoreId}-${String(idx + 1).padStart(3, "0")}`;
@@ -209,7 +325,7 @@ async function main() {
                     create: { score_variable_id: scoreVariableId, ...data },
                     update: data,
                 });
-                if (row.autoFilled) varMatched++; else varCreated++;
+                varCount++;
             } catch (e: any) {
                 console.error(`  variable upsert failed ${scoreVariableId}:`, e.message);
             }
@@ -234,7 +350,12 @@ async function main() {
         groupsByScore.set(scoreId, list);
     }
 
-    let groupCreated = 0;
+    await prisma.cancer_score_group.updateMany({
+        where: { score_id: { in: catalogueIds } },
+        data: { active_status: 0 },
+    });
+
+    let groupCount = 0;
     for (const [scoreId, groups] of groupsByScore) {
         for (const [idx, row] of groups.entries()) {
             const scoreGroupId = `SCGR-${scoreId}-${String(idx + 1).padStart(3, "0")}`;
@@ -251,23 +372,24 @@ async function main() {
                     create: { score_group_id: scoreGroupId, ...data },
                     update: data,
                 });
-                groupCreated++;
+                groupCount++;
             } catch (e: any) {
                 console.error(`  group upsert failed ${scoreGroupId}:`, e.message);
             }
         }
     }
 
-    const sCount = await prisma.cancer_score.count();
-    const vCount = await prisma.cancer_score_variable.count();
-    const gCount = await prisma.cancer_score_group.count();
+    const [sCount, vCount, gCount, lCount] = await Promise.all([
+        prisma.cancer_score.count({ where: { active_status: 1 } }),
+        prisma.cancer_score_variable.count({ where: { active_status: 1 } }),
+        prisma.cancer_score_group.count({ where: { active_status: 1 } }),
+        prisma.cancer_score_cancer_types.count(),
+    ]);
 
-    console.log(`  cancer_score: ${scoreAdded} added, ${scoreUpdated} refreshed (${sCount} total)`);
-    console.log(`  cancer_score_variable: ${varCreated} created, ${varMatched} existing auto-filled (${vCount} total)`);
-    console.log(`  cancer_score_group: ${groupCreated} rows (${gCount} total)`);
-    if (missingTypes.size > 0) {
-        console.warn("  Unresolved cancer type names:", [...missingTypes].join(", "));
-    }
+    console.log(`  cancer_score: ${scoreAdded} added, ${scoreUpdated} refreshed, ${hidden.count} legacy hidden (${sCount} active)`);
+    console.log(`  cancer_score_variable: ${varCount} active (${vCount} total)`);
+    console.log(`  cancer_score_group: ${groupCount} active (${gCount} total)`);
+    console.log(`  cancer_score_cancer_types: ${lCount} links`);
 }
 
 main()
