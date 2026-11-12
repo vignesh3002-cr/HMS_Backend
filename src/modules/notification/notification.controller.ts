@@ -72,7 +72,6 @@ export class NotificationController {
 
     }
 
-<<<<<<< HEAD
     /**
      * POST /api/notifications/send-email
      * Sends an email directly over SMTP — the browser never opens a mail
@@ -103,7 +102,6 @@ export class NotificationController {
 
     }
 
-=======
     async getLabNotifications(req: Request, res: Response) {
         try {
             return res.json({
@@ -130,5 +128,4 @@ export class NotificationController {
             message: "All lab notifications marked as read"
         });
     }
->>>>>>> cc00fb76896b6481839dce29d65aff5cd0a27c2d
 }
