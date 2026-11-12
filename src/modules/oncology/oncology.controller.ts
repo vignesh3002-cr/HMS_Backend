@@ -213,8 +213,42 @@ export class OncologyController {
 
     }
 
-    async getInvestigationParameters(req: Request, res: Response) {
+    async updateCancerScore(req: Request, res: Response) {
 
+        try {
+
+            /* Only the fields actually sent are changed, so a caller may send
+               one metadata column without clearing the rest. */
+            const editable = [
+                "purpose",
+                "when_to_record",
+                "score_range",
+                "risk_groups",
+                "score_status",
+                "score_reference",
+                "developer_note"
+            ];
+            const patch: Record<string, string | null> = {};
+
+            for (const key of editable) {
+                if (Object.prototype.hasOwnProperty.call(req.body ?? {}, key)) {
+                    patch[key] = req.body[key] ?? null;
+                }
+            }
+
+            const data = await service.updateCancerScore(
+                req.params.scoreId as string,
+                patch
+            );
+            return res.json({ success: true, message: "Score updated successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async getInvestigationParameters(req: Request, res: Response) {
         try {
 
             const data = await service.listInvestigationParameters(req.params.cancerTypeId as string);

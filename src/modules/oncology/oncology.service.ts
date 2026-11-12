@@ -334,8 +334,57 @@ export class OncologyService {
 
     }
 
-    async listTnmStages(cancerTypeId: string) {
+    /* Catalogue metadata edited from the Score workspace. Only the
+       descriptive columns are touched; variables and risk groups keep their
+       own tables. */
+    async updateCancerScore(
+        scoreId: string,
+        patch: {
+            purpose?: string | null;
+            when_to_record?: string | null;
+            score_range?: string | null;
+            risk_groups?: string | null;
+            score_status?: string | null;
+            score_reference?: string | null;
+            developer_note?: string | null;
+        }
+    ) {
 
+        const score = await this.repository.findCancerScoreById(scoreId);
+
+        if (!score) {
+            throw new Error("Score not found");
+        }
+
+        const data: Record<string, string | null> = {};
+
+        for (const key of [
+            "purpose",
+            "when_to_record",
+            "score_range",
+            "risk_groups",
+            "score_status",
+            "score_reference",
+            "developer_note",
+        ] as const) {
+            if (!(key in patch)) continue;
+            const raw = patch[key];
+            // An emptied field is stored as NULL, not as "".
+            const value = typeof raw === "string" ? raw.trim() : "";
+            data[key] = value.length > 0 ? value : null;
+        }
+
+        if (Object.keys(data).length === 0) {
+            throw new Error("Nothing to update");
+        }
+
+        return this.repository.updateCancerScore(scoreId, data).then(() =>
+            this.getCancerScoreDetail(scoreId)
+        );
+
+    }
+
+    async listTnmStages(cancerTypeId: string) {
         await this.requireCancerType(cancerTypeId);
 
         return this.repository.findTnmStagesByType(cancerTypeId);

@@ -16,6 +16,7 @@ import {
     addReferenceValueValidation,
     addGradeValidation,
     addScoreValidation,
+    updateCancerScoreValidation,
     addTnmStageValidation,
     addDiseaseStatusValidation,
     getCancerScoreValidation
@@ -181,6 +182,16 @@ router.post(
     addReferenceAccess,
     addScoreValidation,
     controller.addCancerScore.bind(controller)
+);
+
+// Catalogue metadata editing (purpose, range, risk-group text, reference...).
+// Admin-level reference management, like the reseed endpoint.
+router.patch(
+    "/reference/scores/:scoreId",
+    authenticate,
+    authorize("oncology.reference.manage"),
+    updateCancerScoreValidation,
+    controller.updateCancerScore.bind(controller)
 );
 
 router.post(

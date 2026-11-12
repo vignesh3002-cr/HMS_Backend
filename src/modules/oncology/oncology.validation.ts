@@ -20,6 +20,28 @@ export const getCancerScoreValidation = [
 
 ];
 
+// Catalogue metadata edited from the Score workspace. Only the descriptive
+// columns are editable here; variables and risk groups keep their own tables.
+export const updateCancerScoreValidation = [
+
+    param("scoreId").notEmpty(),
+    body("purpose").optional({ nullable: true }).isString().isLength({ max: 2000 })
+        .withMessage("Purpose must be 2000 characters or fewer"),
+    body("when_to_record").optional({ nullable: true }).isString().isLength({ max: 500 })
+        .withMessage("When to record must be 500 characters or fewer"),
+    body("score_range").optional({ nullable: true }).isString().isLength({ max: 500 })
+        .withMessage("Range must be 500 characters or fewer"),
+    body("risk_groups").optional({ nullable: true }).isString().isLength({ max: 2000 })
+        .withMessage("Risk groups must be 2000 characters or fewer"),
+    body("score_status").optional({ nullable: true }).isString().isLength({ max: 100 })
+        .withMessage("Status must be 100 characters or fewer"),
+    body("score_reference").optional({ nullable: true }).isString().isLength({ max: 1000 })
+        .withMessage("Reference must be 1000 characters or fewer"),
+    body("developer_note").optional({ nullable: true }).isString().isLength({ max: 2000 })
+        .withMessage("Developer note must be 2000 characters or fewer")
+
+];
+
 export const getStagingReferenceValidation = [
 
     query("cancer_type_id").notEmpty().withMessage("cancer_type_id is required")

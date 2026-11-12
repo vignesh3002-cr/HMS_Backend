@@ -204,6 +204,18 @@ export class OncologyRepository {
 
     }
 
+    async updateCancerScore(
+        scoreId: string,
+        data: Record<string, string | null>
+    ) {
+
+        return prisma.cancer_score.update({
+            where: { score_id: scoreId },
+            data: data as Prisma.cancer_scoreUpdateInput
+        });
+
+    }
+
     // T / N / M values doctors added for a cancer type, on top of the AJCC
     // values the staging criteria name.
     async findTnmStagesByType(cancerTypeId: string) {
