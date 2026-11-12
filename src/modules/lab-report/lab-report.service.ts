@@ -54,6 +54,33 @@ export class LabReportService {
   }
 
   async create(data: CreateLabReportDto) {
+    // 0. If a report already exists for this report_number or lab_order_id, update it
+    let existingReport = null;
+    if (data.report_number) {
+      existingReport = await prisma.lab_report.findFirst({
+        where: { report_number: data.report_number },
+      });
+    }
+    if (!existingReport && data.lab_order_id) {
+      existingReport = await prisma.lab_report.findFirst({
+        where: { lab_order_id: data.lab_order_id },
+      });
+    }
+
+    if (existingReport) {
+      return this.update(existingReport.lab_report_id, {
+        report_status: data.report_status || "Generated",
+        report_file: data.report_file,
+        digital_signature: data.digital_signature,
+        approved_datetime: data.approved_datetime || new Date(),
+        approved_by: data.approved_by,
+        parameters: data.parameters,
+        clinical_correlation: data.clinical_correlation,
+        overall_decision: data.overall_decision,
+        report_comment: data.report_comment,
+      });
+    }
+
     // 1. Generate unique lab_report_id and report_number
     const timestamp = Date.now();
     const lab_report_id = `RPT${timestamp}`;
@@ -201,6 +228,20 @@ export class LabReportService {
         ? new Date(data.approved_datetime)
         : null;
     if (data.report_status !== undefined) updateData.report_status = data.report_status;
+    if (data.approved_by !== undefined) {
+      let validApprovedBy: string | null = null;
+      if (data.approved_by) {
+        try {
+          const emp = await prisma.employees.findUnique({
+            where: { employee_id: data.approved_by },
+          });
+          if (emp) validApprovedBy = emp.employee_id;
+        } catch {
+          validApprovedBy = null;
+        }
+      }
+      updateData.approved_by = validApprovedBy;
+    }
     if (data.report_file !== undefined) updateData.report_file = data.report_file;
     if (data.digital_signature !== undefined)
       updateData.digital_signature = data.digital_signature;

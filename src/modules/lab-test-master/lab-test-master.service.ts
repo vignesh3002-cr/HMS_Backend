@@ -42,6 +42,10 @@ class LabTestMasterService {
 
     }
 
+        async getAllParameters() {
+        return repository.findAllParameters();
+    }
+
     async getAll() {
 
         return repository.findAll();

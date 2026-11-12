@@ -127,8 +127,6 @@ export class PatientRepository {
 
             where,
 
-            omit: { patient_photo_url: true },
-
             include: {
 
                 branch: {
