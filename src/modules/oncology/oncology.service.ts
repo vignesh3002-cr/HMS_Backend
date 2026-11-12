@@ -1116,6 +1116,13 @@ export class OncologyService {
                 grade_system: dto.grade_system ?? null,
                 score: dto.score ?? null,
                 score_system: dto.score_system ?? null,
+                // The workspace's assessment payload and its derived values:
+                // without these a first save of a visit kept only the score
+                // name, so the criteria came back empty on the next visit.
+                score_variables: formStateOrUndefined(dto.score_variables) ?? Prisma.JsonNull,
+                score_result: dto.score_result ?? null,
+                risk_group: dto.risk_group ?? null,
+                score_points: dto.score_points ?? null,
                 notes: dto.notes ?? null,
                 form_state: formStateOrUndefined(dto.form_state) ?? Prisma.JsonNull,
                 performance_status: dto.performance_status ?? null,
@@ -1153,7 +1160,12 @@ export class OncologyService {
                     cancer_subtype_id: dto.cancer_subtype_id,
                     additional_cancers: additionalCancers,
                     clinical_stage: dto.clinical_stage ?? null,
-                    diagnosis_id: dto.diagnosis_id ?? null
+                    diagnosis_id: dto.diagnosis_id ?? null,
+                    /* Score headline so history shows what was recorded,
+                       without the full per-variable payload. */
+                    score: dto.score ?? null,
+                    score_points: dto.score_points ?? null,
+                    risk_group: dto.risk_group ?? null
                 })
             });
 
@@ -1305,7 +1317,8 @@ export class OncologyService {
             ...(dto.score_variables !== undefined ? { score_variables: formStateOrUndefined(dto.score_variables) } : {}),
             ...(dto.score_result !== undefined ? { score_result: dto.score_result || null } : {}),
             ...(dto.risk_group !== undefined ? { risk_group: dto.risk_group || null } : {}),
-            ...(dto.score_points !== undefined && dto.score_points !== null ? { score_points: dto.score_points } : {}),
+            // null clears the points when the score is removed / not applicable.
+            ...(dto.score_points !== undefined ? { score_points: dto.score_points } : {}),
             ...(dto.notes !== undefined ? { notes: dto.notes || null } : {}),
             ...(dto.form_state !== undefined ? { form_state: formStateOrUndefined(dto.form_state) } : {}),
             ...(dto.performance_status !== undefined && dto.performance_status !== null ? { performance_status: dto.performance_status } : {}),
