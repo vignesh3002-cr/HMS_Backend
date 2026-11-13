@@ -116,6 +116,59 @@ export class DoctorTransferController {
 
     }
 
+    async getPendingTransfer(req: Request, res: Response) {
+
+        try {
+
+            const result = await service.getDoctorPendingTransfer(
+                req.params.employeeId as string
+            );
+
+            return res.json({
+                success: true,
+                message: result ? "Pending transfer found" : "No pending transfer found",
+                data: result
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
+    async discardTransfer(req: Request, res: Response) {
+
+        try {
+
+            const result = await service.discardTransfer(
+                req.params.employeeId as string,
+                req.params.transferId as string,
+                actingUserId(req),
+                req.body?.reason
+            );
+
+            return res.json({
+                success: true,
+                message: result.message,
+                data: result
+            });
+
+        } catch (error: any) {
+
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    }
+
     async transferPreview(req: Request, res: Response) {
 
         try {

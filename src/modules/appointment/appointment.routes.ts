@@ -128,6 +128,13 @@ router.patch(
     controller.updateAppointmentStatus.bind(controller)
 );
 
+router.post(
+    "/:appointmentNo/sandwich",
+    authenticate,
+    authorize("appointment.update"),
+    controller.sandwichAppointment.bind(controller)
+);
+
 router.patch(
     "/:appointmentNo/chemo-fitness",
     authenticate,

@@ -44,4 +44,20 @@ router.get(
     controller.getFutureAppointments.bind(controller)
 );
 
+router.get(
+    "/:employeeId/pending-transfer",
+    authenticate,
+    authorize("doctor.transfer"),
+    authorizeRoles(...DOCTOR_TRANSFER_ROLES),
+    controller.getPendingTransfer.bind(controller)
+);
+
+router.post(
+    "/:employeeId/transfer/:transferId/discard",
+    authenticate,
+    authorize("doctor.transfer"),
+    authorizeRoles(...DOCTOR_TRANSFER_ROLES),
+    controller.discardTransfer.bind(controller)
+);
+
 export default router;

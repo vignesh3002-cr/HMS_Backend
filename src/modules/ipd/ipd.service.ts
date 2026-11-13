@@ -548,6 +548,7 @@ export class IpdService {
             limit: Number.isFinite(limit) ? limit : 10,
             sortField: filter.sortField,
             sortDirection: filter.sortDirection,
+            hasTransfers: filter.hasTransfers === true,
         });
 
     }

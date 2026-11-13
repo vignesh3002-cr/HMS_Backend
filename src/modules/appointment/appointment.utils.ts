@@ -18,6 +18,12 @@ export function formatDateOnly(date: Date): string {
     return `${year}-${month}-${day}`;
 }
 
+export function addDays(date: Date, days: number): Date {
+    const result = new Date(date);
+    result.setUTCDate(result.getUTCDate() + days);
+    return result;
+}
+
 // Monday-start week containing `date` (a UTC-midnight date from parseDateOnly).
 export function getWeekRange(date: Date): { start: Date; end: Date } {
     const dayOfWeek = date.getUTCDay(); // 0=Sun..6=Sat
@@ -32,8 +38,31 @@ export function getWeekRange(date: Date): { start: Date; end: Date } {
     return { start, end };
 }
 
+export function parseTimeToMinutes(time?: string | Date | null): number {
+    if (!time) return 0;
+    if (time instanceof Date) {
+        return isNaN(time.getTime()) ? 0 : time.getUTCHours() * 60 + time.getUTCMinutes();
+    }
+    const str = String(time).trim();
+    if (str.includes("T")) {
+        const d = new Date(str);
+        return isNaN(d.getTime()) ? 0 : d.getUTCHours() * 60 + d.getUTCMinutes();
+    }
+    const isPM = /pm/i.test(str);
+    const isAM = /am/i.test(str);
+    const cleaned = str.replace(/[^\d:]/g, "");
+    const parts = cleaned.split(":").map(Number);
+    let hours = parts[0] || 0;
+    const minutes = parts[1] || 0;
+    if (isPM && hours < 12) hours += 12;
+    if (isAM && hours === 12) hours = 0;
+    return hours * 60 + minutes;
+}
+
 export function timeStringToDate(time: string): Date {
-    const [hours, minutes] = time.split(":").map(Number);
+    const totalMinutes = parseTimeToMinutes(time);
+    const hours = Math.floor(totalMinutes / 60) % 24;
+    const minutes = totalMinutes % 60;
 
     return new Date(Date.UTC(
         1970,
@@ -46,8 +75,8 @@ export function timeStringToDate(time: string): Date {
     ));
 }
 
-export function timeToMinutes(time: Date): number {
-    return time.getUTCHours() * 60 + time.getUTCMinutes();
+export function timeToMinutes(time: Date | string): number {
+    return parseTimeToMinutes(time);
 }
 
 export function formatTimeOfDay(time: Date): string {
@@ -114,4 +143,18 @@ export function generateTimeSlots(
 
     return slots;
 
+}
+export function formatMinutesTo12Hour(minutes: number): string {
+    const hours = Math.floor(minutes / 60) % 24;
+    const mins = minutes % 60;
+    const ampm = hours >= 12 ? "PM" : "AM";
+    const h12 = hours % 12 || 12;
+    return `${String(h12).padStart(2, "0")}:${String(mins).padStart(2, "0")} ${ampm}`;
+}
+
+export function minutesToHHmm(minutes: number): string {
+    const normalized = minutes % 1440;
+    const hours = Math.floor(normalized / 60);
+    const mins = normalized % 60;
+    return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
 }

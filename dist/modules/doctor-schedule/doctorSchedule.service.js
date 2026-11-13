@@ -125,7 +125,9 @@ class DoctorScheduleService {
         }
         if (!bypassPending) {
             const pendingRepo = new doctorTransfer_repository_1.DoctorTransferRepository();
-            const pending = await pendingRepo.findPendingTransfer(employee_id);
+            const today = this.parseDateOnly(new Date().toISOString().slice(0, 10));
+            await pendingRepo.expireStalePendingTransfers(today, employee_id);
+            const pending = await pendingRepo.findPendingTransfer(employee_id, today);
             if (pending) {
                 throw new Error(`Doctor already has transfer ${pending.transfer_id} awaiting confirmation — complete or discard it before starting a new one`);
             }

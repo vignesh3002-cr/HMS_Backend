@@ -10,7 +10,7 @@ export interface CreateAppointmentDTO {
 
     appointment_date: string; // YYYY-MM-DD
 
-    appointment_time: string; // HH:mm
+    appointment_time: string; // HH:mm (or window start time)
 
     reason_for_visit?: string;
 
@@ -21,6 +21,10 @@ export interface CreateAppointmentDTO {
     patient_type?: string;
 
     patient_visit_type?: string;
+
+    duration_minutes?: number;
+
+    schedule_id?: string;
 
 }
 
@@ -43,6 +47,10 @@ export interface UpdateAppointmentDTO {
     patient_type?: string;
 
     patient_visit_type?: string;
+
+    duration_minutes?: number;
+
+    schedule_id?: string;
 
 }
 

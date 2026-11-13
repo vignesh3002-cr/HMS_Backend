@@ -57,13 +57,55 @@ class DoctorTransferRepository {
             orderBy: { assigned_date: "desc" }
         });
     }
-    async findPendingTransfer(employeeId) {
+    async findPendingTransfer(employeeId, minEffectiveDate) {
+        return prisma_1.default.doctor_transfer.findFirst({
+            where: {
+                employee_id: employeeId,
+                status: "PENDING_CONFIRMATION",
+                ...(minEffectiveDate ? { effective_date: { gte: minEffectiveDate } } : {})
+            },
+            orderBy: { requested_at: "desc" }
+        });
+    }
+    async getActivePendingTransfer(employeeId) {
         return prisma_1.default.doctor_transfer.findFirst({
             where: {
                 employee_id: employeeId,
                 status: "PENDING_CONFIRMATION"
             },
+            include: {
+                branch: {
+                    select: { branch_id: true, branch_name: true }
+                }
+            },
             orderBy: { requested_at: "desc" }
+        });
+    }
+    async expireStalePendingTransfers(cutoffDate, employeeId) {
+        return prisma_1.default.doctor_transfer.updateMany({
+            where: {
+                status: "PENDING_CONFIRMATION",
+                effective_date: { lt: cutoffDate },
+                ...(employeeId ? { employee_id: employeeId } : {})
+            },
+            data: {
+                status: "EXPIRED"
+            }
+        });
+    }
+    async discardPendingTransfer(transferId, discardedBy, reason, tx) {
+        const client = tx || prisma_1.default;
+        const now = new Date();
+        return client.doctor_transfer.update({
+            where: { transfer_id: transferId },
+            data: {
+                status: "CANCELLED",
+                action_taken: "DISCARDED",
+                confirmed_by: discardedBy,
+                confirmed_at: now,
+                completed_at: now,
+                transfer_reason: reason ? `[DISCARDED] ${reason}` : undefined
+            }
         });
     }
     async findActiveBranchMapping(employeeId, branchId, userId) {
@@ -110,7 +152,7 @@ class DoctorTransferRepository {
         return prisma_1.default.doctor_schedule.findMany({
             where: {
                 branch_id: branchId,
-                day_of_week: dayOfWeek,
+                day_of_week: Array.isArray(dayOfWeek) ? { in: dayOfWeek } : dayOfWeek,
                 is_active: true,
                 employee_id: { not: excludeEmployeeId },
                 employees: {
@@ -126,6 +168,24 @@ class DoctorTransferRepository {
                 employees: {
                     select: { employee_id: true, first_name: true, last_name: true }
                 }
+            }
+        });
+    }
+    async findActiveDepartmentDoctorsAtBranch(branchId, departmentId, excludeEmployeeId) {
+        return prisma_1.default.employees.findMany({
+            where: {
+                department_id: departmentId,
+                employee_id: { not: excludeEmployeeId },
+                emp_status: { not: false },
+                user_table: { role_type: "DOCTOR" },
+                user_branch_mapping: {
+                    some: { branch_id: branchId, status: 1 }
+                }
+            },
+            select: {
+                employee_id: true,
+                first_name: true,
+                last_name: true
             }
         });
     }

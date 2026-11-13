@@ -170,4 +170,5 @@ export interface AdmissionSearchQuery {
     search?: string;
     sortField?: string;
     sortDirection?: string;
+    hasTransfers?: string | boolean;
 }
