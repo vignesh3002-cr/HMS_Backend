@@ -54,7 +54,6 @@ export const createLabOrderItemValidation = [
     .withMessage(
       `Method must be one of: ${LAB_ORDER_ITEM_METHODS.join(", ")}`
     ),
-
   body("branch_id")
     .optional()
     .isString(),
@@ -113,7 +112,6 @@ export const updateLabOrderItemValidation = [
     .withMessage(
       `Method must be one of: ${LAB_ORDER_ITEM_METHODS.join(", ")}`
     ),
-
   body("item_status")
     .optional()
     .isString()

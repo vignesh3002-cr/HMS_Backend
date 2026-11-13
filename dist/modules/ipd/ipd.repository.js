@@ -32,9 +32,17 @@ const careTeamEmployeeSelect = {
     specialization: true,
     designation: true,
 };
+// Re-attach Prisma's foreign-key generated relation names under frontend-friendly keys.
 function aliasAdmissionEmployee(row) {
-    const { employees_admission_employee_idToemployees: employees, ...rest } = row;
-    return { ...rest, employees };
+    if (!row)
+        return row;
+    const { employees_admission_employee_idToemployees: employees, employees_admission_current_assigned_doctor_idToemployees: assigned_doctor, employees_admission_current_nurse_idToemployees: assigned_nurse, ...rest } = row;
+    return {
+        ...rest,
+        employees: employees || null,
+        assigned_doctor: assigned_doctor || null,
+        assigned_nurse: assigned_nurse || null,
+    };
 }
 class IpdRepository {
     // ------------------------------------------------------------------ wards
@@ -304,8 +312,8 @@ class IpdRepository {
                         specialization: true,
                     },
                 },
-                assigned_doctor: { select: careTeamEmployeeSelect },
-                assigned_nurse: { select: careTeamEmployeeSelect },
+                employees_admission_current_assigned_doctor_idToemployees: { select: careTeamEmployeeSelect },
+                employees_admission_current_nurse_idToemployees: { select: careTeamEmployeeSelect },
                 ward_master: {
                     select: { ward_id: true, ward_name: true },
                 },
@@ -431,8 +439,8 @@ class IpdRepository {
                             last_name: true,
                         },
                     },
-                    assigned_doctor: { select: careTeamEmployeeSelect },
-                    assigned_nurse: { select: careTeamEmployeeSelect },
+                    employees_admission_current_assigned_doctor_idToemployees: { select: careTeamEmployeeSelect },
+                    employees_admission_current_nurse_idToemployees: { select: careTeamEmployeeSelect },
                     ward_master: { select: { ward_id: true, ward_name: true } },
                     bed_master: { select: admissionBedSelect },
                 },
@@ -542,8 +550,8 @@ class IpdRepository {
                         specialization: true,
                     },
                 },
-                assigned_doctor: { select: careTeamEmployeeSelect },
-                assigned_nurse: { select: careTeamEmployeeSelect },
+                employees_admission_current_assigned_doctor_idToemployees: { select: careTeamEmployeeSelect },
+                employees_admission_current_nurse_idToemployees: { select: careTeamEmployeeSelect },
                 ward_master: {
                     select: { ward_id: true, ward_name: true },
                 },

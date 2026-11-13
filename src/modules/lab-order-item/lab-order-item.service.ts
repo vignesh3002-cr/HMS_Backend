@@ -114,7 +114,7 @@ export class LabOrderItemService {
 
     }
 
-    async generateBarcodes(items: { lab_order_item_id: string; barcode: string; sample_type?: string }[]) {
+    async generateBarcodes(items: { lab_order_item_id: string; barcode: string; sample_type?: string; collection_datetime?: string | Date }[]) {
         return repository.generateBarcodes(items);
     }
 

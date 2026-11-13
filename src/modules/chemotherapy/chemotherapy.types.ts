@@ -148,6 +148,7 @@ export interface RegimenProtocolFilterQuery {
     // organization's active personalized protocols alongside the globally
     // available generics. When omitted, only generics are returned.
     organization_id?: string;
+    include_details?: boolean;
 
 }
 

@@ -44,6 +44,19 @@ export class ChemotherapyRepository {
         }
     } satisfies (Prisma.chemotherapy_regimen_protocolInclude & { chemotherapy_protocol_cancers?: any });
 
+    private protocolSummaryInclude = {
+        cancer_types: { select: { cancer_type_id: true, cancer_type: true } },
+        cancer_subtypes: { select: { subtype_id: true, subtype_name: true } },
+        // @ts-ignore
+        chemotherapy_protocol_cancers: {
+            where: { active_status: 1 },
+            include: {
+                cancer_types: { select: { cancer_type_id: true, cancer_type: true } },
+                cancer_subtypes: { select: { subtype_id: true, subtype_name: true } }
+            }
+        }
+    } satisfies (Prisma.chemotherapy_regimen_protocolInclude & { chemotherapy_protocol_cancers?: any });
+
     async listRegimenProtocols(filters: RegimenProtocolFilterQuery) {
 
         // Generic protocols are globally available. Personalized protocols
@@ -68,7 +81,7 @@ export class ChemotherapyRepository {
                 // others (which dropped the cancer-type filter entirely).
                 AND: [visibility, ...(cancerMatch ? [cancerMatch] : [])]
             },
-            include: this.protocolInclude,
+            include: filters.include_details ? this.protocolInclude : this.protocolSummaryInclude,
             orderBy: { regimen_code: "asc" }
         });
 
