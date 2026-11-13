@@ -46,11 +46,33 @@ export class LabOrderItemRepository {
                                 patient_id: true,
                                 appointment_id: true,
                                 visit_date: true,
+                                patient_bio_data: {
+                                    select: {
+                                        patient_id: true,
+                                        patient_first_name: true,
+                                        patient_middle_name: true,
+                                        patient_last_name: true,
+                                        patient_gender: true,
+                                        patient_dob: true,
+                                        patient_blood_group: true
+                                    }
+                                }
                             }
                         }
                     }
                 },
-                lab_test_master: true,
+                lab_test_master: {
+                    include: {
+                        lab_test_parameter: {
+                            orderBy: { sort_order: "asc" }
+                        }
+                    }
+                },
+                lab_result: {
+                    include: {
+                        lab_test_parameter: true
+                    }
+                },
                 sample_collection: true
             }
 
@@ -72,7 +94,18 @@ export class LabOrderItemRepository {
                         patient_history: true
                     }
                 },
-                lab_test_master: true,
+                lab_test_master: {
+                    include: {
+                        lab_test_parameter: {
+                            orderBy: { sort_order: "asc" }
+                        }
+                    }
+                },
+                lab_result: {
+                    include: {
+                        lab_test_parameter: true
+                    }
+                },
                 sample_collection: true
             }
 
@@ -80,9 +113,18 @@ export class LabOrderItemRepository {
 
     }
 
-    async generateBarcodes(items: { lab_order_item_id: string; barcode: string; sample_type?: string }[]) {
+    async generateBarcodes(items: { lab_order_item_id: string; barcode: string; sample_type?: string; collection_datetime?: string | Date }[]) {
         const results = [];
         for (const item of items) {
+            const collectionDate = item.collection_datetime
+                ? new Date(item.collection_datetime)
+                : new Date();
+
+            const existingItem = await prisma.lab_order_item.findUnique({
+                where: { lab_order_item_id: item.lab_order_item_id }
+            });
+            if (!existingItem) continue;
+
             const existing = await prisma.sample_collection.findFirst({
                 where: { lab_order_item_id: item.lab_order_item_id }
             });
@@ -95,6 +137,7 @@ export class LabOrderItemRepository {
                         barcode: item.barcode,
                         container_type: item.sample_type,
                         collection_status: "Collected",
+                        collection_datetime: collectionDate,
                         remarks: `Barcode: ${item.barcode}`
                     }
                 });
@@ -106,7 +149,10 @@ export class LabOrderItemRepository {
                         barcode: item.barcode,
                         container_type: item.sample_type,
                         collection_status: "Collected",
-                        remarks: `Barcode: ${item.barcode}`
+                        collection_datetime: collectionDate,
+                        remarks: `Barcode: ${item.barcode}`,
+                        branch_id: existingItem.branch_id || undefined,
+                        user_id: existingItem.user_id || undefined
                     }
                 });
             }
@@ -114,7 +160,7 @@ export class LabOrderItemRepository {
             const updatedItem = await prisma.lab_order_item.update({
                 where: { lab_order_item_id: item.lab_order_item_id },
                 data: {
-                    item_status: "Barcode Generated",
+                    item_status: "Collected",
                     remarks: `Barcode: ${item.barcode}`
                 }
             });

@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "predev": "node scripts/check-deps.js",
     "dev": "ts-node src/server.ts",
+    "prebuild": "node scripts/check-deps.js",
     "build": "tsc",
     "start": "node dist/server.js",
     "db:seed": "ts-node prisma/seed.ts",
@@ -38,7 +40,7 @@
     "express-validator": "^7.3.2",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.5.0",
-    "nodemailer": "^9.0.3",
+    "nodemailer": "^10.3.1",
     "openai": "^7.17.0",
     "scripts": "^0.1.0",
     "xlsx": "^0.18.5"

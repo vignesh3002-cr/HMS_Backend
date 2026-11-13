@@ -12,6 +12,7 @@ const router = Router();
 router.post("/", authenticate, authorize("lab.manage"), createLabTestMasterValidation, controller.create);
 
 router.get("/", authenticate, controller.getAll);
+router.get("/parameters", authenticate, controller.getAllParameters);
 
 router.get("/:id", authenticate, authorize("lab.manage"), controller.getById);
 
