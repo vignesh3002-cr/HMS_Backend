@@ -92,6 +92,17 @@ class AppointmentRepository {
             }
         });
     }
+    async findDoctorScheduleById(scheduleId) {
+        try {
+            const id = typeof scheduleId === "bigint" ? scheduleId : BigInt(scheduleId);
+            return await prisma_1.default.doctor_schedule.findUnique({
+                where: { schedule_id: id }
+            });
+        }
+        catch {
+            return null;
+        }
+    }
     // A doctor can have more than one active shift on the same day_of_week
     // (e.g. morning + evening), so this returns all of them, not just one.
     async findActiveDoctorSchedules(employeeId, branchId, dayOfWeek) {
@@ -182,13 +193,69 @@ class AppointmentRepository {
     async generateAppointmentNumber(tx) {
         return (0, idGenerator_1.generateId)(tx, "APPOINTMENT");
     }
-    // Must run after lockDoctorSchedule() inside the same transaction.
-    async generateTokenNumber(tx, scheduleId, appointmentDate) {
-        const result = await tx.appointment_history.aggregate({
+    async findBookedAppointmentsForDate(employeeId, appointmentDate) {
+        return prisma_1.default.appointment_history.findMany({
             where: {
-                schedule_id: scheduleId,
-                appointment_date: appointmentDate
+                employee_id: employeeId,
+                appointment_date: appointmentDate,
+                status: { notIn: appointment_constants_1.NON_BLOCKING_APPOINTMENT_STATUSES }
             },
+            select: {
+                appointment_id: true,
+                appointment_date: true,
+                appointment_time: true,
+                duration_minutes: true,
+                token_number: true,
+                status: true
+            },
+            orderBy: {
+                appointment_time: "asc"
+            }
+        });
+    }
+    async findBookedAppointmentsForDateTx(tx, employeeId, appointmentDate) {
+        return tx.appointment_history.findMany({
+            where: {
+                employee_id: employeeId,
+                appointment_date: appointmentDate,
+                status: { notIn: appointment_constants_1.NON_BLOCKING_APPOINTMENT_STATUSES }
+            },
+            select: {
+                appointment_id: true,
+                appointment_date: true,
+                appointment_time: true,
+                duration_minutes: true,
+                token_number: true,
+                status: true
+            },
+            orderBy: {
+                appointment_time: "asc"
+            }
+        });
+    }
+    async getBookedDurationForHour(tx, employeeId, appointmentDate, hourStart, hourEnd, excludeAppointmentId) {
+        const appointments = await tx.appointment_history.findMany({
+            where: {
+                employee_id: employeeId,
+                appointment_date: appointmentDate,
+                appointment_time: {
+                    gte: hourStart,
+                    lt: hourEnd
+                },
+                status: { notIn: appointment_constants_1.NON_BLOCKING_APPOINTMENT_STATUSES },
+                ...(excludeAppointmentId ? { appointment_id: { not: excludeAppointmentId } } : {})
+            },
+            select: { duration_minutes: true }
+        });
+        return appointments.reduce((sum, a) => sum + (a.duration_minutes ?? 10), 0);
+    }
+    // Must run after lockDoctorSchedule() inside the same transaction.
+    async generateTokenNumber(tx, scheduleId, appointmentDate, employeeId) {
+        const whereClause = employeeId
+            ? { employee_id: employeeId, appointment_date: appointmentDate }
+            : { schedule_id: scheduleId, appointment_date: appointmentDate };
+        const result = await tx.appointment_history.aggregate({
+            where: whereClause,
             _max: {
                 token_number: true
             }
@@ -279,7 +346,11 @@ class AppointmentRepository {
                 ? { token_number: sortOrder }
                 : sortBy === "status"
                     ? { status: sortOrder }
-                    : { appointment_date: sortOrder };
+                    : [
+                        { appointment_date: sortOrder },
+                        { appointment_time: "asc" },
+                        { token_number: "asc" },
+                    ];
         const [appointments, total] = await Promise.all([
             prisma_1.default.appointment_history.findMany({
                 where,

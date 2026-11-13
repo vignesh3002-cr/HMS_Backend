@@ -76,6 +76,38 @@ class DoctorTransferController {
             });
         }
     }
+    async getPendingTransfer(req, res) {
+        try {
+            const result = await service.getDoctorPendingTransfer(req.params.employeeId);
+            return res.json({
+                success: true,
+                message: result ? "Pending transfer found" : "No pending transfer found",
+                data: result
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+    async discardTransfer(req, res) {
+        try {
+            const result = await service.discardTransfer(req.params.employeeId, req.params.transferId, actingUserId(req), req.body?.reason);
+            return res.json({
+                success: true,
+                message: result.message,
+                data: result
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
     async transferPreview(req, res) {
         try {
             const errors = (0, express_validator_1.validationResult)(req);

@@ -42,6 +42,7 @@ import referralRoutes from "./modules/referral/referral.routes";
 import priorityFlagsRoutes from "./modules/priority-flags/priorityFlags.routes";
 import aiChatRoutes from "./modules/ai/ai-chat.routes";
 import patientDocumentRoutes from "./modules/patient-document/patientDocument.routes";
+import integrationRoutes from "./modules/integration/integration.routes";
 
 import { hashPassword } from "./utils/bcrypt";
 
@@ -175,6 +176,7 @@ app.use("/api/referral", referralRoutes);
 app.use("/api/priority-flags", priorityFlagsRoutes);
 app.use("/api/ai-chat", aiChatRoutes);
 app.use("/api/patient-documents", patientDocumentRoutes);
+app.use("/api/integrations", integrationRoutes);
 
 app.use("/api/hashpassword", async (req, res) => {
   const { password } = req.body;

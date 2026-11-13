@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DAY_OF_WEEK_NAMES = exports.NON_BLOCKING_APPOINTMENT_STATUSES = exports.TERMINAL_APPOINTMENT_STATUSES = exports.APPOINTMENT_STATUS_VALUES = exports.APPOINTMENT_STATUS = void 0;
+exports.DEFAULT_VISIT_DURATIONS = exports.DAY_OF_WEEK_NAMES = exports.NON_BLOCKING_APPOINTMENT_STATUSES = exports.TERMINAL_APPOINTMENT_STATUSES = exports.APPOINTMENT_STATUS_VALUES = exports.APPOINTMENT_STATUS = void 0;
 exports.APPOINTMENT_STATUS = {
     SCHEDULED: "SCHEDULED",
     RESCHEDULED: "RESCHEDULED",
@@ -9,9 +9,6 @@ exports.APPOINTMENT_STATUS = {
     COMPLETED: "COMPLETED",
     CANCELLED: "CANCELLED",
     NO_SHOW: "NO_SHOW",
-    // Set only by the doctor-transfer workflow (see modules/doctor-transfer) -
-    // not reachable through the generic PATCH /:appointmentNo/status endpoint.
-    TRANSFER_REVIEW_REQUIRED: "TRANSFER_REVIEW_REQUIRED",
     RESCHEDULE_REQUIRED: "RESCHEDULE_REQUIRED"
 };
 exports.APPOINTMENT_STATUS_VALUES = Object.values(exports.APPOINTMENT_STATUS);
@@ -35,3 +32,11 @@ exports.DAY_OF_WEEK_NAMES = [
     "FRIDAY",
     "SATURDAY"
 ];
+exports.DEFAULT_VISIT_DURATIONS = {
+    "New consultation": 40,
+    "Follow-up": 10,
+    "Lab Visit": 10,
+    "Chemotherapy Visit": 10,
+    "New Complaints": 10,
+    "Others": 10
+};

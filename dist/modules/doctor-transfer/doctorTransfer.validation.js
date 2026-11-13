@@ -37,8 +37,9 @@ exports.initiateTransferValidation = [
         .isISO8601()
         .withMessage("Effective date must be a valid date (YYYY-MM-DD)"),
     (0, express_validator_1.body)("transfer_reason")
-        .notEmpty()
-        .withMessage("Transfer reason is required"),
+        .optional({ checkFalsy: true })
+        .isString()
+        .withMessage("Transfer reason must be a string"),
     // Presence/type only -- an EMPTY array is legal for close-only moves
     // (cancel a slot via close_schedule_ids). The service still requires
     // at least one entry whenever new rows would actually be created.
@@ -113,8 +114,31 @@ exports.confirmTransferValidation = [
         .notEmpty(),
     (0, express_validator_1.body)("replacement_employee_id")
         .if((0, express_validator_1.body)("action").equals("TRANSFER"))
+        .if((_value, { req }) => !Array.isArray(req.body?.appointments) || req.body.appointments.length === 0)
         .notEmpty()
         .withMessage("replacement_employee_id is required for the TRANSFER action"),
+    (0, express_validator_1.body)("appointments")
+        .optional()
+        .isArray()
+        .withMessage("appointments must be an array"),
+    (0, express_validator_1.body)("appointments.*.appointment_id")
+        .optional()
+        .notEmpty()
+        .withMessage("appointment_id is required for each appointment entry"),
+    (0, express_validator_1.body)("appointments.*.action")
+        .optional()
+        .isIn(doctorTransfer_constants_1.TRANSFER_ACTION_VALUES)
+        .withMessage(`appointment action must be one of: ${doctorTransfer_constants_1.TRANSFER_ACTION_VALUES.join(", ")}`),
+    (0, express_validator_1.body)("appointments.*.replacement_employee_id")
+        .optional()
+        .isString(),
+    (0, express_validator_1.body)("appointments.*.custom_time")
+        .optional()
+        .matches(TIME_PATTERN)
+        .withMessage("custom_time must be in HH:mm format"),
+    (0, express_validator_1.body)("reason")
+        .optional()
+        .isString(),
     (0, express_validator_1.body)("confirm")
         .if((0, express_validator_1.body)("action").equals("CANCEL"))
         .custom((value) => value === true)
@@ -175,5 +199,7 @@ exports.processRescheduleActionValidation = [
         .if((0, express_validator_1.body)("action").equals("ASSIGN"))
         .notEmpty()
         .matches(TIME_PATTERN)
-        .withMessage("appointment_time must be in HH:mm format")
+        .withMessage("appointment_time must be in HH:mm format"),
+    (0, express_validator_1.body)("schedule_id")
+        .optional()
 ];

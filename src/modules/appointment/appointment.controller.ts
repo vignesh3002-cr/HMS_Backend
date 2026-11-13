@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+﻿import { Request, Response } from "express";
 import { validationResult } from "express-validator";
 import { AppointmentService } from "./appointment.service";
 
@@ -122,10 +122,12 @@ export class AppointmentController {
                 });
             }
 
+            const duration = req.query.duration ? Number(req.query.duration) : undefined;
             const slots = await service.getAvailableSlots(
                 req.query.employeeId as string,
                 req.query.branchId as string,
-                req.query.date as string
+                req.query.date as string,
+                duration
             );
 
             return res.json({
@@ -268,7 +270,13 @@ export class AppointmentController {
                 });
             }
 
-            const cancelledBy = req.body.cancelled_by || (req as any).user?.user_id || (req as any).user?.id || null;
+            const cancelledBy =
+                req.body.cancelled_by?.trim() ||
+                (req as any).user?.employee_id ||
+                (req as any).user?.username ||
+                (req as any).user?.user_id ||
+                (req as any).user?.id ||
+                "admin";
             const appointment = await service.updateAppointmentStatus(
                 req.params.appointmentNo as string,
                 req.body.status,
@@ -341,10 +349,12 @@ export class AppointmentController {
             }
 
             const cancelledBy =
-                req.body.cancelled_by ||
+                req.body.cancelled_by?.trim() ||
+                (req as any).user?.employee_id ||
+                (req as any).user?.username ||
                 (req as any).user?.user_id ||
                 (req as any).user?.id ||
-                null;
+                "admin";
 
             const appointment = await service.cancelAppointment(
                 req.params.appointmentNo as string,
@@ -362,6 +372,29 @@ export class AppointmentController {
             return res.status(400).json({
                 success: false,
                 message: error.message
+            });
+        }
+    }
+
+    async sandwichAppointment(req: Request, res: Response) {
+        try {
+            const appointmentNo = req.params.appointmentNo as string;
+            const { insertAfterAppointmentNo } = req.body;
+
+            const result = await service.sandwichAppointment(
+                appointmentNo,
+                insertAfterAppointmentNo
+            );
+
+            return res.json({
+                success: true,
+                message: "Appointment successfully sandwiched into queue",
+                data: result
+            });
+        } catch (error: any) {
+            return res.status(400).json({
+                success: false,
+                message: error.message || "Failed to sandwich appointment"
             });
         }
     }

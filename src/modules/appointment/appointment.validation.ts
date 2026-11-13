@@ -56,6 +56,10 @@ export const createAppointmentValidation = [
 
     body("patient_visit_type")
         .optional()
+        .isString(),
+
+    body("schedule_id")
+        .optional()
         .isString()
 
 ];
@@ -105,6 +109,10 @@ export const updateAppointmentValidation = [
 
     body("patient_visit_type")
         .optional()
+        .isString(),
+
+    body("schedule_id")
+        .optional()
         .isString()
 
 ];
@@ -151,9 +159,7 @@ export const cancelAppointmentValidation = [
         .withMessage("Cancellation reason is required"),
 
     body("cancelled_by")
-        .notEmpty()
-        .withMessage("Cancelled by is required")
-        .bail()
+        .optional({ checkFalsy: true })
         .isString(),
 
 ];
