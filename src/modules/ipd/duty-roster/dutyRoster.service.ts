@@ -1,5 +1,6 @@
 import prisma from "../../../config/prisma";
 import { generateId } from "../../../utils/idGenerator";
+import { getBranchTimezone, getTimezoneOffsetMs, getTodayIn } from "../../../utils/timezone";
 import { DutyRosterRepository } from "./dutyRoster.repository";
 import {
     AvailableStaffMember,
@@ -22,7 +23,6 @@ const DAYS_OF_WEEK = [
 
 const ROLE_FOR_DUTY = { DUTY_DOCTOR: "DOCTOR", DUTY_NURSE: "NURSE" } as const;
 const MAX_ROSTER_RANGE_DAYS = 62;
-const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 const MINUTES_PER_DAY = 24 * 60;
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
@@ -62,9 +62,9 @@ function parseDateOnly(value: unknown, label: string): Date {
     return d;
 }
 
-/** Today's calendar date in IST, as a UTC-midnight Date. */
-function istTodayDate(): Date {
-    return new Date(new Date(Date.now() + IST_OFFSET_MS).toISOString().slice(0, 10) + "T00:00:00.000Z");
+/** Today's calendar date in the given IANA zone, as a UTC-midnight Date. */
+function todayDateIn(tz: string): Date {
+    return new Date(`${getTodayIn(tz)}T00:00:00.000Z`);
 }
 
 /** Absolute [start, end) minutes of a shift placed `dayOffset` days from a reference day. */
@@ -255,10 +255,14 @@ export class DutyRosterService {
         at: Date = new Date()
     ): Promise<{ enforced: boolean; onDuty: boolean }> {
         const DAY_MS = MINUTES_PER_DAY * 60 * 1000;
-        const ist = new Date(at.getTime() + IST_OFFSET_MS);
-        const today = new Date(ist.toISOString().slice(0, 10) + "T00:00:00.000Z");
+        // "Now" as the BRANCH sees it - its IANA zone from branch.timezone,
+        // never a hardcoded offset, so overnight rules match the hospital city.
+        const local = new Date(
+            at.getTime() + getTimezoneOffsetMs(await getBranchTimezone(branchId), at)
+        );
+        const today = new Date(local.toISOString().slice(0, 10) + "T00:00:00.000Z");
         const yesterday = new Date(today.getTime() - DAY_MS);
-        const nowMin = ist.getUTCHours() * 60 + ist.getUTCMinutes();
+        const nowMin = local.getUTCHours() * 60 + local.getUTCMinutes();
 
         const [rosterCount, templateCount] = await Promise.all([
             prisma.staff_duty_roster.count({
@@ -422,7 +426,7 @@ export class DutyRosterService {
                     where: {
                         branch_id: existing.branch_id,
                         shift_code: existing.shift_code,
-                        duty_date: { gte: istTodayDate() },
+                        duty_date: { gte: todayDateIn(await getBranchTimezone(existing.branch_id)) },
                     },
                     data: { start_time: updated.start_time, end_time: updated.end_time },
                 }),
@@ -532,7 +536,7 @@ export class DutyRosterService {
         }
 
         const dutyDate = parseDateOnly(data.duty_date, "duty_date");
-        if (dutyDate < istTodayDate()) {
+        if (dutyDate < todayDateIn(await getBranchTimezone(data.branch_id))) {
             throw new Error("Cannot roster staff for a past date");
         }
         const shiftCode = data.shift_code.trim().toUpperCase();

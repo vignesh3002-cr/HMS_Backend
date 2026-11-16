@@ -61,22 +61,28 @@ export function timeStringToMinutes(time: string): number {
     const [hours, minutes] = time.split(":").map(Number);
     return hours * 60 + minutes;
 }
-// Asia/Kolkata (IST) is the hospital's reference timezone. IST is UTC+05:30
-// with no daylight saving, so "now" in IST is just UTC now shifted by a fixed
-// offset -- independent of the host/server timezone (Local dev vs Vercel).
-const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
+// IST (Asia/Kolkata, UTC+05:30) is the FALLBACK hospital timezone and the
+// value every existing branch carries by default (branch.timezone). These
+// keep their historical names; branch-aware callers should use
+// getTodayIn(await getBranchTimezone(branchId)) from utils/timezone instead.
+// Implementation now lives in ONE place (utils/timezone) - no more copies.
+import {
+    getNowIn,
+    getTodayIn,
+    getNowMinutesIn,
+    DEFAULT_TIMEZONE,
+} from "../../utils/timezone";
 
 export function getNowInIST(): Date {
-    return new Date(Date.now() + IST_OFFSET_MS);
+    return getNowIn(DEFAULT_TIMEZONE);
 }
 
 export function getTodayInIST(): string {
-    return formatDateOnly(getNowInIST());
+    return getTodayIn(DEFAULT_TIMEZONE);
 }
 
 export function getNowMinutesInIST(): number {
-    const now = getNowInIST();
-    return now.getUTCHours() * 60 + now.getUTCMinutes();
+    return getNowMinutesIn(DEFAULT_TIMEZONE);
 }
 
 

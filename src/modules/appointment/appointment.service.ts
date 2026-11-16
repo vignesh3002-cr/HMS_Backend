@@ -21,10 +21,9 @@ import {
     parseDateOnly,
     formatDateOnly,
     getWeekRange,
-    getTodayInIST,
-    getNowMinutesInIST
 } from "./appointment.utils";
 import { generateId } from "../../utils/idGenerator";
+import { getBranchTimezone, getNowMinutesIn, getTodayIn } from "../../utils/timezone";
 import { LEAVE_STATUS } from "../doctorLeave/doctorLeave.constants";
 import { IpdService } from "../ipd/ipd.service";
 
@@ -833,9 +832,11 @@ export class AppointmentService {
                 data.appointment_date
             );
 
+        // "Past date" is judged against TODAY IN THE BRANCH'S OWN timezone
+        // (branch.timezone), never the server's zone or a hardcoded offset.
         if (
             formatDateOnly(appointmentDate) <
-            getTodayInIST()
+            getTodayIn(await getBranchTimezone(data.branch_id))
         ) {
             throw new Error(
                 "Appointments cannot be booked for a past date"
@@ -1251,11 +1252,12 @@ export class AppointmentService {
 
         // Moving an appointment to a past day is never valid (leaving the
         // original date untouched is fine, e.g. editing notes or status).
+        // Past-ness is judged in the branch's own timezone.
         if (
             data.appointment_date &&
             formatDateOnly(appointmentDate) !==
             formatDateOnly(existing.appointment_date) &&
-            formatDateOnly(appointmentDate) < getTodayInIST()
+            formatDateOnly(appointmentDate) < getTodayIn(await getBranchTimezone(branchId))
         ) {
             throw new Error(
                 "Appointments cannot be moved to a past date"
@@ -1755,14 +1757,15 @@ export class AppointmentService {
                 )
             );
 
-        // "Today" and "now" are hospital time (IST), independent of the
-        // server's own timezone.
+        // "Today" and "now" are the BRANCH's own time (branch.timezone) -
+        // independent of the server's and the browser's timezone.
+        const branchTz = await getBranchTimezone(branchId);
         const isToday =
             formatDateOnly(appointmentDate) ===
-            getTodayInIST();
+            getTodayIn(branchTz);
 
         const nowMinutes =
-            getNowMinutesInIST();
+            getNowMinutesIn(branchTz);
 
         const slots =
             effectiveSchedules.flatMap(

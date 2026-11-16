@@ -70,7 +70,8 @@ import {
     SavePlanOrderDto,
     UpdateAdministrationStatusDto
 } from "./chemotherapy.types";
-import { getTodayInIST, parseDateOnly } from "../appointment/appointment.utils";
+import { parseDateOnly } from "../appointment/appointment.utils";
+import { getBranchTimezone, getDateIn, getTodayIn } from "../../utils/timezone";
 import { logAudit, diffFields, summarizeCreate, summarizeStatusChange } from "../audit/audit.service";
 import { AUDIT_ACTION } from "../audit/audit.types";
 import { computePlanSchedule, type PlanScheduleDay } from "./chemotherapy.schedule";
@@ -407,10 +408,11 @@ function pickCurrentOrder<T extends { order_status: string; chemotherapy_cycle: 
 
 }
 
-// Today's date in IST (the hospital's timezone) for @db.Date columns.
-function istToday(): Date {
+// Today's date in the branch's own IANA zone (branch.timezone) for @db.Date
+// columns - never a hardcoded offset, so DST zones get their own correct day.
+function todayInTz(tz: string): Date {
 
-    return parseDateOnly(getTodayInIST());
+    return parseDateOnly(getTodayIn(tz));
 
 }
 
@@ -435,10 +437,10 @@ function toNumber(value: Prisma.Decimal | number | string | null | undefined): n
 
 }
 
-// The IST calendar date of a timestamp, as YYYY-MM-DD.
-function istDateOf(value: Date): string {
+// The calendar date of a timestamp in the given IANA zone, as YYYY-MM-DD.
+function dateOfInTz(value: Date, tz: string): string {
 
-    return new Date(value.getTime() + (5 * 60 + 30) * 60 * 1000).toISOString().slice(0, 10);
+    return getDateIn(tz, value);
 
 }
 
@@ -5079,7 +5081,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             }
 
             const now = new Date();
-            const treatmentDate = istToday();
+            const treatmentDate = todayInTz(await getBranchTimezone(lockedPlan.branch_id));
 
             if (lockedPlan.treatment_status === PLAN_STATUS.PLANNED) {
 
@@ -5218,7 +5220,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             return status;
         }
 
-        const startDate = cycle.actual_date ?? istToday();
+        const startDate = cycle.actual_date ?? todayInTz(await getBranchTimezone(plan.branch_id));
         const interval = cycle.cycle_interval_days ?? plan.cycle_interval_days ?? 0;
         const nextCycleDate = status === CYCLE_STATUS.COMPLETED && interval > 0 && cycle.cycle_number < plan.planned_cycles
             ? addDays(startDate, interval)
@@ -6023,7 +6025,10 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             cancelled: count(ADMINISTRATION_STATUS.CANCELLED)
         };
 
-        const today = getTodayInIST();
+        // Day boundaries (which cycle-day is "today") follow the PLAN'S BRANCH
+        // timezone (branch.timezone), never the server's or a fixed offset.
+        const branchTz = await getBranchTimezone(plan.branch_id);
+        const today = getTodayIn(branchTz);
         const inAdministration = day?.order_status === PLAN_ORDER_STATUS.IN_ADMINISTRATION;
 
         const treatmentStatus = !day
@@ -6039,7 +6044,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
         const treatmentDate = rows.length > 0
             ? dateOnly(rows[0].administration_date)
             : day?.completed_at ?? day?.created_at
-                ? istDateOf((day.completed_at ?? day.created_at) as Date)
+                ? dateOfInTz((day.completed_at ?? day.created_at) as Date, branchTz)
                 : null;
 
         // What completing this day would close, for the confirmation.
@@ -6165,7 +6170,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                     chemotherapy_cycle_id: cycle.chemotherapy_cycle_id,
                     cycle_number: cycle.cycle_number,
                     cycle_status: cycle.cycle_status,
-                    completion_date: cycle.completion_date ? istDateOf(cycle.completion_date) : dateOnly(cycle.actual_date),
+                    completion_date: cycle.completion_date ? dateOfInTz(cycle.completion_date, branchTz) : dateOnly(cycle.actual_date),
                     protocol_name: protocolName
                 })),
             post_medications: dischargeItems.map((item) => ({

@@ -359,6 +359,10 @@ model branch {
   state_name                   String?                        @db.VarChar(100)
   branch_code                  String?                        @db.VarChar(100)
   country                      String?                        @db.VarChar(100)
+  city                         String?                        @db.VarChar(100)
+  // IANA zone id (e.g. "Asia/Kolkata", "America/New_York") - never a fixed
+  // offset, so daylight-saving rule changes are followed automatically.
+  timezone                     String                         @default("Asia/Kolkata") @db.VarChar(64)
   total_beds                   Int?
   branch_status                String?                        @default("Active") @db.VarChar(100)
   date_of_establish            DateTime?                      @db.Date
@@ -1948,6 +1952,8 @@ model hospital {
   hospital_state      String?  @default("Tamil nadu") @db.VarChar(100)
   hospital_district   String?  @default("Chennai") @db.VarChar(100)
   hospital_area       String?  @default("Tambaram") @db.VarChar(100)
+  // Org-level fallback timezone; branch.timezone is authoritative per branch.
+  timezone            String?  @default("Asia/Kolkata") @db.VarChar(64)
   branch              branch[]
 }
 
