@@ -23,13 +23,10 @@ import {
     formatDateOnly,
     addDays,
     getWeekRange,
-<<<<<<< HEAD
-=======
     getTodayInIST,
     getNowMinutesInIST,
     formatMinutesTo12Hour,
     minutesToHHmm
->>>>>>> d5775ac3b1eebde649bba2a340b434a78c1cdc40
 } from "./appointment.utils";
 import { generateId } from "../../utils/idGenerator";
 import { getBranchTimezone, getNowMinutesIn, getTodayIn } from "../../utils/timezone";
