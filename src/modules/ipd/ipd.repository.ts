@@ -471,9 +471,10 @@ export class IpdRepository {
         limit?: number;
         sortField?: string;
         sortDirection?: string;
+        hasTransfers?: boolean;
     }) {
 
-        const { branchId, assignedTo, status, wardId, patientId, date, search, page = 1, limit = 10 } = filter;
+        const { branchId, assignedTo, status, wardId, patientId, date, search, page = 1, limit = 10, hasTransfers } = filter;
 
         // Status arrives as a single value or a comma-separated list (the IPD
         // filter panel's Status field is a multiselect, same as OPD's).
@@ -497,7 +498,11 @@ export class IpdRepository {
             patient: { patient_bio_data: { patient_first_name: sortDirection } },
             branch: { branch: { branch_name: sortDirection } },
             ward_bed: { ward_master: { ward_name: sortDirection } },
-            doctor: { employee_id: sortDirection },
+            doctor: {
+                employees_admission_employee_idToemployees: {
+                    first_name: sortDirection,
+                },
+            },
         };
 
         const orderBy = orderByMap[sortField] || orderByMap.admission_date;
@@ -509,6 +514,7 @@ export class IpdRepository {
                 : statusList.length > 1
                     ? { status: { in: statusList } }
                     : {}),
+            ...(hasTransfers ? { admission_transfer_log: { some: {} } } : {}),
             ...(wardId ? { ward_id: wardId } : {}),
             ...(patientId ? { patient_id: patientId } : {}),
             ...(dateStart && dateEnd ? { admission_date: { gte: dateStart, lt: dateEnd } } : {}),

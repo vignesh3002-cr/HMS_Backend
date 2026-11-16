@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { DoctorTransferRepository } from "./doctorTransfer.repository";
 import { AppointmentRepository } from "../appointment/appointment.repository";
+import { AppointmentService } from "../appointment/appointment.service";
 import { WorkingHourDto } from "../employee/employee.types";
 import {
     APPOINTMENT_STATUS,
@@ -14,7 +15,10 @@ import {
     timeStringToDate,
     timeToMinutes,
     formatTimeOfDay,
-    timeStringToMinutes
+    timeStringToMinutes,
+    addDays,
+    minutesToHHmm,
+    formatMinutesTo12Hour
 } from "../appointment/appointment.utils";
 import {
     TRANSFER_STATUS,
@@ -55,6 +59,7 @@ export class DoctorTransferService {
 
     private repository = new DoctorTransferRepository();
     private appointmentRepository = new AppointmentRepository();
+    private appointmentService = new AppointmentService();
 
     private async resolveDoctor(employeeId: string) {
 
@@ -680,38 +685,193 @@ private async applySlotMove(
             return [];
         }
 
-        const candidates = await this.repository.findEligibleReplacementCandidates(
+        // Support both appointment day and previous day for overnight shifts
+        const dayIdx = DAY_OF_WEEK_NAMES.indexOf(dayOfWeek as any);
+        const prevDayOfWeek = dayIdx >= 0
+            ? DAY_OF_WEEK_NAMES[(dayIdx + 6) % 7]
+            : dayOfWeek;
+
+        // 1. All active doctors strictly mapped to this branch and department
+        const allMappedDoctors = await this.repository.findActiveDepartmentDoctorsAtBranch(
+            branchId,
+            departmentId,
+            excludeEmployeeId
+        );
+
+        // 2. All schedules for this branch & department on today / yesterday
+        const candidateSchedules = await this.repository.findEligibleReplacementCandidates(
             branchId,
             departmentId,
             excludeEmployeeId,
-            dayOfWeek
+            [dayOfWeek, prevDayOfWeek]
         );
 
         const requestedMinutes = timeToMinutes(appointmentTime);
-        const eligible = new Map<string, { employee_id: string; name: string }>();
 
-        for (const schedule of candidates) {
+        // Group candidate schedules by doctor employee_id
+        const schedulesByDoctor = new Map<string, typeof candidateSchedules>();
+        for (const s of candidateSchedules) {
+            const docId = s.employee_id;
+            if (!docId) continue;
+            const list = schedulesByDoctor.get(docId) ?? [];
+            list.push(s);
+            schedulesByDoctor.set(docId, list);
+        }
 
-            if (!schedule.start_time || !schedule.end_time) {
+        type CandidateResult = {
+            employee_id: string;
+            name: string;
+            shift_start?: string;
+            shift_end?: string;
+            match_type: "EXACT_SESSION" | "BUFFER_MATCH" | "MISMATCH" | "OFF_DUTY";
+            session_label?: string;
+            mismatch_minutes?: number;
+            mismatch_text: string;
+            rank: number;
+        };
+
+        const results: CandidateResult[] = [];
+
+        for (const doc of allMappedDoctors) {
+            if (!doc.employee_id) continue;
+            const docId = doc.employee_id;
+            const docName = `${doc.first_name || ""} ${doc.last_name || ""}`.trim();
+            const schedules = schedulesByDoctor.get(docId) ?? [];
+
+            if (schedules.length === 0) {
+                results.push({
+                    employee_id: docId,
+                    name: docName,
+                    match_type: "OFF_DUTY",
+                    rank: 4,
+                    mismatch_minutes: 9999,
+                    mismatch_text: `Off duty on ${dayOfWeek}`
+                });
                 continue;
             }
 
-            const withinSlot =
-                requestedMinutes >= timeToMinutes(schedule.start_time) &&
-                requestedMinutes < timeToMinutes(schedule.end_time);
+            // Evaluate best schedule for this doctor
+            let bestCandidate: CandidateResult | null = null;
 
-            if (withinSlot && schedule.employees) {
+            for (const schedule of schedules) {
+                if (!schedule.start_time || !schedule.end_time) continue;
 
-                eligible.set(schedule.employees.employee_id!, {
-                    employee_id: schedule.employees.employee_id!,
-                    name: `${schedule.employees.first_name} ${schedule.employees.last_name}`.trim()
-                });
+                const isYesterday = schedule.day_of_week === prevDayOfWeek;
+                const sStart = timeToMinutes(schedule.start_time);
+                let sEnd = timeToMinutes(schedule.end_time);
+                if (sEnd <= sStart) {
+                    sEnd += 1440; // Overnight shift
+                }
 
+                if (isYesterday && sEnd <= 1440) {
+                    continue;
+                }
+
+                let reqMin = requestedMinutes;
+                if (isYesterday) {
+                    reqMin += 1440;
+                } else if (reqMin < sStart && sEnd > 1440) {
+                    reqMin += 1440;
+                }
+
+                const shiftStartLabel = formatMinutesTo12Hour(sStart);
+                const shiftEndLabel = formatMinutesTo12Hour(sEnd);
+
+                let evalResult: CandidateResult;
+
+                if (sStart <= reqMin && reqMin < sEnd) {
+                    // Appointment falls within shift: anchor 1-hour session block
+                    const baseOffset = Math.floor((reqMin - sStart) / 60) * 60;
+                    const sessionStart = sStart + baseOffset;
+                    const sessionEnd = Math.min(sEnd, sStart + baseOffset + 60);
+                    const sessionLabel = `${formatMinutesTo12Hour(sessionStart)} - ${formatMinutesTo12Hour(sessionEnd)}`;
+
+                    evalResult = {
+                        employee_id: docId,
+                        name: docName,
+                        shift_start: shiftStartLabel,
+                        shift_end: shiftEndLabel,
+                        match_type: "EXACT_SESSION",
+                        session_label: sessionLabel,
+                        mismatch_minutes: 0,
+                        mismatch_text: `Exact 1-hr session: ${sessionLabel}`,
+                        rank: 1
+                    };
+                } else if (reqMin < sStart) {
+                    const diff = sStart - reqMin;
+                    if (diff <= 30) {
+                        evalResult = {
+                            employee_id: docId,
+                            name: docName,
+                            shift_start: shiftStartLabel,
+                            shift_end: shiftEndLabel,
+                            match_type: "BUFFER_MATCH",
+                            mismatch_minutes: diff,
+                            mismatch_text: `+${diff}m buffer (Shift starts ${shiftStartLabel})`,
+                            rank: 2
+                        };
+                    } else {
+                        const hrs = Math.floor(diff / 60);
+                        const mins = diff % 60;
+                        const diffStr = hrs > 0 ? (mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`) : `${mins}m`;
+                        evalResult = {
+                            employee_id: docId,
+                            name: docName,
+                            shift_start: shiftStartLabel,
+                            shift_end: shiftEndLabel,
+                            match_type: "MISMATCH",
+                            mismatch_minutes: diff,
+                            mismatch_text: `Shift: ${shiftStartLabel} - ${shiftEndLabel} (${diffStr} after appt)`,
+                            rank: 3
+                        };
+                    }
+                } else {
+                    const diff = reqMin - sEnd;
+                    if (diff <= 30) {
+                        evalResult = {
+                            employee_id: docId,
+                            name: docName,
+                            shift_start: shiftStartLabel,
+                            shift_end: shiftEndLabel,
+                            match_type: "BUFFER_MATCH",
+                            mismatch_minutes: -diff,
+                            mismatch_text: `-${diff}m buffer (Shift ended ${shiftEndLabel})`,
+                            rank: 2
+                        };
+                    } else {
+                        const hrs = Math.floor(diff / 60);
+                        const mins = diff % 60;
+                        const diffStr = hrs > 0 ? (mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`) : `${mins}m`;
+                        evalResult = {
+                            employee_id: docId,
+                            name: docName,
+                            shift_start: shiftStartLabel,
+                            shift_end: shiftEndLabel,
+                            match_type: "MISMATCH",
+                            mismatch_minutes: -diff,
+                            mismatch_text: `Shift: ${shiftStartLabel} - ${shiftEndLabel} (${diffStr} before appt)`,
+                            rank: 3
+                        };
+                    }
+                }
+
+                if (!bestCandidate || evalResult.rank < bestCandidate.rank || (evalResult.rank === bestCandidate.rank && Math.abs(evalResult.mismatch_minutes ?? 0) < Math.abs(bestCandidate.mismatch_minutes ?? 0))) {
+                    bestCandidate = evalResult;
+                }
             }
 
+            if (bestCandidate) {
+                results.push(bestCandidate);
+            }
         }
 
-        return Array.from(eligible.values());
+        // Sort by rank ascending, then absolute mismatch minutes ascending
+        results.sort((a, b) => {
+            if (a.rank !== b.rank) return a.rank - b.rank;
+            return Math.abs(a.mismatch_minutes ?? 0) - Math.abs(b.mismatch_minutes ?? 0);
+        });
+
+        return results;
 
     }
 
@@ -725,15 +885,27 @@ private async applySlotMove(
             throw new Error("New branch is required");
         }
 
+        // Auto-expire any stale pending transfers whose effective date has passed
+        const today = todayDateOnly();
+        await this.repository.expireStalePendingTransfers(today, employeeId);
+
         // One doctor, one transfer in flight: a PENDING_CONFIRMATION transfer
         // must be resolved before a new one can be initiated, otherwise
         // overlapping requests can close/re-create the same schedule rows.
-        const pendingTransfer = await this.repository.findPendingTransfer(employeeId);
+        const pendingTransfer = await this.repository.findPendingTransfer(employeeId, today);
 
-        if (pendingTransfer && !bypassPending) {
-            throw new Error(
-                `Doctor already has transfer ${pendingTransfer.transfer_id} awaiting confirmation — complete or discard it before starting a new one`
-            );
+        if (pendingTransfer) {
+            if (bypassPending) {
+                await this.repository.discardPendingTransfer(
+                    pendingTransfer.transfer_id,
+                    requestedBy,
+                    "Superseded by new transfer"
+                );
+            } else {
+                throw new Error(
+                    `Doctor already has transfer ${pendingTransfer.transfer_id} awaiting confirmation — complete or discard it before starting a new one`
+                );
+            }
         }
 
         if (dto.old_branch_id && dto.close_schedule_ids && dto.close_schedule_ids.length > 0) {
@@ -804,9 +976,7 @@ private async applySlotMove(
 
         }
 
-        if (!dto.transfer_reason?.trim()) {
-            throw new Error("Transfer reason is required");
-        }
+        const transferReason = dto.transfer_reason?.trim() || (dto.mode === "ADD_BRANCH" ? "Doctor branch assignment" : "Doctor branch transfer");
 
         if (!dto.effective_date) {
             throw new Error("Effective date is required");
@@ -843,6 +1013,11 @@ private async applySlotMove(
             ...hour,
             consultation_minutes: consultationMinutes
         }));
+
+        const storedSnapshot: any[] = [
+            ...scheduleSnapshot,
+            ...(oldBranchId ? [{ __meta: "TRANSFER_METADATA", old_branch_id: oldBranchId }] : [])
+        ];
 
         const activeSchedules = await this.repository.findAllActiveSchedules(employeeId);
 
@@ -965,7 +1140,7 @@ let closedBranchIds: string[];
                 effective_date: effectiveDate,
                 new_schedule: scheduleSnapshot as unknown as Prisma.InputJsonValue,
                 closing_schedule_ids: closingScheduleIds,
-                transfer_reason: dto.transfer_reason,
+                transfer_reason: transferReason,
                 status: TRANSFER_STATUS.COMPLETED,
                 affected_appointment_count: affectedCount,
                 requested_by: requestedBy,
@@ -1038,9 +1213,9 @@ let closedBranchIds: string[];
                 old_department_id: oldDepartmentId,
                 new_department_id: newDepartmentId,
                 effective_date: effectiveDate,
-                new_schedule: scheduleSnapshot as unknown as Prisma.InputJsonValue,
+                new_schedule: storedSnapshot as unknown as Prisma.InputJsonValue,
                 closing_schedule_ids: closingScheduleIds,
-                transfer_reason: dto.transfer_reason,
+                transfer_reason: transferReason,
                 status: TRANSFER_STATUS.PENDING_CONFIRMATION,
                 affected_appointment_count: total,
                 requested_by: requestedBy
@@ -1064,6 +1239,7 @@ let closedBranchIds: string[];
         return {
             transfer_id: transfer.transfer_id,
             status: transfer.status,
+            old_branch_id: oldBranchId || undefined,
             message: `${closingScheduleIds.length} conflicting schedule slot(s) have ${total} future appointment(s). Administrator action is required.`,
             affected_appointment_count: total,
             appointments: appointmentsWithCandidates,
@@ -1078,14 +1254,17 @@ let closedBranchIds: string[];
             appointment_id: string;
             appointment_date: Date;
             appointment_time: Date;
+            duration_minutes?: number | null;
         },
         replacementEmployeeId: string,
         replacementEmployee: { first_name: string; last_name: string },
         replacementUserId: string | null | undefined,
-        targetBranchId: string
+        targetBranchId: string,
+        customTime?: string
     ): Promise<{ success: boolean; scheduleId?: bigint; notes: string }> {
 
         const dayOfWeek = toDayOfWeek(appointment.appointment_date);
+        const prevDayOfWeek = toDayOfWeek(addDays(appointment.appointment_date, -1));
 
         // The replacement must be ACTIVELY assigned to the target branch
         // (user_branch_mapping status 1) — a schedule alone is not an
@@ -1103,74 +1282,294 @@ let closedBranchIds: string[];
             };
         }
 
-        const schedules = await tx.doctor_schedule.findMany({
+        // Fetch candidate schedules for today and yesterday (to cover overnight shifts)
+        const candidateSchedules = await tx.doctor_schedule.findMany({
             where: {
                 employee_id: replacementEmployeeId,
                 branch_id: targetBranchId,
-                day_of_week: dayOfWeek,
+                day_of_week: { in: [dayOfWeek, prevDayOfWeek] },
                 is_active: true
             }
         });
 
-        const requestedMinutes = timeToMinutes(appointment.appointment_time);
-
-        const match = schedules.find((schedule) => {
-
-            if (!schedule.start_time || !schedule.end_time) {
-                return false;
-            }
-
-            const start = timeToMinutes(schedule.start_time);
-            const end = timeToMinutes(schedule.end_time);
-
-            return requestedMinutes >= start && requestedMinutes < end;
-
-        });
-
-        if (!match) {
+        if (candidateSchedules.length === 0) {
             return {
                 success: false,
-                notes: `Replacement doctor has no active schedule covering ${formatTimeOfDay(appointment.appointment_time)} on ${dayOfWeek}`
+                notes: `Replacement doctor has no active schedule at branch ${targetBranchId} on ${dayOfWeek}`
             };
         }
 
-        const duplicate = await tx.appointment_history.findFirst({
+        const requestedMinutes = timeToMinutes(appointment.appointment_time);
+        const durationMinutes = appointment.duration_minutes ?? 10;
+        const BUFFER_LIMIT = 30; // ±30m buffer
+
+        // Fetch existing bookings around this appointment date to compute dynamic progression & avoid collisions
+        const bookedAppointments = await tx.appointment_history.findMany({
             where: {
                 employee_id: replacementEmployeeId,
-                appointment_date: appointment.appointment_date,
-                appointment_time: appointment.appointment_time,
+                appointment_date: {
+                    in: [
+                        addDays(appointment.appointment_date, -1),
+                        appointment.appointment_date,
+                        addDays(appointment.appointment_date, 1)
+                    ]
+                },
                 status: { notIn: NON_BLOCKING_APPOINTMENT_STATUSES },
                 appointment_id: { not: appointment.appointment_id }
+            },
+            select: {
+                appointment_id: true,
+                appointment_date: true,
+                appointment_time: true,
+                duration_minutes: true
             }
         });
 
-        if (duplicate) {
+        if (customTime) {
+            const customMin = timeStringToMinutes(customTime);
+            let matchedShiftStart = 0;
+            let matchedShiftEnd = 0;
+            let matchedShiftMin = customMin;
+
+            const sched = candidateSchedules.find((s) => {
+                if (!s.start_time || !s.end_time) return false;
+                const sStart = timeToMinutes(s.start_time);
+                let sEnd = timeToMinutes(s.end_time);
+                if (sEnd <= sStart) sEnd += 1440;
+                let m = customMin;
+                if (s.day_of_week === prevDayOfWeek) m += 1440;
+                else if (m < sStart && sEnd > 1440) m += 1440;
+                const inShift = m >= sStart && m < sEnd;
+                if (inShift) {
+                    matchedShiftStart = sStart;
+                    matchedShiftEnd = sEnd;
+                    matchedShiftMin = m;
+                }
+                return inShift;
+            });
+
+            if (!sched) {
+                return {
+                    success: false,
+                    notes: `Custom time ${customTime} is outside doctor's schedule on ${dayOfWeek}`
+                };
+            }
+
+            if (matchedShiftMin + durationMinutes > matchedShiftEnd) {
+                return {
+                    success: false,
+                    notes: `Custom time ${customTime} (${durationMinutes}m consultation) extends past shift end at ${formatMinutesTo12Hour(matchedShiftEnd % 1440)}`
+                };
+            }
+
+            const isYesterdaySchedule = sched.day_of_week === prevDayOfWeek;
+            const shiftBaseDate = isYesterdaySchedule
+                ? addDays(appointment.appointment_date, -1)
+                : appointment.appointment_date;
+
+            const collision = bookedAppointments.some((b) => {
+                if (!b.appointment_time) return false;
+                let bStart = timeToMinutes(b.appointment_time);
+                const bDateStr = formatDateOnly(b.appointment_date);
+                const sDateStr = formatDateOnly(shiftBaseDate);
+                if (bDateStr !== sDateStr) bStart += 1440;
+                const bEnd = bStart + (b.duration_minutes ?? 10);
+                return matchedShiftMin < bEnd && (matchedShiftMin + durationMinutes) > bStart;
+            });
+
+            if (collision) {
+                return {
+                    success: false,
+                    notes: `Doctor already has a consultation booked at/around ${customTime}. Please choose an open slot.`
+                };
+            }
+
+            const dayOffset = Math.floor(matchedShiftMin / 1440);
+            const effectiveDate = addDays(shiftBaseDate, dayOffset);
+            const targetTime = timeStringToDate(minutesToHHmm(matchedShiftMin % 1440));
+
+            await this.appointmentRepository.lockDoctorSchedule(tx, sched.schedule_id);
+            const tokenNumber = await this.appointmentRepository.generateTokenNumber(
+                tx,
+                sched.schedule_id,
+                effectiveDate
+            );
+
+            const doctorName = `${replacementEmployee.first_name} ${replacementEmployee.last_name}`.trim();
+
+            await this.repository.updateAppointment(tx, appointment.appointment_id, {
+                employee_id: replacementEmployeeId,
+                branch_id: targetBranchId,
+                schedule_id: sched.schedule_id,
+                appointment_date: effectiveDate,
+                appointment_time: targetTime,
+                token_number: tokenNumber,
+                doctor_name: doctorName,
+                assigned_doctor: doctorName,
+                status: "SCHEDULED"
+            });
+
             return {
-                success: false,
-                notes: "Replacement doctor already has an appointment at this exact date and time"
+                success: true,
+                scheduleId: sched.schedule_id,
+                notes: `Reassigned to Dr. ${doctorName} at ${customTime} (manual time adjustment)`
             };
         }
 
-        await this.appointmentRepository.lockDoctorSchedule(tx, match.schedule_id);
+        type SlotMatch = {
+            schedule: typeof candidateSchedules[0];
+            candidateStartMinutes: number;
+            effectiveDate: Date;
+            deltaMinutes: number;
+            sessionLabel: string;
+        };
+
+        const validMatches: SlotMatch[] = [];
+
+        for (const schedule of candidateSchedules) {
+            if (!schedule.start_time || !schedule.end_time) continue;
+
+            const isYesterdaySchedule = schedule.day_of_week === prevDayOfWeek;
+            const shiftStartMin = timeToMinutes(schedule.start_time);
+            let shiftEndMin = timeToMinutes(schedule.end_time);
+            if (shiftEndMin <= shiftStartMin) {
+                shiftEndMin += 1440; // Overnight shift
+            }
+
+            // A schedule from yesterday only covers today if it ran past midnight
+            if (isYesterdaySchedule && shiftEndMin <= 1440) {
+                continue;
+            }
+
+            let normApptMinutes = requestedMinutes;
+            if (isYesterdaySchedule) {
+                normApptMinutes += 1440;
+            } else if (normApptMinutes < shiftStartMin && shiftEndMin > 1440) {
+                normApptMinutes += 1440;
+            }
+
+            // Check if shift overlaps the [normApptMinutes - 30, normApptMinutes + 30] buffer window
+            if (shiftStartMin > normApptMinutes + BUFFER_LIMIT || shiftEndMin <= normApptMinutes - BUFFER_LIMIT) {
+                continue;
+            }
+
+            const shiftBaseDate = isYesterdaySchedule
+                ? addDays(appointment.appointment_date, -1)
+                : appointment.appointment_date;
+
+            // Anchor 1-hour session blocks to shift start
+            const baseSlotOffset = Math.floor(Math.max(0, normApptMinutes - shiftStartMin) / 60) * 60;
+            // Check current 1-hour session, plus adjacent sessions if within ±30m buffer
+            const candidateOffsets = [baseSlotOffset];
+            if (baseSlotOffset - 60 >= 0 && (shiftStartMin + baseSlotOffset - 60 + 60) > (normApptMinutes - BUFFER_LIMIT)) {
+                candidateOffsets.push(baseSlotOffset - 60);
+            }
+            if ((shiftStartMin + baseSlotOffset + 60) < shiftEndMin && (shiftStartMin + baseSlotOffset + 60) <= (normApptMinutes + BUFFER_LIMIT)) {
+                candidateOffsets.push(baseSlotOffset + 60);
+            }
+
+            for (const offset of candidateOffsets) {
+                const blockStartMinutes = shiftStartMin + offset;
+                const blockEndMinutes = Math.min(blockStartMinutes + 60, shiftEndMin);
+
+                // Bookings in this 1-hour session
+                const sessionBookings = bookedAppointments.filter((b) => {
+                    if (!b.appointment_time) return false;
+                    let bStart = timeToMinutes(b.appointment_time);
+                    const bDateStr = formatDateOnly(b.appointment_date);
+                    const sDateStr = formatDateOnly(shiftBaseDate);
+                    if (bDateStr !== sDateStr) bStart += 1440;
+                    const bEnd = bStart + (b.duration_minutes ?? 10);
+                    return bStart < blockEndMinutes && bEnd > blockStartMinutes;
+                });
+
+                // Dynamic progression: earliest available consultation start
+                const latestPriorEnd = sessionBookings.length > 0
+                    ? Math.max(...sessionBookings.map((b) => {
+                        let bStart = timeToMinutes(b.appointment_time!);
+                        const bDateStr = formatDateOnly(b.appointment_date);
+                        const sDateStr = formatDateOnly(shiftBaseDate);
+                        if (bDateStr !== sDateStr) bStart += 1440;
+                        return bStart + (b.duration_minutes ?? 10);
+                    }))
+                    : blockStartMinutes;
+
+                const candidateStart = Math.max(blockStartMinutes, latestPriorEnd);
+
+                // Check collision with any existing booking at or after candidateStart
+                const collision = bookedAppointments.some((b) => {
+                    if (!b.appointment_time) return false;
+                    let bStart = timeToMinutes(b.appointment_time);
+                    const bDateStr = formatDateOnly(b.appointment_date);
+                    const sDateStr = formatDateOnly(shiftBaseDate);
+                    if (bDateStr !== sDateStr) bStart += 1440;
+                    const bEnd = bStart + (b.duration_minutes ?? 10);
+                    return candidateStart < bEnd && (candidateStart + durationMinutes) > bStart;
+                });
+
+                if (!collision && candidateStart + durationMinutes <= shiftEndMin) {
+                    const deltaMinutes = candidateStart - normApptMinutes;
+                    if (Math.abs(deltaMinutes) <= BUFFER_LIMIT) {
+                        const dayOffset = Math.floor(candidateStart / 1440);
+                        const effectiveDate = addDays(shiftBaseDate, dayOffset);
+                        const sessionLabel = `${formatMinutesTo12Hour(blockStartMinutes % 1440)} - ${formatMinutesTo12Hour(blockEndMinutes % 1440)}`;
+
+                        validMatches.push({
+                            schedule,
+                            candidateStartMinutes: candidateStart % 1440,
+                            effectiveDate,
+                            deltaMinutes,
+                            sessionLabel
+                        });
+                    }
+                }
+            }
+        }
+
+        // Sort matches by smallest absolute delta |deltaMinutes|
+        validMatches.sort((a, b) => Math.abs(a.deltaMinutes) - Math.abs(b.deltaMinutes));
+
+        if (validMatches.length === 0) {
+            return {
+                success: false,
+                notes: `No available slot within ±30m buffer in doctor's 1-hour sessions on ${dayOfWeek}`
+            };
+        }
+
+        const best = validMatches[0];
+        const newAppointmentTime = timeStringToDate(minutesToHHmm(best.candidateStartMinutes));
+
+        await this.appointmentRepository.lockDoctorSchedule(tx, best.schedule.schedule_id);
 
         const tokenNumber = await this.appointmentRepository.generateTokenNumber(
             tx,
-            match.schedule_id,
-            appointment.appointment_date
+            best.schedule.schedule_id,
+            best.effectiveDate
         );
 
         const doctorName = `${replacementEmployee.first_name} ${replacementEmployee.last_name}`.trim();
+        const deltaStr = best.deltaMinutes === 0
+            ? "Exact time"
+            : best.deltaMinutes > 0
+            ? `+${best.deltaMinutes}m buffer`
+            : `${best.deltaMinutes}m buffer`;
 
         await this.repository.updateAppointment(tx, appointment.appointment_id, {
             employee_id: replacementEmployeeId,
             branch_id: targetBranchId,
-            schedule_id: match.schedule_id,
+            schedule_id: best.schedule.schedule_id,
+            appointment_date: best.effectiveDate,
+            appointment_time: newAppointmentTime,
             token_number: tokenNumber,
             doctor_name: doctorName,
             assigned_doctor: doctorName
         });
 
-        return { success: true, scheduleId: match.schedule_id, notes: "Reassigned to replacement doctor" };
+        return {
+            success: true,
+            scheduleId: best.schedule.schedule_id,
+            notes: `Reassigned to Dr. ${doctorName} at ${minutesToHHmm(best.candidateStartMinutes)} (${deltaStr} in 1-hr session ${best.sessionLabel})`
+        };
 
     }
 
@@ -1229,6 +1628,7 @@ let closedBranchIds: string[];
         }
 
         let replacementEmployee: {
+            employee_id: string;
             first_name: string;
             last_name: string;
             department_id: string | null;
@@ -1237,37 +1637,43 @@ let closedBranchIds: string[];
 
         if (dto.action === TRANSFER_ACTION.TRANSFER) {
 
-            if (!dto.replacement_employee_id) {
+            const hasPerApptTransfer = Array.isArray(dto.appointments) && dto.appointments.some((a) => a.action === TRANSFER_ACTION.TRANSFER || (!a.action && !!a.replacement_employee_id));
+
+            if (!dto.replacement_employee_id && !hasPerApptTransfer) {
                 throw new Error("A replacement doctor is required for the TRANSFER action");
             }
 
-            if (dto.replacement_employee_id === employeeId) {
-                throw new Error("Replacement doctor must be different from the doctor being transferred");
+            if (dto.replacement_employee_id) {
+                if (dto.replacement_employee_id === employeeId) {
+                    throw new Error("Replacement doctor must be different from the doctor being transferred");
+                }
+
+                const replacement = await this.repository.findDoctorWithRole(dto.replacement_employee_id);
+
+                if (!replacement) {
+                    throw new Error("Replacement doctor not found");
+                }
+
+                if (replacement.user_table?.role_type !== "DOCTOR") {
+                    throw new Error("Replacement is not a doctor");
+                }
+
+                if (replacement.emp_status === false) {
+                    throw new Error("Replacement doctor is inactive");
+                }
+
+                if (transfer.old_department_id && replacement.department_id !== transfer.old_department_id) {
+                    throw new Error("Replacement doctor must belong to the same department as the doctor being transferred");
+                }
+
+                replacementEmployee = {
+                    employee_id: dto.replacement_employee_id,
+                    first_name: replacement.first_name,
+                    last_name: replacement.last_name,
+                    department_id: replacement.department_id,
+                    user_id: replacement.user_id
+                };
             }
-
-            const replacement = await this.repository.findDoctorWithRole(dto.replacement_employee_id);
-
-            if (!replacement) {
-                throw new Error("Replacement doctor not found");
-            }
-
-            if (replacement.user_table?.role_type !== "DOCTOR") {
-                throw new Error("Replacement is not a doctor");
-            }
-
-            if (replacement.emp_status === false) {
-                throw new Error("Replacement doctor is inactive");
-            }
-
-            if (transfer.old_department_id && replacement.department_id !== transfer.old_department_id) {
-                throw new Error("Replacement doctor must belong to the same department as the doctor being transferred");
-            }
-
-            // Eligibility per exact appointment (branch/day/time) is checked
-            // inside the transaction loop below, since conflicts can span
-            // several branches - there's no single "target branch" to gate
-            // on upfront.
-            replacementEmployee = replacement;
 
         } else if (dto.action === TRANSFER_ACTION.CANCEL) {
 
@@ -1299,8 +1705,10 @@ let closedBranchIds: string[];
             // payload tagged inside new_schedule; everything else is treated
             // as normal working-hour entries (none for date changes).
             const snapshotEntries = ((transfer.new_schedule ?? []) as any[]);
+            const metaEntry = snapshotEntries.find((e) => e && e.__meta === "TRANSFER_METADATA");
+            const effectiveOldBranchId = dto.old_branch_id || (metaEntry?.old_branch_id as string | undefined) || null;
             const dateChangeEntry = snapshotEntries.find((e) => e && e.__type === "DATE_CHANGE") as ScheduleChangeRequestDto | undefined;
-            const workingSnapshot = snapshotEntries.filter((e) => !(e && e.__type === "DATE_CHANGE")) as unknown as ScheduleSnapshotEntry[];
+            const workingSnapshot = snapshotEntries.filter((e) => !(e && (e.__type === "DATE_CHANGE" || e.__meta === "TRANSFER_METADATA"))) as unknown as ScheduleSnapshotEntry[];
             const activeSchedulesNow = await this.repository.findAllActiveSchedulesInTx(tx, employeeId);
             const closingScheduleIdsNow = this.findConflictingSchedules(
                 activeSchedulesNow,
@@ -1327,12 +1735,12 @@ let closedBranchIds: string[];
 
             }
 
-            if (dto.old_branch_id) {
+            if (effectiveOldBranchId) {
 
                 for (const schedule of activeSchedulesNow) {
 
                     if (
-                        schedule.branch_id === dto.old_branch_id &&
+                        schedule.branch_id === effectiveOldBranchId &&
                         !closingScheduleIdsNow.includes(schedule.schedule_id)
                     ) {
                         closingScheduleIdsNow.push(schedule.schedule_id);
@@ -1348,8 +1756,8 @@ let closedBranchIds: string[];
 
             const closingBranchIdsNow = Array.from(new Set(closingSchedulesNow.map((s) => s.branch_id)));
 
-            if (dto.old_branch_id) {
-                closingBranchIdsNow.push(dto.old_branch_id);
+            if (effectiveOldBranchId) {
+                closingBranchIdsNow.push(effectiveOldBranchId);
             }
 
             const appointments = await this.repository.findAllFutureAppointmentsForTransferByScheduleIds(
@@ -1359,40 +1767,155 @@ let closedBranchIds: string[];
                 {
                     employeeId,
                     branchIds: closingBranchIdsNow,
-                    includeAllAtBranches: !!dto.old_branch_id
+                    includeAllAtBranches: !!effectiveOldBranchId
                 }
             );
 
             summary.total = appointments.length;
 
+            const affectedDoctorDates = new Map<string, { employee_id: string; appointment_date: Date }>();
+            const trackDoctorDate = (empId?: string | null, date?: Date | null) => {
+                if (!empId || !date) return;
+                const key = `${empId}_${formatDateOnly(date)}`;
+                if (!affectedDoctorDates.has(key)) {
+                    affectedDoctorDates.set(key, { employee_id: empId, appointment_date: date });
+                }
+            };
+
             for (const appointment of appointments) {
 
                 await this.repository.lockAppointment(tx, appointment.appointment_id);
 
-                if (dto.action === TRANSFER_ACTION.TRANSFER) {
+                const perAppt = dto.appointments?.find(
+                    (i) => i.appointment_id === appointment.appointment_id
+                );
+                const apptAction = perAppt?.action ?? dto.action;
+                const replacementId = perAppt?.replacement_employee_id ?? dto.replacement_employee_id;
+                const targetBranchId = perAppt?.replacement_branch_id ?? dto.replacement_branch_id ?? appointment.branch_id!;
+                const customTime = perAppt?.custom_time;
 
-                    // Defaults to the appointment's OWN branch - that's
-                    // physically where the patient is booked - unless the
-                    // admin explicitly wants to relocate everyone to a
-                    // different branch via replacement_branch_id.
-                    const targetBranchId = dto.replacement_branch_id ?? appointment.branch_id!;
+                if (apptAction === TRANSFER_ACTION.TRANSFER) {
+
+                    if (!replacementId) {
+                        await this.repository.updateAppointment(tx, appointment.appointment_id, {
+                            status: APPOINTMENT_STATUS.RESCHEDULE_REQUIRED
+                        });
+
+                        const queueId = await this.repository.generateQueueId(tx);
+
+                        await this.repository.createRescheduleQueueEntry(tx, {
+                            queue_id: queueId,
+                            appointment_id: appointment.appointment_id,
+                            patient_id: appointment.patient_id,
+                            employee_id: employeeId,
+                            branch_id: appointment.branch_id!,
+                            department_id: appointment.department_id,
+                            old_schedule_id: appointment.schedule_id,
+                            old_appointment_date: appointment.appointment_date,
+                            old_appointment_time: appointment.appointment_time,
+                            transfer_id: transfer.transfer_id,
+                            priority: dto.priority ?? "HIGH",
+                            reason: dto.reason ?? transfer.transfer_reason ?? "Transfer unassigned - reschedule required",
+                            status: RESCHEDULE_QUEUE_STATUS.PENDING,
+                            created_by: confirmedBy
+                        });
+
+                        await this.repository.createRescheduleActionLog(tx, {
+                            queue_id: queueId,
+                            action: RESCHEDULE_QUEUE_ACTION.CREATED,
+                            performed_by: confirmedBy,
+                            notes: `Queued from doctor transfer ${transfer.transfer_id}`
+                        });
+
+                        await this.repository.createTransferAppointmentLog(tx, {
+                            transfer_id: transfer.transfer_id,
+                            appointment_id: appointment.appointment_id,
+                            action: TRANSFER_ACTION.RESCHEDULE,
+                            old_employee_id: employeeId,
+                            old_branch_id: appointment.branch_id!,
+                            old_schedule_id: appointment.schedule_id,
+                            old_appointment_date: appointment.appointment_date,
+                            old_appointment_time: appointment.appointment_time,
+                            result_status: APPOINTMENT_LOG_RESULT.QUEUED,
+                            notes: `Queued as ${queueId}`
+                        });
+
+                        summary.queued += 1;
+                        continue;
+                    }
+
+                    const replDoc = replacementId === replacementEmployee?.employee_id
+                        ? replacementEmployee
+                        : await this.repository.findDoctorWithRole(replacementId);
 
                     const outcome = await this.transferSingleAppointment(
                         tx,
                         appointment,
-                        dto.replacement_employee_id!,
-                        replacementEmployee!,
-                        replacementEmployee!.user_id,
-                        targetBranchId
+                        replacementId,
+                        replDoc!,
+                        replDoc?.user_id,
+                        targetBranchId,
+                        customTime
                     );
 
                     if (!outcome.success) {
 
                         await this.repository.updateAppointment(tx, appointment.appointment_id, {
-                            status: APPOINTMENT_STATUS.TRANSFER_REVIEW_REQUIRED
+                            status: APPOINTMENT_STATUS.RESCHEDULE_REQUIRED
                         });
 
+                        const queueId = await this.repository.generateQueueId(tx);
+
+                        await this.repository.createRescheduleQueueEntry(tx, {
+                            queue_id: queueId,
+                            appointment_id: appointment.appointment_id,
+                            patient_id: appointment.patient_id,
+                            employee_id: employeeId,
+                            branch_id: appointment.branch_id!,
+                            department_id: appointment.department_id,
+                            old_schedule_id: appointment.schedule_id,
+                            old_appointment_date: appointment.appointment_date,
+                            old_appointment_time: appointment.appointment_time,
+                            transfer_id: transfer.transfer_id,
+                            priority: "HIGH",
+                            reason: outcome.notes ? `Transfer conflict: ${outcome.notes}` : "Transfer conflict - reschedule required",
+                            status: RESCHEDULE_QUEUE_STATUS.PENDING,
+                            created_by: confirmedBy
+                        });
+
+                        await this.repository.createRescheduleActionLog(tx, {
+                            queue_id: queueId,
+                            action: RESCHEDULE_QUEUE_ACTION.CREATED,
+                            performed_by: confirmedBy,
+                            notes: `Queued from transfer conflict: ${outcome.notes}`
+                        });
+
+                        summary.queued += 1;
+                        summary.conflicts += 1;
+                        conflicts.push({ appointment_id: appointment.appointment_id, reason: outcome.notes });
+
+                    } else {
+
+                        summary.successful += 1;
+                        successful.push({ appointment_id: appointment.appointment_id, reason: outcome.notes });
+                        trackDoctorDate(replacementId, appointment.appointment_date);
+
+                        if (dto.notify_channels && dto.notify_channels.length > 0) {
+                            for (const channel of dto.notify_channels) {
+                                const notificationId = await this.repository.generateNotificationId(tx);
+                                await this.repository.createNotification(tx, {
+                                    notification_id: notificationId,
+                                    appointment_id: appointment.appointment_id,
+                                    channel,
+                                    notification_type: "DOCTOR_TRANSFER_REASSIGNMENT",
+                                    status: "PENDING"
+                                });
+                            }
+                        }
+
                     }
+
+                    trackDoctorDate(employeeId, appointment.appointment_date);
 
                     await this.repository.createTransferAppointmentLog(tx, {
                         transfer_id: transfer.transfer_id,
@@ -1403,22 +1926,14 @@ let closedBranchIds: string[];
                         old_schedule_id: appointment.schedule_id,
                         old_appointment_date: appointment.appointment_date,
                         old_appointment_time: appointment.appointment_time,
-                        new_employee_id: outcome.success ? dto.replacement_employee_id : null,
+                        new_employee_id: outcome.success ? replacementId : null,
                         new_branch_id: outcome.success ? targetBranchId : null,
                         new_schedule_id: outcome.success ? outcome.scheduleId : null,
                         result_status: outcome.success ? APPOINTMENT_LOG_RESULT.SUCCESS : APPOINTMENT_LOG_RESULT.CONFLICT,
                         notes: outcome.notes
                     });
 
-                    if (outcome.success) {
-                        summary.successful += 1;
-                        successful.push({ appointment_id: appointment.appointment_id, reason: outcome.notes });
-                    } else {
-                        summary.conflicts += 1;
-                        conflicts.push({ appointment_id: appointment.appointment_id, reason: outcome.notes });
-                    }
-
-                } else if (dto.action === TRANSFER_ACTION.RESCHEDULE) {
+                } else if (apptAction === TRANSFER_ACTION.RESCHEDULE) {
 
                     await this.repository.updateAppointment(tx, appointment.appointment_id, {
                         status: APPOINTMENT_STATUS.RESCHEDULE_REQUIRED
@@ -1438,7 +1953,7 @@ let closedBranchIds: string[];
                         old_appointment_time: appointment.appointment_time,
                         transfer_id: transfer.transfer_id,
                         priority: dto.priority ?? "NORMAL",
-                        reason: dto.reason ?? transfer.transfer_reason,
+                        reason: dto.reason?.trim() || transfer.transfer_reason || "Doctor transfer reschedule",
                         status: RESCHEDULE_QUEUE_STATUS.PENDING,
                         created_by: confirmedBy
                     });
@@ -1463,6 +1978,7 @@ let closedBranchIds: string[];
                         notes: `Queued as ${queueId}`
                     });
 
+                    trackDoctorDate(employeeId, appointment.appointment_date);
                     summary.queued += 1;
 
                 } else {
@@ -1505,19 +2021,20 @@ let closedBranchIds: string[];
                         notes: DOCTOR_TRANSFER_CANCEL_REASON
                     });
 
+                    trackDoctorDate(employeeId, appointment.appointment_date);
                     summary.cancelled += 1;
 
                 }
 
             }
 
-if (dto.old_branch_id) {
+            if (effectiveOldBranchId) {
                 // True transfer – close all remaining schedules on the source branch
                 await this.applyDoctorTransfer(tx, {
                     employee_id: employeeId,
                     employee_user_id: employee.user_id,
                     employee_branch_id: employee.branch_id,
-                    old_branch_id: dto.old_branch_id,
+                    old_branch_id: effectiveOldBranchId,
                     new_branch_id: transfer.new_branch_id,
                     new_department_id: transfer.new_department_id,
                     effective_date: transfer.effective_date,
@@ -1545,6 +2062,15 @@ if (dto.old_branch_id) {
             // with the appointment actions above.
             if (dateChangeEntry) {
                 await this.applyDateChangeTx(tx, employeeId, dateChangeEntry, confirmedBy);
+            }
+
+            // Recalculate daily timeline for all affected doctors & dates
+            for (const item of affectedDoctorDates.values()) {
+                await this.appointmentService.recalculateDoctorDailyTimeline(
+                    tx,
+                    item.employee_id,
+                    item.appointment_date
+                );
             }
 
             const now = new Date();
@@ -1620,23 +2146,45 @@ if (dto.old_branch_id) {
             const appointmentDate = parseDateOnly(dto.appointment_date);
             const dayOfWeek = toDayOfWeek(appointmentDate);
 
-            const schedules = await this.appointmentRepository.findActiveDoctorSchedules(
-                dto.employee_id,
-                dto.branch_id,
-                dayOfWeek
-            );
-
             const requestedMinutes = timeStringToMinutes(dto.appointment_time);
 
-            const schedule = schedules.find((s) => {
+            let schedule: any = null;
 
-                if (!s.start_time || !s.end_time) {
-                    return false;
+            // 1. Direct Schedule ID resolution if passed from slot selector
+            if (dto.schedule_id) {
+                schedule = await this.appointmentRepository.findDoctorScheduleById(dto.schedule_id);
+                if (schedule && schedule.employee_id !== dto.employee_id) {
+                    throw new Error("Schedule does not belong to the selected doctor");
                 }
+            }
 
-                return requestedMinutes >= timeToMinutes(s.start_time) && requestedMinutes < timeToMinutes(s.end_time);
+            // 2. Fallback to Day-of-Week matching (supporting overnight shifts)
+            if (!schedule) {
+                const schedules = await this.appointmentRepository.findActiveDoctorSchedules(
+                    dto.employee_id,
+                    dto.branch_id,
+                    dayOfWeek
+                );
 
-            });
+                // If not found or early morning, also check yesterday's overnight schedules
+                const prevDay = toDayOfWeek(addDays(appointmentDate, -1));
+                const yesterdaySchedules = await this.appointmentRepository.findActiveDoctorSchedules(
+                    dto.employee_id,
+                    dto.branch_id,
+                    prevDay
+                );
+                const candidateSchedules = [...schedules, ...yesterdaySchedules];
+
+                schedule = candidateSchedules.find((s) => {
+                    if (!s.start_time || !s.end_time) return false;
+                    const sStart = timeToMinutes(s.start_time);
+                    let sEnd = timeToMinutes(s.end_time);
+                    if (sEnd <= sStart) sEnd += 1440;
+                    let reqMin = requestedMinutes;
+                    if (reqMin < sStart && sEnd > 1440) reqMin += 1440;
+                    return reqMin >= sStart && reqMin < sEnd;
+                });
+            }
 
             if (!schedule) {
                 throw new Error("Selected time is outside the doctor's working hours");
@@ -1644,15 +2192,41 @@ if (dto.old_branch_id) {
 
             const appointmentTime = timeStringToDate(dto.appointment_time);
 
-            const duplicate = await this.appointmentRepository.findDuplicateAppointment(
+            // Elastic Collision Check
+            const existingAppts = await this.appointmentRepository.findBookedAppointmentsForDate(
                 dto.employee_id,
-                appointmentDate,
-                appointmentTime,
-                appointmentId
+                appointmentDate
             );
 
-            if (duplicate) {
-                throw new Error("Doctor already has an appointment at the selected date and time");
+            // Also check overnight if shift spans past midnight
+            const schedStart = schedule.start_time ? timeToMinutes(schedule.start_time) : 0;
+            const schedEnd = schedule.end_time ? timeToMinutes(schedule.end_time) : 0;
+            if (schedEnd <= schedStart) {
+                const nextDayAppts = await this.appointmentRepository.findBookedAppointmentsForDate(
+                    dto.employee_id,
+                    addDays(appointmentDate, 1)
+                );
+                existingAppts.push(...nextDayAppts);
+            }
+
+            const targetAppt = await prisma.appointment_history.findUnique({
+                where: { appointment_id: appointmentId },
+                select: { duration_minutes: true }
+            });
+            const duration = targetAppt?.duration_minutes ?? 10;
+            const reqStart = requestedMinutes;
+            const reqEnd = reqStart + duration;
+
+            const overlaps = existingAppts.some((b) => {
+                if (b.appointment_id === appointmentId) return false;
+                if (b.status === APPOINTMENT_STATUS.CANCELLED || b.status === APPOINTMENT_STATUS.NO_SHOW || !b.appointment_time) return false;
+                const bStart = timeToMinutes(b.appointment_time);
+                const bEnd = bStart + (b.duration_minutes ?? 10);
+                return reqStart < bEnd && reqEnd > bStart;
+            });
+
+            if (overlaps) {
+                throw new Error("Selected time overlaps with an existing consultation for this doctor");
             }
 
             return prisma.$transaction(async (tx) => {
@@ -1712,6 +2286,21 @@ if (dto.old_branch_id) {
                     ...(doctorName ? { doctor_name: doctorName, assigned_doctor: doctorName } : {})
                 });
 
+                if (queue.assigned_employee_id && queue.assigned_date) {
+                    await this.appointmentService.recalculateDoctorDailyTimeline(
+                        tx,
+                        queue.assigned_employee_id,
+                        queue.assigned_date
+                    );
+                }
+                if (queue.employee_id && queue.old_appointment_date) {
+                    await this.appointmentService.recalculateDoctorDailyTimeline(
+                        tx,
+                        queue.employee_id,
+                        queue.old_appointment_date
+                    );
+                }
+
                 await this.repository.updateRescheduleQueue(tx, queue.queue_id, {
                     status: RESCHEDULE_QUEUE_STATUS.CONFIRMED
                 });
@@ -1745,6 +2334,14 @@ if (dto.old_branch_id) {
                 cancelled_at: new Date()
             });
 
+            if (queue.employee_id && (queue.old_appointment_date || queue.assigned_date)) {
+                await this.appointmentService.recalculateDoctorDailyTimeline(
+                    tx,
+                    queue.employee_id,
+                    (queue.old_appointment_date || queue.assigned_date)
+                );
+            }
+
             await this.repository.createRescheduleActionLog(tx, {
                 queue_id: queue.queue_id,
                 action: RESCHEDULE_QUEUE_ACTION.CANCELLED,
@@ -1755,6 +2352,149 @@ if (dto.old_branch_id) {
             return { queue_id: queue.queue_id, status: RESCHEDULE_QUEUE_STATUS.CANCELLED };
 
         });
+
+    }
+
+    async getDoctorPendingTransfer(employeeId: string) {
+
+        await this.resolveDoctor(employeeId);
+        const today = todayDateOnly();
+        await this.repository.expireStalePendingTransfers(today, employeeId);
+
+        const pending = await this.repository.getActivePendingTransfer(employeeId);
+        if (!pending) {
+            return null;
+        }
+
+        const closingScheduleIds = (pending.closing_schedule_ids || []) as bigint[];
+
+        const snapshotEntries = ((pending.new_schedule ?? []) as any[]);
+        const metaEntry = snapshotEntries.find((e) => e && e.__meta === "TRANSFER_METADATA");
+        const dateChangeEntry = snapshotEntries.find((e) => e && e.__type === "DATE_CHANGE") as ScheduleChangeRequestDto | undefined;
+        const storedOldBranchId = metaEntry?.old_branch_id as string | undefined;
+
+        let sourceBranchIds: string[] = [];
+        if (closingScheduleIds.length > 0) {
+            const closingSchedules = await this.repository.findSchedulesByIds(prisma, closingScheduleIds);
+            sourceBranchIds = Array.from(new Set(closingSchedules.map((s) => s.branch_id)));
+        }
+        if (storedOldBranchId && !sourceBranchIds.includes(storedOldBranchId)) {
+            sourceBranchIds.push(storedOldBranchId);
+        }
+
+        let appointments: any[] = [];
+
+        if (dateChangeEntry) {
+            const changeDate = parseDateOnly(dateChangeEntry.change_date);
+            const weekday = toDayOfWeek(changeDate);
+            const impact = await this.repository.fetchDataForDateChangeImpact(
+                employeeId,
+                dateChangeEntry.branch_id,
+                changeDate,
+                dateChangeEntry.change_id ? BigInt(dateChangeEntry.change_id) : undefined
+            );
+
+            const proposed = [] as Array<{ mode: string; start_time: Date | null; end_time: Date | null }>;
+            if (dateChangeEntry.action === "CREATE" || dateChangeEntry.action === "UPDATE") {
+                proposed.push({
+                    mode: dateChangeEntry.mode as string,
+                    start_time: dateChangeEntry.start_time ? timeStringToDate(dateChangeEntry.start_time) : null,
+                    end_time: dateChangeEntry.end_time ? timeStringToDate(dateChangeEntry.end_time) : null
+                });
+            }
+
+            const afterWindows = this.buildDateWindows(weekday, impact.templateSchedules, [
+                ...impact.changes.map((chg) => ({
+                    mode: chg.mode as string,
+                    start_time: chg.start_time,
+                    end_time: chg.end_time
+                })),
+                ...proposed
+            ]);
+
+            const dayAppointments = await this.repository.findDayAppointments(
+                employeeId,
+                dateChangeEntry.branch_id,
+                changeDate
+            );
+
+            appointments = dayAppointments.filter((appt) => {
+                if (!appt.appointment_time) return false;
+                const t = timeToMinutes(appt.appointment_time);
+                return !afterWindows.some((w) => t >= w.s && t < w.e);
+            });
+        } else {
+            appointments = await this.repository.findAllFutureAppointmentsForTransferByScheduleIds(
+                prisma,
+                closingScheduleIds,
+                pending.effective_date,
+                {
+                    employeeId,
+                    branchIds: sourceBranchIds,
+                    includeAllAtBranches: Boolean(storedOldBranchId)
+                }
+            );
+        }
+
+        const appointmentsWithCandidates = await Promise.all(
+            appointments.map(async (appointment) => ({
+                ...this.mapAppointmentSummary(appointment),
+                eligible_replacement_doctors: await this.findEligibleReplacementDoctors(
+                    appointment.branch_id!,
+                    pending.old_department_id,
+                    employeeId,
+                    toDayOfWeek(appointment.appointment_date),
+                    appointment.appointment_time
+                )
+            }))
+        );
+
+        return {
+            transfer_id: pending.transfer_id,
+            employee_id: pending.employee_id,
+            status: pending.status,
+            old_branch_id: storedOldBranchId || undefined,
+            new_branch_id: pending.new_branch_id,
+            branch_name: (pending as any).branch?.branch_name,
+            old_department_id: pending.old_department_id,
+            new_department_id: pending.new_department_id,
+            effective_date: formatDateOnly(pending.effective_date),
+            transfer_reason: pending.transfer_reason,
+            affected_appointment_count: appointments.length,
+            appointments: appointmentsWithCandidates,
+            actions_required: TRANSFER_ACTION_VALUES
+        };
+
+    }
+
+    async discardTransfer(employeeId: string, transferId: string, actingUserId: string, reason?: string) {
+
+        await this.resolveDoctor(employeeId);
+
+        const transfer = await this.repository.getDoctorTransferById(transferId);
+        if (!transfer) {
+            throw new Error("Transfer request not found");
+        }
+
+        if (transfer.employee_id !== employeeId) {
+            throw new Error("Transfer request does not belong to this doctor");
+        }
+
+        if (transfer.status !== TRANSFER_STATUS.PENDING_CONFIRMATION) {
+            throw new Error(`Cannot discard a transfer with status: ${transfer.status}`);
+        }
+
+        const discarded = await this.repository.discardPendingTransfer(
+            transferId,
+            actingUserId,
+            reason
+        );
+
+        return {
+            transfer_id: discarded.transfer_id,
+            status: discarded.status,
+            message: `Transfer ${transferId} has been discarded and doctor is now unblocked.`
+        };
 
     }
 

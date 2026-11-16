@@ -220,6 +220,10 @@ export interface CreateStagingDetailDto {
     grade_system?: string | null;
     score?: string | null;
     score_system?: string | null;
+    score_variables?: Record<string, unknown> | null;
+    score_result?: string | null;
+    risk_group?: string | null;
+    score_points?: number | null;
     notes?: string | null;
     performance_status?: number | null;
     employee_id?: string | null;
@@ -262,6 +266,10 @@ export interface UpdateStagingDetailDto {
     grade_system?: string | null;
     score?: string | null;
     score_system?: string | null;
+    score_variables?: Record<string, unknown> | null;
+    score_result?: string | null;
+    risk_group?: string | null;
+    score_points?: number | null;
     notes?: string | null;
     performance_status?: number | null;
     employee_id?: string | null;

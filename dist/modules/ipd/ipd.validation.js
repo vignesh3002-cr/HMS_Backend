@@ -206,6 +206,7 @@ exports.getAdmissionsValidation = [
     (0, express_validator_1.query)("search").optional().isString(),
     // Only admissions the caller is the consultant / duty doctor / nurse of.
     (0, express_validator_1.query)("assignedToMe").optional().isBoolean(),
+    (0, express_validator_1.query)("hasTransfers").optional().isBoolean(),
     (0, express_validator_1.query)("sortField").optional().isIn(exports.IPD_SORT_FIELDS),
     (0, express_validator_1.query)("sortDirection").optional().isIn(["asc", "desc"]),
 ];

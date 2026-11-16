@@ -264,6 +264,7 @@ export const getAdmissionsValidation = [
     query("search").optional().isString(),
     // Only admissions the caller is the consultant / duty doctor / nurse of.
     query("assignedToMe").optional().isBoolean(),
+    query("hasTransfers").optional().isBoolean(),
     query("sortField").optional().isIn(IPD_SORT_FIELDS),
     query("sortDirection").optional().isIn(["asc", "desc"]),
 

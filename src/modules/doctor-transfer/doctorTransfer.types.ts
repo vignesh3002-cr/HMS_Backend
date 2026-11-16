@@ -56,7 +56,7 @@ export interface InitiateTransferDto {
 
     effective_date: string; // YYYY-MM-DD
 
-    transfer_reason: string;
+    transfer_reason?: string;
 
     working_hours: WorkingHourDto[];
 
@@ -67,6 +67,15 @@ export interface InitiateTransferDto {
     // schedule_ids logic is skipped entirely).
     schedule_change?: ScheduleChangeRequestDto;
 
+}
+
+export interface ConfirmTransferAppointmentItem {
+    appointment_id: string;
+    action?: "TRANSFER" | "RESCHEDULE" | "CANCEL";
+    replacement_employee_id?: string;
+    replacement_branch_id?: string;
+    custom_time?: string; // HH:mm
+    custom_date?: string; // YYYY-MM-DD
 }
 
 export interface ConfirmTransferDto {
@@ -83,6 +92,9 @@ export interface ConfirmTransferDto {
     // TRANSFER
     replacement_employee_id?: string;
     replacement_branch_id?: string;
+
+    // Per-appointment overrides for multi-patient assignment
+    appointments?: ConfirmTransferAppointmentItem[];
 
     // RESCHEDULE
     priority?: string;
@@ -103,6 +115,7 @@ export interface RescheduleQueueActionDto {
     branch_id?: string;
     appointment_date?: string; // YYYY-MM-DD
     appointment_time?: string; // HH:mm
+    schedule_id?: string | number | bigint;
 
     reason?: string;
 

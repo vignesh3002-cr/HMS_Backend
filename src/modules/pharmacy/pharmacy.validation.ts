@@ -99,6 +99,10 @@ export const saveFromOrderValidation = [
     body("items.*.dose").optional({ nullable: true }).isString(),
     body("items.*.dose_unit").optional({ nullable: true }).isString(),
     body("items.*.drug_role").optional({ nullable: true }).isString(),
+    body("items.*.route").optional({ nullable: true }).isString(),
+    body("items.*.frequency").optional({ nullable: true }).isString(),
+    body("items.*.duration").optional({ nullable: true }).isString(),
+    body("items.*.instructions").optional({ nullable: true }).isString(),
     body("items.*.pharmacy_item_id").optional({ nullable: true }).isString()
 
 ];
@@ -162,6 +166,30 @@ export const updateSlipItemsValidation = [
         .isString(),
 
     body("items.*.medicine_id")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items.*.drug_role")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items.*.route")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items.*.frequency")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items.*.duration")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items.*.instructions")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items.*.pharmacy_item_id")
         .optional({ nullable: true })
         .isString()
 

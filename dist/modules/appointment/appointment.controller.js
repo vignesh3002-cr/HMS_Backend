@@ -100,7 +100,8 @@ class AppointmentController {
                     errors: errors.array()
                 });
             }
-            const slots = await service.getAvailableSlots(req.query.employeeId, req.query.branchId, req.query.date);
+            const duration = req.query.duration ? Number(req.query.duration) : undefined;
+            const slots = await service.getAvailableSlots(req.query.employeeId, req.query.branchId, req.query.date, duration);
             return res.json({
                 success: true,
                 message: "Available slots fetched successfully",
@@ -212,7 +213,12 @@ class AppointmentController {
                     errors: errors.array()
                 });
             }
-            const cancelledBy = req.body.cancelled_by || req.user?.user_id || req.user?.id || null;
+            const cancelledBy = req.body.cancelled_by?.trim() ||
+                req.user?.employee_id ||
+                req.user?.username ||
+                req.user?.user_id ||
+                req.user?.id ||
+                "admin";
             const appointment = await service.updateAppointmentStatus(req.params.appointmentNo, req.body.status, req.body.cancel_reason, cancelledBy);
             return res.json({
                 success: true,
@@ -268,10 +274,12 @@ class AppointmentController {
                     errors: errors.array()
                 });
             }
-            const cancelledBy = req.body.cancelled_by ||
+            const cancelledBy = req.body.cancelled_by?.trim() ||
+                req.user?.employee_id ||
+                req.user?.username ||
                 req.user?.user_id ||
                 req.user?.id ||
-                null;
+                "admin";
             const appointment = await service.cancelAppointment(req.params.appointmentNo, req.body.cancel_reason, cancelledBy);
             return res.json({
                 success: true,
@@ -283,6 +291,24 @@ class AppointmentController {
             return res.status(400).json({
                 success: false,
                 message: error.message
+            });
+        }
+    }
+    async sandwichAppointment(req, res) {
+        try {
+            const appointmentNo = req.params.appointmentNo;
+            const { insertAfterAppointmentNo } = req.body;
+            const result = await service.sandwichAppointment(appointmentNo, insertAfterAppointmentNo);
+            return res.json({
+                success: true,
+                message: "Appointment successfully sandwiched into queue",
+                data: result
+            });
+        }
+        catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message || "Failed to sandwich appointment"
             });
         }
     }

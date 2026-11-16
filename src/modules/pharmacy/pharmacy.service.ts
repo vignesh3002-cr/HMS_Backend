@@ -79,6 +79,19 @@ const doseOf = (calculated?: unknown, unit?: string | null, fallback?: unknown) 
     };
 };
 
+// A duration as it prints: the number plus its unit code ("30 D"). A value
+// that already carries the unit is never doubled.
+const durationOf = (value?: string | null, unit?: string | null): string | null => {
+    const raw = clean(value);
+    if (!raw) return null;
+
+    const code = clean(unit);
+    if (!code) return raw;
+
+    const escaped = code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(^|\\s)${escaped}$`, "i").test(raw) ? raw : `${raw} ${code}`;
+};
+
 export class PharmacyService {
 
     private repository = new PharmacyRepository();
@@ -175,6 +188,7 @@ export class PharmacyService {
                 drug_role: clean(item.drug_role) ?? PHARMACY_DRUG_ROLE.PRIMARY,
                 route: clean(item.administration_route),
                 frequency: clean(item.frequency),
+                duration: clean(item.duration),
                 instructions: clean(item.administration_detail ?? item.remarks),
                 pharmacy_item_id: pharmMaster?.pharmacy_item_id ?? null
             };
@@ -201,14 +215,14 @@ export class PharmacyService {
                 medicine_id: instruction.medicine_id ?? null,
                 drug_name: drugNameOf(instruction.medicine_id, instruction.drug_brand_name, medicine),
                 brand_name: brandName,
-                dosage_form: clean(medicine?.dosage_form),
+                dosage_form: clean(instruction.drug_from ?? medicine?.dosage_form),
                 patient_dose: protoDoseText,
                 dose,
                 dose_unit: doseUnit,
                 quantity: disDefaultQty,
                 drug_role: PHARMACY_DRUG_ROLE.DISCHARGE,
                 frequency: clean(instruction.frequency),
-                duration: clean(instruction.duration ?? instruction.duration_days),
+                duration: durationOf(instruction.duration, instruction.duration_days),
                 instructions: clean(instruction.administration_detail ?? instruction.comment),
                 pharmacy_item_id: pharmMaster?.pharmacy_item_id ?? null
             });
@@ -760,6 +774,12 @@ export class PharmacyService {
             if (item.dose !== undefined) patch.dose = clean(item.dose);
             if (item.dose_unit !== undefined) patch.dose_unit = clean(item.dose_unit);
             if (item.drug_role !== undefined) patch.drug_role = clean(item.drug_role);
+            if (item.dosage_form !== undefined) patch.dosage_form = clean(item.dosage_form);
+            if (item.patient_dose !== undefined) patch.patient_dose = clean(item.patient_dose);
+            if (item.route !== undefined) patch.route = clean(item.route);
+            if (item.frequency !== undefined) patch.frequency = clean(item.frequency);
+            if (item.duration !== undefined) patch.duration = clean(item.duration);
+            if (item.instructions !== undefined) patch.instructions = clean(item.instructions);
 
             const resolvedPharmItemId = await this.resolveOrCreatePharmacyMasterItem(
                 tx,
@@ -814,6 +834,8 @@ export class PharmacyService {
                         medicine_id: clean(item.medicine_id),
                         drug_name: toProperCase(clean(item.drug_name)),
                         brand_name: toProperCase(clean(item.brand_name)),
+                        dosage_form: clean(item.dosage_form),
+                        patient_dose: clean(item.patient_dose),
                         dose: clean(item.dose),
                         dose_unit: clean(item.dose_unit),
                         quantity: item.quantity ?? null,

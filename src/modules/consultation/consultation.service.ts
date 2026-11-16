@@ -143,6 +143,32 @@ export class ConsultationService {
 
     }
 
+    async listLineOfTherapies(query: MasterListQuery) {
+        return repository.getLineOfTherapies(query);
+    }
+
+    async createCustomLineOfTherapy(data: CreateCustomMasterDTO, createdBy?: string | null) {
+
+        const name = (data.name ?? "").trim();
+        if (!name) {
+            throw new Error("Line of therapy name is required");
+        }
+
+        const existing = await repository.findLineOfTherapyByName(name);
+        if (existing) {
+            return existing;
+        }
+
+        return repository.createLineOfTherapy({
+            code: await uniqueCode("LOT", name, (code) => repository.findLineOfTherapyByCode(code)),
+            name,
+            description: data.description ?? null,
+            is_active: true,
+            created_by: createdBy ?? null
+        });
+
+    }
+
     listDietTypes() {
         return DIET_TYPES;
     }

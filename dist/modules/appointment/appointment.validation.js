@@ -46,6 +46,9 @@ exports.createAppointmentValidation = [
         .isString(),
     (0, express_validator_1.body)("patient_visit_type")
         .optional()
+        .isString(),
+    (0, express_validator_1.body)("schedule_id")
+        .optional()
         .isString()
 ];
 exports.updateAppointmentValidation = [
@@ -83,6 +86,9 @@ exports.updateAppointmentValidation = [
         .isString(),
     (0, express_validator_1.body)("patient_visit_type")
         .optional()
+        .isString(),
+    (0, express_validator_1.body)("schedule_id")
+        .optional()
         .isString()
 ];
 exports.updateAppointmentStatusValidation = [
@@ -115,9 +121,7 @@ exports.cancelAppointmentValidation = [
         .notEmpty()
         .withMessage("Cancellation reason is required"),
     (0, express_validator_1.body)("cancelled_by")
-        .notEmpty()
-        .withMessage("Cancelled by is required")
-        .bail()
+        .optional({ checkFalsy: true })
         .isString(),
 ];
 exports.getAvailableSlotsValidation = [

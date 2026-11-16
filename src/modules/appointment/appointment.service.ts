@@ -9,7 +9,8 @@ import {
 } from "./appointment.types";
 import {
     APPOINTMENT_STATUS,
-    TERMINAL_APPOINTMENT_STATUSES
+    TERMINAL_APPOINTMENT_STATUSES,
+    DEFAULT_VISIT_DURATIONS
 } from "./appointment.constants";
 import {
     toDayOfWeek,
@@ -20,7 +21,15 @@ import {
     generateTimeSlots,
     parseDateOnly,
     formatDateOnly,
+    addDays,
     getWeekRange,
+<<<<<<< HEAD
+=======
+    getTodayInIST,
+    getNowMinutesInIST,
+    formatMinutesTo12Hour,
+    minutesToHHmm
+>>>>>>> d5775ac3b1eebde649bba2a340b434a78c1cdc40
 } from "./appointment.utils";
 import { generateId } from "../../utils/idGenerator";
 import { getBranchTimezone, getNowMinutesIn, getTodayIn } from "../../utils/timezone";
@@ -68,6 +77,7 @@ interface EffectiveSchedule {
     start_time: Date;
     end_time: Date;
     consultation_minutes: number;
+    day_of_week?: string | null;
 }
 
 /**
@@ -226,7 +236,10 @@ function convertNormalSchedules(
 
                 consultation_minutes:
                     schedule.consultation_minutes ??
-                    20
+                    20,
+
+                day_of_week:
+                    schedule.day_of_week
             })
         );
 }
@@ -578,7 +591,9 @@ export class AppointmentService {
         employeeId: string,
         branchId: string,
         departmentId: string | undefined,
-        appointmentDate: Date
+        appointmentDate: Date,
+        scheduleId?: string,
+        appointmentTime?: string
     ): Promise<BookingContext> {
 
         const employee =
@@ -692,6 +707,51 @@ export class AppointmentService {
                 appointmentDate,
                 normalSchedules
             );
+
+        if (scheduleId) {
+            const direct = await repository.findDoctorScheduleById(scheduleId);
+            if (direct && direct.employee_id === employeeId && direct.branch_id === branchId && direct.is_active) {
+                if (!schedules.some((s) => s.schedule_id === direct.schedule_id)) {
+                    schedules.unshift({
+                        schedule_id: direct.schedule_id,
+                        shift_name: direct.shift_name ?? "General Shift",
+                        start_time: direct.start_time,
+                        end_time: direct.end_time,
+                        consultation_minutes: direct.consultation_minutes ?? 20,
+                        day_of_week: direct.day_of_week
+                    });
+                }
+            }
+        }
+
+        const apptMinutes = appointmentTime ? timeToMinutes(appointmentTime) : 0;
+        if (schedules.length === 0 || apptMinutes < 720) {
+            const yesterday = addDays(appointmentDate, -1);
+            const yesterdayDayOfWeek = toDayOfWeek(yesterday);
+            const yesterdayNormal = await repository.findActiveDoctorSchedules(
+                employeeId,
+                branchId,
+                yesterdayDayOfWeek
+            );
+            const yesterdayEffective = await getEffectiveSchedules(
+                employeeId,
+                branchId,
+                yesterday,
+                yesterdayNormal
+            );
+            const overnightSchedules = yesterdayEffective.filter((s) => {
+                if (!s.start_time || !s.end_time) return false;
+                return timeToMinutes(s.end_time) <= timeToMinutes(s.start_time);
+            });
+            for (const os of overnightSchedules) {
+                if (!schedules.some((s) => s.schedule_id === os.schedule_id)) {
+                    schedules.push({
+                        ...os,
+                        day_of_week: os.day_of_week ?? yesterdayDayOfWeek
+                    });
+                }
+            }
+        }
 
         if (
             schedules.length === 0
@@ -883,6 +943,7 @@ export class AppointmentService {
                             schedule_id: null,
                             appointment_date: appointmentDate,
                             appointment_time: appointmentTime,
+                            duration_minutes: Number(data.duration_minutes) || 10,
                             token_number: tokenNumber,
                             status: APPOINTMENT_STATUS.SCHEDULED,
                             reason_for_visit: data.reason_for_visit || "Lab Visit",
@@ -909,7 +970,9 @@ export class AppointmentService {
                 data.employee_id!,
                 data.branch_id,
                 data.department_id,
-                appointmentDate
+                appointmentDate,
+                data.schedule_id,
+                data.appointment_time
             );
 
         /**
@@ -921,23 +984,29 @@ export class AppointmentService {
                 data.appointment_time
             );
 
+        const scheduleDayOfWeek = (schedule.day_of_week ?? "").trim().toUpperCase();
+        const bookingDayOfWeek = toDayOfWeek(appointmentDate);
+        const shiftStartMinPre = timeToMinutes(schedule.start_time!);
+        let shiftEndMinPre = timeToMinutes(schedule.end_time!);
+        if (shiftEndMinPre <= shiftStartMinPre) shiftEndMinPre += 1440;
+        const apptMinPre = timeToMinutes(data.appointment_time);
+
+        const isOvernight = shiftEndMinPre > 1440;
+        const isPostMidnightTime = apptMinPre < shiftStartMinPre;
+        const isFromYesterdayShift = isOvernight && isPostMidnightTime && (
+            (scheduleDayOfWeek !== "" && scheduleDayOfWeek !== bookingDayOfWeek) ||
+            (scheduleDayOfWeek === "" && bookingDayOfWeek !== toDayOfWeek(addDays(appointmentDate, -1)))
+        );
+        const shiftBaseDate = isFromYesterdayShift ? addDays(appointmentDate, -1) : appointmentDate;
+
         const appointmentTime =
             timeStringToDate(
                 data.appointment_time
             );
 
-        const duplicate =
-            await repository.findDuplicateAppointment(
-                data.employee_id!,
-                appointmentDate,
-                appointmentTime
-            );
-
-        if (duplicate) {
-            throw new Error(
-                "This doctor already has an appointment at the selected date and time"
-            );
-        }
+        const durationMinutes = Number(data.duration_minutes) ||
+            DEFAULT_VISIT_DURATIONS[data.patient_visit_type ?? ""] ||
+            10;
 
         const doctorName =
             `${employee.first_name} ${employee.last_name}`.trim();
@@ -951,18 +1020,106 @@ export class AppointmentService {
                         schedule.schedule_id
                     );
 
-                    const stillDuplicate =
+                    const apptMinutes = timeToMinutes(appointmentTime);
+                    const shiftStartMin = timeToMinutes(schedule.start_time!);
+                    let shiftEndMin = timeToMinutes(schedule.end_time!);
+                    if (shiftEndMin <= shiftStartMin) shiftEndMin += 1440;
+
+                    let normApptMinutes = apptMinutes;
+                    if (normApptMinutes < shiftStartMin && shiftEndMin > 1440) {
+                        normApptMinutes += 1440;
+                    }
+
+                    // 1-hour slot boundaries anchored to shift start
+                    const slotOffset = Math.floor(Math.max(0, normApptMinutes - shiftStartMin) / 60) * 60;
+                    const blockStartMinutes = shiftStartMin + slotOffset;
+                    const blockEndMinutes = Math.min(blockStartMinutes + 60, shiftEndMin);
+                    const capacityMinutes = blockEndMinutes - blockStartMinutes;
+
+                    const bookedOnDate = await repository.findBookedAppointmentsForDateTx(
+                        tx,
+                        data.employee_id!,
+                        shiftBaseDate
+                    );
+
+                    if (shiftEndMin > 1440) {
+                        const nextDayAppts = await repository.findBookedAppointmentsForDateTx(
+                            tx,
+                            data.employee_id!,
+                            addDays(shiftBaseDate, 1)
+                        );
+                        bookedOnDate.push(...nextDayAppts);
+                    }
+
+                    const activeAppts = bookedOnDate.filter(
+                        (a) => a.status !== "CANCELLED" && a.status !== "NO_SHOW" && a.appointment_time
+                    );
+
+                    const isToday = formatDateOnly(shiftBaseDate) === getTodayInIST();
+                    const nowMinutes = getNowMinutesInIST();
+                    const baselineStart = isToday ? Math.max(blockStartMinutes, nowMinutes) : blockStartMinutes;
+
+                    const priorOrInSlot = activeAppts.filter((a) => {
+                        let aStart = timeToMinutes(a.appointment_time!);
+                        const isNext = formatDateOnly(a.appointment_date) !== formatDateOnly(shiftBaseDate);
+                        if (isNext || (aStart < shiftStartMin && shiftEndMin > 1440)) aStart += 1440;
+                        const aEnd = aStart + (a.duration_minutes ?? 10);
+                        return aStart < blockEndMinutes && aEnd > blockStartMinutes;
+                    });
+
+                    const latestPriorEnd = priorOrInSlot.length > 0
+                        ? Math.max(...priorOrInSlot.map((a) => {
+                            let aStart = timeToMinutes(a.appointment_time!);
+                            const isNext = formatDateOnly(a.appointment_date) !== formatDateOnly(shiftBaseDate);
+                            if (isNext || (aStart < shiftStartMin && shiftEndMin > 1440)) aStart += 1440;
+                            return aStart + (a.duration_minutes ?? 10);
+                        }))
+                        : blockStartMinutes;
+
+                    const calculatedStartMinutes = Math.max(baselineStart, latestPriorEnd);
+
+                    if (calculatedStartMinutes >= blockEndMinutes) {
+                        throw new Error("This 1-hour session window has no remaining available time slots.");
+                    }
+
+                    const subsequentAppts = activeAppts.filter((a) => {
+                        let aStart = timeToMinutes(a.appointment_time!);
+                        const isNext = formatDateOnly(a.appointment_date) !== formatDateOnly(shiftBaseDate);
+                        if (isNext || (aStart < shiftStartMin && shiftEndMin > 1440)) aStart += 1440;
+                        return aStart >= calculatedStartMinutes;
+                    });
+
+                    const nextBookedStart = subsequentAppts.length > 0
+                        ? Math.min(...subsequentAppts.map((a) => {
+                            let aStart = timeToMinutes(a.appointment_time!);
+                            const isNext = formatDateOnly(a.appointment_date) !== formatDateOnly(shiftBaseDate);
+                            if (isNext || (aStart < shiftStartMin && shiftEndMin > 1440)) aStart += 1440;
+                            return aStart;
+                        }))
+                        : shiftEndMin;
+
+                    const contiguousFreeMinutes = Math.max(0, nextBookedStart - calculatedStartMinutes);
+                    if (contiguousFreeMinutes < durationMinutes || calculatedStartMinutes + durationMinutes > shiftEndMin) {
+                        throw new Error("The requested consultation duration exceeds the available free time in this session.");
+                    }
+
+                    // Date Rollover for midnight (> 11:59 PM)
+                    const dayOffset = Math.floor(calculatedStartMinutes / 1440);
+                    const effectiveAppointmentDate = addDays(shiftBaseDate, dayOffset);
+                    const finalAppointmentTime = timeStringToDate(minutesToHHmm(calculatedStartMinutes % 1440));
+
+                    const patientDuplicate =
                         await tx.appointment_history.findFirst(
                             {
                                 where: {
-                                    employee_id:
-                                        data.employee_id,
+                                    patient_id:
+                                        data.patient_id,
 
                                     appointment_date:
-                                        appointmentDate,
+                                        effectiveAppointmentDate,
 
                                     appointment_time:
-                                        appointmentTime,
+                                        finalAppointmentTime,
 
                                     status: {
                                         notIn: [
@@ -974,9 +1131,9 @@ export class AppointmentService {
                             }
                         );
 
-                    if (stillDuplicate) {
+                    if (patientDuplicate) {
                         throw new Error(
-                            "This doctor already has an appointment at the selected date and time"
+                            "This patient already has an active appointment at the selected date and time"
                         );
                     }
 
@@ -989,7 +1146,8 @@ export class AppointmentService {
                         await repository.generateTokenNumber(
                             tx,
                             schedule.schedule_id,
-                            appointmentDate
+                            effectiveAppointmentDate,
+                            data.employee_id
                         );
 
                     const appointment =
@@ -1015,10 +1173,13 @@ export class AppointmentService {
                                     schedule.schedule_id,
 
                                 appointment_date:
-                                    appointmentDate,
+                                    effectiveAppointmentDate,
 
                                 appointment_time:
-                                    appointmentTime,
+                                    finalAppointmentTime,
+
+                                duration_minutes:
+                                    durationMinutes,
 
                                 token_number:
                                     tokenNumber,
@@ -1076,7 +1237,12 @@ export class AppointmentService {
                         }
                     });
 
-                    return appointment;
+                    return {
+                        ...appointment,
+                        estimated_start_time: formatMinutesTo12Hour(calculatedStartMinutes),
+                        estimated_end_time: formatMinutesTo12Hour(calculatedStartMinutes + durationMinutes),
+                        slot_window: `${formatMinutesTo12Hour(blockStartMinutes)} - ${formatMinutesTo12Hour(blockEndMinutes)}`
+                    };
                 }
             )
         );
@@ -1317,7 +1483,9 @@ export class AppointmentService {
                             employeeId,
                             branchId,
                             departmentId,
-                            appointmentDate
+                            appointmentDate,
+                            data.schedule_id,
+                            appointmentTimeStr
                         );
 
                     const schedule =
@@ -1519,6 +1687,15 @@ export class AppointmentService {
                         cancelledBy || "SYSTEM"
                     );
 
+                    // Recalculate doctor timeline to close the gap and pull subsequent appointments forward
+                    if (existing.employee_id && existing.appointment_date) {
+                        await this.recalculateDoctorDailyTimeline(
+                            tx,
+                            existing.employee_id,
+                            existing.appointment_date
+                        );
+                    }
+
                     return updated;
                 })
             );
@@ -1609,7 +1786,8 @@ export class AppointmentService {
     async getAvailableSlots(
         employeeId: string,
         branchId: string,
-        dateStr: string
+        dateStr: string,
+        requestedDurationMinutes?: number
     ) {
 
         const employee =
@@ -1744,18 +1922,28 @@ export class AppointmentService {
             };
         }
 
-        const bookedTimes =
-            await repository.findBookedAppointmentTimes(
+        const requestedDuration = requestedDurationMinutes && requestedDurationMinutes > 0
+            ? requestedDurationMinutes
+            : 10;
+
+        const bookedAppointments =
+            await repository.findBookedAppointmentsForDate(
                 employeeId,
                 appointmentDate
             );
 
-        const bookedSet =
-            new Set(
-                bookedTimes.map(
-                    formatTimeOfDay
-                )
+        const hasOvernight = effectiveSchedules.some((s) => {
+            if (!s.start_time || !s.end_time) return false;
+            return timeToMinutes(s.end_time) <= timeToMinutes(s.start_time);
+        });
+
+        if (hasOvernight) {
+            const nextDayAppts = await repository.findBookedAppointmentsForDate(
+                employeeId,
+                addDays(appointmentDate, 1)
             );
+            bookedAppointments.push(...nextDayAppts);
+        }
 
         // "Today" and "now" are the BRANCH's own time (branch.timezone) -
         // independent of the server's and the browser's timezone.
@@ -1767,10 +1955,16 @@ export class AppointmentService {
         const nowMinutes =
             getNowMinutesIn(branchTz);
 
+        const allPhases: any[] = [];
+        let globalPhaseCounter = 1;
+
+        const activeAppts = bookedAppointments.filter(
+            (a) => a.status !== "CANCELLED" && a.status !== "NO_SHOW" && a.appointment_time
+        );
+
         const slots =
             effectiveSchedules.flatMap(
                 (schedule) => {
-
                     if (
                         !schedule.start_time ||
                         !schedule.end_time
@@ -1778,49 +1972,116 @@ export class AppointmentService {
                         return [];
                     }
 
-                    const times =
-                        generateTimeSlots(
-                            schedule.start_time,
-                            schedule.end_time,
-                            schedule.consultation_minutes ??
-                            20
-                        );
+                    const startMinutes = timeToMinutes(schedule.start_time);
+                    let endMinutes = timeToMinutes(schedule.end_time);
+                    if (endMinutes <= startMinutes) {
+                        endMinutes += 1440;
+                    }
 
-                    const scheduleStart =
-                        timeToMinutes(schedule.start_time);
+                    const shiftSlots: any[] = [];
+                    const SLOT_DURATION = 60; // 1-Hour Default Sessions
 
-                    return times
-                        .filter(
-                            (time) => {
-                                if (!isToday) return true;
-                                let minutes =
-                                    timeStringToMinutes(time);
-                                // Slots after midnight of an overnight window
-                                // are later on the same booking day.
-                                if (minutes < scheduleStart) {
-                                    minutes += 24 * 60;
-                                }
-                                return minutes > nowMinutes;
-                            }
-                        )
-                        .map(
-                            (time) => ({
-                                schedule_id:
-                                    schedule.schedule_id,
+                    for (let pStart = startMinutes; pStart < endMinutes; pStart += SLOT_DURATION) {
+                        const pEnd = Math.min(pStart + SLOT_DURATION, endMinutes);
+                        const capacityMinutes = pEnd - pStart;
 
-                                shift_name:
-                                    schedule.shift_name,
+                        const isPast = isToday && (pEnd <= nowMinutes);
+                        const baselineStart = isToday ? Math.max(pStart, nowMinutes) : pStart;
 
-                                time,
+                        // Appointments overlapping or prior in this shift
+                        const priorOrInSlot = activeAppts.filter((a) => {
+                            let m = timeToMinutes(a.appointment_time!);
+                            const isNext = formatDateOnly(a.appointment_date) !== formatDateOnly(appointmentDate);
+                            if (isNext || (m < startMinutes && endMinutes > 1440)) m += 1440;
+                            const aEnd = m + (a.duration_minutes ?? 10);
+                            return m < pEnd && aEnd > pStart;
+                        });
 
-                                is_available:
-                                    !bookedSet.has(
-                                        time
-                                    )
-                            })
-                        );
+                        const latestPriorEnd = priorOrInSlot.length > 0
+                            ? Math.max(...priorOrInSlot.map((a) => {
+                                let m = timeToMinutes(a.appointment_time!);
+                                const isNext = formatDateOnly(a.appointment_date) !== formatDateOnly(appointmentDate);
+                                if (isNext || (m < startMinutes && endMinutes > 1440)) m += 1440;
+                                return m + (a.duration_minutes ?? 10);
+                            }))
+                            : pStart;
+
+                        const candidateStart = Math.max(baselineStart, latestPriorEnd);
+
+                        // Find subsequent booked appointment starting at or after candidateStart
+                        const subsequentAppts = activeAppts.filter((a) => {
+                            let m = timeToMinutes(a.appointment_time!);
+                            const isNext = formatDateOnly(a.appointment_date) !== formatDateOnly(appointmentDate);
+                            if (isNext || (m < startMinutes && endMinutes > 1440)) m += 1440;
+                            return m >= candidateStart;
+                        });
+
+                        const nextBookedStart = subsequentAppts.length > 0
+                            ? Math.min(...subsequentAppts.map((a) => {
+                                let m = timeToMinutes(a.appointment_time!);
+                                const isNext = formatDateOnly(a.appointment_date) !== formatDateOnly(appointmentDate);
+                                if (isNext || (m < startMinutes && endMinutes > 1440)) m += 1440;
+                                return m;
+                            }))
+                            : endMinutes;
+
+                        // Contiguous free space starting from candidateStart (including spilling if next slot is empty)
+                        const contiguousFreeMinutes = Math.max(0, nextBookedStart - candidateStart);
+                        const hasSufficientSpace = contiguousFreeMinutes >= requestedDuration && (candidateStart + requestedDuration <= endMinutes);
+
+                        const isCompleted = isPast || (candidateStart >= pEnd) || !hasSufficientSpace;
+                        const isAvailable = !isCompleted;
+
+                        const normStart = pStart % 1440;
+                        const normEnd = pEnd % 1440;
+                        const startH = Math.floor(normStart / 60);
+                        const startM = normStart % 60;
+                        const endH = Math.floor(normEnd / 60);
+                        const endM = normEnd % 60;
+
+                        const timeStr = `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")}`;
+                        const endTimeStr = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+
+                        const displayStart = (isToday && isAvailable) ? Math.max(normStart, candidateStart % 1440) : normStart;
+
+                        const dateOffset = Math.floor(pStart / 1440);
+                        const slotDate = formatDateOnly(addDays(appointmentDate, dateOffset));
+                        const isNextDay = dateOffset > 0;
+
+                        const label = `${formatMinutesTo12Hour(displayStart)} - ${formatMinutesTo12Hour(normEnd)}${isNextDay ? " (+1 day)" : ""}`;
+                        const estimatedStartLabel = formatMinutesTo12Hour(candidateStart % 1440);
+
+                        const phaseNumber = globalPhaseCounter++;
+
+                        shiftSlots.push({
+                            schedule_id: schedule.schedule_id,
+                            shift_name: schedule.shift_name,
+                            time: timeStr,
+                            end_time: endTimeStr,
+                            slot_date: slotDate,
+                            is_next_day: isNextDay,
+                            label,
+                            total_minutes: capacityMinutes,
+                            remaining_minutes: contiguousFreeMinutes,
+                            estimated_start_time: estimatedStartLabel,
+                            available_from: estimatedStartLabel,
+                            is_past: isPast,
+                            is_available: isAvailable,
+                            phase_number: phaseNumber,
+                            phase_label: `1-Hour Window (${label})`,
+                            is_completed: isCompleted,
+                            is_open: isAvailable,
+                            is_phase_open: isAvailable,
+                            status: isCompleted ? "COMPLETED" : "ACTIVE"
+                        });
+                    }
+
+                    allPhases.push(...shiftSlots);
+                    return shiftSlots;
                 }
             );
+
+        const activePhaseObj = allPhases.find(p => p.is_available) || allPhases[0];
 
         return {
             date:
@@ -1829,6 +2090,8 @@ export class AppointmentService {
             day_of_week:
                 dayOfWeek,
 
+            phases: allPhases,
+            active_phase_number: activePhaseObj?.phase_number ?? 1,
             slots
         };
     }
@@ -2322,5 +2585,254 @@ export class AppointmentService {
 
             percentage
         };
+    }
+
+    /**
+     * Recalculates the continuous timeline for active appointments for a doctor on a specific date.
+     * When an appointment is cancelled or marked NO_SHOW, this closes the gap so subsequent
+     * appointments move forward while preserving each patient's full duration timeframe.
+     */
+    async recalculateDoctorDailyTimeline(
+        tx: Prisma.TransactionClient,
+        employeeId: string,
+        appointmentDate: Date
+    ) {
+        const isToday = formatDateOnly(appointmentDate) === getTodayInIST();
+        const nowMinutes = getNowMinutesInIST();
+
+        const allDayAppts = await tx.appointment_history.findMany({
+            where: {
+                employee_id: employeeId,
+                appointment_date: appointmentDate,
+            },
+            orderBy: {
+                appointment_time: "asc"
+            }
+        });
+
+        const activeAppts = allDayAppts.filter(
+            a => a.status !== "CANCELLED" && a.status !== "NO_SHOW"
+        );
+
+        if (activeAppts.length === 0) return;
+
+        const apptsBySchedule = new Map<string, typeof activeAppts>();
+        for (const appt of activeAppts) {
+            const key = appt.schedule_id ? String(appt.schedule_id) : "default";
+            if (!apptsBySchedule.has(key)) {
+                apptsBySchedule.set(key, []);
+            }
+            apptsBySchedule.get(key)!.push(appt);
+        }
+
+        for (const [scheduleId, appts] of apptsBySchedule.entries()) {
+            const scheduleAllAppts = allDayAppts.filter(
+                a => (a.schedule_id ? String(a.schedule_id) : "default") === scheduleId
+            );
+
+            let queueStartMin = 10 * 60;
+            if (scheduleAllAppts.length > 0 && scheduleAllAppts[0].appointment_time) {
+                queueStartMin = timeToMinutes(scheduleAllAppts[0].appointment_time);
+            } else if (scheduleId !== "default") {
+                const schedule = await tx.doctor_schedule.findUnique({
+                    where: { schedule_id: BigInt(scheduleId) }
+                });
+                if (schedule?.start_time) {
+                    queueStartMin = timeToMinutes(schedule.start_time);
+                }
+            } else if (appts.length > 0 && appts[0].appointment_time) {
+                queueStartMin = timeToMinutes(appts[0].appointment_time);
+            }
+
+            let currentMinutes = queueStartMin;
+
+            for (const appt of appts) {
+                if (!appt.appointment_time) continue;
+                const dur = appt.duration_minutes ?? 10;
+                const currentApptMin = timeToMinutes(appt.appointment_time);
+
+                if (
+                    appt.status === APPOINTMENT_STATUS.COMPLETED ||
+                    appt.status === APPOINTMENT_STATUS.IN_CONSULTATION
+                ) {
+                    currentMinutes = Math.max(currentMinutes, currentApptMin + dur);
+                    continue;
+                }
+
+                let targetStartMin = currentMinutes;
+                if (isToday) {
+                    targetStartMin = Math.max(targetStartMin, nowMinutes);
+                }
+                const newStartMin = targetStartMin;
+                if (newStartMin !== currentApptMin) {
+                    const newTimeDate = timeStringToDate(minutesToHHmm(newStartMin % 1440));
+                    await tx.appointment_history.update({
+                        where: { appointment_id: appt.appointment_id },
+                        data: { appointment_time: newTimeDate }
+                    });
+
+                    const shiftDiff = Math.abs(newStartMin - currentApptMin);
+                    if (shiftDiff >= 30 && appt.employee_id) {
+                        await tx.appointment_notification.create({
+                            data: {
+                                notification_id: await generateId(tx, "NOTIFICATION"),
+                                appointment_id: appt.appointment_id,
+                                channel: "IN_APP",
+                                notification_type: "SCHEDULE_SHIFT",
+                                recipient: appt.employee_id,
+                                status: "UNREAD"
+                            }
+                        }).catch(() => {});
+                    }
+                }
+
+                currentMinutes = newStartMin + dur;
+            }
+        }
+    }
+
+    /**
+     * Sandwiches a patient (e.g. late arrival or returning NO_SHOW / CANCELLED patient)
+     * flexibly into the active doctor queue for today / future date.
+     * Can be inserted "NEXT_IN_LINE" (right after current consultation/completed)
+     * or after a specific selected appointment.
+     * Subsequent appointments dynamically shift downstream without modifying any patient's token number.
+     */
+    async sandwichAppointment(
+        appointmentNo: string,
+        insertAfterAppointmentNo?: string | null
+    ) {
+        return prisma.$transaction(async (tx) => {
+            const sandwiched = await tx.appointment_history.findUnique({
+                where: { appointment_id: appointmentNo },
+                include: {
+                    patient_bio_data: true,
+                    employees: true,
+                    doctor_schedule: true
+                }
+            });
+
+            if (!sandwiched) {
+                throw new Error("Appointment not found");
+            }
+
+            if (sandwiched.status === APPOINTMENT_STATUS.COMPLETED) {
+                throw new Error("Cannot sandwich a completed appointment");
+            }
+
+            if (!sandwiched.employee_id || !sandwiched.appointment_date) {
+                throw new Error("Appointment does not have an assigned doctor or date");
+            }
+
+            const activeAppts = await tx.appointment_history.findMany({
+                where: {
+                    employee_id: sandwiched.employee_id,
+                    appointment_date: sandwiched.appointment_date,
+                    appointment_id: { not: appointmentNo },
+                    status: { notIn: ["CANCELLED", "NO_SHOW"] }
+                },
+                orderBy: {
+                    appointment_time: "asc"
+                }
+            });
+
+            const isToday = formatDateOnly(sandwiched.appointment_date) === getTodayInIST();
+            const nowMinutes = getNowMinutesInIST();
+
+        const allDayAppts = await tx.appointment_history.findMany({
+                where: {
+                    employee_id: sandwiched.employee_id,
+                    appointment_date: sandwiched.appointment_date
+                },
+                orderBy: { appointment_time: "asc" }
+            });
+
+            let shiftStartMin = 10 * 60;
+            if (sandwiched.schedule_id) {
+                const sched = await tx.doctor_schedule.findUnique({
+                    where: { schedule_id: sandwiched.schedule_id }
+                });
+                if (sched?.start_time) {
+                    shiftStartMin = timeToMinutes(sched.start_time);
+                }
+            } else if (activeAppts.length > 0 && activeAppts[0].appointment_time) {
+                shiftStartMin = Math.floor(timeToMinutes(activeAppts[0].appointment_time) / 60) * 60;
+            }
+            if (allDayAppts.length > 0 && allDayAppts[0].appointment_time) {
+                shiftStartMin = Math.min(shiftStartMin, timeToMinutes(allDayAppts[0].appointment_time));
+            }
+
+            const newQueue: any[] = [...activeAppts];
+            const dur = sandwiched.duration_minutes ?? 10;
+
+            if (insertAfterAppointmentNo && insertAfterAppointmentNo !== "NEXT_IN_LINE") {
+                const targetIdx = newQueue.findIndex(a => a.appointment_id === insertAfterAppointmentNo);
+                if (targetIdx !== -1) {
+                    newQueue.splice(targetIdx + 1, 0, sandwiched);
+                } else {
+                    newQueue.push(sandwiched);
+                }
+            } else {
+                let insertIdx = 0;
+                for (let i = 0; i < newQueue.length; i++) {
+                    const st = newQueue[i].status;
+                    if (st === APPOINTMENT_STATUS.COMPLETED || st === APPOINTMENT_STATUS.IN_CONSULTATION) {
+                        insertIdx = i + 1;
+                    }
+                }
+                newQueue.splice(insertIdx, 0, sandwiched);
+            }
+
+            let currentMinutes = shiftStartMin;
+            const updatedQueueSummary: any[] = [];
+
+            for (const appt of newQueue) {
+                const apptDur = appt.duration_minutes ?? 10;
+                const isTarget = appt.appointment_id === appointmentNo;
+
+                if (!isTarget && (appt.status === APPOINTMENT_STATUS.COMPLETED || appt.status === APPOINTMENT_STATUS.IN_CONSULTATION)) {
+                    if (appt.appointment_time) {
+                        const existingStart = timeToMinutes(appt.appointment_time);
+                        currentMinutes = Math.max(currentMinutes, existingStart + apptDur);
+                    }
+                    continue;
+                }
+
+                let targetStartMin = currentMinutes;
+                if (isToday) {
+                    targetStartMin = Math.max(targetStartMin, nowMinutes);
+                }
+                const newStartMin = targetStartMin;
+                const newTimeDate = timeStringToDate(minutesToHHmm(newStartMin % 1440));
+
+                const updateData: any = {
+                    appointment_time: newTimeDate
+                };
+
+                if (isTarget) {
+                    updateData.status = APPOINTMENT_STATUS.SCHEDULED;
+                }
+
+                await tx.appointment_history.update({
+                    where: { appointment_id: appt.appointment_id },
+                    data: updateData
+                });
+
+                updatedQueueSummary.push({
+                    appointment_id: appt.appointment_id,
+                    token_number: appt.token_number,
+                    start_time: minutesToHHmm(newStartMin % 1440),
+                    duration_minutes: apptDur,
+                    status: updateData.status || appt.status
+                });
+
+                currentMinutes = newStartMin + apptDur;
+            }
+
+            return {
+                sandwichedAppointmentId: appointmentNo,
+                queue: updatedQueueSummary
+            };
+        });
     }
 }
