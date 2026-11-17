@@ -74,6 +74,9 @@ export const ENTITY_TARGET: Record<string, { table: string; column: string; padT
     BRANCH_SHIFT: { table: "branch_shift_master", column: "shift_id", padTo: 4 },
     DUTY_TEMPLATE: { table: "staff_duty_roster_template", column: "template_id", padTo: 6 },
     DUTY_ROSTER: { table: "staff_duty_roster", column: "roster_id", padTo: 6 },
+    GENOMIC_TEST: { table: "genomic_test", column: "test_id", padTo: 7 },
+    GENOMIC_RESULT: { table: "genomic_result", column: "result_id", padTo: 8 },
+    GENE_MASTER: { table: "gene_master", column: "gene_master_id", padTo: 5 },
 };
 
 function escapeSqlLiteral(value: string): string {

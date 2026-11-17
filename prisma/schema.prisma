@@ -2058,22 +2058,22 @@ model genomic_test {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model hospital {
-  hospital_id         String       @unique(map: "hospital_id_unique") @db.VarChar(100)
-  hospital_name       String       @db.VarChar(100)
-  Hospital_address    String?      @db.VarChar(300)
-  pincode             String?      @db.VarChar(100)
-  contact_number      String?      @db.VarChar(100)
-  fax_number          String?      @db.VarChar(100)
-  email_id            String?      @db.VarChar(100)
-  website_address     String?      @db.VarChar(100)
-  hospital_type       String?      @db.VarChar(100)
-  hospital_license_no String?      @db.VarChar(100)
-  id                  BigInt       @id @default(autoincrement())
-  hospital_country    String?      @default("India") @db.VarChar(100)
-  hospital_state      String?      @default("Tamil nadu") @db.VarChar(100)
-  hospital_district   String?      @default("Chennai") @db.VarChar(100)
-  hospital_area       String?      @default("Tambaram") @db.VarChar(100)
-  timezone            String?      @default("Asia/Kolkata") @db.VarChar(64)
+  hospital_id         String   @unique(map: "hospital_id_unique") @db.VarChar(100)
+  hospital_name       String   @db.VarChar(100)
+  Hospital_address    String?  @db.VarChar(300)
+  pincode             String?  @db.VarChar(100)
+  contact_number      String?  @db.VarChar(100)
+  fax_number          String?  @db.VarChar(100)
+  email_id            String?  @db.VarChar(100)
+  website_address     String?  @db.VarChar(100)
+  hospital_type       String?  @db.VarChar(100)
+  hospital_license_no String?  @db.VarChar(100)
+  id                  BigInt   @id @default(autoincrement())
+  hospital_country    String?  @default("India") @db.VarChar(100)
+  hospital_state      String?  @default("Tamil nadu") @db.VarChar(100)
+  hospital_district   String?  @default("Chennai") @db.VarChar(100)
+  hospital_area       String?  @default("Tambaram") @db.VarChar(100)
+  timezone            String?  @default("Asia/Kolkata") @db.VarChar(64)
   branch              branch[]
   user_table          user_table[]
 }
@@ -3475,3 +3475,5 @@ enum leavestatus {
   APPROVED
   REJECTED
 }
+
+
