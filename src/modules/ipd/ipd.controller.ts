@@ -77,7 +77,8 @@ export class IpdController {
                 page: req.query.page as string,
                 limit: req.query.limit as string,
                 sortField: req.query.sortField as string,
-                sortDirection: req.query.sortDirection as string
+                sortDirection: req.query.sortDirection as string,
+                hasTransfers: String(req.query.hasTransfers ?? "") === "true" ? true : undefined,
             });
 
             return res.json({

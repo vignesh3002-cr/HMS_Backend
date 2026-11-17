@@ -49,8 +49,9 @@ export const initiateTransferValidation = [
         .withMessage("Effective date must be a valid date (YYYY-MM-DD)"),
 
     body("transfer_reason")
-        .notEmpty()
-        .withMessage("Transfer reason is required"),
+        .optional({ checkFalsy: true })
+        .isString()
+        .withMessage("Transfer reason must be a string"),
 
     // Presence/type only -- an EMPTY array is legal for close-only moves
     // (cancel a slot via close_schedule_ids). The service still requires
@@ -147,8 +148,37 @@ export const confirmTransferValidation = [
 
     body("replacement_employee_id")
         .if(body("action").equals("TRANSFER"))
+        .if((_value, { req }) => !Array.isArray(req.body?.appointments) || req.body.appointments.length === 0)
         .notEmpty()
         .withMessage("replacement_employee_id is required for the TRANSFER action"),
+
+    body("appointments")
+        .optional()
+        .isArray()
+        .withMessage("appointments must be an array"),
+
+    body("appointments.*.appointment_id")
+        .optional()
+        .notEmpty()
+        .withMessage("appointment_id is required for each appointment entry"),
+
+    body("appointments.*.action")
+        .optional()
+        .isIn(TRANSFER_ACTION_VALUES)
+        .withMessage(`appointment action must be one of: ${TRANSFER_ACTION_VALUES.join(", ")}`),
+
+    body("appointments.*.replacement_employee_id")
+        .optional()
+        .isString(),
+
+    body("appointments.*.custom_time")
+        .optional()
+        .matches(TIME_PATTERN)
+        .withMessage("custom_time must be in HH:mm format"),
+
+    body("reason")
+        .optional()
+        .isString(),
 
     body("confirm")
         .if(body("action").equals("CANCEL"))
@@ -232,6 +262,9 @@ export const processRescheduleActionValidation = [
         .if(body("action").equals("ASSIGN"))
         .notEmpty()
         .matches(TIME_PATTERN)
-        .withMessage("appointment_time must be in HH:mm format")
+        .withMessage("appointment_time must be in HH:mm format"),
+
+    body("schedule_id")
+        .optional()
 
 ];

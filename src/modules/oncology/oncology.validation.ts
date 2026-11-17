@@ -14,6 +14,34 @@ export const getCancerSubtypesValidation = [
 
 ];
 
+export const getCancerScoreValidation = [
+
+    param("scoreId").notEmpty()
+
+];
+
+// Catalogue metadata edited from the Score workspace. Only the descriptive
+// columns are editable here; variables and risk groups keep their own tables.
+export const updateCancerScoreValidation = [
+
+    param("scoreId").notEmpty(),
+    body("purpose").optional({ nullable: true }).isString().isLength({ max: 2000 })
+        .withMessage("Purpose must be 2000 characters or fewer"),
+    body("when_to_record").optional({ nullable: true }).isString().isLength({ max: 500 })
+        .withMessage("When to record must be 500 characters or fewer"),
+    body("score_range").optional({ nullable: true }).isString().isLength({ max: 500 })
+        .withMessage("Range must be 500 characters or fewer"),
+    body("risk_groups").optional({ nullable: true }).isString().isLength({ max: 2000 })
+        .withMessage("Risk groups must be 2000 characters or fewer"),
+    body("score_status").optional({ nullable: true }).isString().isLength({ max: 100 })
+        .withMessage("Status must be 100 characters or fewer"),
+    body("score_reference").optional({ nullable: true }).isString().isLength({ max: 1000 })
+        .withMessage("Reference must be 1000 characters or fewer"),
+    body("developer_note").optional({ nullable: true }).isString().isLength({ max: 2000 })
+        .withMessage("Developer note must be 2000 characters or fewer")
+
+];
+
 export const getStagingReferenceValidation = [
 
     query("cancer_type_id").notEmpty().withMessage("cancer_type_id is required")
@@ -76,6 +104,10 @@ export const createStagingDetailValidation = [
     body("grade_system").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Grade system must be 100 characters or fewer"),
     body("score").optional({ nullable: true }).isString(),
     body("score_system").optional({ nullable: true }).isString(),
+    body("score_variables").optional({ nullable: true }).isObject().withMessage("score_variables must be an object"),
+    body("score_result").optional({ nullable: true }).isString(),
+    body("risk_group").optional({ nullable: true }).isString().isLength({ max: 200 }).withMessage("Risk group must be 200 characters or fewer"),
+    body("score_points").optional({ nullable: true }).isDecimal().withMessage("score_points must be a decimal number"),
     body("pre_diagnosis").optional({ nullable: true }).isString(),
     body("disease_status").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Disease Status must be 100 characters or fewer"),
     body("notes").optional({ nullable: true }).isString(),
@@ -118,6 +150,10 @@ export const updateStagingDetailValidation = [
     body("grade_system").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Grade system must be 100 characters or fewer"),
     body("score").optional({ nullable: true }).isString(),
     body("score_system").optional({ nullable: true }).isString(),
+    body("score_variables").optional({ nullable: true }).isObject().withMessage("score_variables must be an object"),
+    body("score_result").optional({ nullable: true }).isString(),
+    body("risk_group").optional({ nullable: true }).isString().isLength({ max: 200 }).withMessage("Risk group must be 200 characters or fewer"),
+    body("score_points").optional({ nullable: true }).isDecimal().withMessage("score_points must be a decimal number"),
     body("pre_diagnosis").optional({ nullable: true }).isString(),
     body("disease_status").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Disease Status must be 100 characters or fewer"),
     body("notes").optional({ nullable: true }).isString(),

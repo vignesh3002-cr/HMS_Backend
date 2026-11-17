@@ -168,7 +168,7 @@ export async function seedRegimenProtocols() {
 
         const subtype = protocol.subtype_name
             ? await prisma.cancer_subtypes.findFirst({
-                where: { cancer_type_id: cancerType.cancer_type_id, subtype_name: protocol.subtype_name },
+                where: { cancerTypeId: cancerType.cancer_type_id, subtype_name: protocol.subtype_name },
             })
             : null;
 

@@ -234,6 +234,7 @@ model appointment_history {
   chemo_unfit_notes               String?
   chemo_evaluated_at              DateTime?                         @db.Timestamp(6)
   chemo_evaluated_by              String?                           @db.VarChar(100)
+  duration_minutes                Int?                              @default(10)
   employees                       employees?                        @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction)
   doctor_schedule                 doctor_schedule?                  @relation(fields: [schedule_id], references: [schedule_id], onDelete: NoAction, onUpdate: NoAction)
   branch                          branch?                           @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_appointment_branch")
@@ -464,6 +465,15 @@ model cancer_score {
   applies_to       String?      @db.VarChar(150)
   subtype_keywords String?      @db.VarChar(255)
   display_order    Int?         @default(1)
+  /* Catalogue metadata, seeded from the Score_Catalogue sheet. */
+  purpose          String?
+  when_to_record   String?      @db.VarChar(200)
+  score_range      String?      @db.VarChar(200)
+  risk_groups      String?
+  score_status     String?      @db.VarChar(100)
+  score_reference  String?
+  developer_note   String?
+  auto_fill_percent String?     @db.VarChar(20)
   active_status    Int?         @default(1) @db.SmallInt
   created_at       DateTime?    @default(now()) @db.Timestamp(6)
   updated_at       DateTime?    @default(now()) @db.Timestamp(6)
@@ -472,6 +482,54 @@ model cancer_score {
 
   @@unique([cancer_type_id, score_system, score_value], map: "uq_cancer_score_value")
   @@index([cancer_type_id], map: "idx_cancer_score_type")
+}
+
+/// Which cancer types a score is offered under (a score can serve several).
+model cancer_score_cancer_types {
+  id             BigInt    @id @default(autoincrement())
+  score_id       String    @db.VarChar(100)
+  cancer_type_id String    @db.VarChar(100)
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
+
+  @@unique([score_id, cancer_type_id], map: "uq_score_cancer_type")
+  @@index([cancer_type_id], map: "idx_score_cancer_type_type")
+}
+
+/// Prognostic score variables - the measurable items a score is built from
+/// (one row per score variable, e.g. Nottingham "Tubule formation").
+/// Source: EMR_Risk_Prognostic_Scores.xlsx - Score_Variables sheet.
+/// RLS on; backend connects as table owner.
+model cancer_score_variable {
+  id                BigInt    @id @default(autoincrement())
+  score_variable_id String    @unique(map: "uq_score_variable_id") @db.VarChar(100)
+  score_id          String    @db.VarChar(100)
+  variable_name     String    @db.VarChar(200)
+  criterion         String?   @db.VarChar(500)   // e.g. "<2 mg/dL 1; 2-3 2; >3 3"
+  points            String?   @db.VarChar(100)   // e.g. "1-3", "0-2", "1"
+  source            String    @db.VarChar(20)    // REG, VIT, LAB, STG, IHC, GEN, DER, PATH, CLIN
+  auto_filled       Boolean   @default(false)
+  source_field      String?   @db.VarChar(200)   // e.g. "Bilirubin", "PD-L1 score", "pN"
+  display_order     Int       @default(1)
+  active_status     Int?      @default(1) @db.SmallInt
+  created_at        DateTime? @default(now()) @db.Timestamp(6)
+  updated_at        DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([score_id], map: "idx_score_variable_score")
+}
+
+/// Prognostic score risk groups - the total-points band and its meaning.
+/// Source: EMR_Risk_Prognostic_Scores.xlsx - Score_Groups sheet.
+/// RLS on; backend connects as table owner.
+model cancer_score_group {
+  id            BigInt   @id @default(autoincrement())
+  score_group_id String  @unique(map: "uq_score_group_id") @db.VarChar(100)
+  score_id      String  @db.VarChar(100)
+  group_range   String  @db.VarChar(200)  // e.g. "5-6", ">=10", "RCB-0", "Grade 1"
+  meaning       String? @db.Text
+  sort_order    Int     @default(1)
+  active_status Int?  @default(1) @db.SmallInt
+
+  @@index([score_id], map: "idx_score_group_score")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -2005,6 +2063,21 @@ model immunization_master {
   @@index([is_active], map: "idx_immunization_active")
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model line_of_therapy_master {
+  id          BigInt   @id @default(autoincrement())
+  code        String   @unique(map: "uq_line_of_therapy_code") @db.VarChar(100)
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(200)
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @default(now()) @db.Timestamp(6)
+  created_by  String?  @db.VarChar(100)
+  updated_by  String?  @db.VarChar(100)
+
+  @@index([is_active], map: "idx_line_of_therapy_active")
+}
+
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model investigation_parameter {
@@ -2481,6 +2554,10 @@ model oncology_staging_detail {
   relapse_date                        DateTime?                             @db.Date
   score                               String?
   score_system                        String?                               @db.VarChar(255)
+  score_variables Json?                 // { [score_variable_id]: { selected_criterion, selected_points, source_value } }
+  score_result                        String?                             // computed total / category text
+  risk_group                          String?                             // matched group/range meaning
+  score_points                        Decimal?                            @db.Decimal(10, 2)   // total points
   encounter_no                        String?                               @unique(map: "uq_staging_detail_encounter", where: raw("(encounter_no IS NOT NULL)")) @db.VarChar(100)
   suggested_molecular_test            String?                               @db.VarChar(255)
   suggested_molecular_test_date       DateTime?                             @db.Date
@@ -2488,6 +2565,10 @@ model oncology_staging_detail {
   histopathology                      String?                               @db.VarChar(100)
   second_primary_date                 DateTime?                             @db.Date
   form_state                          Json?
+  score_variables                     Json?                                 @db.Json
+  score_result                        String?
+  risk_group                          String?                               @db.VarChar(200)
+  score_points                        Decimal?                              @db.Decimal(10, 2)
   chemotherapy_plan                   chemotherapy_plan[]
   derived_fields                      derived_fields?
   ihc_results                         ihc_results?
@@ -3000,6 +3081,7 @@ model sample_collection {
   user_id              String?        @db.VarChar(100)
   created_at           DateTime?      @default(now()) @db.Timestamp(6)
   updated_at           DateTime?      @default(now()) @db.Timestamp(6)
+  expiry_datetime      DateTime?      @db.Timestamp(6)
   lab_history          lab_history[]
   lab_result           lab_result[]
   branch               branch?        @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_sample_collection_branch")
@@ -3220,6 +3302,99 @@ model ward_master {
   branch        branch       @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ward_branch")
 
   @@index([branch_id], map: "idx_ward_branch")
+}
+
+/// Integration Provider Configuration
+model integration_provider {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider_type String   @db.VarChar(50)
+  provider_name String   @db.VarChar(100)
+  config        Json
+  is_active     Boolean  @default(true)
+  is_default    Boolean  @default(false)
+  branch_id     String?  @db.VarChar(100)
+  created_by    String?  @db.VarChar(100)
+  created_at    DateTime @default(now()) @db.Timestamp(6)
+  updated_at    DateTime @default(now()) @db.Timestamp(6)
+  updated_by    String?  @db.VarChar(100)
+
+  @@unique([provider_type, branch_id], map: "uq_integration_provider_type_branch")
+  @@index([branch_id], map: "idx_integration_provider_branch_id")
+  @@index([provider_type], map: "idx_integration_provider_provider_type")
+}
+
+/// User Integration Settings
+model user_integration_settings {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id              String   @unique(map: "uq_user_integration_settings_user_id") @db.VarChar(100)
+  email_enabled        Boolean  @default(false)
+  sms_enabled          Boolean  @default(false)
+  whatsapp_enabled     Boolean  @default(false)
+  in_app_enabled       Boolean  @default(true)
+  email_provider_id    String?  @db.Uuid
+  sms_provider_id      String?  @db.Uuid
+  whatsapp_provider_id String?  @db.Uuid
+  created_at           DateTime @default(now()) @db.Timestamp(6)
+  updated_at           DateTime @default(now()) @db.Timestamp(6)
+  updated_by           String?  @db.VarChar(100)
+
+  @@index([user_id], map: "idx_user_integration_settings_user_id")
+}
+
+model cancer_score_cancer_types {
+  id             BigInt    @id @default(autoincrement())
+  score_id       String    @db.VarChar(100)
+  cancer_type_id String    @db.VarChar(100)
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
+
+  @@unique([score_id, cancer_type_id], map: "uq_score_cancer_type")
+  @@index([cancer_type_id], map: "idx_score_cancer_type_type")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model cancer_score_group {
+  id             BigInt  @id @default(autoincrement())
+  score_group_id String  @unique(map: "uq_score_group_id") @db.VarChar(100)
+  score_id       String  @db.VarChar(100)
+  group_range    String  @db.VarChar(200)
+  meaning        String?
+  sort_order     Int     @default(1)
+  active_status  Int?    @default(1) @db.SmallInt
+
+  @@index([score_id], map: "idx_score_group_score")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model cancer_score_variable {
+  id                BigInt    @id @default(autoincrement())
+  score_variable_id String    @unique(map: "uq_score_variable_id") @db.VarChar(100)
+  score_id          String    @db.VarChar(100)
+  variable_name     String    @db.VarChar(200)
+  criterion         String?   @db.VarChar(500)
+  points            String?   @db.VarChar(100)
+  source            String    @db.VarChar(20)
+  auto_filled       Boolean   @default(false)
+  source_field      String?   @db.VarChar(200)
+  display_order     Int       @default(1)
+  active_status     Int?      @default(1) @db.SmallInt
+  created_at        DateTime? @default(now()) @db.Timestamp(6)
+  updated_at        DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([score_id], map: "idx_score_variable_score")
+}
+
+model line_of_therapy_master {
+  id          BigInt   @id @default(autoincrement())
+  code        String   @unique @db.VarChar(100)
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(200)
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @default(now()) @db.Timestamp(6)
+  created_by  String?  @db.VarChar(100)
+  updated_by  String?  @db.VarChar(100)
+
+  @@index([is_active], map: "idx_line_of_therapy_active")
 }
 
 enum DoctorScheduleChangeMode {

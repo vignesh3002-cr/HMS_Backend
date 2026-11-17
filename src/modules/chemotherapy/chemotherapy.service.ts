@@ -4201,6 +4201,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             ...drugChanges,
             ...(dto.drug_sequence !== undefined ? { drug_sequence: dto.drug_sequence } : {}),
             ...(dto.drug_type !== undefined ? { drug_type: dto.drug_type } : {}),
+            ...(dto.formulation !== undefined ? { formulation: dto.formulation } : {}),
             ...(dto.dosage !== undefined ? { protocol_dose: dto.dosage } : {}),
             ...(dto.dosage_unit !== undefined ? { protocol_dose_unit: dto.dosage_unit } : {}),
             ...(dto.frequency !== undefined ? { frequency: dto.frequency } : {}),
