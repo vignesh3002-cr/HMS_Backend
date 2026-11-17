@@ -42,6 +42,7 @@ import referralRoutes from "./modules/referral/referral.routes";
 import priorityFlagsRoutes from "./modules/priority-flags/priorityFlags.routes";
 import aiChatRoutes from "./modules/ai/ai-chat.routes";
 import patientDocumentRoutes from "./modules/patient-document/patientDocument.routes";
+import genomicsRoutes from "./modules/genomics/genomics.routes";
 import integrationRoutes from "./modules/integration/integration.routes";
 
 import { hashPassword } from "./utils/bcrypt";
@@ -155,6 +156,7 @@ app.use("/api/consultation", consultationRoutes);
 app.use("/api/permissions", permissionRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/oncology", oncologyRoutes);
+app.use("/api/genomics", genomicsRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/export", exportRoutes);
 

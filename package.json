@@ -20,7 +20,8 @@
     "db:seed:consultation": "ts-node prisma/seedConsultation.ts",
     "db:seed:cancer-scores": "ts-node prisma/seedCancerScores.ts",
     "db:seed:score-master": "ts-node prisma/seedScoreMaster.ts",
-    "db:seed:drug-monitoring": "ts-node prisma/seedDrugMonitoringMappings.ts"
+    "db:seed:drug-monitoring": "ts-node prisma/seedDrugMonitoringMappings.ts",
+    "db:seed:genomics": "ts-node prisma/seedGenomics.ts"
   },
   "keywords": [],
   "author": "",
