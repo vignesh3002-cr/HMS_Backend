@@ -1,11 +1,6 @@
 import { body } from "express-validator";
 
 export const createLabTestMasterValidation = [
-
-    body("lab_test_category_id")
-        .notEmpty()
-        .withMessage("Lab Test Category is required"),
-
     body("test_name")
         .notEmpty()
         .withMessage("Test Name is required"),
@@ -22,12 +17,15 @@ export const createLabTestMasterValidation = [
     body("tat_hours")
         .optional()
         .isInt()
-        .withMessage("TAT Hours must be a number")
+        .withMessage("TAT Hours must be a number"),
 
+    body("parameters")
+        .optional()
+        .isArray()
+        .withMessage("Parameters must be an array")
 ];
 
 export const updateLabTestMasterValidation = [
-
     body("test_name")
         .optional()
         .notEmpty(),
@@ -42,6 +40,9 @@ export const updateLabTestMasterValidation = [
 
     body("tat_hours")
         .optional()
-        .isInt()
+        .isInt(),
 
+    body("parameters")
+        .optional()
+        .isArray()
 ];

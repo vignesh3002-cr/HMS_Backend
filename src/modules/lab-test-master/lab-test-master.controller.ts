@@ -17,7 +17,11 @@ class LabTestMasterController {
                 });
             }
 
-            const test = await service.create(req.body);
+            const authUser = (req as any).user;
+            const test = await service.create(req.body, {
+                branch_id: authUser?.branch_id,
+                user_id: authUser?.user_id
+            });
 
             return res.status(201).json({
                 success: true,
@@ -36,7 +40,7 @@ class LabTestMasterController {
 
     }
 
-        async getAllParameters(req: Request, res: Response) {
+    async getAllParameters(req: Request, res: Response) {
         try {
             const parameters = await service.getAllParameters();
             return res.status(200).json({

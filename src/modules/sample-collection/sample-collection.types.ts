@@ -3,6 +3,7 @@ export interface CreateSampleCollectionDto {
     barcode?: string;
     container_type?: string;
     collection_datetime?: Date;
+    expiry_datetime?: Date;
     collected_by?: string;
     collection_site?: string;
     collected_volume?: string;

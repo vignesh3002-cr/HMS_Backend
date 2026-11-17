@@ -1,7 +1,7 @@
 import { Router } from "express";
 import controller from "./lab-test-master.controller";
 import { authenticate } from "../auth/auth.middleware";
-import { authorize } from "../../middleware/authorize";
+import { authorizeAny } from "../../middleware/authorize";
 import {
     createLabTestMasterValidation,
     updateLabTestMasterValidation
@@ -9,15 +9,32 @@ import {
 
 const router = Router();
 
-router.post("/", authenticate, authorize("lab.manage"), createLabTestMasterValidation, controller.create);
+router.post(
+    "/",
+    authenticate,
+    authorizeAny("lab.manage", "lab.order", "lab.result"),
+    createLabTestMasterValidation,
+    controller.create
+);
 
 router.get("/", authenticate, controller.getAll);
 router.get("/parameters", authenticate, controller.getAllParameters);
 
-router.get("/:id", authenticate, authorize("lab.manage"), controller.getById);
+router.get("/:id", authenticate, controller.getById);
 
-router.put("/:id", authenticate, authorize("lab.manage"), updateLabTestMasterValidation, controller.update);
+router.put(
+    "/:id",
+    authenticate,
+    authorizeAny("lab.manage", "lab.order", "lab.result"),
+    updateLabTestMasterValidation,
+    controller.update
+);
 
-router.delete("/:id", authenticate, authorize("lab.manage"), controller.delete);
+router.delete(
+    "/:id",
+    authenticate,
+    authorizeAny("lab.manage", "lab.order", "lab.result"),
+    controller.delete
+);
 
 export default router;

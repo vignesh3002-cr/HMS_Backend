@@ -2245,6 +2245,7 @@ model lab_test_master {
   includes_details                      String?
   tat_text                              String?                                 @db.VarChar(100)
   needs_review                          Boolean?                                @default(false)
+  expiry_time_hours                     Decimal?                                @default(2.00) @db.Decimal(5, 2)
   chemotherapy_plan_order_investigation chemotherapy_plan_order_investigation[]
   drug_lab_monitoring                   drug_lab_monitoring[]
   encounter_report                      encounter_report[]
@@ -2988,6 +2989,7 @@ model sample_collection {
   barcode              String?        @unique @db.VarChar(100)
   container_type       String?        @db.VarChar(100)
   collection_datetime  DateTime?      @default(now()) @db.Timestamp(6)
+  expiry_datetime      DateTime?      @db.Timestamp(6)
   collected_by         String?        @db.VarChar(100)
   collection_site      String?        @db.VarChar(100)
   collected_volume     String?        @db.VarChar(100)
