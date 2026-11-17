@@ -23,8 +23,6 @@ import {
     formatDateOnly,
     addDays,
     getWeekRange,
-    getTodayInIST,
-    getNowMinutesInIST,
     formatMinutesTo12Hour,
     minutesToHHmm
 } from "./appointment.utils";
@@ -891,9 +889,10 @@ export class AppointmentService {
 
         // "Past date" is judged against TODAY IN THE BRANCH'S OWN timezone
         // (branch.timezone), never the server's zone or a hardcoded offset.
+        const branchTz = await getBranchTimezone(data.branch_id);
         if (
             formatDateOnly(appointmentDate) <
-            getTodayIn(await getBranchTimezone(data.branch_id))
+            getTodayIn(branchTz)
         ) {
             throw new Error(
                 "Appointments cannot be booked for a past date"
@@ -1052,8 +1051,10 @@ export class AppointmentService {
                         (a) => a.status !== "CANCELLED" && a.status !== "NO_SHOW" && a.appointment_time
                     );
 
-                    const isToday = formatDateOnly(shiftBaseDate) === getTodayInIST();
-                    const nowMinutes = getNowMinutesInIST();
+                    // "Today"/"now" in the BRANCH's own timezone - the same
+                    // zone getAvailableSlots uses, never a hardcoded IST.
+                    const isToday = formatDateOnly(shiftBaseDate) === getTodayIn(branchTz);
+                    const nowMinutes = getNowMinutesIn(branchTz);
                     const baselineStart = isToday ? Math.max(blockStartMinutes, nowMinutes) : blockStartMinutes;
 
                     const priorOrInSlot = activeAppts.filter((a) => {
@@ -2594,9 +2595,6 @@ export class AppointmentService {
         employeeId: string,
         appointmentDate: Date
     ) {
-        const isToday = formatDateOnly(appointmentDate) === getTodayInIST();
-        const nowMinutes = getNowMinutesInIST();
-
         const allDayAppts = await tx.appointment_history.findMany({
             where: {
                 employee_id: employeeId,
@@ -2606,6 +2604,14 @@ export class AppointmentService {
                 appointment_time: "asc"
             }
         });
+
+        // "Today"/"now" judged in the BRANCH's own timezone (falls back to the
+        // hospital default for legacy rows that carry no branch_id).
+        const branchTz = await getBranchTimezone(
+            allDayAppts.find((a) => a.branch_id)?.branch_id
+        );
+        const isToday = formatDateOnly(appointmentDate) === getTodayIn(branchTz);
+        const nowMinutes = getNowMinutesIn(branchTz);
 
         const activeAppts = allDayAppts.filter(
             a => a.status !== "CANCELLED" && a.status !== "NO_SHOW"
@@ -2733,8 +2739,13 @@ export class AppointmentService {
                 }
             });
 
-            const isToday = formatDateOnly(sandwiched.appointment_date) === getTodayInIST();
-            const nowMinutes = getNowMinutesInIST();
+            // "Today"/"now" in the BRANCH's own timezone: the appointment's
+            // branch first, else the branch of the schedule it sits on.
+            const branchTz = await getBranchTimezone(
+                sandwiched.branch_id ?? sandwiched.doctor_schedule?.branch_id
+            );
+            const isToday = formatDateOnly(sandwiched.appointment_date) === getTodayIn(branchTz);
+            const nowMinutes = getNowMinutesIn(branchTz);
 
         const allDayAppts = await tx.appointment_history.findMany({
                 where: {
