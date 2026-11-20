@@ -52,6 +52,7 @@ import {
     UpdateRegimenProtocolDto,
   UpdateRegimenProtocolItemDto,
     RegimenProtocolFilterQuery,
+    ProtocolPerformanceFilterQuery,
     PersonalizeRegimenProtocolDto,
     UpdatePersonalizedProtocolDto,
     PersonalizationDayInput,
@@ -668,6 +669,12 @@ export class ChemotherapyService {
 
     }
 
+    async getProtocolPerformance(filters: ProtocolPerformanceFilterQuery) {
+
+        return this.repository.getProtocolPerformance(filters);
+
+    }
+
     async getRegimenProtocol(protocolId: string, organizationId?: string | null) {
 
         const protocol = await this.repository.findRegimenProtocolById(protocolId);
@@ -1112,7 +1119,10 @@ export class ChemotherapyService {
                 cycle_interval_days: dto.cycle_interval_days ?? null,
                 guideline_source: dto.guideline_source ?? null,
                 notes: dto.notes ?? null,
-                no_of_days: dto.no_of_days ?? 1
+                no_of_days: dto.no_of_days ?? 1,
+                created_by: actingUserId,
+                updated_by: actingUserId,
+                review_date: dto.review_date ? new Date(dto.review_date) : null
             });
 
             await this.repository.syncProtocolCancers(tx, newProtocolId, cancerTypeIds, subtypeIds);
@@ -1233,7 +1243,10 @@ export class ChemotherapyService {
             ...(dto.cycle_interval_days !== undefined ? { cycle_interval_days: dto.cycle_interval_days } : {}),
             ...(dto.guideline_source !== undefined ? { guideline_source: dto.guideline_source } : {}),
             ...(dto.notes !== undefined ? { notes: dto.notes } : {}),
-            ...(dto.no_of_days !== undefined ? { no_of_days: dto.no_of_days } : {})
+            ...(dto.no_of_days !== undefined ? { no_of_days: dto.no_of_days } : {}),
+            ...(dto.active_status !== undefined ? { active_status: dto.active_status } : {}),
+            updated_by: actingUserId,
+            ...(dto.review_date !== undefined ? { review_date: dto.review_date ? new Date(dto.review_date) : null } : {})
         };
 
         await prisma.$transaction(async (tx) => {
@@ -2250,6 +2263,8 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 composition: dto.composition ?? source.composition,
                 additional_notes: dto.additional_notes ?? source.additional_notes,
                 no_of_days: dto.no_of_days ?? source.no_of_days,
+                created_by: actingUserId,
+                updated_by: actingUserId,
                 day_care_referred: dto.day_care_referred ?? source.day_care_referred,
                 create_day_care_appointment: dto.create_day_care_appointment ?? source.create_day_care_appointment,
                 // A fresh personalized copy starts as an inactive draft - it
@@ -2992,7 +3007,9 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 no_of_days: current.no_of_days,
                 day_care_referred: current.day_care_referred,
                 create_day_care_appointment: current.create_day_care_appointment,
-                active_status: PROTOCOL_ACTIVE_STATUS.INACTIVE
+                active_status: PROTOCOL_ACTIVE_STATUS.INACTIVE,
+                created_by: actingUserId,
+                updated_by: actingUserId
             });
 
             await this.applyStructure(tx, versionProtocolId, { days, items }, [], [], actingUserId);
@@ -3003,6 +3020,8 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
             await this.repository.updateRegimenProtocol(tx, current.protocol_id, {
                 active_status: PROTOCOL_ACTIVE_STATUS.INACTIVE,
+                created_by: actingUserId,
+                updated_by: actingUserId,
                 notes: appendNote(current.notes, supersedeNote)
             });
 

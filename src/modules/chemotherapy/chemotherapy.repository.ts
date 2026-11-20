@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { generateId, generateIdBatch } from "../../utils/idGenerator";
 import { ADMINISTRATION_STATUS, DRUG_ROLE, ID_ENTITY, OPEN_PLAN_STATUSES, PLAN_ORDER_STATUS } from "./chemotherapy.constants";
-import { PlanFilterQuery, RegimenProtocolFilterQuery } from "./chemotherapy.types";
+import { PlanFilterQuery, RegimenProtocolFilterQuery, ProtocolPerformanceFilterQuery } from "./chemotherapy.types";
 
 export class ChemotherapyRepository {
 
@@ -73,9 +73,16 @@ export class ChemotherapyRepository {
 
         const cancerMatch = await this.buildProtocolCancerMatch(filters);
 
-        return prisma.chemotherapy_regimen_protocol.findMany({
+        const activeFilter: Prisma.chemotherapy_regimen_protocolWhereInput =
+            filters.include_inactive
+                ? {}
+                : filters.active_status !== undefined
+                    ? { active_status: filters.active_status }
+                    : { active_status: 1 };
+
+        const protocols = await prisma.chemotherapy_regimen_protocol.findMany({
             where: {
-                active_status: 1,
+                ...activeFilter,
                 // AND-ed, not spread: each condition carries its own OR, and
                 // spreading them would let the last OR silently replace the
                 // others (which dropped the cancer-type filter entirely).
@@ -85,6 +92,200 @@ export class ChemotherapyRepository {
             orderBy: { regimen_code: "asc" }
         });
 
+        // Attach real-time patient usage statistics from chemotherapy_plan
+        const usageRows: Array<{ source_protocol_id: string; patient_count: number; used_this_month: number }> =
+            await prisma.$queryRawUnsafe(`
+                SELECT 
+                    source_protocol_id,
+                    COUNT(DISTINCT patient_id)::int as patient_count,
+                    COUNT(DISTINCT CASE WHEN created_at >= date_trunc('month', CURRENT_DATE) THEN patient_id END)::int as used_this_month
+                FROM chemotherapy_plan
+                WHERE source_protocol_id IS NOT NULL AND active_status = 1
+                GROUP BY source_protocol_id
+            `);
+
+        const usageMap = new Map<string, { patient_count: number; used_this_month: number }>();
+        for (const row of usageRows) {
+            usageMap.set(row.source_protocol_id, {
+                patient_count: row.patient_count,
+                used_this_month: row.used_this_month
+            });
+        }
+
+        return protocols.map((p) => {
+            const usage = usageMap.get(p.protocol_id);
+            return {
+                ...p,
+                used_this_month: usage ? usage.used_this_month : 0,
+                patient_count: usage ? usage.patient_count : 0
+            };
+        });
+
+    }
+
+    async getProtocolPerformance(filters: ProtocolPerformanceFilterQuery) {
+        const currentWhere: Prisma.chemotherapy_planWhereInput = {
+            active_status: 1,
+            source_protocol_id: { not: null },
+            ...this.buildPlanDateFilter(filters.date_from, filters.date_to)
+        };
+
+        const prevWhere: Prisma.chemotherapy_planWhereInput = {
+            active_status: 1,
+            source_protocol_id: { not: null },
+            ...this.buildPlanDateFilter(filters.prev_date_from, filters.prev_date_to)
+        };
+
+        const [currentPlans, prevPlans, allProtocols] = await Promise.all([
+            prisma.chemotherapy_plan.findMany({
+                where: currentWhere,
+                select: {
+                    source_protocol_id: true,
+                    patient_id: true,
+                    treatment_status: true,
+                    chemotherapy_plan_id: true
+                }
+            }),
+            (filters.prev_date_from || filters.prev_date_to)
+                ? prisma.chemotherapy_plan.findMany({
+                    where: prevWhere,
+                    select: {
+                        source_protocol_id: true,
+                        patient_id: true
+                    }
+                })
+                : Promise.resolve([]),
+            prisma.chemotherapy_regimen_protocol.findMany({
+                where: {
+                    active_status: 1,
+                    ...(filters.organization_id ? {
+                        OR: [
+                            { protocol_type: { not: "PERSONALIZED" } },
+                            { organization_id: filters.organization_id }
+                        ]
+                    } : { protocol_type: { not: "PERSONALIZED" } })
+                },
+                select: {
+                    protocol_id: true,
+                    regimen_name: true,
+                    regimen_code: true,
+                    no_of_days: true,
+                    treatment_intent: true,
+                    protocol_version: true,
+                    active_status: true,
+                    cancer_types: { select: { cancer_type: true } },
+                    chemotherapy_protocol_cancers: {
+                        select: { cancer_types: { select: { cancer_type: true } } }
+                    }
+                }
+            })
+        ]);
+
+        const currentMap = new Map<string, { count: number; patients: Set<string>; completed: number; active: number; planned: number }>();
+        for (const p of currentPlans) {
+            if (!p.source_protocol_id) continue;
+            let entry = currentMap.get(p.source_protocol_id);
+            if (!entry) {
+                entry = { count: 0, patients: new Set<string>(), completed: 0, active: 0, planned: 0 };
+                currentMap.set(p.source_protocol_id, entry);
+            }
+            entry.count++;
+            if (p.patient_id) entry.patients.add(p.patient_id);
+            const st = (p.treatment_status || "").toUpperCase();
+            if (st === "COMPLETED") entry.completed++;
+            else if (st === "ACTIVE") entry.active++;
+            else if (st === "PLANNED") entry.planned++;
+        }
+
+        const prevMap = new Map<string, number>();
+        for (const p of prevPlans) {
+            if (!p.source_protocol_id) continue;
+            prevMap.set(p.source_protocol_id, (prevMap.get(p.source_protocol_id) || 0) + 1);
+        }
+
+        const totalOrders = currentPlans.length;
+        const totalUniquePatients = new Set(currentPlans.map((p) => p.patient_id).filter(Boolean)).size;
+
+        const COLORS = [
+            "#004888", "#00A878", "#C7701C", "#7B3200", "#6D5BC5",
+            "#0E86C4", "#3D8C40", "#B54A7E", "#C49A2A", "#57627A",
+            "#2E9DB3", "#8F4FB0", "#D9534F", "#3E7CB1", "#A8720F",
+        ];
+
+        const protocols = allProtocols.map((p) => {
+            const cur = currentMap.get(p.protocol_id);
+            const count = cur ? cur.count : 0;
+            const patientCount = cur ? cur.patients.size : 0;
+            const previousCount = prevMap.get(p.protocol_id) || 0;
+            const systemShare = totalOrders > 0 ? Math.round((count / totalOrders) * 100) : 0;
+
+            const multiCancers = (p.chemotherapy_protocol_cancers ?? [])
+                .map((c) => c.cancer_types?.cancer_type)
+                .filter(Boolean);
+            const cancerTypeDisplay = multiCancers.length > 0
+                ? Array.from(new Set(multiCancers)).join(", ")
+                : (p.cancer_types?.cancer_type ?? "—");
+
+            return {
+                id: p.protocol_id,
+                name: p.regimen_name,
+                regimen_code: p.regimen_code || p.protocol_id,
+                cancer_type: cancerTypeDisplay,
+                intent: p.treatment_intent || "—",
+                cycle_days: p.no_of_days || 0,
+                version: p.protocol_version || "v1",
+                status: p.active_status === 1 ? "Active" : "Archive",
+                count,
+                patient_count: patientCount,
+                previousCount,
+                systemShare,
+                details: cur ? {
+                    completed: cur.completed,
+                    active: cur.active,
+                    planned: cur.planned,
+                    total: cur.count
+                } : { completed: 0, active: 0, planned: 0, total: 0 }
+            };
+        });
+
+        protocols.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+        const coloredProtocols = protocols.map((p, idx) => ({
+            ...p,
+            color: COLORS[idx % COLORS.length]
+        }));
+
+        return {
+            protocols: coloredProtocols,
+            totalOrders,
+            totalUniquePatients
+        };
+    }
+
+    private buildPlanDateFilter(from?: string, to?: string): Prisma.chemotherapy_planWhereInput {
+        if (!from && !to) return {};
+        const conditions: Prisma.chemotherapy_planWhereInput[] = [];
+        if (from) {
+            conditions.push({
+                OR: [
+                    { treatment_start_date: { gte: new Date(from) } },
+                    { created_at: { gte: new Date(from) } }
+                ]
+            });
+        }
+        if (to) {
+            const toDate = new Date(to);
+            if (to.length === 10) {
+                toDate.setHours(23, 59, 59, 999);
+            }
+            conditions.push({
+                OR: [
+                    { treatment_start_date: { lte: toDate } },
+                    { created_at: { lte: toDate } }
+                ]
+            });
+        }
+        return conditions.length === 1 ? conditions[0] : { AND: conditions };
     }
 
     // A protocol matches a selected cancer type when either its own
@@ -1288,10 +1489,14 @@ export class ChemotherapyRepository {
             where: { active_status: 1, plan_order_id: null },
             include: { medicine_master: true }
         },
-        chemotherapy_cycle: { where: { active_status: 1 }, orderBy: { cycle_number: "asc" as const } },
+        chemotherapy_cycle: {
+            where: { active_status: 1 },
+            orderBy: { cycle_number: "asc" as const },
+        },
         patient_bio_data: {
             select: { patient_id: true, patient_first_name: true, patient_last_name: true }
         },
+        branch: { select: { branch_name: true } },
         employees: { select: { employee_id: true, first_name: true, last_name: true } },
         oncology_staging_detail: {
             include: { derived_fields: true, cancer_types: true, cancer_subtypes: true }

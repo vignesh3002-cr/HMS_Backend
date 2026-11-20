@@ -91,6 +91,13 @@ router.get(
     controller.listRegimenProtocols.bind(controller)
 );
 
+router.get(
+    "/regimen-protocols/performance",
+    authenticate,
+    authorize("chemo.protocol.read"),
+    controller.getProtocolPerformance.bind(controller)
+);
+
 // ---------------- Personalized regimen protocols ----------------
 // CRITICAL: all of these MUST be registered before "/regimen-protocols/:protocolId"
 // (and the ":protocolId" PUT) below - otherwise "personalized" would be captured

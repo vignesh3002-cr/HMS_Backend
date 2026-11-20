@@ -52,7 +52,9 @@ export const createRegimenProtocolValidation = [
     body("items.*.drug_sequence").isInt({ min: 1 }).withMessage("Each protocol item requires a drug_sequence >= 1"),
     body("items.*.drug_role").optional().isIn(Object.values(DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(DRUG_ROLE).join(", ")}`),
     body("dilutions").optional({ nullable: true }).isArray(),
-    body("discharge_instructions").optional({ nullable: true }).isArray()
+    body("discharge_instructions").optional({ nullable: true }).isArray(),
+    body("active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 }),
+    body("review_date").optional({ nullable: true })
 
 ];
 
@@ -77,7 +79,9 @@ export const updateRegimenProtocolValidation = [
     body("days.*.same_as_day_one").optional({ nullable: true }).isBoolean(),
     body("days.*.active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 }),
     body("dilutions").optional({ nullable: true }).isArray(),
-    body("discharge_instructions").optional({ nullable: true }).isArray()
+    body("discharge_instructions").optional({ nullable: true }).isArray(),
+    body("active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 }),
+    body("review_date").optional({ nullable: true })
 
 ];
 

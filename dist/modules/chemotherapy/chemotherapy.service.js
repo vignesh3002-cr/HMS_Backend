@@ -449,6 +449,9 @@ class ChemotherapyService {
     async listRegimenProtocols(filters) {
         return this.repository.listRegimenProtocols(filters);
     }
+    async getProtocolPerformance(filters) {
+        return this.repository.getProtocolPerformance(filters);
+    }
     async getRegimenProtocol(protocolId, organizationId) {
         const protocol = await this.repository.findRegimenProtocolById(protocolId);
         if (!protocol) {
@@ -771,7 +774,10 @@ class ChemotherapyService {
                 cycle_interval_days: dto.cycle_interval_days ?? null,
                 guideline_source: dto.guideline_source ?? null,
                 notes: dto.notes ?? null,
-                no_of_days: dto.no_of_days ?? 1
+                no_of_days: dto.no_of_days ?? 1,
+                created_by: actingUserId,
+                updated_by: actingUserId,
+                review_date: dto.review_date ? new Date(dto.review_date) : null
             });
             await this.repository.syncProtocolCancers(tx, newProtocolId, cancerTypeIds, subtypeIds);
             for (const item of dto.items) {
@@ -861,7 +867,10 @@ class ChemotherapyService {
             ...(dto.cycle_interval_days !== undefined ? { cycle_interval_days: dto.cycle_interval_days } : {}),
             ...(dto.guideline_source !== undefined ? { guideline_source: dto.guideline_source } : {}),
             ...(dto.notes !== undefined ? { notes: dto.notes } : {}),
-            ...(dto.no_of_days !== undefined ? { no_of_days: dto.no_of_days } : {})
+            ...(dto.no_of_days !== undefined ? { no_of_days: dto.no_of_days } : {}),
+            ...(dto.active_status !== undefined ? { active_status: dto.active_status } : {}),
+            updated_by: actingUserId,
+            ...(dto.review_date !== undefined ? { review_date: dto.review_date ? new Date(dto.review_date) : null } : {})
         };
         await prisma_1.default.$transaction(async (tx) => {
             await this.repository.updateRegimenProtocol(tx, protocolId, protocolChanges);
@@ -1592,6 +1601,8 @@ class ChemotherapyService {
                 composition: dto.composition ?? source.composition,
                 additional_notes: dto.additional_notes ?? source.additional_notes,
                 no_of_days: dto.no_of_days ?? source.no_of_days,
+                created_by: actingUserId,
+                updated_by: actingUserId,
                 day_care_referred: dto.day_care_referred ?? source.day_care_referred,
                 create_day_care_appointment: dto.create_day_care_appointment ?? source.create_day_care_appointment,
                 // A fresh personalized copy starts as an inactive draft - it
@@ -2145,7 +2156,9 @@ class ChemotherapyService {
                 no_of_days: current.no_of_days,
                 day_care_referred: current.day_care_referred,
                 create_day_care_appointment: current.create_day_care_appointment,
-                active_status: chemotherapy_constants_1.PROTOCOL_ACTIVE_STATUS.INACTIVE
+                active_status: chemotherapy_constants_1.PROTOCOL_ACTIVE_STATUS.INACTIVE,
+                created_by: actingUserId,
+                updated_by: actingUserId
             });
             await this.applyStructure(tx, versionProtocolId, { days, items }, [], [], actingUserId);
             const supersedeNote = dto.reason
@@ -2153,6 +2166,8 @@ class ChemotherapyService {
                 : `Superseded by ${versionProtocolId}`;
             await this.repository.updateRegimenProtocol(tx, current.protocol_id, {
                 active_status: chemotherapy_constants_1.PROTOCOL_ACTIVE_STATUS.INACTIVE,
+                created_by: actingUserId,
+                updated_by: actingUserId,
                 notes: appendNote(current.notes, supersedeNote)
             });
             await (0, audit_service_1.logAudit)(tx, {

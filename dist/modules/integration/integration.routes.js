@@ -17,4 +17,8 @@ router.delete("/providers/:id", (0, authorize_1.authorize)("integration.write"),
 router.get("/settings", (0, authorize_1.authorize)("integration.read"), controller.getUserSettings.bind(controller));
 router.put("/settings", (0, authorize_1.authorize)("integration.write"), integration_validation_1.updateUserIntegrationSettingsValidation, controller.updateUserSettings.bind(controller));
 router.get("/providers/type/:type/config", (0, authorize_1.authorize)("integration.read"), integration_validation_1.getProviderByTypeValidation, controller.getProviderConfig.bind(controller));
+router.post("/sms-otp", (0, authorize_1.authorize)("integration.write"), controller.sendSMSOTP.bind(controller));
+router.post("/test/email", (0, authorize_1.authorize)("integration.write"), controller.testEmail.bind(controller));
+router.post("/test/sms", (0, authorize_1.authorize)("integration.write"), controller.testSms.bind(controller));
+router.post("/test/whatsapp", (0, authorize_1.authorize)("integration.write"), controller.testWhatsApp.bind(controller));
 exports.default = router;
