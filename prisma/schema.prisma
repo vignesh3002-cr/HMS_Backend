@@ -2039,6 +2039,9 @@ model ihc_results {
   mmr_overall             String?                 @db.VarChar(100)
   p53_ihc                 String?                 @db.VarChar(100)
   ar_status               String?                 @db.VarChar(100)
+  p16_status              String?                 @db.VarChar(100)
+  p16_percent             Int?                    @db.SmallInt
+  p40_status              String?                 @db.VarChar(100)
   created_at              DateTime?               @default(now()) @db.Timestamp(6)
   updated_at              DateTime?               @default(now()) @db.Timestamp(6)
   mlh1_methylation        String?                 @db.VarChar(100)
@@ -2931,6 +2934,9 @@ model pharmacy_slip {
   last_amended_at     DateTime?            @db.Timestamp(6)
   last_amended_by     String?              @db.VarChar(100)
   last_amend_reason   String?              @db.VarChar(500)
+  /// Source row keys the doctor removed in the Discharge Medication popup, so
+  /// reopening a saved slip does not resurrect order rows they took off it.
+  removed_row_keys    Json?
   branch              branch               @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_branch")
   encounter           encounter?           @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_encounter")
   patient_bio_data    patient_bio_data     @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_patient")
@@ -2965,6 +2971,13 @@ model pharmacy_slip_item {
   pharmacy_item_id      String?          @db.VarChar(100)
   dosage_form           String?          @db.VarChar(100)
   patient_dose          String?          @db.VarChar(100)
+  /// The popup draft row this line belongs to, so a reopened slip can rebuild
+  /// the exact rows (including the doctor's added copies) and their top-ups.
+  source_row_key        String?          @db.VarChar(160)
+  /// True for the automatic top-up line of a row (never for the base line).
+  is_top_up             Boolean          @default(false)
+  /// Set on a base line when the doctor removed its automatic top-up line.
+  extra_suppressed      Boolean          @default(false)
   medicine_master       medicine_master? @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_item_medicine")
   pharmacy_master       pharmacy_master? @relation(fields: [pharmacy_item_id], references: [pharmacy_item_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_item_pharmacy_master")
   pharmacy_slip         pharmacy_slip    @relation(fields: [pharmacy_slip_id], references: [pharmacy_slip_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pharmacy_slip_item_slip")
@@ -3442,4 +3455,140 @@ model genomic_result {
 
   @@unique([test_id, gene_symbol], map: "uq_gene_per_test")
   @@index([test_id], map: "idx_genomic_result_test")
+}
+
+// ---------------------------------------------------------------------------
+// TNM staging module (developer spec Nov 2026). Master rows are seeded from
+// EMR_Master_IHC_Genomics_TNM.xlsx; oncology_stage_record holds the per-visit
+// stage selections and their derived / overridden stage group.
+// ---------------------------------------------------------------------------
+
+model staging_schema {
+  id                 BigInt   @id @default(autoincrement())
+  schema_id          String   @unique @db.VarChar(10)
+  schema_name        String   @db.VarChar(250)
+  system             String?  @db.VarChar(100)
+  edition            String?  @db.VarChar(150)
+  status             String?  @db.VarChar(150)
+  mode               String   @default("TNM") @db.VarChar(10)
+  extra_inputs       String?
+  note               String?
+  cancer_types_using String?
+  display_order      Int?
+  is_active          Boolean  @default(true)
+  updated_at         DateTime @default(now()) @db.Timestamp(6)
+}
+
+model staging_map {
+  id                BigInt   @id @default(autoincrement())
+  map_id            String   @unique @db.VarChar(20)
+  cancer_type_id    String   @db.VarChar(100)
+  cancer_type_label String   @db.VarChar(200)
+  schema_id         String   @db.VarChar(10)
+  role              String   @db.VarChar(20)
+  schema_name       String?  @db.VarChar(250)
+  system_edition    String?  @db.VarChar(200)
+  subsite_question  String?
+  auto_select_rule  String?
+  note              String?
+  display_order     Int?
+  created_at        DateTime @default(now()) @db.Timestamp(6)
+
+  @@unique([cancer_type_id, schema_id, role], map: "uq_staging_map_type_schema_role")
+  @@index([cancer_type_id], map: "idx_staging_map_type")
+}
+
+model staging_category {
+  id            BigInt  @id @default(autoincrement())
+  category_id   String  @unique @db.VarChar(20)
+  schema_id     String  @db.VarChar(10)
+  axis          String  @db.VarChar(1)
+  shown_code    String  @db.VarChar(50)
+  rule_code     String  @db.VarChar(50)
+  context       String  @default("both") @db.VarChar(20)
+  definition    String?
+  display_order Int?
+
+  @@unique([schema_id, axis, shown_code, context], map: "uq_staging_category")
+  @@index([schema_id, axis], map: "idx_staging_category_lookup")
+}
+
+model stage_rule {
+  id             BigInt   @id @default(autoincrement())
+  rule_id        String   @unique @db.VarChar(20)
+  schema_id      String   @db.VarChar(10)
+  context        String   @default("both") @db.VarChar(20)
+  stage_group    String   @db.VarChar(50)
+  t_codes        String[]
+  n_codes        String[]
+  m_codes        String[]
+  conditions_raw String?
+  conditions     Json
+  criteria_text  String?
+  flag           String?
+  display_order  Int?
+
+  @@index([schema_id, context], map: "idx_stage_rule_lookup")
+}
+
+model direct_stage {
+  id              BigInt  @id @default(autoincrement())
+  direct_stage_id String  @unique @db.VarChar(20)
+  schema_id       String  @db.VarChar(10)
+  stage_code      String  @db.VarChar(50)
+  definition      String?
+  display_order   Int?
+  flag            String?
+
+  @@unique([schema_id, stage_code], map: "uq_direct_stage")
+}
+
+model staging_criterion {
+  criterion_key String  @id @db.VarChar(50)
+  label         String  @db.VarChar(120)
+  input_type    String  @db.VarChar(20)
+  options       Json
+  unit          String? @db.VarChar(50)
+  source_module String? @db.VarChar(20)
+  display_order Int?
+}
+
+model oncology_stage_record {
+  id                BigInt   @id @default(autoincrement())
+  stage_record_id   String   @unique @db.VarChar(100)
+  staging_detail_id String   @db.VarChar(100)
+  diagnosis_id      String?  @db.VarChar(100)
+  patient_id        String   @db.VarChar(100)
+  cancer_type_id    String   @db.VarChar(100)
+  schema_id         String   @db.VarChar(10)
+  schema_role       String   @default("PRIMARY") @db.VarChar(20)
+  system            String?  @db.VarChar(100)
+  edition           String?  @db.VarChar(150)
+  context           String   @db.VarChar(20)
+  mode              String   @default("TNM") @db.VarChar(10)
+  t_code            String?  @db.VarChar(50)
+  n_code            String?  @db.VarChar(50)
+  m_code            String?  @db.VarChar(50)
+  s_code            String?  @db.VarChar(50)
+  t_display         String?  @db.VarChar(50)
+  n_display         String?  @db.VarChar(50)
+  m_display         String?  @db.VarChar(50)
+  conditions        Json
+  modifiers         Json
+  derived_stage     String?  @db.VarChar(50)
+  derived_rule_id   String?  @db.VarChar(20)
+  final_stage       String   @db.VarChar(50)
+  is_overridden     Boolean  @default(false)
+  override_reason   String?
+  stage_date        DateTime? @db.Date
+  notes             String?
+  is_active         Boolean  @default(true)
+  created_by        String?  @db.VarChar(100)
+  created_at        DateTime @default(now()) @db.Timestamp(6)
+  updated_by        String?  @db.VarChar(100)
+  updated_at        DateTime @default(now()) @db.Timestamp(6)
+
+  @@index([staging_detail_id], map: "idx_stage_record_detail")
+  @@index([patient_id, stage_date(sort: Desc)], map: "idx_stage_record_patient")
+  @@index([cancer_type_id, schema_id], map: "idx_stage_record_cancer")
 }

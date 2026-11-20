@@ -1,0 +1,290 @@
+[
+ {
+  "cancer_type_label": "Head & Neck SCC",
+  "schema_id": "S04 / S02",
+  "source_module": "IHC",
+  "field": "p16",
+  "usage": "POS → offer HPV-associated oropharynx (S04); NEG/not done → S02",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Oesophageal",
+  "schema_id": "S14 / S15",
+  "source_module": "IHC",
+  "field": "p40",
+  "usage": "POS → suggest SCC schema (S14)",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Breast",
+  "schema_id": "S28",
+  "source_module": "IHC",
+  "field": "ER",
+  "usage": "Shown with prognostic stage",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Breast",
+  "schema_id": "S28",
+  "source_module": "IHC",
+  "field": "PR",
+  "usage": "Shown with prognostic stage",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Breast",
+  "schema_id": "S28",
+  "source_module": "IHC",
+  "field": "HER2",
+  "usage": "Shown with prognostic stage (HER2 status after FISH)",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Endometrial",
+  "schema_id": "S31",
+  "source_module": "IHC",
+  "field": "p53",
+  "usage": "ABN + stage I–II with myometrial invasion → IICmp53abn",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Endometrial",
+  "schema_id": "S31",
+  "source_module": "IHC",
+  "field": "MMR (MLH1/MSH2/MSH6/PMS2)",
+  "usage": "Record MMRd molecular class (no stage change)",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Endometrial",
+  "schema_id": "S31",
+  "source_module": "Genomics",
+  "field": "POLE",
+  "usage": "Pathogenic POLE + stage I–II → IAmPOLEmut",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Neuroendocrine tumour (GEP-NET / NEC)",
+  "schema_id": "N16",
+  "source_module": "IHC",
+  "field": "Ki-67",
+  "usage": "<3% G1; 3–20% G2; >20% G3 (suggested)",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "CNS – Glioma",
+  "schema_id": "N05",
+  "source_module": "IHC",
+  "field": "IDH1 R132H",
+  "usage": "Integrated diagnosis",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "CNS – Glioma",
+  "schema_id": "N05",
+  "source_module": "IHC",
+  "field": "ATRX",
+  "usage": "Integrated diagnosis",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "CNS – Glioma",
+  "schema_id": "N05",
+  "source_module": "Genomics",
+  "field": "IDH1",
+  "usage": "Integrated diagnosis",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "CNS – Glioma",
+  "schema_id": "N05",
+  "source_module": "Genomics",
+  "field": "MGMT",
+  "usage": "Prognostic / predictive",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "CNS – Glioma",
+  "schema_id": "N05",
+  "source_module": "Genomics",
+  "field": "CDKN2A",
+  "usage": "Homozygous deletion → grade 4 (IDH-mutant astrocytoma)",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Acute myeloid leukaemia",
+  "schema_id": "N11",
+  "source_module": "Genomics",
+  "field": "NPM1",
+  "usage": "ELN 2022 risk",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Acute myeloid leukaemia",
+  "schema_id": "N11",
+  "source_module": "Genomics",
+  "field": "FLT3",
+  "usage": "ELN 2022 risk",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Acute myeloid leukaemia",
+  "schema_id": "N11",
+  "source_module": "Genomics",
+  "field": "CEBPA",
+  "usage": "ELN 2022 risk",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Acute myeloid leukaemia",
+  "schema_id": "N11",
+  "source_module": "Genomics",
+  "field": "TP53",
+  "usage": "ELN 2022 adverse",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "CML / MPN / MDS",
+  "schema_id": "N12",
+  "source_module": "Genomics",
+  "field": "TP53",
+  "usage": "IPSS-M",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "CML / MPN / MDS",
+  "schema_id": "N12",
+  "source_module": "Genomics",
+  "field": "SF3B1",
+  "usage": "IPSS-M",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "CML / MPN / MDS",
+  "schema_id": "N12",
+  "source_module": "Genomics",
+  "field": "ASXL1",
+  "usage": "IPSS-M",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "CML / MPN / MDS",
+  "schema_id": "N13",
+  "source_module": "Genomics",
+  "field": "BCR::ABL1",
+  "usage": "CML diagnosis",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Vulva",
+  "schema_id": "S32",
+  "source_module": "IHC",
+  "field": "p16",
+  "usage": "Block-type positive = HPV-associated (recorded with stage)",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Vulva",
+  "schema_id": "S32",
+  "source_module": "IHC",
+  "field": "p53",
+  "usage": "Aberrant = HPV-independent (recorded with stage)",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Penile",
+  "schema_id": "S38",
+  "source_module": "IHC",
+  "field": "p16",
+  "usage": "HPV status recorded with stage",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Merkel cell carcinoma",
+  "schema_id": "S40",
+  "source_module": "IHC",
+  "field": "MCPyV LT antigen (CM2B4)",
+  "usage": "Viral status recorded with stage",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Thymic epithelial tumour",
+  "schema_id": "S27",
+  "source_module": "Genomics",
+  "field": "GTF2I",
+  "usage": "Recorded with stage (thymoma subtype)",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Gestational trophoblastic neoplasia",
+  "schema_id": "N15",
+  "source_module": "Lab",
+  "field": "β-hCG",
+  "usage": "WHO prognostic score",
+  "found_in_source": "n/a (lab/pathology field)"
+ },
+ {
+  "cancer_type_label": "Lung – NSCLC",
+  "schema_id": "S25",
+  "source_module": "Genomics",
+  "field": "EGFR",
+  "usage": "Not a staging input – shown on the stage card for treatment planning",
+  "found_in_source": "Yes"
+ },
+ {
+  "cancer_type_label": "Multiple myeloma / plasma cell",
+  "schema_id": "N02",
+  "source_module": "Cytogenetics / lab",
+  "field": "del(17p), t(4;14), 1q gain, LDH, β2M, albumin",
+  "usage": "R2-ISS points",
+  "found_in_source": "n/a (lab/pathology field)"
+ },
+ {
+  "cancer_type_label": "Prostate",
+  "schema_id": "S34",
+  "source_module": "Lab / pathology",
+  "field": "PSA, ISUP Grade Group",
+  "usage": "Required for stage group",
+  "found_in_source": "n/a (lab/pathology field)"
+ },
+ {
+  "cancer_type_label": "Testis / Germ cell tumour",
+  "schema_id": "S37 / N14",
+  "source_module": "Lab",
+  "field": "AFP, hCG, LDH",
+  "usage": "S category and IGCCCG",
+  "found_in_source": "n/a (lab/pathology field)"
+ },
+ {
+  "cancer_type_label": "Melanoma",
+  "schema_id": "S39",
+  "source_module": "Lab",
+  "field": "LDH",
+  "usage": "M1 suffix (0)/(1)",
+  "found_in_source": "n/a (lab/pathology field)"
+ },
+ {
+  "cancer_type_label": "Thyroid",
+  "schema_id": "S11",
+  "source_module": "Registration",
+  "field": "Date of birth",
+  "usage": "Age <55 / ≥55",
+  "found_in_source": "n/a (lab/pathology field)"
+ },
+ {
+  "cancer_type_label": "GIST",
+  "schema_id": "S43",
+  "source_module": "Pathology",
+  "field": "Mitotic rate per 5 mm²",
+  "usage": "Low ≤5 / High >5",
+  "found_in_source": "n/a (lab/pathology field)"
+ },
+ {
+  "cancer_type_label": "Soft-tissue sarcoma",
+  "schema_id": "S41",
+  "source_module": "Pathology",
+  "field": "FNCLCC grade",
+  "usage": "G1–G3",
+  "found_in_source": "n/a (lab/pathology field)"
+ }
+]

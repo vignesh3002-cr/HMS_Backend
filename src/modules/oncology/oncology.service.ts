@@ -77,7 +77,10 @@ function mapIhcRowToInput(row: any | null | undefined): IhcInput {
         mmr_overall: row.mmr_overall ?? null,
         p53_ihc: row.p53_ihc ?? null,
         ar_status: row.ar_status ?? null,
-        mlh1_methylation: row.mlh1_methylation ?? null
+        mlh1_methylation: row.mlh1_methylation ?? null,
+        p16_status: row.p16_status ?? null,
+        p16_percent: row.p16_percent ?? null,
+        p40_status: row.p40_status ?? null
     };
 
 }

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { OncologyController } from "./oncology.controller";
+import stagingRoutes from "./staging/staging.routes";
 import { authenticate } from "../auth/auth.middleware";
 import { authorize, authorizeAny } from "../../middleware/authorize";
 import {
@@ -294,5 +295,10 @@ router.put(
     saveInvestigationResultsValidation,
     controller.saveInvestigationResults.bind(controller)
 );
+
+// ---------------- TNM staging module ----------------
+// Schemas, live derivation and the per-visit stage records.
+
+router.use("/staging", stagingRoutes);
 
 export default router;
