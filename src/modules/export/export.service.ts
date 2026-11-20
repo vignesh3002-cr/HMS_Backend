@@ -1,5 +1,6 @@
 import prisma from "../../config/prisma";
 import { toCsv } from "../../utils/csv";
+import { buildPatientDiagnoses } from "../patient/patientDiagnoses";
 
 // Secrets / credentials / PII that must never appear in any export.
 const EXCLUDED_COLUMNS = new Set([
@@ -82,20 +83,15 @@ export class ExportService {
             where: query.branchId ? { branch_id: query.branchId } : {},
             include: {
                 branch: { select: { branch_name: true, branch_area: true } },
-                // Same strict rule as patient.service.getPatients: only an
-                // OPEN (PLANNED/ACTIVE) plan contributes a cancer type;
-                // COMPLETED / no plan exports as an empty diagnosis.
-                chemotherapy_plan: {
-                    where: {
-                        treatment_status: { in: ["ACTIVE", "PLANNED"] },
-                        active_status: 1,
-                        deleted_flag: false,
-                    },
-                    select: { cancer_type: true },
-                },
             },
             orderBy: { id: "asc" },
         });
+
+        // Same rule as patient.service.getPatients: ALL diagnoses of a patient
+        // (open + completed plans, then staging records), comma-joined.
+        const diagnosesByPatient = await buildPatientDiagnoses(
+            patients.map((p) => p.patient_id)
+        );
 
         const { rows, columns } = toCsvRows(
             patients,
@@ -104,7 +100,8 @@ export class ExportService {
                 { key: "branch_name", value: (p) => formatBranchName(p.branch) },
                 {
                     key: "diagnosis_name",
-                    value: (p) => p.chemotherapy_plan?.cancer_type ?? "",
+                    value: (p) =>
+                        (diagnosesByPatient.get(p.patient_id ?? "") ?? []).join(", "),
                 },
             ]
         );

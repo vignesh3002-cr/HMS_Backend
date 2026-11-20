@@ -14,6 +14,14 @@ router.post(
     "/login",
     authController.login.bind(authController)
 );
+
+// SYSTEM_OWNER only: create a SUPER_ADMIN user
+router.post(
+    "/create-super-admin",
+    authenticate,
+    authController.createSuperAdmin.bind(authController)
+);
+
 router.post(
     "/send-otp",
     authController.sendOtp.bind(authController)

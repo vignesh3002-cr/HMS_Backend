@@ -1420,6 +1420,18 @@ model diagnosis_medicine_mapping {
   medicine_master medicine_master @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_dm_medicine")
 }
 
+model direct_stage {
+  id              BigInt  @id @default(autoincrement())
+  direct_stage_id String  @unique @db.VarChar(20)
+  schema_id       String  @db.VarChar(10)
+  stage_code      String  @db.VarChar(50)
+  definition      String?
+  display_order   Int?
+  flag            String?
+
+  @@unique([schema_id, stage_code], map: "uq_direct_stage")
+}
+
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model discharge_review_reminder {
   id                       BigInt                 @id @default(autoincrement())
@@ -2075,7 +2087,6 @@ model hospital {
   hospital_area       String?  @default("Tambaram") @db.VarChar(100)
   timezone            String?  @default("Asia/Kolkata") @db.VarChar(64)
   branch              branch[]
-  user_table          user_table[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -2114,6 +2125,9 @@ model ihc_results {
   created_at              DateTime?               @default(now()) @db.Timestamp(6)
   updated_at              DateTime?               @default(now()) @db.Timestamp(6)
   mlh1_methylation        String?                 @db.VarChar(100)
+  p16_status              String?                 @db.VarChar(100)
+  p16_percent             Int?                    @db.SmallInt
+  p40_status              String?                 @db.VarChar(100)
   oncology_staging_detail oncology_staging_detail @relation(fields: [staging_detail_id], references: [staging_detail_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ihc_staging_detail")
 }
 
@@ -2576,6 +2590,47 @@ model oncology_audit_log {
 
   @@index([entity_type, entity_id], map: "idx_audit_entity")
   @@index([patient_id], map: "idx_audit_patient")
+}
+
+model oncology_stage_record {
+  id                BigInt    @id @default(autoincrement())
+  stage_record_id   String    @unique @db.VarChar(100)
+  staging_detail_id String    @db.VarChar(100)
+  diagnosis_id      String?   @db.VarChar(100)
+  patient_id        String    @db.VarChar(100)
+  cancer_type_id    String    @db.VarChar(100)
+  schema_id         String    @db.VarChar(10)
+  schema_role       String    @default("PRIMARY") @db.VarChar(20)
+  system            String?   @db.VarChar(100)
+  edition           String?   @db.VarChar(150)
+  context           String    @db.VarChar(20)
+  mode              String    @default("TNM") @db.VarChar(10)
+  t_code            String?   @db.VarChar(50)
+  n_code            String?   @db.VarChar(50)
+  m_code            String?   @db.VarChar(50)
+  s_code            String?   @db.VarChar(50)
+  t_display         String?   @db.VarChar(50)
+  n_display         String?   @db.VarChar(50)
+  m_display         String?   @db.VarChar(50)
+  conditions        Json      @default("{}")
+  modifiers         Json      @default("{}")
+  derived_stage     String?   @db.VarChar(50)
+  derived_rule_id   String?   @db.VarChar(20)
+  final_stage       String    @db.VarChar(50)
+  is_overridden     Boolean   @default(false)
+  override_reason   String?
+  stage_date        DateTime? @db.Date
+  notes             String?
+  is_active         Boolean   @default(true)
+  created_by        String?   @db.VarChar(100)
+  created_at        DateTime  @default(now()) @db.Timestamp(6)
+  updated_by        String?   @db.VarChar(100)
+  updated_at        DateTime  @default(now()) @db.Timestamp(6)
+
+  @@unique([staging_detail_id, cancer_type_id, schema_id, context], map: "uq_stage_record_active", where: raw("is_active"))
+  @@index([cancer_type_id, schema_id], map: "idx_stage_record_cancer")
+  @@index([staging_detail_id], map: "idx_stage_record_detail")
+  @@index([patient_id, stage_date(sort: Desc)], map: "idx_stage_record_patient")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -3222,6 +3277,68 @@ model staff_duty_roster_template {
   @@index([employee_id], map: "idx_duty_template_employee")
 }
 
+model stage_rule {
+  id             BigInt   @id @default(autoincrement())
+  rule_id        String   @unique @db.VarChar(20)
+  schema_id      String   @db.VarChar(10)
+  context        String   @default("both") @db.VarChar(20)
+  stage_group    String   @db.VarChar(50)
+  t_codes        String[] @default([])
+  n_codes        String[] @default([])
+  m_codes        String[] @default([])
+  conditions_raw String?
+  conditions     Json     @default("[]")
+  criteria_text  String?
+  flag           String?
+  display_order  Int?
+
+  @@index([schema_id, context], map: "idx_stage_rule_lookup")
+}
+
+model staging_category {
+  id            BigInt  @id @default(autoincrement())
+  category_id   String  @unique @db.VarChar(20)
+  schema_id     String  @db.VarChar(10)
+  axis          String  @db.VarChar(1)
+  shown_code    String  @db.VarChar(50)
+  rule_code     String  @db.VarChar(50)
+  context       String  @default("both") @db.VarChar(20)
+  definition    String?
+  display_order Int?
+
+  @@unique([schema_id, axis, shown_code, context], map: "uq_staging_category")
+  @@index([schema_id, axis], map: "idx_staging_category_lookup")
+}
+
+model staging_criterion {
+  criterion_key String  @id @db.VarChar(50)
+  label         String  @db.VarChar(120)
+  input_type    String  @db.VarChar(20)
+  options       Json    @default("[]")
+  unit          String? @db.VarChar(50)
+  source_module String? @db.VarChar(20)
+  display_order Int?
+}
+
+model staging_map {
+  id                BigInt   @id @default(autoincrement())
+  map_id            String   @unique @db.VarChar(20)
+  cancer_type_id    String   @db.VarChar(100)
+  cancer_type_label String   @db.VarChar(200)
+  schema_id         String   @db.VarChar(10)
+  role              String   @db.VarChar(20)
+  schema_name       String?  @db.VarChar(250)
+  system_edition    String?  @db.VarChar(200)
+  subsite_question  String?
+  auto_select_rule  String?
+  note              String?
+  display_order     Int?
+  created_at        DateTime @default(now()) @db.Timestamp(6)
+
+  @@unique([cancer_type_id, schema_id, role], map: "uq_staging_map_type_schema_role")
+  @@index([cancer_type_id], map: "idx_staging_map_type")
+}
+
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model staging_reference {
   id               BigInt       @id @default(autoincrement())
@@ -3238,6 +3355,22 @@ model staging_reference {
   guideline_source String?      @db.VarChar(100)
   created_by       String?      @db.VarChar(100)
   cancer_types     cancer_types @relation(fields: [cancer_type_id], references: [cancer_type_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_staging_cancer_type")
+}
+
+model staging_schema {
+  id                 BigInt   @id @default(autoincrement())
+  schema_id          String   @unique @db.VarChar(10)
+  schema_name        String   @db.VarChar(250)
+  system             String?  @db.VarChar(100)
+  edition            String?  @db.VarChar(150)
+  status             String?  @db.VarChar(150)
+  mode               String   @default("TNM") @db.VarChar(10)
+  extra_inputs       String?
+  note               String?
+  cancer_types_using String?
+  display_order      Int?
+  is_active          Boolean  @default(true)
+  updated_at         DateTime @default(now()) @db.Timestamp(6)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -3356,7 +3489,6 @@ model user_table {
   branch_id                                          String?                   @db.VarChar(100)
   kpi_preferences                                    String?                   @db.VarChar(500)
   kpi_usage                                          String?                   @db.VarChar(1000)
-  Hospital_ID                                        String?                   @db.VarChar
   appointment_history                                appointment_history[]
   chemotherapy_master                                chemotherapy_master[]
   chemotherapy_plan                                  chemotherapy_plan[]
@@ -3381,7 +3513,6 @@ model user_table {
   user_branch_mapping                                user_branch_mapping[]
   user_log                                           user_log[]
   branch                                             branch?                   @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_user_branch")
-  hospital                                           hospital?                 @relation(fields: [Hospital_ID], references: [hospital_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model user_two_factor {
@@ -3475,5 +3606,3 @@ enum leavestatus {
   APPROVED
   REJECTED
 }
-
-

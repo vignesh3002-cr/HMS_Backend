@@ -28,6 +28,7 @@ import doctorScheduleRoutes from "./modules/doctor-schedule/doctorSchedule.route
 import doctorLeaveRoutes from "./modules/doctorLeave/doctorLeave.routes";
 import labTestCategoryRoutes from "./modules/lab-test-category/lab-test-category.routes";
 import labTestMasterRoutes from "./modules/lab-test-master/lab-test-master.routes";
+import hospitalRoutes from "./modules/hospital/hospital.routes";
 import labOrderRoutes from "./modules/lab-order/lab-order-routes";
 import labOrderItemRoutes from "./modules/lab-order-item/lab-order-item.routes";
 import labResultRoutes from "./modules/lab-result/lab-result.routes";
@@ -179,6 +180,7 @@ app.use("/api/priority-flags", priorityFlagsRoutes);
 app.use("/api/ai-chat", aiChatRoutes);
 app.use("/api/patient-documents", patientDocumentRoutes);
 app.use("/api/integrations", integrationRoutes);
+app.use("/api/hospitals", hospitalRoutes);
 
 app.use("/api/hashpassword", async (req, res) => {
   const { password } = req.body;

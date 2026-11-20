@@ -17,17 +17,23 @@ export class AuthRepository {
         },
       },
       include: {
-        branch: true,
+        branch: {
+          include: { hospital: true },
+        },
         employees: {
           include: {
-            branch: true,
+            branch: {
+              include: { hospital: true },
+            },
           },
         },
         patient_bio_data: true,
         user_branch_mapping: {
           where: { status: 1 },
           include: {
-            branch: true,
+            branch: {
+              include: { hospital: true },
+            },
           },
         },
       },

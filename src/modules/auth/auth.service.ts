@@ -78,12 +78,15 @@ const activeMappings = user.user_branch_mapping?.filter(
       ? primaryMapping?.branch_id ?? null
       : primaryMapping?.branch_id || employee?.branch_id || user.branch_id || null;
 
+    const hospitalId = primaryBranch?.hospital_id;
+    const hospitalName = primaryBranch?.hospital?.hospital_name || null;
+
     const token = generateToken({
       username: user.username,
       role: user.role_type,
       user_id: user.user_id,
       employee_id: employee?.employee_id ?? null,
-      hospital_id: primaryBranch?.hospital_id,
+      hospital_id: hospitalId,
     }, rememberMe);
 
     return {
@@ -94,7 +97,8 @@ const activeMappings = user.user_branch_mapping?.filter(
         role: user.role_type,
         role_type: user.role_type,
         employee_id: employee?.employee_id ?? null,
-        hospital_id: primaryBranch?.hospital_id,
+        hospital_id: hospitalId,
+        hospital_name: hospitalName,
         branch_id: primaryBranchId,
         branch_name: primaryBranch?.branch_name || null,
         branch_area: primaryBranch?.branch_area || null,
@@ -198,6 +202,79 @@ const activeMappings = user.user_branch_mapping?.filter(
 
     return this.buildAuthPayload(user, rememberMe);
 
+  }
+
+  async createSuperAdminUser(data: {
+    username: string;
+    password: string;
+    email?: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
+  }) {
+
+    const hashedPassword = await hashPassword(data.password);
+
+    const userId = await generateId(prisma, "USER");
+
+    const user = await prisma.user_table.create({
+      data: {
+        user_id: userId,
+        username: data.username,
+        password: hashedPassword,
+        role_type: "SUPER_ADMIN",
+        created_by: "SYSTEM_OWNER",
+        user_status: 0,
+      },
+    });
+
+    // Create employee profile for the super admin
+    const employeeId = await generateId(prisma, "BRANCH_ADMIN");
+    await prisma.employees.create({
+      data: {
+        employee_id: employeeId,
+        user_id: user.user_id!,
+        branch_id: null,
+        first_name: data.first_name || "Super",
+        middle_name: null,
+        last_name: data.last_name || "Admin",
+        email: data.email || null,
+        mobile_no: null,
+        designation: "Super Admin",
+        department_id: null,
+        blood_group: null,
+        nationality: null,
+        marital_status: null,
+        aadhaar_no: null,
+        pan_no: null,
+        passport_no: null,
+        gender: null,
+        dob: null,
+        permanent_address: null,
+        current_address: null,
+        employee_photo_URL: null,
+        employee_state: null,
+        employee_district: null,
+        employee_area: null,
+        employee_pincode: null,
+        permanent_employee_state: null,
+        permanent_employee_district: null,
+        permanent_employee_area: null,
+        permanent_employee_pincode: null,
+        employee_no_experence: null,
+        emergency_contact_name: null,
+        emergency_contact_relationship: null,
+        emergency_contact_number: null,
+        joining_date: null,
+        emp_status: true,
+      },
+    });
+
+    return {
+      user_id: user.user_id,
+      username: user.username,
+      role_type: user.role_type,
+      employee_id: employeeId,
+    };
   }
 
   async sendOtp(username: string) {
