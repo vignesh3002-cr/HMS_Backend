@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { generateId } from "../../utils/idGenerator";
 import { GetEncountersQuery } from "./encounter.types";
-import { getTodayInIST } from "../appointment/appointment.utils";
+import { getBranchTimezone, getTodayIn } from "../../utils/timezone";
 
 const encounterDetailInclude = {
 
@@ -358,8 +358,12 @@ export class EncounterRepository {
 
     async getCheckedInPatientsToday(employeeId?: string, branchId?: string) {
 
-        // Today is the IST calendar day (appointment_date is a DATE).
-        const todayDate = new Date(`${getTodayInIST()}T00:00:00.000Z`);
+        // "Today" is the calendar day in the BRANCH's own timezone
+        // (appointment_date is a DATE, UTC-midnight anchored). No branch
+        // filter -> default hospital zone.
+        const todayDate = new Date(
+            `${getTodayIn(await getBranchTimezone(branchId))}T00:00:00.000Z`
+        );
 
         // Distinct patients of today's appointments who came in: checked in,
         // in consultation or already checked out - or whose visit encounter

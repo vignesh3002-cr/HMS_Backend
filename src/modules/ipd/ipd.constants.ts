@@ -70,9 +70,11 @@ export const MANUAL_BED_STATUSES = [
 // day has passed into NO_SHOW.
 export const RESERVATION_MAX_DAYS_AHEAD = 1;
 
-// The hospital runs on IST (UTC+05:30, no DST) -- same fixed offset as the
-// appointment job, so day boundaries don't depend on the server timezone.
-export const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
+// The hospital's reference fixed offset (IST, UTC+05:30, no DST) - now
+// re-exported from the single shared timezone utility so exactly one
+// definition exists. Branch-aware day boundaries should prefer
+// getTodayIn(getBranchTimezone(...)) from utils/timezone.
+export { IST_OFFSET_MS } from "../../utils/timezone";
 
 export const PAYMENT_MODE_VALUES = [
     "CASH",

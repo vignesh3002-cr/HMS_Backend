@@ -13,9 +13,9 @@ import {
 import {
     CARE_TEAM_END_REASON,
     CARE_TEAM_ROLE,
-    IST_OFFSET_MS,
 } from "./ipd.constants";
 import { EmployeeRepository } from "../employee/employee.repository";
+import { getBranchTimezone, getTodayIn } from "../../utils/timezone";
 
 const httpError = (message: string, status: number) => {
     const err: any = new Error(message);
@@ -30,9 +30,6 @@ const BULK_TX_OPTIONS = { timeout: 20000 };
 // Roles that may re-roster a whole ward at a staff change (a charge nurse or
 // an admin). A doctor can still hand over their own patients one by one.
 const BULK_ROLES = [...TOP_LEVEL_ADMIN_ROLES, BRANCH_ADMIN, ADMIN, NURSE];
-
-/** The IST calendar day (yyyy-MM-dd) of an instant. */
-const istDate = (at: Date) => new Date(at.getTime() + IST_OFFSET_MS).toISOString().slice(0, 10);
 
 const fullName = (e?: { first_name?: string | null; middle_name?: string | null; last_name?: string | null } | null) =>
     [e?.first_name, e?.middle_name, e?.last_name].filter(Boolean).join(" ");
@@ -106,9 +103,13 @@ export class CareTeamService {
         // approved leave today. (Duty schedule is managed via staff_duty_roster,
         // independent of OPD clinic consultation slots in doctor_schedule).
         if (checkAvailability) {
-            // DATE columns: compare against today's IST calendar day at UTC midnight,
-            // not the current UTC instant (which is yesterday before 05:30 IST).
-            const today = new Date(`${istDate(new Date())}T00:00:00.000Z`);
+            // DATE columns: compare against today's calendar day IN THE
+            // BRANCH'S timezone, anchored at UTC midnight - not the server's
+            // zone or the raw UTC instant (which is "yesterday" before local
+            // midnight in zones behind UTC).
+            const today = new Date(
+                `${getTodayIn(await getBranchTimezone(branchId))}T00:00:00.000Z`
+            );
             const onLeave = await prisma.doctor_leave.findFirst({
                 where: {
                     employee_id: employeeId,

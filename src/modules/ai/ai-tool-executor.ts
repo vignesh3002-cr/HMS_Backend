@@ -11,6 +11,7 @@ import { NotificationService } from "../notification/notification.service";
 import { PriorityFlagsService } from "../priority-flags/priorityFlags.service";
 
 import prisma from "../../config/prisma";
+import { getBranchTimezone, getTodayIn } from "../../utils/timezone";
 
 const appointmentService = new AppointmentService();
 const patientService = new PatientService();
@@ -305,14 +306,16 @@ async function getAppointment(args: any) {
 }
 
 async function getTodayAppointments(args: any, user: AIUserContext) {
-    const today = new Date();
-    const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    // "Today" is the BRANCH's calendar day (branch.timezone), never the
+    // server machine's local date.
+    const branchId = args.branch_id || user.branch_id;
+    const dateStr = getTodayIn(await getBranchTimezone(branchId));
 
     const appointments = await appointmentService.getAppointments({
         employeeId: args.employee_id,
         status: args.status,
         date: dateStr,
-        branchId: args.branch_id || user.branch_id,
+        branchId,
         // Was 50. A single day's roster is the one query where the chatbot
         // genuinely wants volume, but 50 projected rows still costs ~4K tokens
         // and the projection marker tells the model to narrow down if it needs
@@ -754,10 +757,10 @@ async function getPatientEncounters(args: any, user: AIUserContext) {
 // ═══════════════════════════════════════════════════════════════
 
 async function getDashboardSummary(args: any, user: AIUserContext) {
-    const today = new Date();
-    const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-
     const branchId = args.branch_id || user.branch_id;
+    // "Today" is the BRANCH's calendar day (branch.timezone), never the
+    // server machine's local date.
+    const dateStr = getTodayIn(await getBranchTimezone(branchId));
 
     const [allAppointments, checkedIn] = await Promise.all([
         appointmentService.getAppointments({

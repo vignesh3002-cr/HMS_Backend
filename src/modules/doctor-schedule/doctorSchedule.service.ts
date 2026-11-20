@@ -1,6 +1,7 @@
 import { doctor_schedule_change_mode, Prisma } from "@prisma/client";
 type DoctorScheduleChangeMode = doctor_schedule_change_mode;
 import prisma from "../../config/prisma";
+import { getBranchTimezone, getTodayIn } from "../../utils/timezone";
 import { DoctorTransferRepository } from "../doctor-transfer/doctorTransfer.repository";
 import { DoctorLeaveService } from "../doctorLeave/doctorLeave.service";
 
@@ -231,14 +232,15 @@ export class DoctorScheduleService {
                 change_date
             );
 
-        // Compare against today's calendar date in IST (hospital time).
-        const todayIst =
-            new Date(Date.now() + 5.5 * 60 * 60 * 1000)
-                .toISOString()
-                .slice(0, 10);
+        // Compare against today's calendar date in the BRANCH's own timezone
+        // (IANA zone from branch.timezone) - never the server's zone and
+        // never a hardcoded offset, so a branch abroad checks its own day.
+        const todayLocal = getTodayIn(
+            await getBranchTimezone(branch_id)
+        );
 
         if (
-            parsedDate.toISOString().slice(0, 10) < todayIst
+            parsedDate.toISOString().slice(0, 10) < todayLocal
         ) {
             throw new Error(
                 "Schedule changes cannot be created for a past date"
