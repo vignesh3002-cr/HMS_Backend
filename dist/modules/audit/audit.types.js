@@ -7,5 +7,7 @@ exports.AUDIT_ACTION = {
     STATUS_CHANGE: "STATUS_CHANGE",
     DEACTIVATE: "DEACTIVATE",
     PRINT: "PRINT",
-    AMEND: "AMEND"
+    AMEND: "AMEND",
+    // Read access worth recording - e.g. opening a germline genomic report.
+    VIEW: "VIEW"
 };

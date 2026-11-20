@@ -1,0 +1,10386 @@
+[
+ {
+  "rule_id": "SR97554685bf",
+  "schema_id": "S01",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR7a77fb905b",
+  "schema_id": "S01",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRb0b09ad710",
+  "schema_id": "S01",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe5637e4c08",
+  "schema_id": "S01",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR9c4fd63c99",
+  "schema_id": "S01",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T1",
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T3 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR068949bdf4",
+  "schema_id": "S01",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T4a"
+  ],
+  "n_codes": [
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4a N0–N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRaa588db383",
+  "schema_id": "S01",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T1",
+   "T2",
+   "T3",
+   "T4a"
+  ],
+  "n_codes": [
+   "N2a",
+   "N2b",
+   "N2c"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T4a N2a–N2c M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRc771fcc85e",
+  "schema_id": "S01",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2a",
+   "N2b",
+   "N2c",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4b any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRc04c251841",
+  "schema_id": "S01",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "Tis",
+   "T1",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N3a–N3b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRada254306f",
+  "schema_id": "S01",
+  "context": "both",
+  "stage_group": "IVC",
+  "t_codes": [
+   "TX",
+   "Tis",
+   "T1",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2a",
+   "N2b",
+   "N2c",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR7b676bce42",
+  "schema_id": "S02",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR5f16ecac0a",
+  "schema_id": "S02",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRcd0232baab",
+  "schema_id": "S02",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR4c97493145",
+  "schema_id": "S02",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR756320b4c8",
+  "schema_id": "S02",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T1",
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T3 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR12373fd3c7",
+  "schema_id": "S02",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T4a"
+  ],
+  "n_codes": [
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4a N0–N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR66442d73ec",
+  "schema_id": "S02",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T1",
+   "T2",
+   "T3",
+   "T4a"
+  ],
+  "n_codes": [
+   "N2a",
+   "N2b",
+   "N2c"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T4a N2a–N2c M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRa2292988df",
+  "schema_id": "S02",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2a",
+   "N2b",
+   "N2c",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4b any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRf8f0c7afd0",
+  "schema_id": "S02",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "Tis",
+   "T1",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N3a–N3b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRfb38585149",
+  "schema_id": "S02",
+  "context": "both",
+  "stage_group": "IVC",
+  "t_codes": [
+   "TX",
+   "Tis",
+   "T1",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2a",
+   "N2b",
+   "N2c",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR598740af1c",
+  "schema_id": "S03",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR139fe1fde2",
+  "schema_id": "S03",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR632d69b495",
+  "schema_id": "S03",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRc1404b67d4",
+  "schema_id": "S03",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR42abc57549",
+  "schema_id": "S03",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T1",
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T3 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR074fb88c89",
+  "schema_id": "S03",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T4a"
+  ],
+  "n_codes": [
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4a N0–N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR1d78a18f8c",
+  "schema_id": "S03",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T1",
+   "T2",
+   "T3",
+   "T4a"
+  ],
+  "n_codes": [
+   "N2a",
+   "N2b",
+   "N2c"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T4a N2a–N2c M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRc1b56aae92",
+  "schema_id": "S03",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2a",
+   "N2b",
+   "N2c",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4b any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR5d134639ba",
+  "schema_id": "S03",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "Tis",
+   "T1",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N3a–N3b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR86932b40c0",
+  "schema_id": "S03",
+  "context": "both",
+  "stage_group": "IVC",
+  "t_codes": [
+   "TX",
+   "Tis",
+   "T1",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2a",
+   "N2b",
+   "N2c",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR0ad35acb60",
+  "schema_id": "S04",
+  "context": "clinical",
+  "stage_group": "I",
+  "t_codes": [
+   "T0",
+   "T1",
+   "T2"
+  ],
+  "n_codes": [
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T0–T2 N0–N1 M0",
+  "flag": "Verify: V9 clinical groups – 8th-edition clinical grouping applied to V9 N categories",
+  "display_order": null
+ },
+ {
+  "rule_id": "SR7fb48f410a",
+  "schema_id": "S04",
+  "context": "clinical",
+  "stage_group": "II",
+  "t_codes": [
+   "T0",
+   "T1",
+   "T2"
+  ],
+  "n_codes": [
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T0–T2 N2 M0; T3 N0–N2 M0",
+  "flag": "Verify (as above)",
+  "display_order": null
+ },
+ {
+  "rule_id": "SR2c50d28812",
+  "schema_id": "S04",
+  "context": "clinical",
+  "stage_group": "II",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0",
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T0–T2 N2 M0; T3 N0–N2 M0",
+  "flag": "Verify (as above)",
+  "display_order": null
+ },
+ {
+  "rule_id": "SR539fc4b64e",
+  "schema_id": "S04",
+  "context": "clinical",
+  "stage_group": "III",
+  "t_codes": [
+   "T0",
+   "T1",
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "N3"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T0–T3 N3 M0; T4 any N M0",
+  "flag": "Verify (as above)",
+  "display_order": null
+ },
+ {
+  "rule_id": "SR03905bf93e",
+  "schema_id": "S04",
+  "context": "clinical",
+  "stage_group": "III",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T0–T3 N3 M0; T4 any N M0",
+  "flag": "Verify (as above)",
+  "display_order": null
+ },
+ {
+  "rule_id": "SRaef75230b9",
+  "schema_id": "S04",
+  "context": "clinical",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR2adcf0d15c",
+  "schema_id": "S04",
+  "context": "pathological",
+  "stage_group": "I",
+  "t_codes": [
+   "T0",
+   "T1",
+   "T2"
+  ],
+  "n_codes": [
+   "N0",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T0–T2 N0–N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR0bf87776f5",
+  "schema_id": "S04",
+  "context": "pathological",
+  "stage_group": "II",
+  "t_codes": [
+   "T0",
+   "T1",
+   "T2"
+  ],
+  "n_codes": [
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T0–T2 N2–N3 M0; T3 N0–N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR086e79b92e",
+  "schema_id": "S04",
+  "context": "pathological",
+  "stage_group": "II",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0",
+   "N1a",
+   "N1b",
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T0–T2 N2–N3 M0; T3 N0–N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR160123c32a",
+  "schema_id": "S04",
+  "context": "pathological",
+  "stage_group": "III",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N3"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N3 M0; T4 any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR523b7ae5ad",
+  "schema_id": "S04",
+  "context": "pathological",
+  "stage_group": "III",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N3 M0; T4 any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRef427f4cba",
+  "schema_id": "S04",
+  "context": "pathological",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SReddd65aed8",
+  "schema_id": "S05",
+  "context": "both",
+  "stage_group": "IA",
+  "t_codes": [
+   "T0",
+   "T1",
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T2 N0 M0 (T0 grouped with T1)",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR84c5a2c407",
+  "schema_id": "S05",
+  "context": "both",
+  "stage_group": "IB",
+  "t_codes": [
+   "T0",
+   "T1",
+   "T2"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T2 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR23524cd1c4",
+  "schema_id": "S05",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T0",
+   "T1",
+   "T2"
+  ],
+  "n_codes": [
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T2 N2 M0; T3 N0–N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR7cffe22bf0",
+  "schema_id": "S05",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0",
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T2 N2 M0; T3 N0–N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR062bdcf466",
+  "schema_id": "S05",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 any N M0; any T N3 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRb596278d64",
+  "schema_id": "S05",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N3"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 any N M0; any T N3 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRd2ab0796d9",
+  "schema_id": "S05",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M1a"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Any T any N M1a",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR0c87ded1e5",
+  "schema_id": "S05",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M1b"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Any T any N M1b",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR5fe04c21fb",
+  "schema_id": "S06",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR58647d3ffe",
+  "schema_id": "S06",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR932288cd6b",
+  "schema_id": "S06",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRfd51d68206",
+  "schema_id": "S06",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe8007e81d7",
+  "schema_id": "S06",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T1",
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T3 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRbf59a4c147",
+  "schema_id": "S06",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T4a"
+  ],
+  "n_codes": [
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4a N0–N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR1eba2a95c4",
+  "schema_id": "S06",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T1",
+   "T2",
+   "T3",
+   "T4a"
+  ],
+  "n_codes": [
+   "N2a",
+   "N2b",
+   "N2c"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T4a N2a–N2c M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR3f826ce68f",
+  "schema_id": "S06",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2a",
+   "N2b",
+   "N2c",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4b any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR4ec1eb02f1",
+  "schema_id": "S06",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "Tis",
+   "T1",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N3a–N3b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR60c5dfed85",
+  "schema_id": "S06",
+  "context": "both",
+  "stage_group": "IVC",
+  "t_codes": [
+   "TX",
+   "Tis",
+   "T1",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2a",
+   "N2b",
+   "N2c",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR07a9214783",
+  "schema_id": "S07",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe2c21e4908",
+  "schema_id": "S07",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1a",
+   "T1b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRbc78e6b59d",
+  "schema_id": "S07",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRbf109f0ec0",
+  "schema_id": "S07",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR0bc68dc45d",
+  "schema_id": "S07",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T3 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRd50bb2d97b",
+  "schema_id": "S07",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T4a"
+  ],
+  "n_codes": [
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4a N0–N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR81b4539544",
+  "schema_id": "S07",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4a"
+  ],
+  "n_codes": [
+   "N2a",
+   "N2b",
+   "N2c"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T4a N2a–N2c M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRdc41ef48d5",
+  "schema_id": "S07",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2a",
+   "N2b",
+   "N2c",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4b any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRfa05dcb0f5",
+  "schema_id": "S07",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N3a–N3b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR69f0454692",
+  "schema_id": "S07",
+  "context": "both",
+  "stage_group": "IVC",
+  "t_codes": [
+   "TX",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2a",
+   "N2b",
+   "N2c",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR2672ecbc59",
+  "schema_id": "S08",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRf1810f0d44",
+  "schema_id": "S08",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRa47ffa9fbd",
+  "schema_id": "S08",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRb20b2cc950",
+  "schema_id": "S08",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR70feffe5b5",
+  "schema_id": "S08",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T1",
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T3 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR25e17f0917",
+  "schema_id": "S08",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T4a"
+  ],
+  "n_codes": [
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4a N0–N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR3d4229cd78",
+  "schema_id": "S08",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T1",
+   "T2",
+   "T3",
+   "T4a"
+  ],
+  "n_codes": [
+   "N2a",
+   "N2b",
+   "N2c"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T4a N2a–N2c M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR1b2e997092",
+  "schema_id": "S08",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2a",
+   "N2b",
+   "N2c",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4b any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR1ad2c7b880",
+  "schema_id": "S08",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "Tis",
+   "T1",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N3a–N3b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR2a2063d2cf",
+  "schema_id": "S08",
+  "context": "both",
+  "stage_group": "IVC",
+  "t_codes": [
+   "TX",
+   "Tis",
+   "T1",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2a",
+   "N2b",
+   "N2c",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR59a3f25dc9",
+  "schema_id": "S09",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR426e4bc6a4",
+  "schema_id": "S09",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRda49b0d77a",
+  "schema_id": "S09",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe75754d9b5",
+  "schema_id": "S09",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T1",
+   "T2"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T2 N1 M0; T3–T4 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe359dc9128",
+  "schema_id": "S09",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T2 N1 M0; T3–T4 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRd8e2bf0fec",
+  "schema_id": "S09",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T1",
+   "T2"
+  ],
+  "n_codes": [
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T2 N2 M0; T3–T4 N1–N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR6694a40826",
+  "schema_id": "S09",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T2 N2 M0; T3–T4 N1–N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRc0a121239c",
+  "schema_id": "S09",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR481e896467",
+  "schema_id": "S10",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR09b6315307",
+  "schema_id": "S10",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRa168ce28c6",
+  "schema_id": "S10",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR43d4922351",
+  "schema_id": "S10",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0; T1–T3 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRcbdcc095af",
+  "schema_id": "S10",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T1",
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0; T1–T3 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR6f78479a0e",
+  "schema_id": "S10",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "T1",
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "N2a",
+   "N2b",
+   "N2c",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T3 N2–N3 M0; T4 any N M0; any M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR485b66efee",
+  "schema_id": "S10",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2a",
+   "N2b",
+   "N2c",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T3 N2–N3 M0; T4 any N M0; any M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR93e4e6d041",
+  "schema_id": "S10",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "Tis",
+   "T1",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2a",
+   "N2b",
+   "N2c",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T3 N2–N3 M0; T4 any N M0; any M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR302632a30c",
+  "schema_id": "S11",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3a",
+   "T3b",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Age = <55",
+  "conditions": [
+   {
+    "key": "Age",
+    "values": [
+     "<55"
+    ]
+   }
+  ],
+  "criteria_text": "Age <55: any T any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR8080b0e264",
+  "schema_id": "S11",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3a",
+   "T3b",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": "Age = <55",
+  "conditions": [
+   {
+    "key": "Age",
+    "values": [
+     "<55"
+    ]
+   }
+  ],
+  "criteria_text": "Age <55: any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRf4d399dec0",
+  "schema_id": "S11",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T2"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Age = ≥55",
+  "conditions": [
+   {
+    "key": "Age",
+    "values": [
+     "≥55"
+    ]
+   }
+  ],
+  "criteria_text": "Age ≥55: T1–T2 N0/NX M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRf80c860979",
+  "schema_id": "S11",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T2"
+  ],
+  "n_codes": [
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Age = ≥55",
+  "conditions": [
+   {
+    "key": "Age",
+    "values": [
+     "≥55"
+    ]
+   }
+  ],
+  "criteria_text": "Age ≥55: T1–T2 N1 M0; T3a/T3b any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR4b793fc7bb",
+  "schema_id": "S11",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T3a",
+   "T3b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Age = ≥55",
+  "conditions": [
+   {
+    "key": "Age",
+    "values": [
+     "≥55"
+    ]
+   }
+  ],
+  "criteria_text": "Age ≥55: T1–T2 N1 M0; T3a/T3b any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR69584f55e6",
+  "schema_id": "S11",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T4a"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Age = ≥55",
+  "conditions": [
+   {
+    "key": "Age",
+    "values": [
+     "≥55"
+    ]
+   }
+  ],
+  "criteria_text": "Age ≥55: T4a any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRcb7972de31",
+  "schema_id": "S11",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Age = ≥55",
+  "conditions": [
+   {
+    "key": "Age",
+    "values": [
+     "≥55"
+    ]
+   }
+  ],
+  "criteria_text": "Age ≥55: T4b any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR4e8e690580",
+  "schema_id": "S11",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3a",
+   "T3b",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": "Age = ≥55",
+  "conditions": [
+   {
+    "key": "Age",
+    "values": [
+     "≥55"
+    ]
+   }
+  ],
+  "criteria_text": "Age ≥55: any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe0e9fa051d",
+  "schema_id": "S12",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1a",
+   "T1b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T1b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRdb89d527c1",
+  "schema_id": "S12",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T2",
+   "T3a",
+   "T3b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2–T3b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR464192a31a",
+  "schema_id": "S12",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2",
+   "T3a",
+   "T3b"
+  ],
+  "n_codes": [
+   "N1a"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T3b N1a M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR7f84d4c2ff",
+  "schema_id": "S12",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T4a"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4a any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR286be310c1",
+  "schema_id": "S12",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2",
+   "T3a",
+   "T3b"
+  ],
+  "n_codes": [
+   "N1b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T3b N1b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR41e8ec3d4f",
+  "schema_id": "S12",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4b any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR4bcaf51b0e",
+  "schema_id": "S12",
+  "context": "both",
+  "stage_group": "IVC",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3a",
+   "T3b",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR93bde46174",
+  "schema_id": "S13",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2",
+   "T3a"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T3a NX/N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRa73585bc62",
+  "schema_id": "S13",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2",
+   "T3a"
+  ],
+  "n_codes": [
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T3a N1a–N1b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRd46940c0e9",
+  "schema_id": "S13",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "T3b",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3b–T4b any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR643c8a02d1",
+  "schema_id": "S13",
+  "context": "both",
+  "stage_group": "IVC",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3a",
+   "T3b",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR8306e47211",
+  "schema_id": "S14",
+  "context": "clinical",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR02fc25f40d",
+  "schema_id": "S14",
+  "context": "clinical",
+  "stage_group": "I",
+  "t_codes": [
+   "T1a",
+   "T1b"
+  ],
+  "n_codes": [
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T1b N0–N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRcb7e7f3f43",
+  "schema_id": "S14",
+  "context": "clinical",
+  "stage_group": "II",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0–N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR7d2a567413",
+  "schema_id": "S14",
+  "context": "clinical",
+  "stage_group": "II",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRbe180f816d",
+  "schema_id": "S14",
+  "context": "clinical",
+  "stage_group": "III",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR4a0bcfd127",
+  "schema_id": "S14",
+  "context": "clinical",
+  "stage_group": "III",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T3 N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR5b172e767e",
+  "schema_id": "S14",
+  "context": "clinical",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "N0",
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4a–T4b N0–N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR28aed37123",
+  "schema_id": "S14",
+  "context": "clinical",
+  "stage_group": "IVA",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "N3"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N3 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR91dfdf93ed",
+  "schema_id": "S14",
+  "context": "clinical",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR79610385aa",
+  "schema_id": "S15",
+  "context": "clinical",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe92679e5bf",
+  "schema_id": "S15",
+  "context": "clinical",
+  "stage_group": "I",
+  "t_codes": [
+   "T1a",
+   "T1b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T1b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRb42953d34b",
+  "schema_id": "S15",
+  "context": "clinical",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T1a",
+   "T1b"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T1b N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR1acb45c5c8",
+  "schema_id": "S15",
+  "context": "clinical",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR4f3860351f",
+  "schema_id": "S15",
+  "context": "clinical",
+  "stage_group": "III",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR6e3ec5eee1",
+  "schema_id": "S15",
+  "context": "clinical",
+  "stage_group": "III",
+  "t_codes": [
+   "T3",
+   "T4a"
+  ],
+  "n_codes": [
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3–T4a N0–N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR4c6218fef2",
+  "schema_id": "S15",
+  "context": "clinical",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4a"
+  ],
+  "n_codes": [
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T4a N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR6dea03c5ed",
+  "schema_id": "S15",
+  "context": "clinical",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "N0",
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4b N0–N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRde82dc07ae",
+  "schema_id": "S15",
+  "context": "clinical",
+  "stage_group": "IVA",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "N3"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N3 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR9bcd66339c",
+  "schema_id": "S15",
+  "context": "clinical",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR7fbca59dec",
+  "schema_id": "S16",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR3bc7cc7d5a",
+  "schema_id": "S16",
+  "context": "clinical",
+  "stage_group": "I",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR1f63103461",
+  "schema_id": "S16",
+  "context": "clinical",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2"
+  ],
+  "n_codes": [
+   "N1",
+   "N2",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T2 N1–N3b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR4176f5a988",
+  "schema_id": "S16",
+  "context": "clinical",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T3",
+   "T4a"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3–T4a N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR144c549fa7",
+  "schema_id": "S16",
+  "context": "clinical",
+  "stage_group": "III",
+  "t_codes": [
+   "T3",
+   "T4a"
+  ],
+  "n_codes": [
+   "N1",
+   "N2",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3–T4a N1–N3b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR687b49d9c6",
+  "schema_id": "S16",
+  "context": "clinical",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4b any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR1c29530d68",
+  "schema_id": "S16",
+  "context": "clinical",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe8c33f074c",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IA",
+  "t_codes": [
+   "T1a",
+   "T1b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T1b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR8ba4d8248a",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IB",
+  "t_codes": [
+   "T1a",
+   "T1b"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T1b N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR3a0857e0e9",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IB",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR4abf9ffa05",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T1a",
+   "T1b"
+  ],
+  "n_codes": [
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T1b N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR8efa7d8ae5",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRd6c4d5213c",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRab95468e45",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T1a",
+   "T1b"
+  ],
+  "n_codes": [
+   "N3a"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T1b N3a M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR1c8eb7e124",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR479bc40795",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR1974cddd44",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T4a"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4a N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR8317b0c909",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N3a"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N3a M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR4fb658cf46",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRf9ff9532d1",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T4a"
+  ],
+  "n_codes": [
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4a N1–N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRfb08bee2e5",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRf23ca48a69",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2"
+  ],
+  "n_codes": [
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T2 N3b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRfccc5a171e",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T3",
+   "T4a"
+  ],
+  "n_codes": [
+   "N3a"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3–T4a N3a M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRd6352aab21",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4b N1–N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRa7e5c20fb6",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "T3",
+   "T4a"
+  ],
+  "n_codes": [
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3–T4a N3b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR135db74259",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4b N3a–N3b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR7ed4423f06",
+  "schema_id": "S16",
+  "context": "pathological",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3a",
+   "N3b"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR701bf4ed69",
+  "schema_id": "S17",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR7a5cf18aab",
+  "schema_id": "S17",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1",
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR59bc2a9387",
+  "schema_id": "S17",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRaed245171f",
+  "schema_id": "S17",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T4a"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4a N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR7c77156f4a",
+  "schema_id": "S17",
+  "context": "both",
+  "stage_group": "IIC",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR19ec2d756d",
+  "schema_id": "S17",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T1",
+   "T2"
+  ],
+  "n_codes": [
+   "N1a",
+   "N1b",
+   "N1c"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T2 N1a–N1c M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRd72ab87af7",
+  "schema_id": "S17",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "N2a"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1 N2a M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRb5bad2499d",
+  "schema_id": "S17",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T3",
+   "T4a"
+  ],
+  "n_codes": [
+   "N1a",
+   "N1b",
+   "N1c"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3–T4a N1a–N1c M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR1abada5dd8",
+  "schema_id": "S17",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "N2a"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2–T3 N2a M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR0b6b4fbff4",
+  "schema_id": "S17",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T1",
+   "T2"
+  ],
+  "n_codes": [
+   "N2b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T2 N2b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR60610ba53e",
+  "schema_id": "S17",
+  "context": "both",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "T4a"
+  ],
+  "n_codes": [
+   "N2a"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4a N2a M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe3ea6d88da",
+  "schema_id": "S17",
+  "context": "both",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "T3",
+   "T4a"
+  ],
+  "n_codes": [
+   "N2b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3–T4a N2b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR628c85db41",
+  "schema_id": "S17",
+  "context": "both",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "N1a",
+   "N1b",
+   "N1c",
+   "N2a",
+   "N2b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4b N1a–N2b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR0c44b45f80",
+  "schema_id": "S17",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b",
+   "N1c",
+   "N2a",
+   "N2b"
+  ],
+  "m_codes": [
+   "M1a"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1a",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR1bc1109f0e",
+  "schema_id": "S17",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b",
+   "N1c",
+   "N2a",
+   "N2b"
+  ],
+  "m_codes": [
+   "M1b"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1b",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRb497355ccd",
+  "schema_id": "S17",
+  "context": "both",
+  "stage_group": "IVC",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b",
+   "N1c",
+   "N2a",
+   "N2b"
+  ],
+  "m_codes": [
+   "M1c"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1c",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR1b385be523",
+  "schema_id": "S18",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR41b45f98cc",
+  "schema_id": "S18",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR0c6b2af860",
+  "schema_id": "S18",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T1",
+   "T2"
+  ],
+  "n_codes": [
+   "N1a",
+   "N1b",
+   "N1c"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T2 N1a–N1c M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR8de371b867",
+  "schema_id": "S18",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0",
+   "N1a",
+   "N1b",
+   "N1c"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0–N1c M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRa0348f8bad",
+  "schema_id": "S18",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRae66f74418",
+  "schema_id": "S18",
+  "context": "both",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "N1a",
+   "N1b",
+   "N1c"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 N1a–N1c M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR0ac06c25a0",
+  "schema_id": "S18",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b",
+   "N1c"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR15654ece9c",
+  "schema_id": "S19",
+  "context": "both",
+  "stage_group": "IA",
+  "t_codes": [
+   "T1a"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR9e0a5f9342",
+  "schema_id": "S19",
+  "context": "both",
+  "stage_group": "IB",
+  "t_codes": [
+   "T1b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR05b349d10d",
+  "schema_id": "S19",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRc73c21e5ac",
+  "schema_id": "S19",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR84de0b6397",
+  "schema_id": "S19",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR30983f2382",
+  "schema_id": "S19",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe860954ba0",
+  "schema_id": "S19",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRd6e5813390",
+  "schema_id": "S20",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRf0a7851b25",
+  "schema_id": "S20",
+  "context": "both",
+  "stage_group": "IA",
+  "t_codes": [
+   "T1a"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR0dd931aad1",
+  "schema_id": "S20",
+  "context": "both",
+  "stage_group": "IB",
+  "t_codes": [
+   "T1b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR3228c932fa",
+  "schema_id": "S20",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRdb59b53200",
+  "schema_id": "S20",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR8233d65853",
+  "schema_id": "S20",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRfdbfb14056",
+  "schema_id": "S20",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR87b9b9bb44",
+  "schema_id": "S20",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR0d8ef39d9e",
+  "schema_id": "S21",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR26ea59bff3",
+  "schema_id": "S21",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRfc559c33fb",
+  "schema_id": "S21",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T2a",
+   "T2b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2a–T2b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRc6b7ff8200",
+  "schema_id": "S21",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR30502485cf",
+  "schema_id": "S21",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR5afd43b433",
+  "schema_id": "S21",
+  "context": "both",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1",
+   "T2a",
+   "T2b",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR5ab582244d",
+  "schema_id": "S21",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1",
+   "T2a",
+   "T2b",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR72b9b322dc",
+  "schema_id": "S21",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1",
+   "T2a",
+   "T2b",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR798fbf7b9b",
+  "schema_id": "S22",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR37e9a17842",
+  "schema_id": "S22",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRf681f9fc09",
+  "schema_id": "S22",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRaf95da4c95",
+  "schema_id": "S22",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR09205032c9",
+  "schema_id": "S22",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR37a8f1b225",
+  "schema_id": "S22",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0–N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRa43efee4e9",
+  "schema_id": "S22",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T1",
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T3 N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe8cd82f34b",
+  "schema_id": "S22",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR7456b720b6",
+  "schema_id": "S22",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR648bce2350",
+  "schema_id": "S23",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR953cf1b5e7",
+  "schema_id": "S23",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1a",
+   "T1b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T1b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR0b784074e6",
+  "schema_id": "S23",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T2a"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2a N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe7e7a93d9e",
+  "schema_id": "S23",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T2b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR20b87b9d05",
+  "schema_id": "S23",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR5c83060468",
+  "schema_id": "S23",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2a",
+   "T2b",
+   "T3"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T3 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR4ed3e79e5c",
+  "schema_id": "S23",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 N0–N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRfab6432747",
+  "schema_id": "S23",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2a",
+   "T2b",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR101e93cc24",
+  "schema_id": "S23",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2a",
+   "T2b",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR951bd2fafc",
+  "schema_id": "S24",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRfdb2c769d9",
+  "schema_id": "S24",
+  "context": "both",
+  "stage_group": "IA",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T1c"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T1c N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR023386da4f",
+  "schema_id": "S24",
+  "context": "both",
+  "stage_group": "IB",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR5b993e31f6",
+  "schema_id": "S24",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRa0f71055c8",
+  "schema_id": "S24",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T1c",
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T3 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRf95cc9c660",
+  "schema_id": "S24",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T1c",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRa524656eef",
+  "schema_id": "S24",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR25213eb7f8",
+  "schema_id": "S24",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T1c",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR15ad877b11",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR37f8889b3c",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IA1",
+  "t_codes": [
+   "T1mi",
+   "T1a"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1mi–T1a N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR350ec05b83",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IA2",
+  "t_codes": [
+   "T1b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRb7e423f4bc",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IA3",
+  "t_codes": [
+   "T1c"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1c N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRa364756620",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IB",
+  "t_codes": [
+   "T2a"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2a N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR90a459b941",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T2b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR395f57f3de",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T1mi",
+   "T1a",
+   "T1b",
+   "T1c"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1mi–T1c N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRdb6ff74e4c",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T1mi",
+   "T1a",
+   "T1b",
+   "T1c"
+  ],
+  "n_codes": [
+   "N2a"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1mi–T1c N2a M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR206bc30fbe",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T2a",
+   "T2b"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2a–T2b N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRd38c6f25ec",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR06e43dbea9",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T1mi",
+   "T1a",
+   "T1b",
+   "T1c"
+  ],
+  "n_codes": [
+   "N2b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1mi–T1c N2b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR33f35b899b",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T2a",
+   "T2b"
+  ],
+  "n_codes": [
+   "N2a"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2a–T2b N2a M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR9f26b8debf",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRbe198a343a",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 N0–N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR04b3df7777",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T1mi",
+   "T1a",
+   "T1b",
+   "T1c",
+   "T2a",
+   "T2b"
+  ],
+  "n_codes": [
+   "N3"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1mi–T2b N3 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR8342433d8c",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T2a",
+   "T2b"
+  ],
+  "n_codes": [
+   "N2b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2a–T2b N2b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRd1aec734bc",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N2a"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3–T4 N2a M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR988c2537e0",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N2b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N2b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR9fa9f3ebed",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N3"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3–T4 N3 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe0448c5684",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "N2b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 N2b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR3b20e5e616",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1mi",
+   "T1a",
+   "T1b",
+   "T1c",
+   "T2a",
+   "T2b",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2a",
+   "N2b",
+   "N3"
+  ],
+  "m_codes": [
+   "M1a",
+   "M1b"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1a–M1b",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRc28ced189a",
+  "schema_id": "S25",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1mi",
+   "T1a",
+   "T1b",
+   "T1c",
+   "T2a",
+   "T2b",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2a",
+   "N2b",
+   "N3"
+  ],
+  "m_codes": [
+   "M1c1",
+   "M1c2"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1c1–M1c2",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRc3da4813c5",
+  "schema_id": "S26",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR7ae8ee445f",
+  "schema_id": "S26",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR07d5317fb9",
+  "schema_id": "S26",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR46a78853d8",
+  "schema_id": "S26",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1 N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRf2c77802b8",
+  "schema_id": "S26",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N1–N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR0c93aba68f",
+  "schema_id": "S26",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR4be544f388",
+  "schema_id": "S26",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRd1c6c809a2",
+  "schema_id": "S26",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR522b305d31",
+  "schema_id": "S27",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1a",
+   "T1b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T1b N0 M0",
+  "flag": "Verify V9 grouping (I may be split IA/IB)",
+  "display_order": null
+ },
+ {
+  "rule_id": "SR3cd0de0308",
+  "schema_id": "S27",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRf522201b4c",
+  "schema_id": "S27",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRd0410da95b",
+  "schema_id": "S27",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRbe0838633b",
+  "schema_id": "S27",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0",
+   "M1a"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N1 M0–M1a",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR3cb21cea9c",
+  "schema_id": "S27",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M1a"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N0 M1a",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR002d525604",
+  "schema_id": "S27",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N2"
+  ],
+  "m_codes": [
+   "M0",
+   "M1a",
+   "M1b"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N2 M0–M1b",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRa01cfc645e",
+  "schema_id": "S27",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M1b"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N0–N1 M1b",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR5eddce82bc",
+  "schema_id": "S28",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR0dcd7bc5aa",
+  "schema_id": "S28",
+  "context": "both",
+  "stage_group": "IA",
+  "t_codes": [
+   "T1mi",
+   "T1a",
+   "T1b",
+   "T1c"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1mi–T1c N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe69c9782f1",
+  "schema_id": "S28",
+  "context": "both",
+  "stage_group": "IB",
+  "t_codes": [
+   "T0",
+   "Tis",
+   "T1mi",
+   "T1a",
+   "T1b",
+   "T1c"
+  ],
+  "n_codes": [
+   "N1mi"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T0–T1c N1mi M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRc1487b17f6",
+  "schema_id": "S28",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T0",
+   "Tis",
+   "T1mi",
+   "T1a",
+   "T1b",
+   "T1c"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T0–T1c N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR769623557f",
+  "schema_id": "S28",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe9752996f7",
+  "schema_id": "S28",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "N1mi",
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2 N1mi/N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR674acbbf2a",
+  "schema_id": "S28",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR0b7c42c952",
+  "schema_id": "S28",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T0",
+   "Tis",
+   "T1mi",
+   "T1a",
+   "T1b",
+   "T1c",
+   "T2"
+  ],
+  "n_codes": [
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T0–T2 N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRbee34412c4",
+  "schema_id": "S28",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N1mi",
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N1mi/N1/N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR175d99302a",
+  "schema_id": "S28",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T4a",
+   "T4b",
+   "T4c",
+   "T4d"
+  ],
+  "n_codes": [
+   "N0",
+   "N1mi",
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4a–T4d N0/N1mi/N1/N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRed3edda81f",
+  "schema_id": "S28",
+  "context": "both",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1mi",
+   "T1a",
+   "T1b",
+   "T1c",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b",
+   "T4c",
+   "T4d"
+  ],
+  "n_codes": [
+   "N3"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N3 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRda13c07b38",
+  "schema_id": "S28",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1mi",
+   "T1a",
+   "T1b",
+   "T1c",
+   "T2",
+   "T3",
+   "T4a",
+   "T4b",
+   "T4c",
+   "T4d"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3",
+   "N1mi"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR8c511d7998",
+  "schema_id": "S29",
+  "context": "both",
+  "stage_group": "IA1",
+  "t_codes": [
+   "T1a1"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a1 NX/N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR07fcc06530",
+  "schema_id": "S29",
+  "context": "both",
+  "stage_group": "IA2",
+  "t_codes": [
+   "T1a2"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a2 NX/N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR05d5cd75bc",
+  "schema_id": "S29",
+  "context": "both",
+  "stage_group": "IB1",
+  "t_codes": [
+   "T1b1"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1b1 NX/N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRec18b2e39e",
+  "schema_id": "S29",
+  "context": "both",
+  "stage_group": "IB2",
+  "t_codes": [
+   "T1b2"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1b2 NX/N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR265fd630ed",
+  "schema_id": "S29",
+  "context": "both",
+  "stage_group": "IB3",
+  "t_codes": [
+   "T1b3"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1b3 NX/N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRfcd221596d",
+  "schema_id": "S29",
+  "context": "both",
+  "stage_group": "IIA1",
+  "t_codes": [
+   "T2a1"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2a1 NX/N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR262b3d6c2c",
+  "schema_id": "S29",
+  "context": "both",
+  "stage_group": "IIA2",
+  "t_codes": [
+   "T2a2"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2a2 NX/N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR29c7dad589",
+  "schema_id": "S29",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T2b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2b NX/N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRc383981bb2",
+  "schema_id": "S29",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T3a"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3a NX/N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRc0a58ff46b",
+  "schema_id": "S29",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T3b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3b NX/N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR547607a805",
+  "schema_id": "S29",
+  "context": "both",
+  "stage_group": "IIIC1",
+  "t_codes": [
+   "T1a1",
+   "T1a2",
+   "T1b1",
+   "T1b2",
+   "T1b3",
+   "T2a1",
+   "T2a2",
+   "T2b",
+   "T3a",
+   "T3b"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Any T (T1–T3) with pelvic nodes; add r or p",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRb926e9e741",
+  "schema_id": "S29",
+  "context": "both",
+  "stage_group": "IIIC2",
+  "t_codes": [
+   "T1a1",
+   "T1a2",
+   "T1b1",
+   "T1b2",
+   "T1b3",
+   "T2a1",
+   "T2a2",
+   "T2b",
+   "T3a",
+   "T3b"
+  ],
+  "n_codes": [
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Any T (T1–T3) with para-aortic nodes; add r or p",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRca302d4529",
+  "schema_id": "S29",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRb2aac6dbfd",
+  "schema_id": "S29",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a1",
+   "T1a2",
+   "T1b1",
+   "T1b2",
+   "T1b3",
+   "T2a1",
+   "T2a2",
+   "T2b",
+   "T3a",
+   "T3b",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR95ff3baeed",
+  "schema_id": "S30",
+  "context": "both",
+  "stage_group": "IA",
+  "t_codes": [
+   "T1a"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a NX/N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR67ec3dd163",
+  "schema_id": "S30",
+  "context": "both",
+  "stage_group": "IB",
+  "t_codes": [
+   "T1b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1b NX/N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR6dceb00df7",
+  "schema_id": "S30",
+  "context": "both",
+  "stage_group": "IC1",
+  "t_codes": [
+   "T1c1"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1c1 NX/N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR6ba23b1fb6",
+  "schema_id": "S30",
+  "context": "both",
+  "stage_group": "IC2",
+  "t_codes": [
+   "T1c2"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1c2 NX/N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRb18b71875d",
+  "schema_id": "S30",
+  "context": "both",
+  "stage_group": "IC3",
+  "t_codes": [
+   "T1c3"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1c3 NX/N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe18e3795a8",
+  "schema_id": "S30",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T2a"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2a NX/N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR14d9ec2909",
+  "schema_id": "S30",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T2b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2b NX/N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRdd071ff614",
+  "schema_id": "S30",
+  "context": "both",
+  "stage_group": "IIIA1(i)",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T1c1",
+   "T1c2",
+   "T1c3",
+   "T2a",
+   "T2b"
+  ],
+  "n_codes": [
+   "N1a"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T2b N1a M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR33e12c64f9",
+  "schema_id": "S30",
+  "context": "both",
+  "stage_group": "IIIA1(ii)",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T1c1",
+   "T1c2",
+   "T1c3",
+   "T2a",
+   "T2b"
+  ],
+  "n_codes": [
+   "N1b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T2b N1b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR3fd7d2eca4",
+  "schema_id": "S30",
+  "context": "both",
+  "stage_group": "IIIA2",
+  "t_codes": [
+   "T3a"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3a any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR2f062fa5ec",
+  "schema_id": "S30",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T3b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3b any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRdebdab0edc",
+  "schema_id": "S30",
+  "context": "both",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "T3c"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3c any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRab9dac3fa0",
+  "schema_id": "S30",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T1c1",
+   "T1c2",
+   "T1c3",
+   "T2a",
+   "T2b",
+   "T3a",
+   "T3b",
+   "T3c"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M1a"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1a",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR74825a083c",
+  "schema_id": "S30",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T1c1",
+   "T1c2",
+   "T1c3",
+   "T2a",
+   "T2b",
+   "T3a",
+   "T3b",
+   "T3c"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b"
+  ],
+  "m_codes": [
+   "M1b"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1b",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR120fc24d8b",
+  "schema_id": "S33",
+  "context": "both",
+  "stage_group": "IA",
+  "t_codes": [
+   "T1a"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR41c959123b",
+  "schema_id": "S33",
+  "context": "both",
+  "stage_group": "IB",
+  "t_codes": [
+   "T1b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRb4fa2ee120",
+  "schema_id": "S33",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T2a"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2a N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRd6ab205404",
+  "schema_id": "S33",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T2b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR6b69561caf",
+  "schema_id": "S33",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2a",
+   "T2b",
+   "T3"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T3 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR42ad8348c9",
+  "schema_id": "S33",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR438c69a980",
+  "schema_id": "S33",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRf1ad606444",
+  "schema_id": "S33",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T2a",
+   "T2b",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR390961b61d",
+  "schema_id": "S34",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T1c",
+   "T2a",
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "PSA = <10; GG = 1",
+  "conditions": [
+   {
+    "key": "PSA",
+    "values": [
+     "<10"
+    ]
+   },
+   {
+    "key": "GG",
+    "values": [
+     "1"
+    ]
+   }
+  ],
+  "criteria_text": "cT1a–cT2a or pT2, N0 M0, PSA <10, GG1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR1a710210ba",
+  "schema_id": "S34",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T1c",
+   "T2a",
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "PSA = 10-<20; GG = 1",
+  "conditions": [
+   {
+    "key": "PSA",
+    "values": [
+     "10-<20"
+    ]
+   },
+   {
+    "key": "GG",
+    "values": [
+     "1"
+    ]
+   }
+  ],
+  "criteria_text": "cT1a–cT2a/pT2 N0 M0 PSA 10–<20 GG1; cT2b–c N0 M0 PSA <20 GG1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR53b5179500",
+  "schema_id": "S34",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T2b",
+   "T2c"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "PSA = <10 / 10-<20; GG = 1",
+  "conditions": [
+   {
+    "key": "PSA",
+    "values": [
+     "<10",
+     "10-<20"
+    ]
+   },
+   {
+    "key": "GG",
+    "values": [
+     "1"
+    ]
+   }
+  ],
+  "criteria_text": "cT1a–cT2a/pT2 N0 M0 PSA 10–<20 GG1; cT2b–c N0 M0 PSA <20 GG1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR96a1ed251e",
+  "schema_id": "S34",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T1c",
+   "T2a",
+   "T2b",
+   "T2c",
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "PSA = <10 / 10-<20; GG = 2",
+  "conditions": [
+   {
+    "key": "PSA",
+    "values": [
+     "<10",
+     "10-<20"
+    ]
+   },
+   {
+    "key": "GG",
+    "values": [
+     "2"
+    ]
+   }
+  ],
+  "criteria_text": "T1–T2 N0 M0, PSA <20, GG2",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRaa028ae35f",
+  "schema_id": "S34",
+  "context": "both",
+  "stage_group": "IIC",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T1c",
+   "T2a",
+   "T2b",
+   "T2c",
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "PSA = <10 / 10-<20; GG = 3 / 4",
+  "conditions": [
+   {
+    "key": "PSA",
+    "values": [
+     "<10",
+     "10-<20"
+    ]
+   },
+   {
+    "key": "GG",
+    "values": [
+     "3",
+     "4"
+    ]
+   }
+  ],
+  "criteria_text": "T1–T2 N0 M0, PSA <20, GG3–4",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR3e2b757d2a",
+  "schema_id": "S34",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T1c",
+   "T2a",
+   "T2b",
+   "T2c",
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "PSA = ≥20; GG = 1 / 2 / 3 / 4",
+  "conditions": [
+   {
+    "key": "PSA",
+    "values": [
+     "≥20"
+    ]
+   },
+   {
+    "key": "GG",
+    "values": [
+     "1",
+     "2",
+     "3",
+     "4"
+    ]
+   }
+  ],
+  "criteria_text": "T1–T2 N0 M0, PSA ≥20, GG1–4",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR429197f40a",
+  "schema_id": "S34",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T3a",
+   "T3b",
+   "T4"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "PSA = <10 / 10-<20 / ≥20; GG = 1 / 2 / 3 / 4",
+  "conditions": [
+   {
+    "key": "PSA",
+    "values": [
+     "<10",
+     "10-<20",
+     "≥20"
+    ]
+   },
+   {
+    "key": "GG",
+    "values": [
+     "1",
+     "2",
+     "3",
+     "4"
+    ]
+   }
+  ],
+  "criteria_text": "T3–T4 N0 M0, any PSA, GG1–4",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR7a0dc5b446",
+  "schema_id": "S34",
+  "context": "both",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T1c",
+   "T2a",
+   "T2b",
+   "T2c",
+   "T3a",
+   "T3b",
+   "T4",
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "PSA = <10 / 10-<20 / ≥20; GG = 5",
+  "conditions": [
+   {
+    "key": "PSA",
+    "values": [
+     "<10",
+     "10-<20",
+     "≥20"
+    ]
+   },
+   {
+    "key": "GG",
+    "values": [
+     "5"
+    ]
+   }
+  ],
+  "criteria_text": "Any T N0 M0, any PSA, GG5",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR14fec4ba1d",
+  "schema_id": "S34",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T1c",
+   "T2a",
+   "T2b",
+   "T2c",
+   "T3a",
+   "T3b",
+   "T4",
+   "T2"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SReccf40d22a",
+  "schema_id": "S34",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T1c",
+   "T2a",
+   "T2b",
+   "T2c",
+   "T3a",
+   "T3b",
+   "T4",
+   "T2"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M1a",
+   "M1b",
+   "M1c"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1a–M1c",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRbd5f26bfe9",
+  "schema_id": "S35",
+  "context": "both",
+  "stage_group": "0a",
+  "t_codes": [
+   "Ta"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Ta N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR6192cbfbfe",
+  "schema_id": "S35",
+  "context": "both",
+  "stage_group": "0is",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR7242005b68",
+  "schema_id": "S35",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR53ffed2de5",
+  "schema_id": "S35",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T2a",
+   "T2b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2a–T2b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRad12a2b292",
+  "schema_id": "S35",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T3a",
+   "T3b",
+   "T4a"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3a–T4a N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe51e36b23b",
+  "schema_id": "S35",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T1",
+   "T2a",
+   "T2b",
+   "T3a",
+   "T3b",
+   "T4a"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T4a N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe9c80e8f6a",
+  "schema_id": "S35",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T1",
+   "T2a",
+   "T2b",
+   "T3a",
+   "T3b",
+   "T4a"
+  ],
+  "n_codes": [
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1–T4a N2–N3 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRfb5beccd8e",
+  "schema_id": "S35",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4b any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR87b6960b0f",
+  "schema_id": "S35",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Ta",
+   "Tis",
+   "T1",
+   "T2a",
+   "T2b",
+   "T3a",
+   "T3b",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M1a"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1a",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRdd0fef197d",
+  "schema_id": "S35",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Ta",
+   "Tis",
+   "T1",
+   "T2a",
+   "T2b",
+   "T3a",
+   "T3b",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M1b"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1b",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR835e2102fb",
+  "schema_id": "S36",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1a",
+   "T1b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T1b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR516a93200c",
+  "schema_id": "S36",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T2a",
+   "T2b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2a–T2b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR17b05c0565",
+  "schema_id": "S36",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T3a",
+   "T3b",
+   "T3c"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3a–T3c N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRfbac5aeef2",
+  "schema_id": "S36",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2a",
+   "T2b",
+   "T3a",
+   "T3b",
+   "T3c"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T3c N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRa7dc84b414",
+  "schema_id": "S36",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR846e3b5006",
+  "schema_id": "S36",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1a",
+   "T1b",
+   "T2a",
+   "T2b",
+   "T3a",
+   "T3b",
+   "T3c",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRcf8d71e6c8",
+  "schema_id": "S37",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "S = S0",
+  "conditions": [
+   {
+    "key": "S",
+    "values": [
+     "S0"
+    ]
+   }
+  ],
+  "criteria_text": "Tis N0 M0 S0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRc4d322141d",
+  "schema_id": "S37",
+  "context": "both",
+  "stage_group": "IA",
+  "t_codes": [
+   "T1a",
+   "T1b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "S = S0",
+  "conditions": [
+   {
+    "key": "S",
+    "values": [
+     "S0"
+    ]
+   }
+  ],
+  "criteria_text": "T1a–T1b N0 M0 S0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR0acdfec36f",
+  "schema_id": "S37",
+  "context": "both",
+  "stage_group": "IB",
+  "t_codes": [
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "S = S0",
+  "conditions": [
+   {
+    "key": "S",
+    "values": [
+     "S0"
+    ]
+   }
+  ],
+  "criteria_text": "T2–T4 N0 M0 S0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRee240f25c0",
+  "schema_id": "S37",
+  "context": "both",
+  "stage_group": "IS",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "S = S1 / S2 / S3",
+  "conditions": [
+   {
+    "key": "S",
+    "values": [
+     "S1",
+     "S2",
+     "S3"
+    ]
+   }
+  ],
+  "criteria_text": "any T N0 M0 S1–S3",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRb4c48ecfec",
+  "schema_id": "S37",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "S = S0 / S1",
+  "conditions": [
+   {
+    "key": "S",
+    "values": [
+     "S0",
+     "S1"
+    ]
+   }
+  ],
+  "criteria_text": "any T N1 M0 S0–S1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRf3f8c70fd9",
+  "schema_id": "S37",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "S = S0 / S1",
+  "conditions": [
+   {
+    "key": "S",
+    "values": [
+     "S0",
+     "S1"
+    ]
+   }
+  ],
+  "criteria_text": "any T N2 M0 S0–S1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR81cbd6cb4f",
+  "schema_id": "S37",
+  "context": "both",
+  "stage_group": "IIC",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N3"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "S = S0 / S1",
+  "conditions": [
+   {
+    "key": "S",
+    "values": [
+     "S0",
+     "S1"
+    ]
+   }
+  ],
+  "criteria_text": "any T N3 M0 S0–S1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR9f128b7683",
+  "schema_id": "S37",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M1a"
+  ],
+  "conditions_raw": "S = S0 / S1",
+  "conditions": [
+   {
+    "key": "S",
+    "values": [
+     "S0",
+     "S1"
+    ]
+   }
+  ],
+  "criteria_text": "any T any N M1a S0–S1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe599d38cdc",
+  "schema_id": "S37",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N1",
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "S = S2",
+  "conditions": [
+   {
+    "key": "S",
+    "values": [
+     "S2"
+    ]
+   }
+  ],
+  "criteria_text": "any T N1–N3 M0 S2",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRc48303567f",
+  "schema_id": "S37",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M1a"
+  ],
+  "conditions_raw": "S = S2",
+  "conditions": [
+   {
+    "key": "S",
+    "values": [
+     "S2"
+    ]
+   }
+  ],
+  "criteria_text": "any T any N M1a S2",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR1e4e881133",
+  "schema_id": "S37",
+  "context": "both",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N1",
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "S = S3",
+  "conditions": [
+   {
+    "key": "S",
+    "values": [
+     "S3"
+    ]
+   }
+  ],
+  "criteria_text": "any T N1–N3 M0 S3",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR5ab2e8f3f7",
+  "schema_id": "S37",
+  "context": "both",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M1a"
+  ],
+  "conditions_raw": "S = S3",
+  "conditions": [
+   {
+    "key": "S",
+    "values": [
+     "S3"
+    ]
+   }
+  ],
+  "criteria_text": "any T any N M1a S3",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR92339e40a8",
+  "schema_id": "S37",
+  "context": "both",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M1b"
+  ],
+  "conditions_raw": "S = SX / S0 / S1 / S2 / S3",
+  "conditions": [
+   {
+    "key": "S",
+    "values": [
+     "SX",
+     "S0",
+     "S1",
+     "S2",
+     "S3"
+    ]
+   }
+  ],
+  "criteria_text": "any T any N M1b any S",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR05801ae6c4",
+  "schema_id": "S38",
+  "context": "both",
+  "stage_group": "0is",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR57c5bef428",
+  "schema_id": "S38",
+  "context": "both",
+  "stage_group": "0a",
+  "t_codes": [
+   "Ta"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Ta N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRf72f87b9ed",
+  "schema_id": "S38",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1a"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR4b4c334ec7",
+  "schema_id": "S38",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T1b",
+   "T2"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1b–T2 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRfc4c80dd84",
+  "schema_id": "S38",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR2163399b7c",
+  "schema_id": "S38",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T3 N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR771bb30a20",
+  "schema_id": "S38",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "N2"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T3 N2 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR334b41fad6",
+  "schema_id": "S38",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 any N M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR645696536d",
+  "schema_id": "S38",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "Ta",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N3"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N3 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR3fa901089b",
+  "schema_id": "S38",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "Ta",
+   "T1a",
+   "T1b",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR511b4daf48",
+  "schema_id": "S39",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR2b638e5d7f",
+  "schema_id": "S39",
+  "context": "clinical",
+  "stage_group": "IA",
+  "t_codes": [
+   "T1a"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR05dbfe0be1",
+  "schema_id": "S39",
+  "context": "clinical",
+  "stage_group": "IB",
+  "t_codes": [
+   "T1b",
+   "T2a"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1b–T2a N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR5641fbdb02",
+  "schema_id": "S39",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T2b",
+   "T3a"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2b–T3a N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR388957bb79",
+  "schema_id": "S39",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T3b",
+   "T4a"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3b–T4a N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRf5eba2de0f",
+  "schema_id": "S39",
+  "context": "both",
+  "stage_group": "IIC",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR8cdff32187",
+  "schema_id": "S39",
+  "context": "clinical",
+  "stage_group": "III",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2a",
+   "T2b",
+   "T3a",
+   "T3b",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "N1a",
+   "N1b",
+   "N1c",
+   "N2a",
+   "N2b",
+   "N2c",
+   "N3a",
+   "N3b",
+   "N3c"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N1a–N3c M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR947f1c40db",
+  "schema_id": "S39",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1a",
+   "T1b",
+   "T2a",
+   "T2b",
+   "T3a",
+   "T3b",
+   "T4a",
+   "T4b"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1a",
+   "N1b",
+   "N1c",
+   "N2a",
+   "N2b",
+   "N2c",
+   "N3a",
+   "N3b",
+   "N3c"
+  ],
+  "m_codes": [
+   "M1a",
+   "M1b",
+   "M1c",
+   "M1d"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1a–M1d",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRfe1c2cfa58",
+  "schema_id": "S39",
+  "context": "pathological",
+  "stage_group": "IA",
+  "t_codes": [
+   "T1a",
+   "T1b"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T1b N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR56003ed5f4",
+  "schema_id": "S39",
+  "context": "pathological",
+  "stage_group": "IB",
+  "t_codes": [
+   "T2a"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2a N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR1a1fa94887",
+  "schema_id": "S39",
+  "context": "pathological",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2a"
+  ],
+  "n_codes": [
+   "N1a",
+   "N2a"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T2a N1a/N2a M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR141f427932",
+  "schema_id": "S39",
+  "context": "pathological",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T0"
+  ],
+  "n_codes": [
+   "N1b",
+   "N1c"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T0 N1b–N1c M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRa7f5726b8a",
+  "schema_id": "S39",
+  "context": "pathological",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2a"
+  ],
+  "n_codes": [
+   "N1b",
+   "N1c",
+   "N2b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T2a N1b–N1c/N2b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR22056c5ae7",
+  "schema_id": "S39",
+  "context": "pathological",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T2b",
+   "T3a"
+  ],
+  "n_codes": [
+   "N1a",
+   "N1b",
+   "N1c",
+   "N2a",
+   "N2b"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2b–T3a N1a–N2b M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR37da029295",
+  "schema_id": "S39",
+  "context": "pathological",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "T0"
+  ],
+  "n_codes": [
+   "N2b",
+   "N2c",
+   "N3b",
+   "N3c"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T0 N2b–N2c/N3b–N3c M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRc9665a86f1",
+  "schema_id": "S39",
+  "context": "pathological",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "T1a",
+   "T1b",
+   "T2a",
+   "T2b",
+   "T3a"
+  ],
+  "n_codes": [
+   "N2c",
+   "N3a",
+   "N3b",
+   "N3c"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1a–T3a N2c–N3c M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR39db1e6fbe",
+  "schema_id": "S39",
+  "context": "pathological",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "T3b",
+   "T4a"
+  ],
+  "n_codes": [
+   "N1a",
+   "N1b",
+   "N1c",
+   "N2a",
+   "N2b",
+   "N2c",
+   "N3a",
+   "N3b",
+   "N3c"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T3b–T4a N1a–N3c M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR9f3360f91d",
+  "schema_id": "S39",
+  "context": "pathological",
+  "stage_group": "IIIC",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "N1a",
+   "N1b",
+   "N1c",
+   "N2a",
+   "N2b",
+   "N2c"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4b N1a–N2c M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRb11e55d549",
+  "schema_id": "S39",
+  "context": "pathological",
+  "stage_group": "IIID",
+  "t_codes": [
+   "T4b"
+  ],
+  "n_codes": [
+   "N3a",
+   "N3b",
+   "N3c"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4b N3a–N3c M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR49683d944f",
+  "schema_id": "S40",
+  "context": "both",
+  "stage_group": "0",
+  "t_codes": [
+   "Tis"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "Tis N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR132859ec42",
+  "schema_id": "S40",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T1 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR1c6975cc9c",
+  "schema_id": "S40",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T2–T3 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRd60674e039",
+  "schema_id": "S40",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "T4 N0 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR80a3206d7f",
+  "schema_id": "S40",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N1",
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N1–N3 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR5230434898",
+  "schema_id": "S40",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "Tis",
+   "T1",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1",
+   "N2",
+   "N3"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR1fabe40037",
+  "schema_id": "S41",
+  "context": "both",
+  "stage_group": "IA",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Grade = G1 / GX",
+  "conditions": [
+   {
+    "key": "Grade",
+    "values": [
+     "G1",
+     "GX"
+    ]
+   }
+  ],
+  "criteria_text": "T1 NX/N0 M0 Grade G1/GX",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRd1fb6292d6",
+  "schema_id": "S41",
+  "context": "both",
+  "stage_group": "IB",
+  "t_codes": [
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Grade = G1 / GX",
+  "conditions": [
+   {
+    "key": "Grade",
+    "values": [
+     "G1",
+     "GX"
+    ]
+   }
+  ],
+  "criteria_text": "T2–T4 NX/N0 M0 Grade G1/GX",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe711053fe0",
+  "schema_id": "S41",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Grade = G2 / G3",
+  "conditions": [
+   {
+    "key": "Grade",
+    "values": [
+     "G2",
+     "G3"
+    ]
+   }
+  ],
+  "criteria_text": "T1 NX/N0 M0 Grade G2/G3",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR8d4c75f487",
+  "schema_id": "S41",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Grade = G2 / G3",
+  "conditions": [
+   {
+    "key": "Grade",
+    "values": [
+     "G2",
+     "G3"
+    ]
+   }
+  ],
+  "criteria_text": "T2 NX/N0 M0 Grade G2/G3",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRc8396fc2f7",
+  "schema_id": "S41",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Grade = G2 / G3",
+  "conditions": [
+   {
+    "key": "Grade",
+    "values": [
+     "G2",
+     "G3"
+    ]
+   }
+  ],
+  "criteria_text": "T3–T4 NX/N0 M0 Grade G2/G3",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR8eac03508a",
+  "schema_id": "S41",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N1 M0",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR7ff8383937",
+  "schema_id": "S41",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR588df66095",
+  "schema_id": "S42",
+  "context": "both",
+  "stage_group": "IA",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Grade = G1 / GX",
+  "conditions": [
+   {
+    "key": "Grade",
+    "values": [
+     "G1",
+     "GX"
+    ]
+   }
+  ],
+  "criteria_text": "T1 NX/N0 M0 Grade G1/GX",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR866c451a41",
+  "schema_id": "S42",
+  "context": "both",
+  "stage_group": "IB",
+  "t_codes": [
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Grade = G1 / GX",
+  "conditions": [
+   {
+    "key": "Grade",
+    "values": [
+     "G1",
+     "GX"
+    ]
+   }
+  ],
+  "criteria_text": "T2–T3 NX/N0 M0 Grade G1/GX",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR879307c02f",
+  "schema_id": "S42",
+  "context": "both",
+  "stage_group": "IIA",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Grade = G2 / G3",
+  "conditions": [
+   {
+    "key": "Grade",
+    "values": [
+     "G2",
+     "G3"
+    ]
+   }
+  ],
+  "criteria_text": "T1 NX/N0 M0 Grade G2/G3",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR7771b2d9ef",
+  "schema_id": "S42",
+  "context": "both",
+  "stage_group": "IIB",
+  "t_codes": [
+   "T2"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Grade = G2 / G3",
+  "conditions": [
+   {
+    "key": "Grade",
+    "values": [
+     "G2",
+     "G3"
+    ]
+   }
+  ],
+  "criteria_text": "T2 NX/N0 M0 Grade G2/G3",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRa3dbdd7f41",
+  "schema_id": "S42",
+  "context": "both",
+  "stage_group": "III",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Grade = G2 / G3",
+  "conditions": [
+   {
+    "key": "Grade",
+    "values": [
+     "G2",
+     "G3"
+    ]
+   }
+  ],
+  "criteria_text": "T3 NX/N0 M0 Grade G2/G3",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR80f893829f",
+  "schema_id": "S42",
+  "context": "both",
+  "stage_group": "IVA",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1",
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M1a"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T NX/N0 M1a",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR91117535a2",
+  "schema_id": "S42",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1",
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0",
+   "M1a",
+   "M1b"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N1 any M",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR5d52847110",
+  "schema_id": "S42",
+  "context": "both",
+  "stage_group": "IVB",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1",
+   "T2",
+   "T3"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M1b"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1b",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR03174abd3e",
+  "schema_id": "S43",
+  "context": "both",
+  "stage_group": "IA",
+  "t_codes": [
+   "T1",
+   "T2"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Site = Gastric/omental; Mitosis = ≤5/5mm²",
+  "conditions": [
+   {
+    "key": "Site",
+    "values": [
+     "Gastric/omental"
+    ]
+   },
+   {
+    "key": "Mitosis",
+    "values": [
+     "≤5/5mm²"
+    ]
+   }
+  ],
+  "criteria_text": "T1–T2 NX/N0 M0 Site Gastric/omental Mitosis ≤5/5mm²",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRb202d3be83",
+  "schema_id": "S43",
+  "context": "both",
+  "stage_group": "IB",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Site = Gastric/omental; Mitosis = ≤5/5mm²",
+  "conditions": [
+   {
+    "key": "Site",
+    "values": [
+     "Gastric/omental"
+    ]
+   },
+   {
+    "key": "Mitosis",
+    "values": [
+     "≤5/5mm²"
+    ]
+   }
+  ],
+  "criteria_text": "T3 NX/N0 M0 Site Gastric/omental Mitosis ≤5/5mm²",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR223e111c1f",
+  "schema_id": "S43",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T1",
+   "T2"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Site = Gastric/omental; Mitosis = >5/5mm²",
+  "conditions": [
+   {
+    "key": "Site",
+    "values": [
+     "Gastric/omental"
+    ]
+   },
+   {
+    "key": "Mitosis",
+    "values": [
+     ">5/5mm²"
+    ]
+   }
+  ],
+  "criteria_text": "T1–T2 NX/N0 M0 Site Gastric/omental Mitosis >5/5mm²",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR5d62ee032b",
+  "schema_id": "S43",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Site = Gastric/omental; Mitosis = ≤5/5mm²",
+  "conditions": [
+   {
+    "key": "Site",
+    "values": [
+     "Gastric/omental"
+    ]
+   },
+   {
+    "key": "Mitosis",
+    "values": [
+     "≤5/5mm²"
+    ]
+   }
+  ],
+  "criteria_text": "T4 NX/N0 M0 Site Gastric/omental Mitosis ≤5/5mm²",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe970605c6d",
+  "schema_id": "S43",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Site = Gastric/omental; Mitosis = >5/5mm²",
+  "conditions": [
+   {
+    "key": "Site",
+    "values": [
+     "Gastric/omental"
+    ]
+   },
+   {
+    "key": "Mitosis",
+    "values": [
+     ">5/5mm²"
+    ]
+   }
+  ],
+  "criteria_text": "T3 NX/N0 M0 Site Gastric/omental Mitosis >5/5mm²",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR4f4b152c0e",
+  "schema_id": "S43",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Site = Gastric/omental; Mitosis = >5/5mm²",
+  "conditions": [
+   {
+    "key": "Site",
+    "values": [
+     "Gastric/omental"
+    ]
+   },
+   {
+    "key": "Mitosis",
+    "values": [
+     ">5/5mm²"
+    ]
+   }
+  ],
+  "criteria_text": "T4 NX/N0 M0 Site Gastric/omental Mitosis >5/5mm²",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR940388aed0",
+  "schema_id": "S43",
+  "context": "both",
+  "stage_group": "I",
+  "t_codes": [
+   "T1",
+   "T2"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Site = Small-intestine/other; Mitosis = ≤5/5mm²",
+  "conditions": [
+   {
+    "key": "Site",
+    "values": [
+     "Small-intestine/other"
+    ]
+   },
+   {
+    "key": "Mitosis",
+    "values": [
+     "≤5/5mm²"
+    ]
+   }
+  ],
+  "criteria_text": "T1–T2 NX/N0 M0 Site Small-intestine/other Mitosis ≤5/5mm²",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRe42303948d",
+  "schema_id": "S43",
+  "context": "both",
+  "stage_group": "II",
+  "t_codes": [
+   "T3"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Site = Small-intestine/other; Mitosis = ≤5/5mm²",
+  "conditions": [
+   {
+    "key": "Site",
+    "values": [
+     "Small-intestine/other"
+    ]
+   },
+   {
+    "key": "Mitosis",
+    "values": [
+     "≤5/5mm²"
+    ]
+   }
+  ],
+  "criteria_text": "T3 NX/N0 M0 Site Small-intestine/other Mitosis ≤5/5mm²",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRdef9651b8b",
+  "schema_id": "S43",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T1"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Site = Small-intestine/other; Mitosis = >5/5mm²",
+  "conditions": [
+   {
+    "key": "Site",
+    "values": [
+     "Small-intestine/other"
+    ]
+   },
+   {
+    "key": "Mitosis",
+    "values": [
+     ">5/5mm²"
+    ]
+   }
+  ],
+  "criteria_text": "T1 NX/N0 M0 Site Small-intestine/other Mitosis >5/5mm²",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR197756c333",
+  "schema_id": "S43",
+  "context": "both",
+  "stage_group": "IIIA",
+  "t_codes": [
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Site = Small-intestine/other; Mitosis = ≤5/5mm²",
+  "conditions": [
+   {
+    "key": "Site",
+    "values": [
+     "Small-intestine/other"
+    ]
+   },
+   {
+    "key": "Mitosis",
+    "values": [
+     "≤5/5mm²"
+    ]
+   }
+  ],
+  "criteria_text": "T4 NX/N0 M0 Site Small-intestine/other Mitosis ≤5/5mm²",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SRdee7c004fb",
+  "schema_id": "S43",
+  "context": "both",
+  "stage_group": "IIIB",
+  "t_codes": [
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0"
+  ],
+  "m_codes": [
+   "M0"
+  ],
+  "conditions_raw": "Site = Small-intestine/other; Mitosis = >5/5mm²",
+  "conditions": [
+   {
+    "key": "Site",
+    "values": [
+     "Small-intestine/other"
+    ]
+   },
+   {
+    "key": "Mitosis",
+    "values": [
+     ">5/5mm²"
+    ]
+   }
+  ],
+  "criteria_text": "T2–T4 NX/N0 M0 Site Small-intestine/other Mitosis >5/5mm²",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR60397df0d2",
+  "schema_id": "S43",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "N1"
+  ],
+  "m_codes": [
+   "M0",
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T N1 any M",
+  "flag": null,
+  "display_order": null
+ },
+ {
+  "rule_id": "SR54b903a4d8",
+  "schema_id": "S43",
+  "context": "both",
+  "stage_group": "IV",
+  "t_codes": [
+   "TX",
+   "T0",
+   "T1",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "n_codes": [
+   "NX",
+   "N0",
+   "N1"
+  ],
+  "m_codes": [
+   "M1"
+  ],
+  "conditions_raw": null,
+  "conditions": [],
+  "criteria_text": "any T any N M1",
+  "flag": null,
+  "display_order": null
+ }
+]

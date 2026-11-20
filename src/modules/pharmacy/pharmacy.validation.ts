@@ -86,6 +86,17 @@ export const saveFromOrderValidation = [
         .isArray()
         .withMessage("Items must be an array"),
 
+    body("removed_row_keys")
+        .optional({ nullable: true })
+        .isArray()
+        .withMessage("removed_row_keys must be an array"),
+
+    body("removed_row_keys.*")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 160 })
+        .withMessage("A removed row key is too long"),
+
     body("items.*.quantity")
         .optional({ nullable: true })
         .isInt({ min: 0 })
@@ -99,7 +110,18 @@ export const saveFromOrderValidation = [
     body("items.*.dose").optional({ nullable: true }).isString(),
     body("items.*.dose_unit").optional({ nullable: true }).isString(),
     body("items.*.drug_role").optional({ nullable: true }).isString(),
-    body("items.*.pharmacy_item_id").optional({ nullable: true }).isString()
+    body("items.*.route").optional({ nullable: true }).isString(),
+    body("items.*.frequency").optional({ nullable: true }).isString(),
+    body("items.*.duration").optional({ nullable: true }).isString(),
+    body("items.*.instructions").optional({ nullable: true }).isString(),
+    body("items.*.pharmacy_item_id").optional({ nullable: true }).isString(),
+    body("items.*.source_row_key")
+        .optional({ nullable: true })
+        .isString()
+        .isLength({ max: 160 })
+        .withMessage("A row key is too long"),
+    body("items.*.is_top_up").optional({ nullable: true }).isBoolean(),
+    body("items.*.extra_suppressed").optional({ nullable: true }).isBoolean()
 
 ];
 
@@ -162,6 +184,30 @@ export const updateSlipItemsValidation = [
         .isString(),
 
     body("items.*.medicine_id")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items.*.drug_role")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items.*.route")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items.*.frequency")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items.*.duration")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items.*.instructions")
+        .optional({ nullable: true })
+        .isString(),
+
+    body("items.*.pharmacy_item_id")
         .optional({ nullable: true })
         .isString()
 

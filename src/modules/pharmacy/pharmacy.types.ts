@@ -26,6 +26,11 @@ export interface ResolvedMedicationLine {
     duration?: string | null;
     instructions?: string | null;
     pharmacy_item_id?: string | null;
+    // The popup draft row this line belongs to, and whether it is the
+    // automatic top-up line of that row.
+    source_row_key?: string | null;
+    is_top_up?: boolean | null;
+    extra_suppressed?: boolean | null;
 }
 
 export interface ResolveContext {
@@ -72,6 +77,9 @@ export interface PharmacySlipItemView {
     duration: string | null;
     instructions: string | null;
     pharmacy_item_id?: string | null;
+    source_row_key?: string | null;
+    is_top_up?: boolean | null;
+    extra_suppressed?: boolean | null;
 }
 
 export interface PharmacyMasterItemView {
@@ -120,6 +128,8 @@ export interface PharmacySlipView {
     created_by: string | null;
     created_at: Date | null;
     updated_at: Date | null;
+    /* Draft row keys the doctor removed in the popup. */
+    removed_row_keys?: string[] | null;
     patient_bio_data?: {
         patient_id?: string;
         patient_first_name?: string | null;
@@ -151,6 +161,9 @@ export interface SlipOrderItemDto {
     duration?: string | null;
     instructions?: string | null;
     pharmacy_item_id?: string | null;
+    source_row_key?: string | null;
+    is_top_up?: boolean | null;
+    extra_suppressed?: boolean | null;
 }
 
 // POST /pharmacy/slips/from-order - upsert the live slip of one cycle day.
@@ -160,6 +173,7 @@ export interface CreateSlipFromOrderDto {
     cycle_day: number;
     encounter_no?: string | null;
     appointment_id?: string | null;
+    removed_row_keys?: string[] | null;
     items: SlipOrderItemDto[];
 }
 

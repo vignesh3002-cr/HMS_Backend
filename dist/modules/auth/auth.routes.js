@@ -18,6 +18,10 @@ router.use("/2fa", twoFactor_routes_1.default);
 router.post("/login", authController.login.bind(authController));
 router.post("/send-otp", authController.sendOtp.bind(authController));
 router.post("/verify-otp", authController.verifyOtp.bind(authController));
+// Forgot Password Flow (Unauthenticated: Username -> Default Channel OTP -> Reset)
+router.post("/forgot-password/request-otp", twoFactor_controller_1.twoFactorController.requestForgotPasswordOtp.bind(twoFactor_controller_1.twoFactorController));
+router.post("/forgot-password/verify-otp", twoFactor_controller_1.twoFactorController.verifyForgotPasswordOtp.bind(twoFactor_controller_1.twoFactorController));
+router.post("/forgot-password/reset", twoFactor_controller_1.twoFactorController.finalizeForgotPassword.bind(twoFactor_controller_1.twoFactorController));
 router.get("/me", auth_middleware_1.authenticate, async (req, res) => {
     const authUser = req.user;
     // employee_id isn't in the JWT payload -- the frontend needs it to

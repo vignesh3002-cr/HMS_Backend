@@ -46,6 +46,7 @@ const chemotherapy_repository_1 = require("./chemotherapy.repository");
 const oncology_repository_1 = require("../oncology/oncology.repository");
 const chemotherapy_constants_1 = require("./chemotherapy.constants");
 const appointment_utils_1 = require("../appointment/appointment.utils");
+const timezone_1 = require("../../utils/timezone");
 const audit_service_1 = require("../audit/audit.service");
 const audit_types_1 = require("../audit/audit.types");
 const chemotherapy_schedule_1 = require("./chemotherapy.schedule");
@@ -246,9 +247,10 @@ function pickCurrentOrder(orders, planOpen) {
         ?? [...orders].reverse().find((order) => order.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.COMPLETED)
         ?? null;
 }
-// Today's date in IST (the hospital's timezone) for @db.Date columns.
-function istToday() {
-    return (0, appointment_utils_1.parseDateOnly)((0, appointment_utils_1.getTodayInIST)());
+// Today's date in the branch's own IANA zone (branch.timezone) for @db.Date
+// columns - never a hardcoded offset, so DST zones get their own correct day.
+function todayInTz(tz) {
+    return (0, appointment_utils_1.parseDateOnly)((0, timezone_1.getTodayIn)(tz));
 }
 function addDays(date, days) {
     const next = new Date(date);
@@ -262,9 +264,9 @@ function toNumber(value) {
     const number = Number(value);
     return Number.isFinite(number) ? number : null;
 }
-// The IST calendar date of a timestamp, as YYYY-MM-DD.
-function istDateOf(value) {
-    return new Date(value.getTime() + (5 * 60 + 30) * 60 * 1000).toISOString().slice(0, 10);
+// The calendar date of a timestamp in the given IANA zone, as YYYY-MM-DD.
+function dateOfInTz(value, tz) {
+    return (0, timezone_1.getDateIn)(tz, value);
 }
 function dateOnly(value) {
     return value ? value.toISOString().slice(0, 10) : null;
@@ -3027,6 +3029,7 @@ class ChemotherapyService {
             ...drugChanges,
             ...(dto.drug_sequence !== undefined ? { drug_sequence: dto.drug_sequence } : {}),
             ...(dto.drug_type !== undefined ? { drug_type: dto.drug_type } : {}),
+            ...(dto.formulation !== undefined ? { formulation: dto.formulation } : {}),
             ...(dto.dosage !== undefined ? { protocol_dose: dto.dosage } : {}),
             ...(dto.dosage_unit !== undefined ? { protocol_dose_unit: dto.dosage_unit } : {}),
             ...(dto.frequency !== undefined ? { frequency: dto.frequency } : {}),
@@ -3667,7 +3670,7 @@ class ChemotherapyService {
                 throw new Error(`Cannot complete an order on a plan that is already ${lockedPlan.treatment_status}`);
             }
             const now = new Date();
-            const treatmentDate = istToday();
+            const treatmentDate = todayInTz(await (0, timezone_1.getBranchTimezone)(lockedPlan.branch_id));
             if (lockedPlan.treatment_status === chemotherapy_constants_1.PLAN_STATUS.PLANNED) {
                 await this.repository.updatePlan(tx, planId, { treatment_status: chemotherapy_constants_1.PLAN_STATUS.ACTIVE, updated_by: actingUserId });
                 await (0, audit_service_1.logAudit)(tx, {
@@ -3760,7 +3763,7 @@ class ChemotherapyService {
         if (steps.length === 0) {
             return status;
         }
-        const startDate = cycle.actual_date ?? istToday();
+        const startDate = cycle.actual_date ?? todayInTz(await (0, timezone_1.getBranchTimezone)(plan.branch_id));
         const interval = cycle.cycle_interval_days ?? plan.cycle_interval_days ?? 0;
         const nextCycleDate = status === chemotherapy_constants_1.CYCLE_STATUS.COMPLETED && interval > 0 && cycle.cycle_number < plan.planned_cycles
             ? addDays(startDate, interval)
@@ -4323,7 +4326,10 @@ class ChemotherapyService {
             skipped: count(chemotherapy_constants_1.ADMINISTRATION_STATUS.SKIPPED),
             cancelled: count(chemotherapy_constants_1.ADMINISTRATION_STATUS.CANCELLED)
         };
-        const today = (0, appointment_utils_1.getTodayInIST)();
+        // Day boundaries (which cycle-day is "today") follow the PLAN'S BRANCH
+        // timezone (branch.timezone), never the server's or a fixed offset.
+        const branchTz = await (0, timezone_1.getBranchTimezone)(plan.branch_id);
+        const today = (0, timezone_1.getTodayIn)(branchTz);
         const inAdministration = day?.order_status === chemotherapy_constants_1.PLAN_ORDER_STATUS.IN_ADMINISTRATION;
         const treatmentStatus = !day
             ? null
@@ -4337,7 +4343,7 @@ class ChemotherapyService {
         const treatmentDate = rows.length > 0
             ? dateOnly(rows[0].administration_date)
             : day?.completed_at ?? day?.created_at
-                ? istDateOf((day.completed_at ?? day.created_at))
+                ? dateOfInTz((day.completed_at ?? day.created_at), branchTz)
                 : null;
         // What completing this day would close, for the confirmation.
         const cycleOrders = day ? orders.filter((order) => order.chemotherapy_cycle_id === day.chemotherapy_cycle_id) : [];
@@ -4451,7 +4457,7 @@ class ChemotherapyService {
                 chemotherapy_cycle_id: cycle.chemotherapy_cycle_id,
                 cycle_number: cycle.cycle_number,
                 cycle_status: cycle.cycle_status,
-                completion_date: cycle.completion_date ? istDateOf(cycle.completion_date) : dateOnly(cycle.actual_date),
+                completion_date: cycle.completion_date ? dateOfInTz(cycle.completion_date, branchTz) : dateOnly(cycle.actual_date),
                 protocol_name: protocolName
             })),
             post_medications: dischargeItems.map((item) => ({

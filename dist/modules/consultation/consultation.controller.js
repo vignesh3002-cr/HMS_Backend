@@ -128,6 +128,33 @@ class ConsultationController {
             return handleError(res, err);
         }
     }
+    async getLineOfTherapies(req, res) {
+        try {
+            const error = firstError(req);
+            if (error)
+                return res.status(400).json({ success: false, message: error });
+            const data = await service.listLineOfTherapies({
+                search: req.query.search,
+                isActive: req.query.isActive === undefined ? undefined : req.query.isActive === "true"
+            });
+            return res.json({ success: true, message: "Line of therapy options fetched successfully", data });
+        }
+        catch (err) {
+            return handleError(res, err);
+        }
+    }
+    async createCustomLineOfTherapy(req, res) {
+        try {
+            const error = firstError(req);
+            if (error)
+                return res.status(400).json({ success: false, message: error });
+            const data = await service.createCustomLineOfTherapy(req.body, actingUserId(req));
+            return res.status(201).json({ success: true, message: "Line of therapy added successfully", data });
+        }
+        catch (err) {
+            return handleError(res, err);
+        }
+    }
     async getDietTypes(req, res) {
         try {
             return res.json({ success: true, message: "Diet types fetched successfully", data: service.listDietTypes() });

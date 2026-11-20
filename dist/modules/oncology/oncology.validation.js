@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.saveInvestigationResultsValidation = exports.listInvestigationResultsValidation = exports.addDiseaseStatusValidation = exports.addTnmStageValidation = exports.addScoreValidation = exports.addGradeValidation = exports.addReferenceValueValidation = exports.listStagingDetailsValidation = exports.getStagingDetailValidation = exports.upsertMolecularValidation = exports.upsertIhcValidation = exports.updateStagingDetailValidation = exports.createStagingDetailValidation = exports.getStagingReferenceValidation = exports.getCancerSubtypesValidation = void 0;
+exports.saveInvestigationResultsValidation = exports.listInvestigationResultsValidation = exports.addDiseaseStatusValidation = exports.addTnmStageValidation = exports.addScoreValidation = exports.addGradeValidation = exports.addReferenceValueValidation = exports.listStagingDetailsValidation = exports.getStagingDetailValidation = exports.upsertMolecularValidation = exports.upsertIhcValidation = exports.updateStagingDetailValidation = exports.createStagingDetailValidation = exports.getStagingReferenceValidation = exports.updateCancerScoreValidation = exports.getCancerScoreValidation = exports.getCancerSubtypesValidation = void 0;
 const express_validator_1 = require("express-validator");
 const oncology_constants_1 = require("./oncology.constants");
 // Request-shape validation only (types, presence, ranges that would otherwise
@@ -10,6 +10,28 @@ const oncology_constants_1 = require("./oncology.constants");
 const PERCENT_RULE = { min: 0, max: 100 };
 exports.getCancerSubtypesValidation = [
     (0, express_validator_1.param)("cancerTypeId").notEmpty()
+];
+exports.getCancerScoreValidation = [
+    (0, express_validator_1.param)("scoreId").notEmpty()
+];
+// Catalogue metadata edited from the Score workspace. Only the descriptive
+// columns are editable here; variables and risk groups keep their own tables.
+exports.updateCancerScoreValidation = [
+    (0, express_validator_1.param)("scoreId").notEmpty(),
+    (0, express_validator_1.body)("purpose").optional({ nullable: true }).isString().isLength({ max: 2000 })
+        .withMessage("Purpose must be 2000 characters or fewer"),
+    (0, express_validator_1.body)("when_to_record").optional({ nullable: true }).isString().isLength({ max: 500 })
+        .withMessage("When to record must be 500 characters or fewer"),
+    (0, express_validator_1.body)("score_range").optional({ nullable: true }).isString().isLength({ max: 500 })
+        .withMessage("Range must be 500 characters or fewer"),
+    (0, express_validator_1.body)("risk_groups").optional({ nullable: true }).isString().isLength({ max: 2000 })
+        .withMessage("Risk groups must be 2000 characters or fewer"),
+    (0, express_validator_1.body)("score_status").optional({ nullable: true }).isString().isLength({ max: 100 })
+        .withMessage("Status must be 100 characters or fewer"),
+    (0, express_validator_1.body)("score_reference").optional({ nullable: true }).isString().isLength({ max: 1000 })
+        .withMessage("Reference must be 1000 characters or fewer"),
+    (0, express_validator_1.body)("developer_note").optional({ nullable: true }).isString().isLength({ max: 2000 })
+        .withMessage("Developer note must be 2000 characters or fewer")
 ];
 exports.getStagingReferenceValidation = [
     (0, express_validator_1.query)("cancer_type_id").notEmpty().withMessage("cancer_type_id is required")
@@ -63,6 +85,10 @@ exports.createStagingDetailValidation = [
     (0, express_validator_1.body)("grade_system").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Grade system must be 100 characters or fewer"),
     (0, express_validator_1.body)("score").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("score_system").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("score_variables").optional({ nullable: true }).isObject().withMessage("score_variables must be an object"),
+    (0, express_validator_1.body)("score_result").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("risk_group").optional({ nullable: true }).isString().isLength({ max: 200 }).withMessage("Risk group must be 200 characters or fewer"),
+    (0, express_validator_1.body)("score_points").optional({ nullable: true }).isDecimal().withMessage("score_points must be a decimal number"),
     (0, express_validator_1.body)("pre_diagnosis").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("disease_status").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Disease Status must be 100 characters or fewer"),
     (0, express_validator_1.body)("notes").optional({ nullable: true }).isString(),
@@ -102,6 +128,10 @@ exports.updateStagingDetailValidation = [
     (0, express_validator_1.body)("grade_system").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Grade system must be 100 characters or fewer"),
     (0, express_validator_1.body)("score").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("score_system").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("score_variables").optional({ nullable: true }).isObject().withMessage("score_variables must be an object"),
+    (0, express_validator_1.body)("score_result").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("risk_group").optional({ nullable: true }).isString().isLength({ max: 200 }).withMessage("Risk group must be 200 characters or fewer"),
+    (0, express_validator_1.body)("score_points").optional({ nullable: true }).isDecimal().withMessage("score_points must be a decimal number"),
     (0, express_validator_1.body)("pre_diagnosis").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("disease_status").optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage("Disease Status must be 100 characters or fewer"),
     (0, express_validator_1.body)("notes").optional({ nullable: true }).isString(),
@@ -117,6 +147,7 @@ exports.upsertIhcValidation = [
     (0, express_validator_1.body)("ki67_percent").optional({ nullable: true }).isInt(PERCENT_RULE),
     (0, express_validator_1.body)("pdl1_tps").optional({ nullable: true }).isInt(PERCENT_RULE),
     (0, express_validator_1.body)("pdl1_cps").optional({ nullable: true }).isInt({ min: 0 }),
+    (0, express_validator_1.body)("p16_percent").optional({ nullable: true }).isInt(PERCENT_RULE),
     (0, express_validator_1.body)("her2_fish_ratio").optional({ nullable: true }).isFloat({ min: 0 }),
     (0, express_validator_1.body)("her2_avg_copy").optional({ nullable: true }).isFloat({ min: 0 })
 ];

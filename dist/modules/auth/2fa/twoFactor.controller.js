@@ -226,6 +226,73 @@ class TwoFactorController {
             res.status(400).json({ success: false, message: err.message });
         }
     }
+    async requestAddAlternateAuthOtp(req, res) {
+        try {
+            const userId = getAuthUserId(req);
+            const result = await twoFactor_service_1.twoFactorService.requestAddAlternateAuthOtp(userId);
+            res.status(200).json(result);
+        }
+        catch (err) {
+            res.status(400).json({ success: false, message: err.message });
+        }
+    }
+    async verifyAddAlternateAuthOtp(req, res) {
+        try {
+            const userId = getAuthUserId(req);
+            const { code } = req.body;
+            if (!code) {
+                res.status(400).json({ success: false, message: "Authorization code is required" });
+                return;
+            }
+            const result = await twoFactor_service_1.twoFactorService.verifyAddAlternateAuthOtp(userId, code);
+            res.status(200).json(result);
+        }
+        catch (err) {
+            res.status(400).json({ success: false, message: err.message });
+        }
+    }
+    async requestForgotPasswordOtp(req, res) {
+        try {
+            const { username } = req.body;
+            if (!username) {
+                res.status(400).json({ success: false, message: "Username is required" });
+                return;
+            }
+            const result = await twoFactor_service_1.twoFactorService.requestForgotPasswordOtp(username);
+            res.status(200).json(result);
+        }
+        catch (err) {
+            res.status(400).json({ success: false, message: err.message });
+        }
+    }
+    async verifyForgotPasswordOtp(req, res) {
+        try {
+            const { username, code } = req.body;
+            if (!username || !code) {
+                res.status(400).json({ success: false, message: "Username and verification code are required" });
+                return;
+            }
+            const result = await twoFactor_service_1.twoFactorService.verifyForgotPasswordOtp(username, code);
+            res.status(200).json(result);
+        }
+        catch (err) {
+            res.status(400).json({ success: false, message: err.message });
+        }
+    }
+    async finalizeForgotPassword(req, res) {
+        try {
+            const { username, resetToken, newPassword } = req.body;
+            if (!username || !resetToken || !newPassword) {
+                res.status(400).json({ success: false, message: "Username, reset token, and new password are required" });
+                return;
+            }
+            const result = await twoFactor_service_1.twoFactorService.finalizeForgotPassword(username, resetToken, newPassword);
+            res.status(200).json(result);
+        }
+        catch (err) {
+            res.status(400).json({ success: false, message: err.message });
+        }
+    }
 }
 exports.TwoFactorController = TwoFactorController;
 exports.twoFactorController = new TwoFactorController();

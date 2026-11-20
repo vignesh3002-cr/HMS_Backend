@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendOtpEmailWithConfig = exports.sendOtpEmail = void 0;
+exports.sendOtpEmailWithConfig = exports.sendMail = exports.sendOtpEmail = void 0;
 const nodemailer = __importStar(require("nodemailer"));
 let transporter = null;
 const isSmtpConfigured = () => Boolean(process.env.MAIL_HOST && process.env.MAIL_USER && process.env.MAIL_PASS);
@@ -78,6 +78,24 @@ const sendOtpEmail = async (to, otp) => {
     });
 };
 exports.sendOtpEmail = sendOtpEmail;
+/**
+ * Sends an arbitrary email using the MAIL_* environment SMTP settings.
+ * Throws (instead of silently logging) when SMTP is not configured or the
+ * send fails, so callers can block dependent workflows as needed.
+ */
+const sendMail = async (options) => {
+    if (!isSmtpConfigured()) {
+        throw new Error("Email is not configured. Set MAIL_HOST/MAIL_USER/MAIL_PASS or add an EMAIL provider in Settings → Integrations.");
+    }
+    return getTransporter().sendMail({
+        from: options.from || process.env.MAIL_FROM || process.env.MAIL_USER,
+        to: options.to,
+        subject: options.subject,
+        text: options.text,
+        html: options.html,
+    });
+};
+exports.sendMail = sendMail;
 /**
  * Sends an OTP using the SMTP settings stored in the Settings -> Integration
  * EMAIL provider. Falls back to the MAIL_* environment variables when no

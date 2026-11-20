@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { OncologyController } from "./oncology.controller";
+import stagingRoutes from "./staging/staging.routes";
 import { authenticate } from "../auth/auth.middleware";
 import { authorize, authorizeAny } from "../../middleware/authorize";
 import {
@@ -16,8 +17,10 @@ import {
     addReferenceValueValidation,
     addGradeValidation,
     addScoreValidation,
+    updateCancerScoreValidation,
     addTnmStageValidation,
-    addDiseaseStatusValidation
+    addDiseaseStatusValidation,
+    getCancerScoreValidation
 } from "./oncology.validation";
 
 const router = Router();
@@ -62,6 +65,30 @@ router.get(
     authorize("oncology.reference.read"),
     getCancerSubtypesValidation,
     controller.getCancerScores.bind(controller)
+);
+
+router.get(
+    "/reference/scores/:scoreId/variables",
+    authenticate,
+    authorize("oncology.reference.read"),
+    getCancerScoreValidation,
+    controller.getCancerScoreVariables.bind(controller)
+);
+
+router.get(
+    "/reference/scores/:scoreId/groups",
+    authenticate,
+    authorize("oncology.reference.read"),
+    getCancerScoreValidation,
+    controller.getCancerScoreGroups.bind(controller)
+);
+
+router.get(
+    "/reference/scores/:scoreId",
+    authenticate,
+    authorize("oncology.reference.read"),
+    getCancerScoreValidation,
+    controller.getCancerScoreDetail.bind(controller)
 );
 
 // The Investigation Results tests (tumour markers etc.) of a cancer type.
@@ -156,6 +183,16 @@ router.post(
     addReferenceAccess,
     addScoreValidation,
     controller.addCancerScore.bind(controller)
+);
+
+// Catalogue metadata editing (purpose, range, risk-group text, reference...).
+// Admin-level reference management, like the reseed endpoint.
+router.patch(
+    "/reference/scores/:scoreId",
+    authenticate,
+    authorize("oncology.reference.manage"),
+    updateCancerScoreValidation,
+    controller.updateCancerScore.bind(controller)
 );
 
 router.post(
@@ -258,5 +295,10 @@ router.put(
     saveInvestigationResultsValidation,
     controller.saveInvestigationResults.bind(controller)
 );
+
+// ---------------- TNM staging module ----------------
+// Schemas, live derivation and the per-visit stage records.
+
+router.use("/staging", stagingRoutes);
 
 export default router;

@@ -89,10 +89,13 @@ class DoctorLeaveRepository {
         });
     }
     async getDoctorLeaves(query) {
-        const { employee_id, status, page = 1, limit = 10 } = query;
+        const { employee_id, branchId, status, page = 1, limit = 10 } = query;
         const where = {};
         if (employee_id) {
             where.employee_id = employee_id;
+        }
+        if (branchId) {
+            where.branch_id = branchId;
         }
         if (status) {
             where.status = status;

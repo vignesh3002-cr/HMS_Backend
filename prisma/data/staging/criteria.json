@@ -1,0 +1,92 @@
+[
+ {
+  "criterion_key": "Age",
+  "label": "Age at diagnosis",
+  "input_type": "NUMBER",
+  "options": [],
+  "unit": "years",
+  "source_module": "REG",
+  "display_order": 1
+ },
+ {
+  "criterion_key": "GG",
+  "label": "Grade Group",
+  "input_type": "ENUM",
+  "options": [
+   "1",
+   "2",
+   "3",
+   "4",
+   "5"
+  ],
+  "unit": null,
+  "source_module": "SCORE",
+  "display_order": 3
+ },
+ {
+  "criterion_key": "Grade",
+  "label": "Histologic grade",
+  "input_type": "ENUM",
+  "options": [
+   "GX",
+   "G1",
+   "G2",
+   "G3"
+  ],
+  "unit": null,
+  "source_module": "DIAG",
+  "display_order": 5
+ },
+ {
+  "criterion_key": "Mitosis",
+  "label": "Mitotic rate",
+  "input_type": "ENUM",
+  "options": [
+   "≤5/5mm²",
+   ">5/5mm²"
+  ],
+  "unit": null,
+  "source_module": "SCORE",
+  "display_order": 7
+ },
+ {
+  "criterion_key": "PSA",
+  "label": "PSA",
+  "input_type": "BAND",
+  "options": [
+   "<10",
+   "10-<20",
+   "≥20"
+  ],
+  "unit": "ng/mL",
+  "source_module": "LAB",
+  "display_order": 2
+ },
+ {
+  "criterion_key": "S",
+  "label": "S category (IGCCCG)",
+  "input_type": "ENUM",
+  "options": [
+   "SX",
+   "S0",
+   "S1",
+   "S2",
+   "S3"
+  ],
+  "unit": null,
+  "source_module": "LAB",
+  "display_order": 4
+ },
+ {
+  "criterion_key": "Site",
+  "label": "Primary site (NET)",
+  "input_type": "ENUM",
+  "options": [
+   "Gastric/omental",
+   "Small-intestine/other"
+  ],
+  "unit": null,
+  "source_module": "DIAG",
+  "display_order": 6
+ }
+]

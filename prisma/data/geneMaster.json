@@ -1,0 +1,6682 @@
+[
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "SOMATIC",
+    "gene_symbol": "IDH1",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "SOMATIC",
+    "gene_symbol": "IDH2",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "SOMATIC",
+    "gene_symbol": "FGFR2",
+    "sort_order": 3,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "SOMATIC",
+    "gene_symbol": "ERBB2",
+    "sort_order": 4,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "SOMATIC",
+    "gene_symbol": "BRAF",
+    "sort_order": 5,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "SOMATIC",
+    "gene_symbol": "KRAS",
+    "sort_order": 6,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK1",
+    "sort_order": 7,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK2",
+    "sort_order": 8,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Biliary tract",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK3",
+    "sort_order": 9,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Biliary tract"
+    ]
+  },
+  {
+    "cancer_site": "Bladder",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": "Bladder",
+    "emr_cancer_types": [
+      "Bladder / Urothelial"
+    ]
+  },
+  {
+    "cancer_site": "Bladder",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": "Bladder",
+    "emr_cancer_types": [
+      "Bladder / Urothelial"
+    ]
+  },
+  {
+    "cancer_site": "Bladder",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": "Bladder",
+    "emr_cancer_types": [
+      "Bladder / Urothelial"
+    ]
+  },
+  {
+    "cancer_site": "Bladder",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": "Bladder",
+    "emr_cancer_types": [
+      "Bladder / Urothelial"
+    ]
+  },
+  {
+    "cancer_site": "Bladder",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": "Bladder",
+    "emr_cancer_types": [
+      "Bladder / Urothelial"
+    ]
+  },
+  {
+    "cancer_site": "Bladder",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": "Bladder",
+    "emr_cancer_types": [
+      "Bladder / Urothelial"
+    ]
+  },
+  {
+    "cancer_site": "Bladder",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": "Bladder",
+    "emr_cancer_types": [
+      "Bladder / Urothelial"
+    ]
+  },
+  {
+    "cancer_site": "Bladder",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": "Bladder",
+    "emr_cancer_types": [
+      "Bladder / Urothelial"
+    ]
+  },
+  {
+    "cancer_site": "Bladder",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": "Bladder",
+    "emr_cancer_types": [
+      "Bladder / Urothelial"
+    ]
+  },
+  {
+    "cancer_site": "Bladder",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": "Bladder",
+    "emr_cancer_types": [
+      "Bladder / Urothelial"
+    ]
+  },
+  {
+    "cancer_site": "Bladder",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": "Bladder",
+    "emr_cancer_types": [
+      "Bladder / Urothelial"
+    ]
+  },
+  {
+    "cancer_site": "Bladder",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": "Bladder",
+    "emr_cancer_types": [
+      "Bladder / Urothelial"
+    ]
+  },
+  {
+    "cancer_site": "Bladder",
+    "scope": "SOMATIC",
+    "gene_symbol": "FGFR2",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Bladder",
+    "emr_cancer_types": [
+      "Bladder / Urothelial"
+    ]
+  },
+  {
+    "cancer_site": "Bladder",
+    "scope": "SOMATIC",
+    "gene_symbol": "FGFR3",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Bladder",
+    "emr_cancer_types": [
+      "Bladder / Urothelial"
+    ]
+  },
+  {
+    "cancer_site": "Bladder",
+    "scope": "SOMATIC",
+    "gene_symbol": "ERBB2",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Bladder",
+    "emr_cancer_types": [
+      "Bladder / Urothelial"
+    ]
+  },
+  {
+    "cancer_site": "Breast",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Breast",
+    "emr_cancer_types": [
+      "Breast"
+    ]
+  },
+  {
+    "cancer_site": "Breast",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Breast",
+    "emr_cancer_types": [
+      "Breast"
+    ]
+  },
+  {
+    "cancer_site": "Breast",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Breast",
+    "emr_cancer_types": [
+      "Breast"
+    ]
+  },
+  {
+    "cancer_site": "Breast",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Breast",
+    "emr_cancer_types": [
+      "Breast"
+    ]
+  },
+  {
+    "cancer_site": "Breast",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Breast",
+    "emr_cancer_types": [
+      "Breast"
+    ]
+  },
+  {
+    "cancer_site": "Breast",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Breast",
+    "emr_cancer_types": [
+      "Breast"
+    ]
+  },
+  {
+    "cancer_site": "Breast",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Breast",
+    "emr_cancer_types": [
+      "Breast"
+    ]
+  },
+  {
+    "cancer_site": "Breast",
+    "scope": "GERMLINE",
+    "gene_symbol": "CDH1",
+    "sort_order": 8,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Breast",
+    "emr_cancer_types": [
+      "Breast"
+    ]
+  },
+  {
+    "cancer_site": "Breast",
+    "scope": "GERMLINE",
+    "gene_symbol": "STK11",
+    "sort_order": 9,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Breast",
+    "emr_cancer_types": [
+      "Breast"
+    ]
+  },
+  {
+    "cancer_site": "Breast",
+    "scope": "SOMATIC",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Breast",
+    "emr_cancer_types": [
+      "Breast"
+    ]
+  },
+  {
+    "cancer_site": "Breast",
+    "scope": "SOMATIC",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Breast",
+    "emr_cancer_types": [
+      "Breast"
+    ]
+  },
+  {
+    "cancer_site": "Breast",
+    "scope": "SOMATIC",
+    "gene_symbol": "PIK3CA",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Breast",
+    "emr_cancer_types": [
+      "Breast"
+    ]
+  },
+  {
+    "cancer_site": "Breast",
+    "scope": "SOMATIC",
+    "gene_symbol": "CDH1",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Breast",
+    "emr_cancer_types": [
+      "Breast"
+    ]
+  },
+  {
+    "cancer_site": "Breast",
+    "scope": "SOMATIC",
+    "gene_symbol": "ERBB2",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Breast",
+    "emr_cancer_types": [
+      "Breast"
+    ]
+  },
+  {
+    "cancer_site": "Breast",
+    "scope": "SOMATIC",
+    "gene_symbol": "ESR1",
+    "sort_order": 6,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Breast",
+    "emr_cancer_types": [
+      "Breast"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "SOMATIC",
+    "gene_symbol": "EGFR",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "SOMATIC",
+    "gene_symbol": "ALK",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "SOMATIC",
+    "gene_symbol": "ROS1",
+    "sort_order": 3,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "SOMATIC",
+    "gene_symbol": "KRAS",
+    "sort_order": 4,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "SOMATIC",
+    "gene_symbol": "BRAF",
+    "sort_order": 5,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "SOMATIC",
+    "gene_symbol": "ERBB2",
+    "sort_order": 6,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "SOMATIC",
+    "gene_symbol": "IDH1",
+    "sort_order": 7,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "SOMATIC",
+    "gene_symbol": "FGFR2",
+    "sort_order": 8,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK1",
+    "sort_order": 9,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK2",
+    "sort_order": 10,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK3",
+    "sort_order": 11,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "SOMATIC",
+    "gene_symbol": "MLH1",
+    "sort_order": 12,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "SOMATIC",
+    "gene_symbol": "MSH2",
+    "sort_order": 13,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "SOMATIC",
+    "gene_symbol": "MSH6",
+    "sort_order": 14,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Carcinoma of unknown primary",
+    "scope": "SOMATIC",
+    "gene_symbol": "PMS2",
+    "sort_order": 15,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Carcinoma of unknown primary"
+    ]
+  },
+  {
+    "cancer_site": "Cervical",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": "Cervical",
+    "emr_cancer_types": [
+      "Cervical"
+    ]
+  },
+  {
+    "cancer_site": "Cervical",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": "Cervical",
+    "emr_cancer_types": [
+      "Cervical"
+    ]
+  },
+  {
+    "cancer_site": "Cervical",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": "Cervical",
+    "emr_cancer_types": [
+      "Cervical"
+    ]
+  },
+  {
+    "cancer_site": "Cervical",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": "Cervical",
+    "emr_cancer_types": [
+      "Cervical"
+    ]
+  },
+  {
+    "cancer_site": "Cervical",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": "Cervical",
+    "emr_cancer_types": [
+      "Cervical"
+    ]
+  },
+  {
+    "cancer_site": "Cervical",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": "Cervical",
+    "emr_cancer_types": [
+      "Cervical"
+    ]
+  },
+  {
+    "cancer_site": "Cervical",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": "Cervical",
+    "emr_cancer_types": [
+      "Cervical"
+    ]
+  },
+  {
+    "cancer_site": "Cervical",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": "Cervical",
+    "emr_cancer_types": [
+      "Cervical"
+    ]
+  },
+  {
+    "cancer_site": "Cervical",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": "Cervical",
+    "emr_cancer_types": [
+      "Cervical"
+    ]
+  },
+  {
+    "cancer_site": "Cervical",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": "Cervical",
+    "emr_cancer_types": [
+      "Cervical"
+    ]
+  },
+  {
+    "cancer_site": "Cervical",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": "Cervical",
+    "emr_cancer_types": [
+      "Cervical"
+    ]
+  },
+  {
+    "cancer_site": "Cervical",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": "Cervical",
+    "emr_cancer_types": [
+      "Cervical"
+    ]
+  },
+  {
+    "cancer_site": "Cervical",
+    "scope": "SOMATIC",
+    "gene_symbol": "PIK3CA",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Cervical",
+    "emr_cancer_types": [
+      "Cervical"
+    ]
+  },
+  {
+    "cancer_site": "Cervical",
+    "scope": "SOMATIC",
+    "gene_symbol": "ERBB2",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Cervical",
+    "emr_cancer_types": [
+      "Cervical"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Glioma",
+      "CNS – Medulloblastoma / embryonal"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "GERMLINE",
+    "gene_symbol": "NF1",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Glioma",
+      "CNS – Medulloblastoma / embryonal"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTCH1",
+    "sort_order": 3,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Medulloblastoma / embryonal"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "GERMLINE",
+    "gene_symbol": "SUFU",
+    "sort_order": 4,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Medulloblastoma / embryonal"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "GERMLINE",
+    "gene_symbol": "APC",
+    "sort_order": 5,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Medulloblastoma / embryonal"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "GERMLINE",
+    "gene_symbol": "ELP1",
+    "sort_order": 6,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Medulloblastoma / embryonal"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "SOMATIC",
+    "gene_symbol": "IDH1",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Glioma"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "SOMATIC",
+    "gene_symbol": "IDH2",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Glioma"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "SOMATIC",
+    "gene_symbol": "EGFR",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Glioma"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "SOMATIC",
+    "gene_symbol": "TERT",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Glioma"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "SOMATIC",
+    "gene_symbol": "ATRX",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Glioma"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "SOMATIC",
+    "gene_symbol": "MGMT",
+    "sort_order": 6,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Glioma"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "SOMATIC",
+    "gene_symbol": "CTNNB1",
+    "sort_order": 7,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Medulloblastoma / embryonal"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "SOMATIC",
+    "gene_symbol": "SMO",
+    "sort_order": 8,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Medulloblastoma / embryonal"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "SOMATIC",
+    "gene_symbol": "PTCH1",
+    "sort_order": 9,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Medulloblastoma / embryonal"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "SOMATIC",
+    "gene_symbol": "SUFU",
+    "sort_order": 10,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Medulloblastoma / embryonal"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "SOMATIC",
+    "gene_symbol": "MYC",
+    "sort_order": 11,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Medulloblastoma / embryonal"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "SOMATIC",
+    "gene_symbol": "MYCN",
+    "sort_order": 12,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Medulloblastoma / embryonal"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "SOMATIC",
+    "gene_symbol": "H3-3A",
+    "sort_order": 13,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Glioma"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "SOMATIC",
+    "gene_symbol": "TP53",
+    "sort_order": 14,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Medulloblastoma / embryonal"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "SOMATIC",
+    "gene_symbol": "BRAF",
+    "sort_order": 15,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Glioma"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "SOMATIC",
+    "gene_symbol": "SMARCB1",
+    "sort_order": 16,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Medulloblastoma / embryonal"
+    ]
+  },
+  {
+    "cancer_site": "CNS",
+    "scope": "SOMATIC",
+    "gene_symbol": "CDKN2A",
+    "sort_order": 17,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "CNS",
+    "emr_cancer_types": [
+      "CNS – Glioma"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "GERMLINE",
+    "gene_symbol": "APC",
+    "sort_order": 6,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "GERMLINE",
+    "gene_symbol": "MUTYH",
+    "sort_order": 7,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "GERMLINE",
+    "gene_symbol": "POLE",
+    "sort_order": 8,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "GERMLINE",
+    "gene_symbol": "POLD1",
+    "sort_order": 9,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "GERMLINE",
+    "gene_symbol": "STK11",
+    "sort_order": 10,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "GERMLINE",
+    "gene_symbol": "SMAD4",
+    "sort_order": 11,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "SOMATIC",
+    "gene_symbol": "KRAS",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "SOMATIC",
+    "gene_symbol": "NRAS",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "SOMATIC",
+    "gene_symbol": "BRAF",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "SOMATIC",
+    "gene_symbol": "ERBB2",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "SOMATIC",
+    "gene_symbol": "MLH1",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "SOMATIC",
+    "gene_symbol": "MSH2",
+    "sort_order": 6,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "SOMATIC",
+    "gene_symbol": "MSH6",
+    "sort_order": 7,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Colorectal",
+    "scope": "SOMATIC",
+    "gene_symbol": "PMS2",
+    "sort_order": 8,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Colorectal",
+    "emr_cancer_types": [
+      "Colorectal"
+    ]
+  },
+  {
+    "cancer_site": "Endometrial",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Endometrial",
+    "emr_cancer_types": [
+      "Endometrial"
+    ]
+  },
+  {
+    "cancer_site": "Endometrial",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Endometrial",
+    "emr_cancer_types": [
+      "Endometrial"
+    ]
+  },
+  {
+    "cancer_site": "Endometrial",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Endometrial",
+    "emr_cancer_types": [
+      "Endometrial"
+    ]
+  },
+  {
+    "cancer_site": "Endometrial",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Endometrial",
+    "emr_cancer_types": [
+      "Endometrial"
+    ]
+  },
+  {
+    "cancer_site": "Endometrial",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Endometrial",
+    "emr_cancer_types": [
+      "Endometrial"
+    ]
+  },
+  {
+    "cancer_site": "Endometrial",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 6,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Endometrial",
+    "emr_cancer_types": [
+      "Endometrial"
+    ]
+  },
+  {
+    "cancer_site": "Endometrial",
+    "scope": "GERMLINE",
+    "gene_symbol": "POLE",
+    "sort_order": 7,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Endometrial",
+    "emr_cancer_types": [
+      "Endometrial"
+    ]
+  },
+  {
+    "cancer_site": "Endometrial",
+    "scope": "SOMATIC",
+    "gene_symbol": "POLE",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Endometrial",
+    "emr_cancer_types": [
+      "Endometrial"
+    ]
+  },
+  {
+    "cancer_site": "Endometrial",
+    "scope": "SOMATIC",
+    "gene_symbol": "TP53",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Endometrial",
+    "emr_cancer_types": [
+      "Endometrial"
+    ]
+  },
+  {
+    "cancer_site": "Endometrial",
+    "scope": "SOMATIC",
+    "gene_symbol": "MLH1",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Endometrial",
+    "emr_cancer_types": [
+      "Endometrial"
+    ]
+  },
+  {
+    "cancer_site": "Endometrial",
+    "scope": "SOMATIC",
+    "gene_symbol": "MSH2",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Endometrial",
+    "emr_cancer_types": [
+      "Endometrial"
+    ]
+  },
+  {
+    "cancer_site": "Endometrial",
+    "scope": "SOMATIC",
+    "gene_symbol": "MSH6",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Endometrial",
+    "emr_cancer_types": [
+      "Endometrial"
+    ]
+  },
+  {
+    "cancer_site": "Endometrial",
+    "scope": "SOMATIC",
+    "gene_symbol": "PMS2",
+    "sort_order": 6,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Endometrial",
+    "emr_cancer_types": [
+      "Endometrial"
+    ]
+  },
+  {
+    "cancer_site": "Endometrial",
+    "scope": "SOMATIC",
+    "gene_symbol": "ERBB2",
+    "sort_order": 7,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Endometrial",
+    "emr_cancer_types": [
+      "Endometrial"
+    ]
+  },
+  {
+    "cancer_site": "Ewing sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Ewing sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Ewing sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Ewing sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Ewing sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Ewing sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Ewing sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Ewing sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Ewing sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Ewing sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Ewing sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Ewing sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Ewing sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Ewing sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Ewing sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Ewing sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Ewing sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Ewing sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Ewing sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Ewing sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Ewing sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Ewing sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Ewing sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Ewing sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Ewing sarcoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "EWSR1::FLI1",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Ewing sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Ewing sarcoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "EWSR1::ERG",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Ewing sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Gastric",
+    "scope": "GERMLINE",
+    "gene_symbol": "CDH1",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Gastric",
+    "emr_cancer_types": [
+      "Gastric / GEJ"
+    ]
+  },
+  {
+    "cancer_site": "Gastric",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Gastric",
+    "emr_cancer_types": [
+      "Gastric / GEJ"
+    ]
+  },
+  {
+    "cancer_site": "Gastric",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Gastric",
+    "emr_cancer_types": [
+      "Gastric / GEJ"
+    ]
+  },
+  {
+    "cancer_site": "Gastric",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Gastric",
+    "emr_cancer_types": [
+      "Gastric / GEJ"
+    ]
+  },
+  {
+    "cancer_site": "Gastric",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Gastric",
+    "emr_cancer_types": [
+      "Gastric / GEJ"
+    ]
+  },
+  {
+    "cancer_site": "Gastric",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 6,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Gastric",
+    "emr_cancer_types": [
+      "Gastric / GEJ"
+    ]
+  },
+  {
+    "cancer_site": "Gastric",
+    "scope": "GERMLINE",
+    "gene_symbol": "APC",
+    "sort_order": 7,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Gastric",
+    "emr_cancer_types": [
+      "Gastric / GEJ"
+    ]
+  },
+  {
+    "cancer_site": "Gastric",
+    "scope": "GERMLINE",
+    "gene_symbol": "STK11",
+    "sort_order": 8,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Gastric",
+    "emr_cancer_types": [
+      "Gastric / GEJ"
+    ]
+  },
+  {
+    "cancer_site": "Gastric",
+    "scope": "SOMATIC",
+    "gene_symbol": "ERBB2",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Gastric",
+    "emr_cancer_types": [
+      "Gastric / GEJ"
+    ]
+  },
+  {
+    "cancer_site": "Gastric",
+    "scope": "SOMATIC",
+    "gene_symbol": "CDH1",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Gastric",
+    "emr_cancer_types": [
+      "Gastric / GEJ"
+    ]
+  },
+  {
+    "cancer_site": "Gastric",
+    "scope": "SOMATIC",
+    "gene_symbol": "MLH1",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Gastric",
+    "emr_cancer_types": [
+      "Gastric / GEJ"
+    ]
+  },
+  {
+    "cancer_site": "Gastric",
+    "scope": "SOMATIC",
+    "gene_symbol": "MSH2",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Gastric",
+    "emr_cancer_types": [
+      "Gastric / GEJ"
+    ]
+  },
+  {
+    "cancer_site": "Gastric",
+    "scope": "SOMATIC",
+    "gene_symbol": "MSH6",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Gastric",
+    "emr_cancer_types": [
+      "Gastric / GEJ"
+    ]
+  },
+  {
+    "cancer_site": "Gastric",
+    "scope": "SOMATIC",
+    "gene_symbol": "PMS2",
+    "sort_order": 6,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Gastric",
+    "emr_cancer_types": [
+      "Gastric / GEJ"
+    ]
+  },
+  {
+    "cancer_site": "Germ cell tumour",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Germ cell tumour"
+    ]
+  },
+  {
+    "cancer_site": "Germ cell tumour",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Germ cell tumour"
+    ]
+  },
+  {
+    "cancer_site": "Germ cell tumour",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Germ cell tumour"
+    ]
+  },
+  {
+    "cancer_site": "Germ cell tumour",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Germ cell tumour"
+    ]
+  },
+  {
+    "cancer_site": "Germ cell tumour",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Germ cell tumour"
+    ]
+  },
+  {
+    "cancer_site": "Germ cell tumour",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Germ cell tumour"
+    ]
+  },
+  {
+    "cancer_site": "Germ cell tumour",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Germ cell tumour"
+    ]
+  },
+  {
+    "cancer_site": "Germ cell tumour",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Germ cell tumour"
+    ]
+  },
+  {
+    "cancer_site": "Germ cell tumour",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Germ cell tumour"
+    ]
+  },
+  {
+    "cancer_site": "Germ cell tumour",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Germ cell tumour"
+    ]
+  },
+  {
+    "cancer_site": "Germ cell tumour",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Germ cell tumour"
+    ]
+  },
+  {
+    "cancer_site": "Germ cell tumour",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Germ cell tumour"
+    ]
+  },
+  {
+    "cancer_site": "GIST",
+    "scope": "GERMLINE",
+    "gene_symbol": "SDHA",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "GIST"
+    ]
+  },
+  {
+    "cancer_site": "GIST",
+    "scope": "GERMLINE",
+    "gene_symbol": "SDHB",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "GIST"
+    ]
+  },
+  {
+    "cancer_site": "GIST",
+    "scope": "GERMLINE",
+    "gene_symbol": "SDHC",
+    "sort_order": 3,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "GIST"
+    ]
+  },
+  {
+    "cancer_site": "GIST",
+    "scope": "GERMLINE",
+    "gene_symbol": "SDHD",
+    "sort_order": 4,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "GIST"
+    ]
+  },
+  {
+    "cancer_site": "GIST",
+    "scope": "GERMLINE",
+    "gene_symbol": "NF1",
+    "sort_order": 5,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "GIST"
+    ]
+  },
+  {
+    "cancer_site": "GIST",
+    "scope": "GERMLINE",
+    "gene_symbol": "KIT",
+    "sort_order": 6,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "GIST"
+    ]
+  },
+  {
+    "cancer_site": "GIST",
+    "scope": "SOMATIC",
+    "gene_symbol": "KIT",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "GIST"
+    ]
+  },
+  {
+    "cancer_site": "GIST",
+    "scope": "SOMATIC",
+    "gene_symbol": "PDGFRA",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "GIST"
+    ]
+  },
+  {
+    "cancer_site": "GIST",
+    "scope": "SOMATIC",
+    "gene_symbol": "SDHA",
+    "sort_order": 3,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "GIST"
+    ]
+  },
+  {
+    "cancer_site": "GIST",
+    "scope": "SOMATIC",
+    "gene_symbol": "SDHB",
+    "sort_order": 4,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "GIST"
+    ]
+  },
+  {
+    "cancer_site": "GIST",
+    "scope": "SOMATIC",
+    "gene_symbol": "SDHC",
+    "sort_order": 5,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "GIST"
+    ]
+  },
+  {
+    "cancer_site": "GIST",
+    "scope": "SOMATIC",
+    "gene_symbol": "SDHD",
+    "sort_order": 6,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "GIST"
+    ]
+  },
+  {
+    "cancer_site": "GIST",
+    "scope": "SOMATIC",
+    "gene_symbol": "NF1",
+    "sort_order": 7,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "GIST"
+    ]
+  },
+  {
+    "cancer_site": "GIST",
+    "scope": "SOMATIC",
+    "gene_symbol": "BRAF",
+    "sort_order": 8,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "GIST"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "SOMATIC",
+    "gene_symbol": "TP53",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "SOMATIC",
+    "gene_symbol": "CDKN2A",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "SOMATIC",
+    "gene_symbol": "NUTM1",
+    "sort_order": 3,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "SOMATIC",
+    "gene_symbol": "ERBB2",
+    "sort_order": 4,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK1",
+    "sort_order": 5,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK2",
+    "sort_order": 6,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Head & Neck",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK3",
+    "sort_order": 7,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Head & Neck",
+    "emr_cancer_types": [
+      "Head & Neck SCC"
+    ]
+  },
+  {
+    "cancer_site": "Kidney",
+    "scope": "GERMLINE",
+    "gene_symbol": "VHL",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Kidney",
+    "emr_cancer_types": [
+      "Renal (RCC)"
+    ]
+  },
+  {
+    "cancer_site": "Kidney",
+    "scope": "GERMLINE",
+    "gene_symbol": "FH",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Kidney",
+    "emr_cancer_types": [
+      "Renal (RCC)"
+    ]
+  },
+  {
+    "cancer_site": "Kidney",
+    "scope": "GERMLINE",
+    "gene_symbol": "FLCN",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Kidney",
+    "emr_cancer_types": [
+      "Renal (RCC)"
+    ]
+  },
+  {
+    "cancer_site": "Kidney",
+    "scope": "GERMLINE",
+    "gene_symbol": "BAP1",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Kidney",
+    "emr_cancer_types": [
+      "Renal (RCC)"
+    ]
+  },
+  {
+    "cancer_site": "Kidney",
+    "scope": "GERMLINE",
+    "gene_symbol": "MET",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Kidney",
+    "emr_cancer_types": [
+      "Renal (RCC)"
+    ]
+  },
+  {
+    "cancer_site": "Kidney",
+    "scope": "GERMLINE",
+    "gene_symbol": "SDHB",
+    "sort_order": 6,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Kidney",
+    "emr_cancer_types": [
+      "Renal (RCC)"
+    ]
+  },
+  {
+    "cancer_site": "Kidney",
+    "scope": "GERMLINE",
+    "gene_symbol": "SDHA",
+    "sort_order": 7,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Kidney",
+    "emr_cancer_types": [
+      "Renal (RCC)"
+    ]
+  },
+  {
+    "cancer_site": "Kidney",
+    "scope": "GERMLINE",
+    "gene_symbol": "SDHC",
+    "sort_order": 8,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Kidney",
+    "emr_cancer_types": [
+      "Renal (RCC)"
+    ]
+  },
+  {
+    "cancer_site": "Kidney",
+    "scope": "GERMLINE",
+    "gene_symbol": "SDHD",
+    "sort_order": 9,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Kidney",
+    "emr_cancer_types": [
+      "Renal (RCC)"
+    ]
+  },
+  {
+    "cancer_site": "Kidney",
+    "scope": "SOMATIC",
+    "gene_symbol": "VHL",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Kidney",
+    "emr_cancer_types": [
+      "Renal (RCC)"
+    ]
+  },
+  {
+    "cancer_site": "Kidney",
+    "scope": "SOMATIC",
+    "gene_symbol": "PBRM1",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Kidney",
+    "emr_cancer_types": [
+      "Renal (RCC)"
+    ]
+  },
+  {
+    "cancer_site": "Kidney",
+    "scope": "SOMATIC",
+    "gene_symbol": "BAP1",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Kidney",
+    "emr_cancer_types": [
+      "Renal (RCC)"
+    ]
+  },
+  {
+    "cancer_site": "Kidney",
+    "scope": "SOMATIC",
+    "gene_symbol": "SETD2",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Kidney",
+    "emr_cancer_types": [
+      "Renal (RCC)"
+    ]
+  },
+  {
+    "cancer_site": "Kidney",
+    "scope": "SOMATIC",
+    "gene_symbol": "TFE3",
+    "sort_order": 5,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Kidney",
+    "emr_cancer_types": [
+      "Renal (RCC)"
+    ]
+  },
+  {
+    "cancer_site": "Kidney",
+    "scope": "SOMATIC",
+    "gene_symbol": "SMARCB1",
+    "sort_order": 6,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Kidney",
+    "emr_cancer_types": [
+      "Renal (RCC)"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - ALL",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - ALL",
+    "emr_cancer_types": [
+      "Acute lymphoblastic leukaemia / LBL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - ALL",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - ALL",
+    "emr_cancer_types": [
+      "Acute lymphoblastic leukaemia / LBL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - ALL",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - ALL",
+    "emr_cancer_types": [
+      "Acute lymphoblastic leukaemia / LBL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - ALL",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - ALL",
+    "emr_cancer_types": [
+      "Acute lymphoblastic leukaemia / LBL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - ALL",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - ALL",
+    "emr_cancer_types": [
+      "Acute lymphoblastic leukaemia / LBL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - ALL",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - ALL",
+    "emr_cancer_types": [
+      "Acute lymphoblastic leukaemia / LBL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - ALL",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - ALL",
+    "emr_cancer_types": [
+      "Acute lymphoblastic leukaemia / LBL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - ALL",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - ALL",
+    "emr_cancer_types": [
+      "Acute lymphoblastic leukaemia / LBL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - ALL",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - ALL",
+    "emr_cancer_types": [
+      "Acute lymphoblastic leukaemia / LBL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - ALL",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - ALL",
+    "emr_cancer_types": [
+      "Acute lymphoblastic leukaemia / LBL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - ALL",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - ALL",
+    "emr_cancer_types": [
+      "Acute lymphoblastic leukaemia / LBL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - ALL",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - ALL",
+    "emr_cancer_types": [
+      "Acute lymphoblastic leukaemia / LBL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - ALL",
+    "scope": "SOMATIC",
+    "gene_symbol": "BCR::ABL1",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Leukaemia - ALL",
+    "emr_cancer_types": [
+      "Acute lymphoblastic leukaemia / LBL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - ALL",
+    "scope": "SOMATIC",
+    "gene_symbol": "KMT2A",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Leukaemia - ALL",
+    "emr_cancer_types": [
+      "Acute lymphoblastic leukaemia / LBL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - AML",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - AML",
+    "emr_cancer_types": [
+      "Acute myeloid leukaemia"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - AML",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - AML",
+    "emr_cancer_types": [
+      "Acute myeloid leukaemia"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - AML",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - AML",
+    "emr_cancer_types": [
+      "Acute myeloid leukaemia"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - AML",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - AML",
+    "emr_cancer_types": [
+      "Acute myeloid leukaemia"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - AML",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - AML",
+    "emr_cancer_types": [
+      "Acute myeloid leukaemia"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - AML",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - AML",
+    "emr_cancer_types": [
+      "Acute myeloid leukaemia"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - AML",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - AML",
+    "emr_cancer_types": [
+      "Acute myeloid leukaemia"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - AML",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - AML",
+    "emr_cancer_types": [
+      "Acute myeloid leukaemia"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - AML",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - AML",
+    "emr_cancer_types": [
+      "Acute myeloid leukaemia"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - AML",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - AML",
+    "emr_cancer_types": [
+      "Acute myeloid leukaemia"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - AML",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - AML",
+    "emr_cancer_types": [
+      "Acute myeloid leukaemia"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - AML",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - AML",
+    "emr_cancer_types": [
+      "Acute myeloid leukaemia"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - AML",
+    "scope": "SOMATIC",
+    "gene_symbol": "FLT3",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Leukaemia - AML",
+    "emr_cancer_types": [
+      "Acute myeloid leukaemia"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - AML",
+    "scope": "SOMATIC",
+    "gene_symbol": "NPM1",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Leukaemia - AML",
+    "emr_cancer_types": [
+      "Acute myeloid leukaemia"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - AML",
+    "scope": "SOMATIC",
+    "gene_symbol": "CEBPA",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Leukaemia - AML",
+    "emr_cancer_types": [
+      "Acute myeloid leukaemia"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - AML",
+    "scope": "SOMATIC",
+    "gene_symbol": "IDH1",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Leukaemia - AML",
+    "emr_cancer_types": [
+      "Acute myeloid leukaemia"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - AML",
+    "scope": "SOMATIC",
+    "gene_symbol": "IDH2",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Leukaemia - AML",
+    "emr_cancer_types": [
+      "Acute myeloid leukaemia"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - AML",
+    "scope": "SOMATIC",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Leukaemia - AML",
+    "emr_cancer_types": [
+      "Acute myeloid leukaemia"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CLL",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CLL",
+    "emr_cancer_types": [
+      "CLL / SLL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CLL",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CLL",
+    "emr_cancer_types": [
+      "CLL / SLL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CLL",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CLL",
+    "emr_cancer_types": [
+      "CLL / SLL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CLL",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CLL",
+    "emr_cancer_types": [
+      "CLL / SLL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CLL",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CLL",
+    "emr_cancer_types": [
+      "CLL / SLL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CLL",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CLL",
+    "emr_cancer_types": [
+      "CLL / SLL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CLL",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CLL",
+    "emr_cancer_types": [
+      "CLL / SLL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CLL",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CLL",
+    "emr_cancer_types": [
+      "CLL / SLL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CLL",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CLL",
+    "emr_cancer_types": [
+      "CLL / SLL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CLL",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CLL",
+    "emr_cancer_types": [
+      "CLL / SLL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CLL",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CLL",
+    "emr_cancer_types": [
+      "CLL / SLL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CLL",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CLL",
+    "emr_cancer_types": [
+      "CLL / SLL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CLL",
+    "scope": "SOMATIC",
+    "gene_symbol": "IGHV",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Leukaemia - CLL",
+    "emr_cancer_types": [
+      "CLL / SLL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CLL",
+    "scope": "SOMATIC",
+    "gene_symbol": "TP53",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Leukaemia - CLL",
+    "emr_cancer_types": [
+      "CLL / SLL"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "SOMATIC",
+    "gene_symbol": "BCR::ABL1",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "SOMATIC",
+    "gene_symbol": "ABL1",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "SOMATIC",
+    "gene_symbol": "JAK2",
+    "sort_order": 3,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "SOMATIC",
+    "gene_symbol": "CALR",
+    "sort_order": 4,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "SOMATIC",
+    "gene_symbol": "MPL",
+    "sort_order": 5,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "SOMATIC",
+    "gene_symbol": "SF3B1",
+    "sort_order": 6,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "SOMATIC",
+    "gene_symbol": "ASXL1",
+    "sort_order": 7,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Leukaemia - CML",
+    "scope": "SOMATIC",
+    "gene_symbol": "TP53",
+    "sort_order": 8,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Leukaemia - CML",
+    "emr_cancer_types": [
+      "CML / MPN / MDS"
+    ]
+  },
+  {
+    "cancer_site": "Liver",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": "Liver",
+    "emr_cancer_types": [
+      "Hepatocellular (HCC)"
+    ]
+  },
+  {
+    "cancer_site": "Liver",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": "Liver",
+    "emr_cancer_types": [
+      "Hepatocellular (HCC)"
+    ]
+  },
+  {
+    "cancer_site": "Liver",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": "Liver",
+    "emr_cancer_types": [
+      "Hepatocellular (HCC)"
+    ]
+  },
+  {
+    "cancer_site": "Liver",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": "Liver",
+    "emr_cancer_types": [
+      "Hepatocellular (HCC)"
+    ]
+  },
+  {
+    "cancer_site": "Liver",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": "Liver",
+    "emr_cancer_types": [
+      "Hepatocellular (HCC)"
+    ]
+  },
+  {
+    "cancer_site": "Liver",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": "Liver",
+    "emr_cancer_types": [
+      "Hepatocellular (HCC)"
+    ]
+  },
+  {
+    "cancer_site": "Liver",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": "Liver",
+    "emr_cancer_types": [
+      "Hepatocellular (HCC)"
+    ]
+  },
+  {
+    "cancer_site": "Liver",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": "Liver",
+    "emr_cancer_types": [
+      "Hepatocellular (HCC)"
+    ]
+  },
+  {
+    "cancer_site": "Liver",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": "Liver",
+    "emr_cancer_types": [
+      "Hepatocellular (HCC)"
+    ]
+  },
+  {
+    "cancer_site": "Liver",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": "Liver",
+    "emr_cancer_types": [
+      "Hepatocellular (HCC)"
+    ]
+  },
+  {
+    "cancer_site": "Liver",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": "Liver",
+    "emr_cancer_types": [
+      "Hepatocellular (HCC)"
+    ]
+  },
+  {
+    "cancer_site": "Liver",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": "Liver",
+    "emr_cancer_types": [
+      "Hepatocellular (HCC)"
+    ]
+  },
+  {
+    "cancer_site": "Liver",
+    "scope": "SOMATIC",
+    "gene_symbol": "CTNNB1",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Liver",
+    "emr_cancer_types": [
+      "Hepatocellular (HCC)"
+    ]
+  },
+  {
+    "cancer_site": "Liver",
+    "scope": "SOMATIC",
+    "gene_symbol": "TP53",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Liver",
+    "emr_cancer_types": [
+      "Hepatocellular (HCC)"
+    ]
+  },
+  {
+    "cancer_site": "Liver",
+    "scope": "SOMATIC",
+    "gene_symbol": "TERT",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Liver",
+    "emr_cancer_types": [
+      "Hepatocellular (HCC)"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC",
+      "Lung – SCLC / NEC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC",
+      "Lung – SCLC / NEC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC",
+      "Lung – SCLC / NEC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC",
+      "Lung – SCLC / NEC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC",
+      "Lung – SCLC / NEC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC",
+      "Lung – SCLC / NEC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC",
+      "Lung – SCLC / NEC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC",
+      "Lung – SCLC / NEC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC",
+      "Lung – SCLC / NEC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC",
+      "Lung – SCLC / NEC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC",
+      "Lung – SCLC / NEC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC",
+      "Lung – SCLC / NEC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "SOMATIC",
+    "gene_symbol": "EGFR",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "SOMATIC",
+    "gene_symbol": "ALK",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "SOMATIC",
+    "gene_symbol": "ROS1",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "SOMATIC",
+    "gene_symbol": "KRAS",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "SOMATIC",
+    "gene_symbol": "BRAF",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "SOMATIC",
+    "gene_symbol": "MET",
+    "sort_order": 6,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "SOMATIC",
+    "gene_symbol": "RET",
+    "sort_order": 7,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK1",
+    "sort_order": 8,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK2",
+    "sort_order": 9,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK3",
+    "sort_order": 10,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "SOMATIC",
+    "gene_symbol": "TP53",
+    "sort_order": 11,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – SCLC / NEC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "SOMATIC",
+    "gene_symbol": "RB1",
+    "sort_order": 12,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – SCLC / NEC"
+    ]
+  },
+  {
+    "cancer_site": "Lung",
+    "scope": "SOMATIC",
+    "gene_symbol": "ERBB2",
+    "sort_order": 13,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Lung",
+    "emr_cancer_types": [
+      "Lung – NSCLC"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - DLBCL",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - DLBCL",
+    "emr_cancer_types": [
+      "DLBCL / High-grade B-cell"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - DLBCL",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - DLBCL",
+    "emr_cancer_types": [
+      "DLBCL / High-grade B-cell"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - DLBCL",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - DLBCL",
+    "emr_cancer_types": [
+      "DLBCL / High-grade B-cell"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - DLBCL",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - DLBCL",
+    "emr_cancer_types": [
+      "DLBCL / High-grade B-cell"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - DLBCL",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - DLBCL",
+    "emr_cancer_types": [
+      "DLBCL / High-grade B-cell"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - DLBCL",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - DLBCL",
+    "emr_cancer_types": [
+      "DLBCL / High-grade B-cell"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - DLBCL",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - DLBCL",
+    "emr_cancer_types": [
+      "DLBCL / High-grade B-cell"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - DLBCL",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - DLBCL",
+    "emr_cancer_types": [
+      "DLBCL / High-grade B-cell"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - DLBCL",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - DLBCL",
+    "emr_cancer_types": [
+      "DLBCL / High-grade B-cell"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - DLBCL",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - DLBCL",
+    "emr_cancer_types": [
+      "DLBCL / High-grade B-cell"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - DLBCL",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - DLBCL",
+    "emr_cancer_types": [
+      "DLBCL / High-grade B-cell"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - DLBCL",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - DLBCL",
+    "emr_cancer_types": [
+      "DLBCL / High-grade B-cell"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - DLBCL",
+    "scope": "SOMATIC",
+    "gene_symbol": "MYC",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Lymphoma - DLBCL",
+    "emr_cancer_types": [
+      "DLBCL / High-grade B-cell"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - DLBCL",
+    "scope": "SOMATIC",
+    "gene_symbol": "BCL2",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Lymphoma - DLBCL",
+    "emr_cancer_types": [
+      "DLBCL / High-grade B-cell"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - DLBCL",
+    "scope": "SOMATIC",
+    "gene_symbol": "BCL6",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Lymphoma - DLBCL",
+    "emr_cancer_types": [
+      "DLBCL / High-grade B-cell"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Follicular",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Follicular",
+    "emr_cancer_types": [
+      "Follicular / Marginal-zone (indolent B-NHL)"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Follicular",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Follicular",
+    "emr_cancer_types": [
+      "Follicular / Marginal-zone (indolent B-NHL)"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Follicular",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Follicular",
+    "emr_cancer_types": [
+      "Follicular / Marginal-zone (indolent B-NHL)"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Follicular",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Follicular",
+    "emr_cancer_types": [
+      "Follicular / Marginal-zone (indolent B-NHL)"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Follicular",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Follicular",
+    "emr_cancer_types": [
+      "Follicular / Marginal-zone (indolent B-NHL)"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Follicular",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Follicular",
+    "emr_cancer_types": [
+      "Follicular / Marginal-zone (indolent B-NHL)"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Follicular",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Follicular",
+    "emr_cancer_types": [
+      "Follicular / Marginal-zone (indolent B-NHL)"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Follicular",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Follicular",
+    "emr_cancer_types": [
+      "Follicular / Marginal-zone (indolent B-NHL)"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Follicular",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Follicular",
+    "emr_cancer_types": [
+      "Follicular / Marginal-zone (indolent B-NHL)"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Follicular",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Follicular",
+    "emr_cancer_types": [
+      "Follicular / Marginal-zone (indolent B-NHL)"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Follicular",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Follicular",
+    "emr_cancer_types": [
+      "Follicular / Marginal-zone (indolent B-NHL)"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Follicular",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Follicular",
+    "emr_cancer_types": [
+      "Follicular / Marginal-zone (indolent B-NHL)"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Follicular",
+    "scope": "SOMATIC",
+    "gene_symbol": "BCL2",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Lymphoma - Follicular",
+    "emr_cancer_types": [
+      "Follicular / Marginal-zone (indolent B-NHL)"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Follicular",
+    "scope": "SOMATIC",
+    "gene_symbol": "BCL6",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Lymphoma - Follicular",
+    "emr_cancer_types": [
+      "Follicular / Marginal-zone (indolent B-NHL)"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Follicular",
+    "scope": "SOMATIC",
+    "gene_symbol": "KMT2D",
+    "sort_order": 3,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Lymphoma - Follicular",
+    "emr_cancer_types": [
+      "Follicular / Marginal-zone (indolent B-NHL)"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Follicular",
+    "scope": "SOMATIC",
+    "gene_symbol": "CREBBP",
+    "sort_order": 4,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Lymphoma - Follicular",
+    "emr_cancer_types": [
+      "Follicular / Marginal-zone (indolent B-NHL)"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Follicular",
+    "scope": "SOMATIC",
+    "gene_symbol": "EZH2",
+    "sort_order": 5,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Lymphoma - Follicular",
+    "emr_cancer_types": [
+      "Follicular / Marginal-zone (indolent B-NHL)"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Hodgkin",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Hodgkin",
+    "emr_cancer_types": [
+      "Hodgkin lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Hodgkin",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Hodgkin",
+    "emr_cancer_types": [
+      "Hodgkin lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Hodgkin",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Hodgkin",
+    "emr_cancer_types": [
+      "Hodgkin lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Hodgkin",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Hodgkin",
+    "emr_cancer_types": [
+      "Hodgkin lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Hodgkin",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Hodgkin",
+    "emr_cancer_types": [
+      "Hodgkin lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Hodgkin",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Hodgkin",
+    "emr_cancer_types": [
+      "Hodgkin lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Hodgkin",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Hodgkin",
+    "emr_cancer_types": [
+      "Hodgkin lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Hodgkin",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Hodgkin",
+    "emr_cancer_types": [
+      "Hodgkin lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Hodgkin",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Hodgkin",
+    "emr_cancer_types": [
+      "Hodgkin lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Hodgkin",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Hodgkin",
+    "emr_cancer_types": [
+      "Hodgkin lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Hodgkin",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Hodgkin",
+    "emr_cancer_types": [
+      "Hodgkin lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Lymphoma - Hodgkin",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": "Lymphoma - Hodgkin",
+    "emr_cancer_types": [
+      "Hodgkin lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Mantle cell lymphoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mantle cell lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Mantle cell lymphoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mantle cell lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Mantle cell lymphoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mantle cell lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Mantle cell lymphoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mantle cell lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Mantle cell lymphoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mantle cell lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Mantle cell lymphoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mantle cell lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Mantle cell lymphoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mantle cell lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Mantle cell lymphoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mantle cell lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Mantle cell lymphoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mantle cell lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Mantle cell lymphoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mantle cell lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Mantle cell lymphoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mantle cell lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Mantle cell lymphoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mantle cell lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Mantle cell lymphoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "CCND1",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mantle cell lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Mantle cell lymphoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "TP53",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mantle cell lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Mantle cell lymphoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "ATM",
+    "sort_order": 3,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mantle cell lymphoma"
+    ]
+  },
+  {
+    "cancer_site": "Mesothelioma",
+    "scope": "GERMLINE",
+    "gene_symbol": "BAP1",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mesothelioma"
+    ]
+  },
+  {
+    "cancer_site": "Mesothelioma",
+    "scope": "SOMATIC",
+    "gene_symbol": "BAP1",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mesothelioma"
+    ]
+  },
+  {
+    "cancer_site": "Mesothelioma",
+    "scope": "SOMATIC",
+    "gene_symbol": "CDKN2A",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mesothelioma"
+    ]
+  },
+  {
+    "cancer_site": "Mesothelioma",
+    "scope": "SOMATIC",
+    "gene_symbol": "NF2",
+    "sort_order": 3,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Mesothelioma"
+    ]
+  },
+  {
+    "cancer_site": "Myeloma",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": "Myeloma",
+    "emr_cancer_types": [
+      "Multiple myeloma / plasma cell"
+    ]
+  },
+  {
+    "cancer_site": "Myeloma",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": "Myeloma",
+    "emr_cancer_types": [
+      "Multiple myeloma / plasma cell"
+    ]
+  },
+  {
+    "cancer_site": "Myeloma",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": "Myeloma",
+    "emr_cancer_types": [
+      "Multiple myeloma / plasma cell"
+    ]
+  },
+  {
+    "cancer_site": "Myeloma",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": "Myeloma",
+    "emr_cancer_types": [
+      "Multiple myeloma / plasma cell"
+    ]
+  },
+  {
+    "cancer_site": "Myeloma",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": "Myeloma",
+    "emr_cancer_types": [
+      "Multiple myeloma / plasma cell"
+    ]
+  },
+  {
+    "cancer_site": "Myeloma",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": "Myeloma",
+    "emr_cancer_types": [
+      "Multiple myeloma / plasma cell"
+    ]
+  },
+  {
+    "cancer_site": "Myeloma",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": "Myeloma",
+    "emr_cancer_types": [
+      "Multiple myeloma / plasma cell"
+    ]
+  },
+  {
+    "cancer_site": "Myeloma",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": "Myeloma",
+    "emr_cancer_types": [
+      "Multiple myeloma / plasma cell"
+    ]
+  },
+  {
+    "cancer_site": "Myeloma",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": "Myeloma",
+    "emr_cancer_types": [
+      "Multiple myeloma / plasma cell"
+    ]
+  },
+  {
+    "cancer_site": "Myeloma",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": "Myeloma",
+    "emr_cancer_types": [
+      "Multiple myeloma / plasma cell"
+    ]
+  },
+  {
+    "cancer_site": "Myeloma",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": "Myeloma",
+    "emr_cancer_types": [
+      "Multiple myeloma / plasma cell"
+    ]
+  },
+  {
+    "cancer_site": "Myeloma",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": "Myeloma",
+    "emr_cancer_types": [
+      "Multiple myeloma / plasma cell"
+    ]
+  },
+  {
+    "cancer_site": "Myeloma",
+    "scope": "SOMATIC",
+    "gene_symbol": "TP53",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Myeloma",
+    "emr_cancer_types": [
+      "Multiple myeloma / plasma cell"
+    ]
+  },
+  {
+    "cancer_site": "Myeloma",
+    "scope": "SOMATIC",
+    "gene_symbol": "CCND1",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Myeloma",
+    "emr_cancer_types": [
+      "Multiple myeloma / plasma cell"
+    ]
+  },
+  {
+    "cancer_site": "Myeloma",
+    "scope": "SOMATIC",
+    "gene_symbol": "KRAS",
+    "sort_order": 3,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Myeloma",
+    "emr_cancer_types": [
+      "Multiple myeloma / plasma cell"
+    ]
+  },
+  {
+    "cancer_site": "Myeloma",
+    "scope": "SOMATIC",
+    "gene_symbol": "NRAS",
+    "sort_order": 4,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Myeloma",
+    "emr_cancer_types": [
+      "Multiple myeloma / plasma cell"
+    ]
+  },
+  {
+    "cancer_site": "Neuroblastoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "ALK",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Neuroblastoma"
+    ]
+  },
+  {
+    "cancer_site": "Neuroblastoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "PHOX2B",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Neuroblastoma"
+    ]
+  },
+  {
+    "cancer_site": "Neuroblastoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "MYCN",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Neuroblastoma"
+    ]
+  },
+  {
+    "cancer_site": "Neuroblastoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "ALK",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Neuroblastoma"
+    ]
+  },
+  {
+    "cancer_site": "Neuroendocrine tumour (GEP-NET / NEC)",
+    "scope": "GERMLINE",
+    "gene_symbol": "MEN1",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Neuroendocrine tumour (GEP-NET / NEC)"
+    ]
+  },
+  {
+    "cancer_site": "Neuroendocrine tumour (GEP-NET / NEC)",
+    "scope": "GERMLINE",
+    "gene_symbol": "VHL",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Neuroendocrine tumour (GEP-NET / NEC)"
+    ]
+  },
+  {
+    "cancer_site": "Neuroendocrine tumour (GEP-NET / NEC)",
+    "scope": "GERMLINE",
+    "gene_symbol": "NF1",
+    "sort_order": 3,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Neuroendocrine tumour (GEP-NET / NEC)"
+    ]
+  },
+  {
+    "cancer_site": "Neuroendocrine tumour (GEP-NET / NEC)",
+    "scope": "GERMLINE",
+    "gene_symbol": "TSC1",
+    "sort_order": 4,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Neuroendocrine tumour (GEP-NET / NEC)"
+    ]
+  },
+  {
+    "cancer_site": "Neuroendocrine tumour (GEP-NET / NEC)",
+    "scope": "GERMLINE",
+    "gene_symbol": "TSC2",
+    "sort_order": 5,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Neuroendocrine tumour (GEP-NET / NEC)"
+    ]
+  },
+  {
+    "cancer_site": "Neuroendocrine tumour (GEP-NET / NEC)",
+    "scope": "SOMATIC",
+    "gene_symbol": "MEN1",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Neuroendocrine tumour (GEP-NET / NEC)"
+    ]
+  },
+  {
+    "cancer_site": "Neuroendocrine tumour (GEP-NET / NEC)",
+    "scope": "SOMATIC",
+    "gene_symbol": "DAXX",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Neuroendocrine tumour (GEP-NET / NEC)"
+    ]
+  },
+  {
+    "cancer_site": "Neuroendocrine tumour (GEP-NET / NEC)",
+    "scope": "SOMATIC",
+    "gene_symbol": "ATRX",
+    "sort_order": 3,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Neuroendocrine tumour (GEP-NET / NEC)"
+    ]
+  },
+  {
+    "cancer_site": "Neuroendocrine tumour (GEP-NET / NEC)",
+    "scope": "SOMATIC",
+    "gene_symbol": "TP53",
+    "sort_order": 4,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Neuroendocrine tumour (GEP-NET / NEC)"
+    ]
+  },
+  {
+    "cancer_site": "Neuroendocrine tumour (GEP-NET / NEC)",
+    "scope": "SOMATIC",
+    "gene_symbol": "RB1",
+    "sort_order": 5,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Neuroendocrine tumour (GEP-NET / NEC)"
+    ]
+  },
+  {
+    "cancer_site": "Oesophageal",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": "Oesophageal",
+    "emr_cancer_types": [
+      "Oesophageal"
+    ]
+  },
+  {
+    "cancer_site": "Oesophageal",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": "Oesophageal",
+    "emr_cancer_types": [
+      "Oesophageal"
+    ]
+  },
+  {
+    "cancer_site": "Oesophageal",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": "Oesophageal",
+    "emr_cancer_types": [
+      "Oesophageal"
+    ]
+  },
+  {
+    "cancer_site": "Oesophageal",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": "Oesophageal",
+    "emr_cancer_types": [
+      "Oesophageal"
+    ]
+  },
+  {
+    "cancer_site": "Oesophageal",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": "Oesophageal",
+    "emr_cancer_types": [
+      "Oesophageal"
+    ]
+  },
+  {
+    "cancer_site": "Oesophageal",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": "Oesophageal",
+    "emr_cancer_types": [
+      "Oesophageal"
+    ]
+  },
+  {
+    "cancer_site": "Oesophageal",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": "Oesophageal",
+    "emr_cancer_types": [
+      "Oesophageal"
+    ]
+  },
+  {
+    "cancer_site": "Oesophageal",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": "Oesophageal",
+    "emr_cancer_types": [
+      "Oesophageal"
+    ]
+  },
+  {
+    "cancer_site": "Oesophageal",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": "Oesophageal",
+    "emr_cancer_types": [
+      "Oesophageal"
+    ]
+  },
+  {
+    "cancer_site": "Oesophageal",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": "Oesophageal",
+    "emr_cancer_types": [
+      "Oesophageal"
+    ]
+  },
+  {
+    "cancer_site": "Oesophageal",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": "Oesophageal",
+    "emr_cancer_types": [
+      "Oesophageal"
+    ]
+  },
+  {
+    "cancer_site": "Oesophageal",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": "Oesophageal",
+    "emr_cancer_types": [
+      "Oesophageal"
+    ]
+  },
+  {
+    "cancer_site": "Oesophageal",
+    "scope": "SOMATIC",
+    "gene_symbol": "ERBB2",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Oesophageal",
+    "emr_cancer_types": [
+      "Oesophageal"
+    ]
+  },
+  {
+    "cancer_site": "Oesophageal",
+    "scope": "SOMATIC",
+    "gene_symbol": "MLH1",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Oesophageal",
+    "emr_cancer_types": [
+      "Oesophageal"
+    ]
+  },
+  {
+    "cancer_site": "Oesophageal",
+    "scope": "SOMATIC",
+    "gene_symbol": "MSH2",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Oesophageal",
+    "emr_cancer_types": [
+      "Oesophageal"
+    ]
+  },
+  {
+    "cancer_site": "Oesophageal",
+    "scope": "SOMATIC",
+    "gene_symbol": "MSH6",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Oesophageal",
+    "emr_cancer_types": [
+      "Oesophageal"
+    ]
+  },
+  {
+    "cancer_site": "Oesophageal",
+    "scope": "SOMATIC",
+    "gene_symbol": "PMS2",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Oesophageal",
+    "emr_cancer_types": [
+      "Oesophageal"
+    ]
+  },
+  {
+    "cancer_site": "Osteosarcoma / bone tumours",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Osteosarcoma / bone tumours"
+    ]
+  },
+  {
+    "cancer_site": "Osteosarcoma / bone tumours",
+    "scope": "GERMLINE",
+    "gene_symbol": "RB1",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Osteosarcoma / bone tumours"
+    ]
+  },
+  {
+    "cancer_site": "Osteosarcoma / bone tumours",
+    "scope": "SOMATIC",
+    "gene_symbol": "TP53",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Osteosarcoma / bone tumours"
+    ]
+  },
+  {
+    "cancer_site": "Osteosarcoma / bone tumours",
+    "scope": "SOMATIC",
+    "gene_symbol": "RB1",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Osteosarcoma / bone tumours"
+    ]
+  },
+  {
+    "cancer_site": "Osteosarcoma / bone tumours",
+    "scope": "SOMATIC",
+    "gene_symbol": "MDM2",
+    "sort_order": 3,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Osteosarcoma / bone tumours"
+    ]
+  },
+  {
+    "cancer_site": "Osteosarcoma / bone tumours",
+    "scope": "SOMATIC",
+    "gene_symbol": "CDK4",
+    "sort_order": 4,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Osteosarcoma / bone tumours"
+    ]
+  },
+  {
+    "cancer_site": "Osteosarcoma / bone tumours",
+    "scope": "SOMATIC",
+    "gene_symbol": "H3-3A",
+    "sort_order": 5,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Osteosarcoma / bone tumours"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "GERMLINE",
+    "gene_symbol": "RAD51C",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "GERMLINE",
+    "gene_symbol": "RAD51D",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRIP1",
+    "sort_order": 6,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 7,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 8,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 9,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 10,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 11,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "SOMATIC",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "SOMATIC",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "SOMATIC",
+    "gene_symbol": "ERBB2",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "SOMATIC",
+    "gene_symbol": "ARID1A",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "SOMATIC",
+    "gene_symbol": "PIK3CA",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "SOMATIC",
+    "gene_symbol": "MLH1",
+    "sort_order": 6,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "SOMATIC",
+    "gene_symbol": "MSH2",
+    "sort_order": 7,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "SOMATIC",
+    "gene_symbol": "MSH6",
+    "sort_order": 8,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "SOMATIC",
+    "gene_symbol": "PMS2",
+    "sort_order": 9,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Ovarian",
+    "scope": "SOMATIC",
+    "gene_symbol": "TP53",
+    "sort_order": 10,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": "Ovarian",
+    "emr_cancer_types": [
+      "Ovarian (epithelial)"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "GERMLINE",
+    "gene_symbol": "CDKN2A",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "GERMLINE",
+    "gene_symbol": "STK11",
+    "sort_order": 6,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 7,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 8,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 9,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 10,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "SOMATIC",
+    "gene_symbol": "KRAS",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "SOMATIC",
+    "gene_symbol": "TP53",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "SOMATIC",
+    "gene_symbol": "CDKN2A",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "SOMATIC",
+    "gene_symbol": "SMAD4",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "SOMATIC",
+    "gene_symbol": "BRCA1",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "SOMATIC",
+    "gene_symbol": "BRCA2",
+    "sort_order": 6,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK1",
+    "sort_order": 7,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK2",
+    "sort_order": 8,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Pancreatic",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK3",
+    "sort_order": 9,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Pancreatic",
+    "emr_cancer_types": [
+      "Pancreatic"
+    ]
+  },
+  {
+    "cancer_site": "Prostate",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Prostate",
+    "emr_cancer_types": [
+      "Prostate"
+    ]
+  },
+  {
+    "cancer_site": "Prostate",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Prostate",
+    "emr_cancer_types": [
+      "Prostate"
+    ]
+  },
+  {
+    "cancer_site": "Prostate",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Prostate",
+    "emr_cancer_types": [
+      "Prostate"
+    ]
+  },
+  {
+    "cancer_site": "Prostate",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Prostate",
+    "emr_cancer_types": [
+      "Prostate"
+    ]
+  },
+  {
+    "cancer_site": "Prostate",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Prostate",
+    "emr_cancer_types": [
+      "Prostate"
+    ]
+  },
+  {
+    "cancer_site": "Prostate",
+    "scope": "GERMLINE",
+    "gene_symbol": "HOXB13",
+    "sort_order": 6,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Prostate",
+    "emr_cancer_types": [
+      "Prostate"
+    ]
+  },
+  {
+    "cancer_site": "Prostate",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 7,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Prostate",
+    "emr_cancer_types": [
+      "Prostate"
+    ]
+  },
+  {
+    "cancer_site": "Prostate",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 8,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Prostate",
+    "emr_cancer_types": [
+      "Prostate"
+    ]
+  },
+  {
+    "cancer_site": "Prostate",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 9,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Prostate",
+    "emr_cancer_types": [
+      "Prostate"
+    ]
+  },
+  {
+    "cancer_site": "Prostate",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 10,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Prostate",
+    "emr_cancer_types": [
+      "Prostate"
+    ]
+  },
+  {
+    "cancer_site": "Prostate",
+    "scope": "SOMATIC",
+    "gene_symbol": "TMPRSS2::ERG",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Prostate",
+    "emr_cancer_types": [
+      "Prostate"
+    ]
+  },
+  {
+    "cancer_site": "Prostate",
+    "scope": "SOMATIC",
+    "gene_symbol": "PTEN",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Prostate",
+    "emr_cancer_types": [
+      "Prostate"
+    ]
+  },
+  {
+    "cancer_site": "Prostate",
+    "scope": "SOMATIC",
+    "gene_symbol": "SPOP",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Prostate",
+    "emr_cancer_types": [
+      "Prostate"
+    ]
+  },
+  {
+    "cancer_site": "Prostate",
+    "scope": "SOMATIC",
+    "gene_symbol": "BRCA2",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Prostate",
+    "emr_cancer_types": [
+      "Prostate"
+    ]
+  },
+  {
+    "cancer_site": "Rhabdomyosarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Rhabdomyosarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Rhabdomyosarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Rhabdomyosarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Rhabdomyosarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Rhabdomyosarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Rhabdomyosarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Rhabdomyosarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Rhabdomyosarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Rhabdomyosarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Rhabdomyosarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Rhabdomyosarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Rhabdomyosarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Rhabdomyosarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Rhabdomyosarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Rhabdomyosarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Rhabdomyosarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Rhabdomyosarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Rhabdomyosarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Rhabdomyosarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Rhabdomyosarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Rhabdomyosarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Rhabdomyosarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Rhabdomyosarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Rhabdomyosarcoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "PAX3::FOXO1",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Rhabdomyosarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Rhabdomyosarcoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "PAX7::FOXO1",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Rhabdomyosarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Rhabdomyosarcoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "MYOD1",
+    "sort_order": 3,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Rhabdomyosarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Rhabdomyosarcoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "SMARCB1",
+    "sort_order": 4,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Rhabdomyosarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Skin (Melanoma)",
+    "scope": "GERMLINE",
+    "gene_symbol": "CDKN2A",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Skin (Melanoma)",
+    "emr_cancer_types": [
+      "Melanoma"
+    ]
+  },
+  {
+    "cancer_site": "Skin (Melanoma)",
+    "scope": "GERMLINE",
+    "gene_symbol": "CDK4",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Skin (Melanoma)",
+    "emr_cancer_types": [
+      "Melanoma"
+    ]
+  },
+  {
+    "cancer_site": "Skin (Melanoma)",
+    "scope": "GERMLINE",
+    "gene_symbol": "BAP1",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Skin (Melanoma)",
+    "emr_cancer_types": [
+      "Melanoma"
+    ]
+  },
+  {
+    "cancer_site": "Skin (Melanoma)",
+    "scope": "SOMATIC",
+    "gene_symbol": "BRAF",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Skin (Melanoma)",
+    "emr_cancer_types": [
+      "Melanoma"
+    ]
+  },
+  {
+    "cancer_site": "Skin (Melanoma)",
+    "scope": "SOMATIC",
+    "gene_symbol": "NRAS",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Skin (Melanoma)",
+    "emr_cancer_types": [
+      "Melanoma"
+    ]
+  },
+  {
+    "cancer_site": "Skin (Melanoma)",
+    "scope": "SOMATIC",
+    "gene_symbol": "KIT",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Skin (Melanoma)",
+    "emr_cancer_types": [
+      "Melanoma"
+    ]
+  },
+  {
+    "cancer_site": "Skin (Melanoma)",
+    "scope": "SOMATIC",
+    "gene_symbol": "NF1",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Skin (Melanoma)",
+    "emr_cancer_types": [
+      "Melanoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "MDM2",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "CDK4",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK1",
+    "sort_order": 3,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK2",
+    "sort_order": 4,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK3",
+    "sort_order": 5,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "SS18::SSX",
+    "sort_order": 6,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "NAB2::STAT6",
+    "sort_order": 7,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "EWSR1",
+    "sort_order": 8,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "ALK",
+    "sort_order": 9,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "Soft-tissue sarcoma",
+    "scope": "SOMATIC",
+    "gene_symbol": "SMARCB1",
+    "sort_order": 10,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Soft-tissue sarcoma"
+    ]
+  },
+  {
+    "cancer_site": "T-cell / NK-cell lymphoma (PTCL, ALCL)",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "T-cell / NK-cell lymphoma (PTCL, ALCL)"
+    ]
+  },
+  {
+    "cancer_site": "T-cell / NK-cell lymphoma (PTCL, ALCL)",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "T-cell / NK-cell lymphoma (PTCL, ALCL)"
+    ]
+  },
+  {
+    "cancer_site": "T-cell / NK-cell lymphoma (PTCL, ALCL)",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "T-cell / NK-cell lymphoma (PTCL, ALCL)"
+    ]
+  },
+  {
+    "cancer_site": "T-cell / NK-cell lymphoma (PTCL, ALCL)",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "T-cell / NK-cell lymphoma (PTCL, ALCL)"
+    ]
+  },
+  {
+    "cancer_site": "T-cell / NK-cell lymphoma (PTCL, ALCL)",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "T-cell / NK-cell lymphoma (PTCL, ALCL)"
+    ]
+  },
+  {
+    "cancer_site": "T-cell / NK-cell lymphoma (PTCL, ALCL)",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "T-cell / NK-cell lymphoma (PTCL, ALCL)"
+    ]
+  },
+  {
+    "cancer_site": "T-cell / NK-cell lymphoma (PTCL, ALCL)",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "T-cell / NK-cell lymphoma (PTCL, ALCL)"
+    ]
+  },
+  {
+    "cancer_site": "T-cell / NK-cell lymphoma (PTCL, ALCL)",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "T-cell / NK-cell lymphoma (PTCL, ALCL)"
+    ]
+  },
+  {
+    "cancer_site": "T-cell / NK-cell lymphoma (PTCL, ALCL)",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "T-cell / NK-cell lymphoma (PTCL, ALCL)"
+    ]
+  },
+  {
+    "cancer_site": "T-cell / NK-cell lymphoma (PTCL, ALCL)",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "T-cell / NK-cell lymphoma (PTCL, ALCL)"
+    ]
+  },
+  {
+    "cancer_site": "T-cell / NK-cell lymphoma (PTCL, ALCL)",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "T-cell / NK-cell lymphoma (PTCL, ALCL)"
+    ]
+  },
+  {
+    "cancer_site": "T-cell / NK-cell lymphoma (PTCL, ALCL)",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "T-cell / NK-cell lymphoma (PTCL, ALCL)"
+    ]
+  },
+  {
+    "cancer_site": "T-cell / NK-cell lymphoma (PTCL, ALCL)",
+    "scope": "SOMATIC",
+    "gene_symbol": "ALK",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "T-cell / NK-cell lymphoma (PTCL, ALCL)"
+    ]
+  },
+  {
+    "cancer_site": "T-cell / NK-cell lymphoma (PTCL, ALCL)",
+    "scope": "SOMATIC",
+    "gene_symbol": "DUSP22",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "T-cell / NK-cell lymphoma (PTCL, ALCL)"
+    ]
+  },
+  {
+    "cancer_site": "T-cell / NK-cell lymphoma (PTCL, ALCL)",
+    "scope": "SOMATIC",
+    "gene_symbol": "TP63",
+    "sort_order": 3,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "T-cell / NK-cell lymphoma (PTCL, ALCL)"
+    ]
+  },
+  {
+    "cancer_site": "T-cell / NK-cell lymphoma (PTCL, ALCL)",
+    "scope": "SOMATIC",
+    "gene_symbol": "RHOA",
+    "sort_order": 4,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "T-cell / NK-cell lymphoma (PTCL, ALCL)"
+    ]
+  },
+  {
+    "cancer_site": "T-cell / NK-cell lymphoma (PTCL, ALCL)",
+    "scope": "SOMATIC",
+    "gene_symbol": "TET2",
+    "sort_order": 5,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "T-cell / NK-cell lymphoma (PTCL, ALCL)"
+    ]
+  },
+  {
+    "cancer_site": "Thyroid",
+    "scope": "GERMLINE",
+    "gene_symbol": "RET",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Thyroid",
+    "emr_cancer_types": [
+      "Thyroid"
+    ]
+  },
+  {
+    "cancer_site": "Thyroid",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Thyroid",
+    "emr_cancer_types": [
+      "Thyroid"
+    ]
+  },
+  {
+    "cancer_site": "Thyroid",
+    "scope": "GERMLINE",
+    "gene_symbol": "APC",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Thyroid",
+    "emr_cancer_types": [
+      "Thyroid"
+    ]
+  },
+  {
+    "cancer_site": "Thyroid",
+    "scope": "SOMATIC",
+    "gene_symbol": "BRAF",
+    "sort_order": 1,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Thyroid",
+    "emr_cancer_types": [
+      "Thyroid"
+    ]
+  },
+  {
+    "cancer_site": "Thyroid",
+    "scope": "SOMATIC",
+    "gene_symbol": "HRAS",
+    "sort_order": 2,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Thyroid",
+    "emr_cancer_types": [
+      "Thyroid"
+    ]
+  },
+  {
+    "cancer_site": "Thyroid",
+    "scope": "SOMATIC",
+    "gene_symbol": "KRAS",
+    "sort_order": 3,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Thyroid",
+    "emr_cancer_types": [
+      "Thyroid"
+    ]
+  },
+  {
+    "cancer_site": "Thyroid",
+    "scope": "SOMATIC",
+    "gene_symbol": "NRAS",
+    "sort_order": 4,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Thyroid",
+    "emr_cancer_types": [
+      "Thyroid"
+    ]
+  },
+  {
+    "cancer_site": "Thyroid",
+    "scope": "SOMATIC",
+    "gene_symbol": "RET",
+    "sort_order": 5,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Thyroid",
+    "emr_cancer_types": [
+      "Thyroid"
+    ]
+  },
+  {
+    "cancer_site": "Thyroid",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK1",
+    "sort_order": 6,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Thyroid",
+    "emr_cancer_types": [
+      "Thyroid"
+    ]
+  },
+  {
+    "cancer_site": "Thyroid",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK2",
+    "sort_order": 7,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Thyroid",
+    "emr_cancer_types": [
+      "Thyroid"
+    ]
+  },
+  {
+    "cancer_site": "Thyroid",
+    "scope": "SOMATIC",
+    "gene_symbol": "NTRK3",
+    "sort_order": 8,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Thyroid",
+    "emr_cancer_types": [
+      "Thyroid"
+    ]
+  },
+  {
+    "cancer_site": "Thyroid",
+    "scope": "SOMATIC",
+    "gene_symbol": "ALK",
+    "sort_order": 9,
+    "source": "Genomics spec 2 Nov",
+    "spec_site": "Thyroid",
+    "emr_cancer_types": [
+      "Thyroid"
+    ]
+  },
+  {
+    "cancer_site": "Waldenström / Lymphoplasmacytic",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA1",
+    "sort_order": 1,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Waldenström / Lymphoplasmacytic"
+    ]
+  },
+  {
+    "cancer_site": "Waldenström / Lymphoplasmacytic",
+    "scope": "GERMLINE",
+    "gene_symbol": "BRCA2",
+    "sort_order": 2,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Waldenström / Lymphoplasmacytic"
+    ]
+  },
+  {
+    "cancer_site": "Waldenström / Lymphoplasmacytic",
+    "scope": "GERMLINE",
+    "gene_symbol": "PALB2",
+    "sort_order": 3,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Waldenström / Lymphoplasmacytic"
+    ]
+  },
+  {
+    "cancer_site": "Waldenström / Lymphoplasmacytic",
+    "scope": "GERMLINE",
+    "gene_symbol": "ATM",
+    "sort_order": 4,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Waldenström / Lymphoplasmacytic"
+    ]
+  },
+  {
+    "cancer_site": "Waldenström / Lymphoplasmacytic",
+    "scope": "GERMLINE",
+    "gene_symbol": "CHEK2",
+    "sort_order": 5,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Waldenström / Lymphoplasmacytic"
+    ]
+  },
+  {
+    "cancer_site": "Waldenström / Lymphoplasmacytic",
+    "scope": "GERMLINE",
+    "gene_symbol": "TP53",
+    "sort_order": 6,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Waldenström / Lymphoplasmacytic"
+    ]
+  },
+  {
+    "cancer_site": "Waldenström / Lymphoplasmacytic",
+    "scope": "GERMLINE",
+    "gene_symbol": "PTEN",
+    "sort_order": 7,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Waldenström / Lymphoplasmacytic"
+    ]
+  },
+  {
+    "cancer_site": "Waldenström / Lymphoplasmacytic",
+    "scope": "GERMLINE",
+    "gene_symbol": "MLH1",
+    "sort_order": 8,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Waldenström / Lymphoplasmacytic"
+    ]
+  },
+  {
+    "cancer_site": "Waldenström / Lymphoplasmacytic",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH2",
+    "sort_order": 9,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Waldenström / Lymphoplasmacytic"
+    ]
+  },
+  {
+    "cancer_site": "Waldenström / Lymphoplasmacytic",
+    "scope": "GERMLINE",
+    "gene_symbol": "MSH6",
+    "sort_order": 10,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Waldenström / Lymphoplasmacytic"
+    ]
+  },
+  {
+    "cancer_site": "Waldenström / Lymphoplasmacytic",
+    "scope": "GERMLINE",
+    "gene_symbol": "PMS2",
+    "sort_order": 11,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Waldenström / Lymphoplasmacytic"
+    ]
+  },
+  {
+    "cancer_site": "Waldenström / Lymphoplasmacytic",
+    "scope": "GERMLINE",
+    "gene_symbol": "EPCAM",
+    "sort_order": 12,
+    "source": "Default germline panel",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Waldenström / Lymphoplasmacytic"
+    ]
+  },
+  {
+    "cancer_site": "Waldenström / Lymphoplasmacytic",
+    "scope": "SOMATIC",
+    "gene_symbol": "MYD88",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Waldenström / Lymphoplasmacytic"
+    ]
+  },
+  {
+    "cancer_site": "Waldenström / Lymphoplasmacytic",
+    "scope": "SOMATIC",
+    "gene_symbol": "CXCR4",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Waldenström / Lymphoplasmacytic"
+    ]
+  },
+  {
+    "cancer_site": "Wilms tumour",
+    "scope": "GERMLINE",
+    "gene_symbol": "WT1",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Wilms tumour"
+    ]
+  },
+  {
+    "cancer_site": "Wilms tumour",
+    "scope": "SOMATIC",
+    "gene_symbol": "WT1",
+    "sort_order": 1,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Wilms tumour"
+    ]
+  },
+  {
+    "cancer_site": "Wilms tumour",
+    "scope": "SOMATIC",
+    "gene_symbol": "CTNNB1",
+    "sort_order": 2,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Wilms tumour"
+    ]
+  },
+  {
+    "cancer_site": "Wilms tumour",
+    "scope": "SOMATIC",
+    "gene_symbol": "TP53",
+    "sort_order": 3,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Wilms tumour"
+    ]
+  },
+  {
+    "cancer_site": "Wilms tumour",
+    "scope": "SOMATIC",
+    "gene_symbol": "SMARCB1",
+    "sort_order": 4,
+    "source": "Proposed 3 Nov – sign-off",
+    "spec_site": null,
+    "emr_cancer_types": [
+      "Wilms tumour"
+    ]
+  }
+]

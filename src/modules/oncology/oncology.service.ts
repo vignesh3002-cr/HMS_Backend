@@ -77,7 +77,10 @@ function mapIhcRowToInput(row: any | null | undefined): IhcInput {
         mmr_overall: row.mmr_overall ?? null,
         p53_ihc: row.p53_ihc ?? null,
         ar_status: row.ar_status ?? null,
-        mlh1_methylation: row.mlh1_methylation ?? null
+        mlh1_methylation: row.mlh1_methylation ?? null,
+        p16_status: row.p16_status ?? null,
+        p16_percent: row.p16_percent ?? null,
+        p40_status: row.p40_status ?? null
     };
 
 }
@@ -287,8 +290,104 @@ export class OncologyService {
 
     }
 
-    async listTnmStages(cancerTypeId: string) {
+    async listCancerScoreVariables(scoreId: string) {
 
+        return this.repository.findCancerScoreVariablesByScoreId(scoreId);
+
+    }
+
+    async listCancerScoreGroups(scoreId: string) {
+
+        return this.repository.findCancerScoreGroupsByScoreId(scoreId);
+
+    }
+
+    async getCancerScoreDetail(scoreId: string) {
+
+        const score = await this.repository.findCancerScoreById(scoreId);
+
+        if (!score) {
+            throw new Error("Score not found");
+        }
+
+        const [variables, groups] = await Promise.all([
+            this.repository.findCancerScoreVariablesByScoreId(scoreId),
+            this.repository.findCancerScoreGroupsByScoreId(scoreId),
+        ]);
+
+        return {
+            score_id: score.score_id,
+            score_name: score.score_system,
+            cancer_type_id: score.cancer_type_id,
+            applies_to: score.applies_to,
+            purpose: score.purpose ?? score.score_rule,
+            when_to_record: score.when_to_record,
+            method: score.input_type,
+            range: score.score_range,
+            risk_groups: score.risk_groups,
+            status: score.score_status ?? (score.active_status === 1 ? "Current" : null),
+            reference: score.score_reference,
+            developer_note: score.developer_note,
+            variables: variables.length,
+            auto_filled: variables.filter((v) => v.auto_filled).length,
+            auto_fill_percent: score.auto_fill_percent,
+            variables_list: variables,
+            groups,
+        };
+
+    }
+
+    /* Catalogue metadata edited from the Score workspace. Only the
+       descriptive columns are touched; variables and risk groups keep their
+       own tables. */
+    async updateCancerScore(
+        scoreId: string,
+        patch: {
+            purpose?: string | null;
+            when_to_record?: string | null;
+            score_range?: string | null;
+            risk_groups?: string | null;
+            score_status?: string | null;
+            score_reference?: string | null;
+            developer_note?: string | null;
+        }
+    ) {
+
+        const score = await this.repository.findCancerScoreById(scoreId);
+
+        if (!score) {
+            throw new Error("Score not found");
+        }
+
+        const data: Record<string, string | null> = {};
+
+        for (const key of [
+            "purpose",
+            "when_to_record",
+            "score_range",
+            "risk_groups",
+            "score_status",
+            "score_reference",
+            "developer_note",
+        ] as const) {
+            if (!(key in patch)) continue;
+            const raw = patch[key];
+            // An emptied field is stored as NULL, not as "".
+            const value = typeof raw === "string" ? raw.trim() : "";
+            data[key] = value.length > 0 ? value : null;
+        }
+
+        if (Object.keys(data).length === 0) {
+            throw new Error("Nothing to update");
+        }
+
+        return this.repository.updateCancerScore(scoreId, data).then(() =>
+            this.getCancerScoreDetail(scoreId)
+        );
+
+    }
+
+    async listTnmStages(cancerTypeId: string) {
         await this.requireCancerType(cancerTypeId);
 
         return this.repository.findTnmStagesByType(cancerTypeId);
@@ -1020,6 +1119,13 @@ export class OncologyService {
                 grade_system: dto.grade_system ?? null,
                 score: dto.score ?? null,
                 score_system: dto.score_system ?? null,
+                // The workspace's assessment payload and its derived values:
+                // without these a first save of a visit kept only the score
+                // name, so the criteria came back empty on the next visit.
+                score_variables: formStateOrUndefined(dto.score_variables) ?? Prisma.JsonNull,
+                score_result: dto.score_result ?? null,
+                risk_group: dto.risk_group ?? null,
+                score_points: dto.score_points ?? null,
                 notes: dto.notes ?? null,
                 form_state: formStateOrUndefined(dto.form_state) ?? Prisma.JsonNull,
                 performance_status: dto.performance_status ?? null,
@@ -1045,6 +1151,19 @@ export class OncologyService {
 
             await this.repository.upsertDerivedFields(tx, newId, derivedPersistPayload(derived));
 
+            // NGS reports captured earlier in this visit were saved with
+            // staging_detail_id = null (the diagnosis did not exist yet);
+            // attach them now that this visit has its staging detail.
+            await tx.genomic_test.updateMany({
+                where: {
+                    patient_id: dto.patient_id,
+                    encounter_no: encounterNo,
+                    staging_detail_id: null,
+                    is_deleted: false
+                },
+                data: { staging_detail_id: newId, updated_at: new Date() }
+            });
+
             await logAudit(tx, {
                 entity_type: "oncology_staging_detail",
                 entity_id: newId,
@@ -1057,7 +1176,12 @@ export class OncologyService {
                     cancer_subtype_id: dto.cancer_subtype_id,
                     additional_cancers: additionalCancers,
                     clinical_stage: dto.clinical_stage ?? null,
-                    diagnosis_id: dto.diagnosis_id ?? null
+                    diagnosis_id: dto.diagnosis_id ?? null,
+                    /* Score headline so history shows what was recorded,
+                       without the full per-variable payload. */
+                    score: dto.score ?? null,
+                    score_points: dto.score_points ?? null,
+                    risk_group: dto.risk_group ?? null
                 })
             });
 
@@ -1206,6 +1330,11 @@ export class OncologyService {
             ...(dto.grade_system !== undefined ? { grade_system: dto.grade_system || null } : {}),
             ...(dto.score !== undefined ? { score: dto.score || null } : {}),
             ...(dto.score_system !== undefined ? { score_system: dto.score_system || null } : {}),
+            ...(dto.score_variables !== undefined ? { score_variables: formStateOrUndefined(dto.score_variables) } : {}),
+            ...(dto.score_result !== undefined ? { score_result: dto.score_result || null } : {}),
+            ...(dto.risk_group !== undefined ? { risk_group: dto.risk_group || null } : {}),
+            // null clears the points when the score is removed / not applicable.
+            ...(dto.score_points !== undefined ? { score_points: dto.score_points } : {}),
             ...(dto.notes !== undefined ? { notes: dto.notes || null } : {}),
             ...(dto.form_state !== undefined ? { form_state: formStateOrUndefined(dto.form_state) } : {}),
             ...(dto.performance_status !== undefined && dto.performance_status !== null ? { performance_status: dto.performance_status } : {}),
@@ -1233,6 +1362,20 @@ export class OncologyService {
             }
 
             await this.repository.upsertDerivedFields(tx, stagingDetailId, derivedPersistPayload(derived));
+
+            // Attach any NGS report captured for this visit before the
+            // diagnosis was saved (see createStagingDetail above).
+            if (existing.encounter_no) {
+                await tx.genomic_test.updateMany({
+                    where: {
+                        patient_id: existing.patient_id,
+                        encounter_no: existing.encounter_no,
+                        staging_detail_id: null,
+                        is_deleted: false
+                    },
+                    data: { staging_detail_id: stagingDetailId, updated_at: new Date() }
+                });
+            }
 
             // form_state is the form's UI snapshot of the same values; the
             // clinical columns already carry the audited changes.

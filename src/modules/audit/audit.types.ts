@@ -4,7 +4,9 @@ export const AUDIT_ACTION = {
     STATUS_CHANGE: "STATUS_CHANGE",
     DEACTIVATE: "DEACTIVATE",
     PRINT: "PRINT",
-    AMEND: "AMEND"
+    AMEND: "AMEND",
+    // Read access worth recording - e.g. opening a germline genomic report.
+    VIEW: "VIEW"
 } as const;
 
 export type AuditAction = typeof AUDIT_ACTION[keyof typeof AUDIT_ACTION];

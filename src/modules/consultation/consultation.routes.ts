@@ -87,6 +87,22 @@ router.post(
 );
 
 router.get(
+    "/masters/line-of-therapies",
+    authenticate,
+    authorize("encounter.read"),
+    listMasterValidation,
+    controller.getLineOfTherapies.bind(controller)
+);
+
+router.post(
+    "/masters/line-of-therapies/custom",
+    authenticate,
+    authorize("encounter.update"),
+    createCustomMasterValidation,
+    controller.createCustomLineOfTherapy.bind(controller)
+);
+
+router.get(
     "/masters/molecular-tests",
     authenticate,
     authorize("encounter.read"),

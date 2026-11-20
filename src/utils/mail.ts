@@ -67,6 +67,33 @@ export const sendOtpEmail = async (
 };
 
 /**
+ * Sends an arbitrary email using the MAIL_* environment SMTP settings.
+ * Throws (instead of silently logging) when SMTP is not configured or the
+ * send fails, so callers can block dependent workflows as needed.
+ */
+export const sendMail = async (options: {
+  to: string;
+  subject: string;
+  text?: string;
+  html?: string;
+  from?: string;
+}) => {
+  if (!isSmtpConfigured()) {
+    throw new Error(
+      "Email is not configured. Set MAIL_HOST/MAIL_USER/MAIL_PASS or add an EMAIL provider in Settings → Integrations."
+    );
+  }
+
+  return getTransporter().sendMail({
+    from: options.from || process.env.MAIL_FROM || process.env.MAIL_USER,
+    to: options.to,
+    subject: options.subject,
+    text: options.text,
+    html: options.html,
+  });
+};
+
+/**
  * Sends an OTP using the SMTP settings stored in the Settings -> Integration
  * EMAIL provider. Falls back to the MAIL_* environment variables when no
  * provider is configured, and throws (instead of quietly logging) when

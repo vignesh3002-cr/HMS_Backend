@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.twoFactorService = exports.TwoFactorService = void 0;
 const crypto_1 = require("crypto");
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma_1 = __importDefault(require("../../../config/prisma"));
 const bcrypt_1 = require("../../../utils/bcrypt");
 const idGenerator_1 = require("../../../utils/idGenerator");
@@ -21,6 +22,8 @@ const authService = new auth_service_1.AuthService();
 function isOtpChannel(value) {
     return (value === "PRIMARY_EMAIL" ||
         value === "ALT_EMAIL" ||
+        value === "PRIMARY_MOBILE" ||
+        value === "ALT_MOBILE" ||
         value === "SMS" ||
         value === "WHATSAPP");
 }
@@ -55,7 +58,15 @@ class TwoFactorService {
             alternateMobileVerified: record.alternate_mobile_verified,
             preferredMobileTarget: record.preferred_mobile_target === "SECONDARY" ? "SECONDARY" : "PRIMARY",
             whatsappEnabled: record.whatsapp_enabled,
-            defaultLoginMethod: record.default_login_method,
+            defaultLoginMethod: record.default_login_method === "EMAIL"
+                ? record.preferred_email_target === "SECONDARY"
+                    ? "SECONDARY_EMAIL"
+                    : "PRIMARY_EMAIL"
+                : record.default_login_method === "MOBILE" || record.default_login_method === "SMS"
+                    ? record.preferred_mobile_target === "SECONDARY"
+                        ? "SECONDARY_MOBILE"
+                        : "PRIMARY_MOBILE"
+                    : record.default_login_method,
             remainingRecoveryCodes: (0, recovery_utils_1.countUnusedCodes)(record.recovery_codes),
         };
     }
@@ -130,12 +141,73 @@ class TwoFactorService {
         return { success: true, message: "Two-factor authentication disabled" };
     }
     // ---------------------------------------------------------------------
+    // Authorization for adding alternate contact
+    // ---------------------------------------------------------------------
+    async requestAddAlternateAuthOtp(userId) {
+        const record = await this.getOrCreateRecord(userId);
+        const options = await this.buildChannelOptions(userId);
+        if (options.length === 0) {
+            return {
+                success: true,
+                authorized: true,
+                message: "No default channel configured",
+                destination: "",
+                defaultMethod: "",
+            };
+        }
+        let targetChannelId;
+        const def = record.default_login_method;
+        if (def === "PRIMARY_EMAIL" && options.some((o) => o.id === "PRIMARY_EMAIL")) {
+            targetChannelId = "PRIMARY_EMAIL";
+        }
+        else if ((def === "SECONDARY_EMAIL" || def === "ALT_EMAIL") &&
+            options.some((o) => o.id === "ALT_EMAIL")) {
+            targetChannelId = "ALT_EMAIL";
+        }
+        else if (def === "PRIMARY_MOBILE" && options.some((o) => o.id === "PRIMARY_MOBILE")) {
+            targetChannelId = "PRIMARY_MOBILE";
+        }
+        else if ((def === "SECONDARY_MOBILE" || def === "ALT_MOBILE") &&
+            options.some((o) => o.id === "ALT_MOBILE")) {
+            targetChannelId = "ALT_MOBILE";
+        }
+        const selected = options.find((o) => o.id === targetChannelId) ?? options[0];
+        const otp = this.generateNumericOtp();
+        await this.deliverOtp(selected.id, selected.destination, otp);
+        await this.createOtpRecord(userId, "ALT_AUTHORIZE", otp);
+        return {
+            success: true,
+            authorized: false,
+            message: `Authorization code sent to ${this.maskContact(selected.destination)}`,
+            destination: this.maskContact(selected.destination),
+            defaultMethod: selected.id,
+        };
+    }
+    async verifyAddAlternateAuthOtp(userId, code) {
+        await this.consumeOtp(userId, "ALT_AUTHORIZE", code);
+        return { success: true, message: "Authorization confirmed. You may now verify your new alternate contact." };
+    }
+    // ---------------------------------------------------------------------
     // Alternate email
     // ---------------------------------------------------------------------
     async sendAlternateEmailOtp(userId, alternateEmail) {
         const email = String(alternateEmail ?? "").trim();
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             throw new Error("A valid alternate email address is required");
+        }
+        const options = await this.buildChannelOptions(userId);
+        if (options.length > 0) {
+            const authorized = await prisma_1.default.login_otp.findFirst({
+                where: {
+                    user_id: userId,
+                    user_type: "ALT_AUTHORIZE",
+                    is_verified: true,
+                    created_at: { gte: new Date(Date.now() - 15 * 60 * 1000) },
+                },
+            });
+            if (!authorized) {
+                throw new Error("Please authorize this request using your default OTP method first.");
+            }
         }
         const otp = this.generateNumericOtp();
         // Delivery happens before the OTP row is written: if the mail server
@@ -159,6 +231,12 @@ class TwoFactorService {
             data: {
                 alternate_email: email,
                 alternate_email_verified: true,
+            },
+        });
+        await prisma_1.default.login_otp.deleteMany({
+            where: {
+                user_id: userId,
+                user_type: "ALT_AUTHORIZE",
             },
         });
         return { success: true, message: "Alternate email verified successfully" };
@@ -186,12 +264,29 @@ class TwoFactorService {
         if (viaWhatsApp) {
             throw new Error("WhatsApp verification is not configured. Please verify this number by SMS instead.");
         }
+        const options = await this.buildChannelOptions(userId);
+        if (options.length > 0) {
+            const authorized = await prisma_1.default.login_otp.findFirst({
+                where: {
+                    user_id: userId,
+                    user_type: "ALT_AUTHORIZE",
+                    is_verified: true,
+                    created_at: { gte: new Date(Date.now() - 15 * 60 * 1000) },
+                },
+            });
+            if (!authorized) {
+                throw new Error("Please authorize this request using your default OTP method first.");
+            }
+        }
         const otp = this.generateNumericOtp();
-        await this.sendSmsOtp(mobile, otp);
+        const delivery = await this.sendSmsOtp(mobile, otp);
         await this.createOtpRecord(userId, "ALT_MOBILE_VERIFY", otp);
         return {
             success: true,
-            message: `Verification code sent to ${this.maskPhone(mobile)}`,
+            message: delivery === "queued"
+                ? "Verification code accepted by the SMS gateway but delivery is not confirmed. If it does not arrive, check the TextBee phone (battery, permissions, SMS balance and SIM)."
+                : `Verification code sent to ${this.maskPhone(mobile)}`,
+            deliveryStatus: delivery,
         };
     }
     async confirmAlternateMobile(userId, alternateMobile, code) {
@@ -206,6 +301,12 @@ class TwoFactorService {
             data: {
                 alternate_mobile: mobile,
                 alternate_mobile_verified: true,
+            },
+        });
+        await prisma_1.default.login_otp.deleteMany({
+            where: {
+                user_id: userId,
+                user_type: "ALT_AUTHORIZE",
             },
         });
         return { success: true, message: "Alternate mobile number verified successfully" };
@@ -226,21 +327,35 @@ class TwoFactorService {
     // Routing preferences
     // ---------------------------------------------------------------------
     async updatePreferences(userId, req) {
-        const { preferredEmailTarget, preferredMobileTarget, whatsappEnabled } = req ?? {};
+        const { defaultLoginMethod, preferredEmailTarget, preferredMobileTarget, whatsappEnabled } = req ?? {};
         await this.getOrCreateRecord(userId);
+        // Derive synchronized email/mobile target flags from defaultLoginMethod if supplied
+        let syncEmailTarget = preferredEmailTarget;
+        let syncMobileTarget = preferredMobileTarget;
+        if (defaultLoginMethod === "PRIMARY_EMAIL")
+            syncEmailTarget = "PRIMARY";
+        if (defaultLoginMethod === "SECONDARY_EMAIL" || defaultLoginMethod === "ALT_EMAIL")
+            syncEmailTarget = "SECONDARY";
+        if (defaultLoginMethod === "PRIMARY_MOBILE")
+            syncMobileTarget = "PRIMARY";
+        if (defaultLoginMethod === "SECONDARY_MOBILE" || defaultLoginMethod === "ALT_MOBILE")
+            syncMobileTarget = "SECONDARY";
         await prisma_1.default.user_two_factor.update({
             where: { user_id: userId },
             data: {
-                ...(preferredEmailTarget !== undefined && {
-                    preferred_email_target: preferredEmailTarget,
+                ...(defaultLoginMethod !== undefined && {
+                    default_login_method: defaultLoginMethod,
                 }),
-                ...(preferredMobileTarget !== undefined && {
-                    preferred_mobile_target: preferredMobileTarget,
+                ...(syncEmailTarget !== undefined && {
+                    preferred_email_target: syncEmailTarget,
+                }),
+                ...(syncMobileTarget !== undefined && {
+                    preferred_mobile_target: syncMobileTarget,
                 }),
                 ...(whatsappEnabled !== undefined && { whatsapp_enabled: whatsappEnabled }),
             },
         });
-        return { success: true, message: "Security preferences updated" };
+        return { success: true, message: "Security preferences updated successfully" };
     }
     // ---------------------------------------------------------------------
     // Login verification methods
@@ -256,9 +371,11 @@ class TwoFactorService {
         const record = await this.getOrCreateRecord(user.user_id);
         const primaryEmail = user.employees?.email ?? null;
         const primaryMobile = record.primary_mobile ?? user.employees?.mobile_no ?? null;
-        const availability = await this.getChannelAvailability();
         const methods = [];
-        if (primaryEmail && availability.email) {
+        // Primary channels are always shown when a contact value exists. The
+        // secondary channels are only offered once the contact has been verified;
+        // an unverified value must never appear as a usable login method.
+        if (primaryEmail) {
             methods.push({
                 id: "PRIMARY_EMAIL",
                 label: "Primary Email",
@@ -267,7 +384,7 @@ class TwoFactorService {
                 icon: "Mail",
             });
         }
-        if (record.alternate_email && record.alternate_email_verified && availability.email) {
+        if (record.alternate_email && record.alternate_email_verified) {
             methods.push({
                 id: "ALT_EMAIL",
                 label: "Alternate Email",
@@ -276,14 +393,21 @@ class TwoFactorService {
                 icon: "Mail",
             });
         }
-        if ((primaryMobile || record.alternate_mobile) && availability.sms) {
+        if (primaryMobile) {
             methods.push({
-                id: "SMS",
-                label: "Mobile SMS",
-                description: "Send a verification code by text message",
-                destination: this.maskPhone(record.preferred_mobile_target === "SECONDARY" && record.alternate_mobile
-                    ? record.alternate_mobile
-                    : primaryMobile || record.alternate_mobile),
+                id: "PRIMARY_MOBILE",
+                label: "Primary Mobile",
+                description: "Send a verification code to your primary mobile by SMS",
+                destination: this.maskPhone(primaryMobile),
+                icon: "Smartphone",
+            });
+        }
+        if (record.alternate_mobile && record.alternate_mobile_verified) {
+            methods.push({
+                id: "ALT_MOBILE",
+                label: "Alternate Mobile",
+                description: "Send a verification code to your alternate mobile by SMS",
+                destination: this.maskPhone(record.alternate_mobile),
                 icon: "Smartphone",
             });
         }
@@ -316,12 +440,15 @@ class TwoFactorService {
         const otp = this.generateNumericOtp();
         // Send first, persist second: a failed delivery must not leave an
         // orphaned OTP row that the user can never receive.
-        await this.deliverOtp(channel, destination, otp);
+        const delivery = await this.deliverOtp(channel, destination, otp);
         await this.createOtpRecord(userId, targetType, otp);
         return {
             success: true,
-            message: `Verification code sent via ${this.channelLabel(channel)}`,
+            message: delivery === "queued"
+                ? "Verification code accepted by the SMS gateway but delivery is not confirmed. If it does not arrive, check the TextBee phone (battery, permissions, SMS balance and SIM)."
+                : `Verification code sent via ${this.channelLabel(channel)}`,
             destination: this.maskContact(destination),
+            deliveryStatus: delivery,
         };
     }
     async resendLoginOtp(username, channel) {
@@ -383,11 +510,38 @@ class TwoFactorService {
         if (!(await this.verifyPassword(oldPassword, user.password))) {
             throw new Error("Invalid current password");
         }
+        const record = await this.getOrCreateRecord(userId);
         const options = await this.buildChannelOptions(userId);
         if (options.length === 0) {
             throw new Error("No verification channel is configured. Add an email or mobile number in Settings → Security.");
         }
-        const selected = options.find((option) => option.id === channel) ?? options[0];
+        // Determine target channel: explicit channel > user's configured default > first available option
+        let targetChannelId = channel;
+        if (!targetChannelId) {
+            const def = record.default_login_method;
+            if (def === "PRIMARY_EMAIL" && options.some((o) => o.id === "PRIMARY_EMAIL")) {
+                targetChannelId = "PRIMARY_EMAIL";
+            }
+            else if ((def === "SECONDARY_EMAIL" || def === "ALT_EMAIL") &&
+                options.some((o) => o.id === "ALT_EMAIL")) {
+                targetChannelId = "ALT_EMAIL";
+            }
+            else if (def === "PRIMARY_MOBILE" && options.some((o) => o.id === "PRIMARY_MOBILE")) {
+                targetChannelId = "PRIMARY_MOBILE";
+            }
+            else if ((def === "SECONDARY_MOBILE" || def === "ALT_MOBILE") &&
+                options.some((o) => o.id === "ALT_MOBILE")) {
+                targetChannelId = "ALT_MOBILE";
+            }
+            else if (def === "EMAIL") {
+                targetChannelId =
+                    record.preferred_email_target === "SECONDARY" &&
+                        options.some((o) => o.id === "ALT_EMAIL")
+                        ? "ALT_EMAIL"
+                        : "PRIMARY_EMAIL";
+            }
+        }
+        const selected = options.find((option) => option.id === targetChannelId) ?? options[0];
         const otp = this.generateNumericOtp();
         await this.deliverOtp(selected.id, selected.destination, otp);
         await this.createOtpRecord(userId, "PASSWORD_RESET", otp);
@@ -438,17 +592,156 @@ class TwoFactorService {
         return { success: true, message: "Password changed successfully" };
     }
     // ---------------------------------------------------------------------
+    // Forgot Password (Unauthenticated: Username -> Default OTP -> Reset)
+    // ---------------------------------------------------------------------
+    async requestForgotPasswordOtp(username) {
+        const trimmed = String(username ?? "").trim();
+        if (!trimmed) {
+            throw new Error("Username is required");
+        }
+        const user = await prisma_1.default.user_table.findFirst({
+            where: { username: { equals: trimmed, mode: "insensitive" } },
+        });
+        if (!user || !user.user_id) {
+            throw new Error("User not found");
+        }
+        const record = await this.getOrCreateRecord(user.user_id);
+        const options = await this.buildChannelOptions(user.user_id);
+        if (options.length === 0) {
+            throw new Error("No verification channel is configured for this account. Please contact your system administrator.");
+        }
+        let targetChannelId;
+        const def = record.default_login_method;
+        if (def === "PRIMARY_EMAIL" && options.some((o) => o.id === "PRIMARY_EMAIL")) {
+            targetChannelId = "PRIMARY_EMAIL";
+        }
+        else if ((def === "SECONDARY_EMAIL" || def === "ALT_EMAIL") &&
+            options.some((o) => o.id === "ALT_EMAIL")) {
+            targetChannelId = "ALT_EMAIL";
+        }
+        else if (def === "PRIMARY_MOBILE" && options.some((o) => o.id === "PRIMARY_MOBILE")) {
+            targetChannelId = "PRIMARY_MOBILE";
+        }
+        else if ((def === "SECONDARY_MOBILE" || def === "ALT_MOBILE") &&
+            options.some((o) => o.id === "ALT_MOBILE")) {
+            targetChannelId = "ALT_MOBILE";
+        }
+        const selected = options.find((o) => o.id === targetChannelId) ?? options[0];
+        const otp = this.generateNumericOtp();
+        await this.deliverOtp(selected.id, selected.destination, otp);
+        await this.createOtpRecord(user.user_id, "FORGOT_PASSWORD", otp);
+        return {
+            success: true,
+            message: `Verification code sent to ${this.maskContact(selected.destination)}`,
+            destination: this.maskContact(selected.destination),
+            defaultMethod: selected.id,
+        };
+    }
+    async verifyForgotPasswordOtp(username, code) {
+        const trimmedUser = String(username ?? "").trim();
+        if (!trimmedUser) {
+            throw new Error("Username is required");
+        }
+        const user = await prisma_1.default.user_table.findFirst({
+            where: { username: { equals: trimmedUser, mode: "insensitive" } },
+        });
+        if (!user || !user.user_id) {
+            throw new Error("User not found");
+        }
+        await this.consumeOtp(user.user_id, "FORGOT_PASSWORD", code);
+        const secret = process.env.JWT_SECRET || "Dbsol_HMS@2026";
+        const resetToken = jsonwebtoken_1.default.sign({
+            userId: user.user_id,
+            username: user.username,
+            purpose: "FORGOT_PASSWORD",
+        }, secret, { expiresIn: "10m" });
+        return {
+            success: true,
+            message: "Verification code confirmed",
+            resetToken,
+        };
+    }
+    async finalizeForgotPassword(username, resetToken, newPassword) {
+        const trimmedUser = String(username ?? "").trim();
+        if (!trimmedUser) {
+            throw new Error("Username is required");
+        }
+        if (!resetToken) {
+            throw new Error("Reset token is required");
+        }
+        if (!newPassword || newPassword.length < 8) {
+            throw new Error("New password must be at least 8 characters long");
+        }
+        const user = await prisma_1.default.user_table.findFirst({
+            where: { username: { equals: trimmedUser, mode: "insensitive" } },
+        });
+        if (!user || !user.user_id) {
+            throw new Error("User not found");
+        }
+        const secret = process.env.JWT_SECRET || "Dbsol_HMS@2026";
+        let decoded;
+        try {
+            decoded = jsonwebtoken_1.default.verify(resetToken, secret);
+        }
+        catch {
+            throw new Error("Invalid or expired password reset session. Please request a new verification code.");
+        }
+        if (decoded?.purpose !== "FORGOT_PASSWORD" || decoded?.userId !== user.user_id) {
+            throw new Error("Invalid reset session");
+        }
+        const verifiedOtp = await prisma_1.default.login_otp.findFirst({
+            where: {
+                user_id: user.user_id,
+                user_type: "FORGOT_PASSWORD",
+                is_verified: true,
+            },
+            orderBy: { created_at: "desc" },
+        });
+        if (!verifiedOtp) {
+            throw new Error("Please verify the OTP before setting a new password");
+        }
+        await prisma_1.default.user_table.update({
+            where: { user_id: user.user_id },
+            data: { password: await (0, bcrypt_1.hashPassword)(newPassword) },
+        });
+        await prisma_1.default.login_otp.deleteMany({
+            where: {
+                user_id: user.user_id,
+                user_type: "FORGOT_PASSWORD",
+            },
+        });
+        return {
+            success: true,
+            message: "Password has been reset successfully. Please log in with your new password.",
+        };
+    }
+    // ---------------------------------------------------------------------
     // Internals
     // ---------------------------------------------------------------------
     async getOrCreateRecord(userId) {
+        const user = await prisma_1.default.user_table.findUnique({
+            where: { user_id: userId },
+            include: { employees: true },
+        });
+        const employeeMobile = user?.employees?.mobile_no ?? null;
         const existing = await prisma_1.default.user_two_factor.findUnique({
             where: { user_id: userId },
         });
         if (existing) {
+            if (!existing.primary_mobile && employeeMobile) {
+                return prisma_1.default.user_two_factor.update({
+                    where: { user_id: userId },
+                    data: { primary_mobile: employeeMobile },
+                });
+            }
             return existing;
         }
         return prisma_1.default.user_two_factor.create({
-            data: { user_id: userId },
+            data: {
+                user_id: userId,
+                primary_mobile: employeeMobile,
+                default_login_method: "PRIMARY_EMAIL",
+            },
         });
     }
     async verifyPassword(password, hashedPassword) {
@@ -503,9 +796,9 @@ class TwoFactorService {
         });
     }
     /**
-     * Every channel the current user can actually receive a code on. The
-     * primary/secondary preference decides which mobile/email wins, but all
-     * configured channels stay available for "try another way".
+     * Every channel the current user can actually receive a code on. Unverified
+     * secondary contacts are excluded so a "try another way" pick can never
+     * silently fall back to a contact the user has not confirmed.
      */
     async buildChannelOptions(userId) {
         const user = await prisma_1.default.user_table.findUnique({
@@ -518,68 +811,106 @@ class TwoFactorService {
         const record = await this.getOrCreateRecord(userId);
         const primaryEmail = user.employees?.email ?? null;
         const primaryMobile = record.primary_mobile ?? user.employees?.mobile_no ?? null;
-        const availability = await this.getChannelAvailability();
         const options = [];
-        if (primaryEmail && availability.email) {
+        if (primaryEmail) {
             options.push({
                 id: "PRIMARY_EMAIL",
                 label: "Primary Email",
                 destination: primaryEmail,
             });
         }
-        if (record.alternate_email && record.alternate_email_verified && availability.email) {
+        if (record.alternate_email && record.alternate_email_verified) {
             options.push({
                 id: "ALT_EMAIL",
                 label: "Alternate Email",
                 destination: record.alternate_email,
             });
         }
-        const mobile = record.preferred_mobile_target === "SECONDARY" && record.alternate_mobile
-            ? record.alternate_mobile
-            : primaryMobile || record.alternate_mobile;
-        if (mobile && availability.sms) {
-            options.push({ id: "SMS", label: "Mobile SMS", destination: mobile });
+        if (primaryMobile) {
+            options.push({
+                id: "PRIMARY_MOBILE",
+                label: "Primary Mobile",
+                destination: primaryMobile,
+            });
+        }
+        if (record.alternate_mobile && record.alternate_mobile_verified) {
+            options.push({
+                id: "ALT_MOBILE",
+                label: "Alternate Mobile",
+                destination: record.alternate_mobile,
+            });
         }
         return options;
     }
-    /**
-     * Which delivery providers are actually usable right now. Keeps us from
-     * advertising a channel the user could never receive a code on.
-     */
-    async getChannelAvailability() {
-        const [emailConfig, smsConfig] = await Promise.all([
-            integrationService.getProviderConfig("EMAIL"),
-            integrationService.getProviderConfig("SMS"),
-        ]);
-        const envEmailConfigured = Boolean(process.env.MAIL_HOST && process.env.MAIL_USER && process.env.MAIL_PASS);
-        return {
-            email: Boolean((emailConfig?.host && emailConfig.auth?.user && emailConfig.auth?.pass) ||
-                envEmailConfigured),
-            sms: Boolean(smsConfig?.deviceId),
-        };
-    }
     async resolveDestination(userId, channel) {
-        const options = await this.buildChannelOptions(userId);
-        const match = options.find((option) => option.id === channel);
-        if (!match) {
-            throw new Error(`No destination is configured for ${this.channelLabel(channel)}`);
+        const user = await prisma_1.default.user_table.findUnique({
+            where: { user_id: userId },
+            include: { employees: true },
+        });
+        if (!user) {
+            throw new Error("User not found");
         }
-        const targetType = channel === "PRIMARY_EMAIL"
-            ? "EMAIL"
-            : channel === "ALT_EMAIL"
-                ? "ALT_EMAIL"
-                : channel;
-        return { destination: match.destination, targetType };
+        const record = await this.getOrCreateRecord(userId);
+        const primaryEmail = user.employees?.email ?? null;
+        const primaryMobile = record.primary_mobile ?? user.employees?.mobile_no ?? null;
+        // "preferred" is the backward-compatible SMS/WhatsApp target: the verified
+        // secondary number only wins when it is both chosen and confirmed.
+        const preferredMobile = record.preferred_mobile_target === "SECONDARY" &&
+            record.alternate_mobile &&
+            record.alternate_mobile_verified
+            ? record.alternate_mobile
+            : primaryMobile;
+        switch (channel) {
+            case "PRIMARY_EMAIL":
+                if (!primaryEmail) {
+                    throw new Error("No primary email is configured for this account");
+                }
+                return { destination: primaryEmail, targetType: "EMAIL" };
+            case "ALT_EMAIL":
+                if (!record.alternate_email) {
+                    throw new Error("No alternate email is configured for this account");
+                }
+                if (!record.alternate_email_verified) {
+                    throw new Error("Your alternate email is not verified yet");
+                }
+                return { destination: record.alternate_email, targetType: "ALT_EMAIL" };
+            case "PRIMARY_MOBILE":
+                if (!primaryMobile) {
+                    throw new Error("No primary mobile number is configured for this account");
+                }
+                return { destination: primaryMobile, targetType: "SMS" };
+            case "ALT_MOBILE":
+                if (!record.alternate_mobile) {
+                    throw new Error("No alternate mobile number is configured for this account");
+                }
+                if (!record.alternate_mobile_verified) {
+                    throw new Error("Your alternate mobile number is not verified yet");
+                }
+                return { destination: record.alternate_mobile, targetType: "SMS" };
+            case "SMS":
+                if (!preferredMobile) {
+                    throw new Error("No mobile number is configured for this account");
+                }
+                return { destination: preferredMobile, targetType: "SMS" };
+            case "WHATSAPP":
+                if (!preferredMobile) {
+                    throw new Error("No mobile number is configured for this account");
+                }
+                return { destination: preferredMobile, targetType: "WHATSAPP" };
+            default:
+                throw new Error("Unsupported verification channel");
+        }
     }
     async deliverOtp(channel, destination, otp) {
         switch (channel) {
             case "PRIMARY_EMAIL":
             case "ALT_EMAIL":
                 await this.sendEmailOtp(destination, otp);
-                return;
+                return "sent";
+            case "PRIMARY_MOBILE":
+            case "ALT_MOBILE":
             case "SMS":
-                await this.sendSmsOtp(destination, otp);
-                return;
+                return this.sendSmsOtp(destination, otp);
             case "WHATSAPP":
                 throw new Error("WhatsApp delivery is not configured. Please choose email or SMS.");
             default:
@@ -596,14 +927,39 @@ class TwoFactorService {
         if (!deviceId) {
             throw new Error("SMS is not configured. Add your TextBee device ID in Settings → Integrations.");
         }
+        // TEMP (testing only): stop reporting a false "sent" when the TextBee
+        // phone is known to be failing. Remove with the helpers in smsService.ts.
+        const health = await (0, smsService_1.getSmsGatewayHealth)({
+            deviceId,
+            apiKey: config?.apiKey,
+            apiUrl: config?.apiUrl,
+        });
+        if (!health.healthy) {
+            throw new Error(`SMS gateway is not delivering messages: ${health.reason}. Check the TextBee phone (battery, app permissions, SMS balance and SIM) and try again.`);
+        }
+        const message = `Your HMS verification code is ${otp}. It expires in 5 minutes.`;
         try {
             await (0, smsService_1.sendSMS)({
                 deviceId,
                 recipients: [to],
-                message: `Your HMS verification code is ${otp}. It expires in 5 minutes.`,
+                message,
+                apiKey: config?.apiKey,
+                apiUrl: config?.apiUrl,
+                simSlotIndex: 0,
+            });
+            // TEMP (testing only): catch immediate device failures so the UI does
+            // not show success for a message the phone already rejected.
+            const confirmation = await (0, smsService_1.verifySmsDelivery)({
+                deviceId,
+                recipients: [to],
+                message,
                 apiKey: config?.apiKey,
                 apiUrl: config?.apiUrl,
             });
+            if (health.recentFailure && confirmation !== "delivered") {
+                return "queued";
+            }
+            return "sent";
         }
         catch (err) {
             throw new Error(`Failed to send SMS: ${err.message}`);
@@ -615,6 +971,10 @@ class TwoFactorService {
                 return "primary email";
             case "ALT_EMAIL":
                 return "alternate email";
+            case "PRIMARY_MOBILE":
+                return "primary mobile";
+            case "ALT_MOBILE":
+                return "alternate mobile";
             case "SMS":
                 return "mobile SMS";
             case "WHATSAPP":

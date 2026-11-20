@@ -26,6 +26,23 @@ const toReportComment = (value) => {
     }
     return { text: value };
 };
+/* The stored comment as an object, from a jsonb object or an older JSON
+   string / plain text. */
+const asComment = (value) => {
+    if (!value)
+        return null;
+    if (typeof value === "object")
+        return value;
+    if (typeof value !== "string")
+        return null;
+    try {
+        const parsed = JSON.parse(value);
+        return parsed && typeof parsed === "object" ? parsed : { text: value };
+    }
+    catch {
+        return { text: value };
+    }
+};
 /* The comment's text, from a stored comment object or older string. */
 const reportCommentText = (value) => {
     const comment = typeof value === "string" ? toReportComment(value) : value;
@@ -49,6 +66,113 @@ class LabReportService {
             throw new Error(`Lab report for order id ${orderId} not found`);
         }
         return report;
+    }
+    /* One order item's report for the doctor's "View Report" action.
+       lab_report only carries lab_order_id, so the item is resolved through
+       lab_result first, then through the order's reports. */
+    async getByOrderItem(labOrderItemId) {
+        const data = await repository.findByOrderItem(labOrderItemId);
+        if (!data) {
+            throw new Error(`Lab order item with id ${labOrderItemId} not found`);
+        }
+        const { item, results, orderReports, patient } = data;
+        const linkedReports = results
+            .map((result) => result.lab_report)
+            .filter((report) => Boolean(report));
+        const resultIds = new Set(results.map((result) => result.lab_result_id));
+        const parametersOf = (report) => Array.isArray(asComment(report?.report_comment)?.parameters)
+            ? asComment(report?.report_comment)?.parameters
+            : [];
+        /* A report whose saved parameters carry this item's lab_result ids is
+           this item's report even when lab_result.lab_report_id is empty. */
+        const reportByParameters = orderReports.find((report) => parametersOf(report).some((parameter) => resultIds.has(String(parameter?.id ?? ""))));
+        const report = linkedReports.find((candidate) => Boolean(candidate.report_file)) ??
+            linkedReports[0] ??
+            reportByParameters ??
+            (orderReports.length === 1 ? orderReports[0] : null) ??
+            orderReports.find((candidate) => Boolean(candidate.report_file)) ??
+            orderReports[0] ??
+            null;
+        const reportParameters = parametersOf(report).map((parameter) => ({
+            name: parameter?.parameter ?? parameter?.name ?? "",
+            value: parameter?.result ??
+                parameter?.observedValue ??
+                parameter?.value ??
+                "",
+            unit: parameter?.unit ?? "",
+            referenceRange: parameter?.referenceRange ?? parameter?.reference_range ?? "",
+            status: parameter?.status ?? "",
+            comment: parameter?.comment ?? parameter?.remarks ?? "",
+        }));
+        /* Fall back to the stored lab_result rows when the report comment has
+           no parameter list (older reports). */
+        const resultParameters = results.map((result) => {
+            const testParameter = result.lab_test_parameter;
+            const range = testParameter?.ref_range_text ||
+                (testParameter?.ref_range_low != null && testParameter?.ref_range_high != null
+                    ? `${testParameter.ref_range_low} - ${testParameter.ref_range_high}`
+                    : "");
+            return {
+                name: testParameter?.parameter_name ?? result.parameter_name,
+                value: result.result_value ?? "",
+                unit: testParameter?.unit ?? "",
+                referenceRange: range,
+                status: result.abnormal_flag || result.result_status || "",
+                comment: result.result_comment ?? "",
+            };
+        });
+        const order = item.lab_order;
+        const patientName = patient
+            ? [
+                patient.patient_first_name,
+                patient.patient_middle_name,
+                patient.patient_last_name,
+            ]
+                .filter(Boolean)
+                .join(" ")
+            : "";
+        return {
+            item: {
+                lab_order_item_id: item.lab_order_item_id,
+                lab_order_id: item.lab_order_id,
+                lab_test_id: item.lab_test_id,
+                item_status: item.item_status,
+                remarks: item.remarks,
+                created_at: item.created_at,
+                lab_test_master: item.lab_test_master,
+            },
+            order: {
+                lab_order_id: order?.lab_order_id ?? item.lab_order_id,
+                order_datetime: order?.order_datetime ?? null,
+                priority: order?.priority ?? null,
+                clinical_notes: order?.clinical_notes ?? null,
+                department: order?.department_master?.department_name ?? "",
+                doctor: order?.employees
+                    ? `Dr. ${order.employees.first_name ?? ""} ${order.employees.last_name ?? ""}`.trim()
+                    : "",
+            },
+            patient: {
+                patient_id: patient?.patient_id ?? order?.patient_history?.patient_id ?? "",
+                name: patientName,
+                age: patient?.patient_age ?? null,
+                gender: patient?.patient_gender ?? null,
+                dob: patient?.patient_dob ?? null,
+                mrn_no: order?.patient_history?.mrn_no ?? null,
+            },
+            /* The selected report carries the stored PDF; the others are listed
+               without their (large) files. */
+            report,
+            otherReports: orderReports
+                .filter((candidate) => candidate.lab_report_id !== report?.lab_report_id)
+                .map((candidate) => ({
+                lab_report_id: candidate.lab_report_id,
+                report_number: candidate.report_number,
+                report_status: candidate.report_status,
+                generated_datetime: candidate.generated_datetime,
+                has_file: Boolean(candidate.report_file),
+            })),
+            parameters: reportParameters.length > 0 ? reportParameters : resultParameters,
+        };
     }
     async create(data) {
         // 0. If a report already exists for this report_number or lab_order_id, update it

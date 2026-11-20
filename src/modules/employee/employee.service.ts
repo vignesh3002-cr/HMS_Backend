@@ -5,6 +5,7 @@ import { CreateEmployeeDto, UpdateEmployeeDto, GetEmployeesQuery, WorkingHourDto
 import { generateId } from "../../utils/idGenerator";
 import { TOP_LEVEL_ADMIN_ROLES, BRANCH_ADMIN, ADMIN } from "../../permissions/roles";
 import { permissionService } from "../permission/permission.service";
+import { getBranchTimezone, getTodayIn } from "../../utils/timezone";
 
 const repository = new EmployeeRepository();
 let employeeId: string;
@@ -21,9 +22,11 @@ function timeStringToUtcDate(time: string): Date {
     return new Date(Date.UTC(1970, 0, 1, hours, minutes, 0, 0));
 }
 
-function todayDateOnly(): Date {
-    const now = new Date();
-    return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+// Today's calendar day in the BRANCH's timezone, anchored at UTC midnight for
+// @db.Date columns (effective_from) - never the SERVER machine's local date,
+// which differs between local dev and the deployed host.
+async function todayDateOnly(tz?: string | null): Promise<Date> {
+    return new Date(`${getTodayIn(await getBranchTimezone(tz))}T00:00:00.000Z`);
 }
 
 function normalizeDayOfWeek(day: string): WorkingHourDto["day_of_week"] {
@@ -362,7 +365,7 @@ for (const branchId of allowedBranchIds) {
             status: 1,
             // Doctor assignments record when they started (effective_from);
             // other roles keep their existing create behavior unchanged.
-            ...(data.role_type === "DOCTOR" ? { effective_from: todayDateOnly() } : {}),
+            ...(data.role_type === "DOCTOR" ? { effective_from: await todayDateOnly(branchId) } : {}),
 
         }
 
@@ -424,7 +427,7 @@ for (const schedule of data.working_hours ?? []) {
 
             is_active: true,
 
-            effective_from: todayDateOnly()
+            effective_from: await todayDateOnly(schedule.branch_id)
 
         }
   
@@ -804,7 +807,7 @@ const protectedIds = [
                         end_time: timeStringToUtcDate(schedule.end_time),
                         consultation_minutes: data.consultation_minutes ?? 20,
                         is_active: true,
-                        effective_from: todayDateOnly(),
+                        effective_from: await todayDateOnly(schedule.branch_id),
                     },
                 });
             }
@@ -846,8 +849,11 @@ async softDeleteSchedule(employeeId: string, scheduleId: number, actingUserId: s
         // working hours to serve them. Direct the admin to the doctor's
         // Schedule page, where cancellation runs through the transfer flow
         // (transfer / reschedule / cancel choices per appointment).
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
+        // "Today" is the BRANCH's calendar day (UTC-midnight anchored), not
+        // the server machine's local midnight.
+        const todayStart = new Date(
+            `${getTodayIn(await getBranchTimezone(schedule.branch_id))}T00:00:00.000Z`
+        );
 
         const upcomingAppointments = await tx.appointment_history.findMany({
             where: {
@@ -898,8 +904,10 @@ async softDeleteEmployee(employeeId: string, actingUserId: string) {
         // RESCHEDULE_REQUIRED, unlinked from the doctor and queued so an
         // admin can reassign them later (via the edit appointment form or
         // the reschedule queue).
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // "Today" is the BRANCH's calendar day, never the server's local date.
+        const today = new Date(
+            `${getTodayIn(await getBranchTimezone(employee.branch_id))}T00:00:00.000Z`
+        );
 
         const futureAppointments = await repository.findFutureAppointmentsTx(
             tx,

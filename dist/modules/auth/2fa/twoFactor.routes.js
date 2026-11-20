@@ -13,6 +13,9 @@ router.get("/status", auth_middleware_1.authenticate, twoFactor_controller_1.two
 router.post("/totp/setup", auth_middleware_1.authenticate, twoFactor_controller_1.twoFactorController.setupTotp.bind(twoFactor_controller_1.twoFactorController));
 router.post("/totp/confirm", auth_middleware_1.authenticate, twoFactor_controller_1.twoFactorController.confirmTotp.bind(twoFactor_controller_1.twoFactorController));
 router.post("/disable", auth_middleware_1.authenticate, twoFactor_controller_1.twoFactorController.disableTwoFactor.bind(twoFactor_controller_1.twoFactorController));
+// Step 1: Default-channel authorization for adding alternate contact
+router.post("/alternate/request-auth-otp", auth_middleware_1.authenticate, twoFactor_controller_1.twoFactorController.requestAddAlternateAuthOtp.bind(twoFactor_controller_1.twoFactorController));
+router.post("/alternate/verify-auth-otp", auth_middleware_1.authenticate, twoFactor_controller_1.twoFactorController.verifyAddAlternateAuthOtp.bind(twoFactor_controller_1.twoFactorController));
 // Alternate Email
 router.post("/alternate-email/send-otp", auth_middleware_1.authenticate, twoFactor_controller_1.twoFactorController.sendAlternateEmailOtp.bind(twoFactor_controller_1.twoFactorController));
 router.post("/alternate-email/confirm", auth_middleware_1.authenticate, twoFactor_controller_1.twoFactorController.confirmAlternateEmail.bind(twoFactor_controller_1.twoFactorController));

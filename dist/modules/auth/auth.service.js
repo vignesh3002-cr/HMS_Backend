@@ -11,6 +11,7 @@ const prisma_1 = __importDefault(require("../../config/prisma"));
 const idGenerator_1 = require("../../utils/idGenerator");
 const crypto_1 = require("crypto");
 const mail_1 = require("../../utils/mail");
+const sms_1 = require("../../utils/sms");
 const roles_1 = require("../../permissions/roles");
 class AuthService {
     authRepository = new auth_repository_1.AuthRepository();
@@ -186,6 +187,40 @@ class AuthService {
             throw new Error("User not found");
         }
         this.assertAccountUsable(user);
+        const twoFactor = await prisma_1.default.user_two_factor.findUnique({
+            where: { user_id: user.user_id },
+        });
+        const isMobileDefault = twoFactor?.default_login_method === "PRIMARY_MOBILE" ||
+            twoFactor?.default_login_method === "SECONDARY_MOBILE" ||
+            twoFactor?.default_login_method === "ALT_MOBILE";
+        const targetMobile = twoFactor?.default_login_method === "PRIMARY_MOBILE"
+            ? (twoFactor.primary_mobile || user.employees?.mobile_no)
+            : twoFactor?.alternate_mobile;
+        if (isMobileDefault && targetMobile) {
+            const otp = (0, crypto_1.randomInt)(100000, 999999).toString();
+            const expiry = new Date(Date.now() + 5 * 60 * 1000);
+            await prisma_1.default.$transaction(async (tx) => {
+                const id = await (0, idGenerator_1.generateId)(tx, "LOGIN_OTP");
+                await tx.login_otp.create({
+                    data: {
+                        otp_id: id,
+                        user_id: user.user_id,
+                        user_type: user.role_type === "PATIENT" ? "PATIENT" : "EMPLOYEE",
+                        otp_code: otp,
+                        expires_at: expiry,
+                    },
+                });
+            });
+            const message = `Your HMS verification code is ${otp}. It expires in 5 minutes.`;
+            await (0, sms_1.sendSms)({ recipient: targetMobile, message });
+            const compact = targetMobile.replace(/\s+/g, "");
+            const masked = compact.length <= 4
+                ? "*".repeat(compact.length)
+                : `${"*".repeat(compact.length - 4)}${compact.slice(-4)}`;
+            return {
+                message: `OTP sent to ${masked}`,
+            };
+        }
         const email = await this.resolveEmail(user);
         if (!email) {
             throw new Error("Email address not found");

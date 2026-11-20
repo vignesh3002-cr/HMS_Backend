@@ -10,6 +10,9 @@ export interface CreateBranchDto {
   district?: string | null;
   state_name?: string | null;
   country?: string | null;
+  city?: string | null;
+  // IANA zone id ("Asia/Kolkata"). Optional on create; DB default fills it.
+  timezone?: string;
   area?: string | null;
   pincode?: number | null;
   license_number?: string | null;
@@ -75,6 +78,10 @@ export interface UpdateBranchDto {
   district?: string | null;
   state_name?: string | null;
   country?: string | null;
+  city?: string | null;
+  // IANA zone id ("Asia/Kolkata"); null/absent = leave the stored zone alone
+  // (the column is NOT NULL, so it is never cleared to null).
+  timezone?: string | null;
   area?: string | null;
   pincode?: number | null;
   license_number?: string | null;

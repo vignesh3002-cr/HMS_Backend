@@ -101,6 +101,27 @@ class ConsultationRepository {
         const result = await prisma_1.default.treatment_type_master.aggregate({ _max: { display_order: true } });
         return (result._max.display_order ?? 0) + 1;
     }
+    async getLineOfTherapies(query) {
+        const where = {};
+        if (query.isActive !== undefined)
+            where.is_active = query.isActive;
+        if (query.search) {
+            where.OR = [
+                { name: { contains: query.search, mode: "insensitive" } },
+                { code: { contains: query.search, mode: "insensitive" } }
+            ];
+        }
+        return prisma_1.default.line_of_therapy_master.findMany({ where, orderBy: { name: "asc" } });
+    }
+    async findLineOfTherapyByCode(code) {
+        return prisma_1.default.line_of_therapy_master.findUnique({ where: { code } });
+    }
+    async findLineOfTherapyByName(name) {
+        return prisma_1.default.line_of_therapy_master.findFirst({ where: { name: { equals: name, mode: "insensitive" } } });
+    }
+    async createLineOfTherapy(data) {
+        return prisma_1.default.line_of_therapy_master.create({ data });
+    }
     // ---------------- Personal history ----------------
     async findPersonalHistoryByEncounter(encounterNo) {
         return prisma_1.default.patient_personal_history.findUnique({ where: { encounter_no: encounterNo } });

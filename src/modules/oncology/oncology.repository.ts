@@ -156,9 +156,62 @@ export class OncologyRepository {
 
     async findCancerScoresByType(cancerTypeId: string) {
 
+        /* A score can serve several cancer types (e.g. MMR/MSI applies to
+           eight). The link table is the source of truth; the primary
+           cancer_type_id is kept for older rows that predate it. */
+        const links = await prisma.cancer_score_cancer_types.findMany({
+            where: { cancer_type_id: cancerTypeId },
+            select: { score_id: true },
+        });
+        const linkedIds = links.map((link) => link.score_id);
+
         return prisma.cancer_score.findMany({
-            where: { cancer_type_id: cancerTypeId, active_status: 1 },
-            orderBy: [{ score_system: "asc" as const }, { display_order: "asc" as const }]
+            where: {
+                active_status: 1,
+                OR: [
+                    { cancer_type_id: cancerTypeId },
+                    ...(linkedIds.length > 0
+                        ? [{ score_id: { in: linkedIds } }]
+                        : []),
+                ],
+            },
+            orderBy: [{ display_order: "asc" as const }, { score_system: "asc" as const }]
+        });
+
+    }
+
+    async findCancerScoreVariablesByScoreId(scoreId: string) {
+
+        return prisma.cancer_score_variable.findMany({
+            where: { score_id: scoreId, active_status: 1 },
+            orderBy: { display_order: "asc" }
+        });
+
+    }
+
+    async findCancerScoreGroupsByScoreId(scoreId: string) {
+
+        return prisma.cancer_score_group.findMany({
+            where: { score_id: scoreId, active_status: 1 },
+            orderBy: { sort_order: "asc" }
+        });
+
+    }
+
+    async findCancerScoreById(scoreId: string) {
+
+        return prisma.cancer_score.findUnique({ where: { score_id: scoreId } });
+
+    }
+
+    async updateCancerScore(
+        scoreId: string,
+        data: Record<string, string | null>
+    ) {
+
+        return prisma.cancer_score.update({
+            where: { score_id: scoreId },
+            data: data as Prisma.cancer_scoreUpdateInput
         });
 
     }

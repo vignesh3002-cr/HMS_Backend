@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.doctorScheduleService = exports.DoctorScheduleService = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
+const timezone_1 = require("../../utils/timezone");
 const doctorTransfer_repository_1 = require("../doctor-transfer/doctorTransfer.repository");
 const doctorLeave_service_1 = require("../doctorLeave/doctorLeave.service");
 /*
@@ -144,11 +145,11 @@ class DoctorScheduleService {
         // 6. Validate date
         // --------------------------------------------------
         const parsedDate = this.parseDateOnly(change_date);
-        // Compare against today's calendar date in IST (hospital time).
-        const todayIst = new Date(Date.now() + 5.5 * 60 * 60 * 1000)
-            .toISOString()
-            .slice(0, 10);
-        if (parsedDate.toISOString().slice(0, 10) < todayIst) {
+        // Compare against today's calendar date in the BRANCH's own timezone
+        // (IANA zone from branch.timezone) - never the server's zone and
+        // never a hardcoded offset, so a branch abroad checks its own day.
+        const todayLocal = (0, timezone_1.getTodayIn)(await (0, timezone_1.getBranchTimezone)(branch_id));
+        if (parsedDate.toISOString().slice(0, 10) < todayLocal) {
             throw new Error("Schedule changes cannot be created for a past date");
         }
         // --------------------------------------------------

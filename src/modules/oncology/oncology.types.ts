@@ -38,6 +38,11 @@ export interface IhcInput {
     p53_ihc?: string | null;
     ar_status?: string | null;
     mlh1_methylation?: string | null; // Methylated | Not Methylated | Not Done
+    // p16 drives the HPV-associated oropharynx staging schema choice and p40
+    // the squamous-cell confirmation for head & neck / oesophagus.
+    p16_status?: string | null; // Positive | Negative | Equivocal | Not Done
+    p16_percent?: number | null;
+    p40_status?: string | null; // Positive | Negative | Not Done
 
 }
 
@@ -130,6 +135,9 @@ export interface IhcUpsertDto {
     p53_ihc?: string | null;
     ar_status?: string | null;
     mlh1_methylation?: string | null;
+    p16_status?: string | null;
+    p16_percent?: number | null;
+    p40_status?: string | null;
 
 }
 
@@ -220,6 +228,10 @@ export interface CreateStagingDetailDto {
     grade_system?: string | null;
     score?: string | null;
     score_system?: string | null;
+    score_variables?: Record<string, unknown> | null;
+    score_result?: string | null;
+    risk_group?: string | null;
+    score_points?: number | null;
     notes?: string | null;
     performance_status?: number | null;
     employee_id?: string | null;
@@ -262,6 +274,10 @@ export interface UpdateStagingDetailDto {
     grade_system?: string | null;
     score?: string | null;
     score_system?: string | null;
+    score_variables?: Record<string, unknown> | null;
+    score_result?: string | null;
+    risk_group?: string | null;
+    score_points?: number | null;
     notes?: string | null;
     performance_status?: number | null;
     employee_id?: string | null;
