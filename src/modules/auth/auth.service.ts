@@ -204,7 +204,7 @@ const activeMappings = user.user_branch_mapping?.filter(
     return validated;
   }
 
-  async login(username: string, password: string, rememberMe: boolean) {
+  async login(username: string, password: string, rememberMe: boolean = false, directLogin: boolean = false) {
 
     const user =
       await this.authRepository.findUserByUsername(username);
@@ -222,14 +222,44 @@ const activeMappings = user.user_branch_mapping?.filter(
 
     this.assertAccountUsable(user);
 
-    // Send OTP to the user's registered email
-    const otpResult = await this.sendOtp(user.username!);
+    // Direct Login / Cloud Test Bypass (Useful on Render free tier where SMTP/SMS is blocked)
+    const isDirectLoginAllowed = process.env.ALLOW_DIRECT_LOGIN === "true" || process.env.ENABLE_OTP === "false";
+    const shouldBypassOtp = isDirectLoginAllowed && (directLogin || process.env.ENABLE_OTP === "false");
 
-    return {
-      username: user.username,
-      requiresOtp: true,
-      message: otpResult.message,
-    };
+    if (shouldBypassOtp) {
+      const session = this.buildAuthPayload(user, rememberMe);
+      return {
+        username: user.username,
+        requiresOtp: false,
+        token: session.token,
+        user: session.user,
+        message: "Login successful (Direct Login enabled)",
+      };
+    }
+
+    // Standard flow: Send OTP to the user's registered email/phone
+    try {
+      const otpResult = await this.sendOtp(user.username!);
+
+      return {
+        username: user.username,
+        requiresOtp: true,
+        message: otpResult.message,
+      };
+    } catch (otpError: any) {
+      if (isDirectLoginAllowed) {
+        console.warn(`[Auth] OTP delivery failed (${otpError.message}). Falling back to Direct Login session because ALLOW_DIRECT_LOGIN=true.`);
+        const session = this.buildAuthPayload(user, rememberMe);
+        return {
+          username: user.username,
+          requiresOtp: false,
+          token: session.token,
+          user: session.user,
+          message: "Login successful (OTP service unavailable, Direct Login fallback applied)",
+        };
+      }
+      throw otpError;
+    }
 
   }
 

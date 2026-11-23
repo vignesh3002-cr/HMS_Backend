@@ -9,8 +9,8 @@ export class AuthController {
 
         try {
 
-            const { username, password, rememberMe } = req.body;
-            console.log("Remember Me:", rememberMe);
+            const { username, password, rememberMe, directLogin } = req.body;
+            console.log("Remember Me:", rememberMe, "Direct Login:", directLogin);
 
             if (!username || !password) {
                 return res.status(400).json({
@@ -22,8 +22,29 @@ export class AuthController {
             const result = await authService.login(
                 username,
                 password,
-                rememberMe
+                rememberMe,
+                Boolean(directLogin)
             );
+
+            if (!result.requiresOtp && result.token) {
+                res.cookie("token", result.token, {
+                    httpOnly: true,
+                    secure: false,
+                    sameSite: "lax",
+                    maxAge: rememberMe ? 12 * 60 * 60 * 1000 : 5 * 60 * 1000
+                });
+
+                return res.status(200).json({
+                    success: true,
+                    message: result.message || "Login successful",
+                    data: {
+                        username: result.username,
+                        requiresOtp: false,
+                        token: result.token,
+                        user: result.user
+                    }
+                });
+            }
 
             return res.status(200).json({
                 success: true,
