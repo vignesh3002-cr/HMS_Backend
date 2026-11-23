@@ -15,30 +15,14 @@ class AuthController {
                 });
             }
             const result = await authService.login(username, password, rememberMe);
-            // OTP flow temporarily disabled - issuing the session cookie directly on login
-            // Cookie lifetime must match the JWT's own expiry (see utils/jwt.ts:
-            // 12h when rememberMe is on, 5m otherwise) - otherwise the cookie
-            // outlives the token (or vice versa) and requests start failing
-            // with 401s well before the user expects to be logged out.
-            res.cookie("token", result.token, {
-                httpOnly: true,
-                secure: false,
-                sameSite: "lax",
-                maxAge: rememberMe ? 12 * 60 * 60 * 1000 : 5 * 60 * 1000
-            });
             return res.status(200).json({
                 success: true,
-                message: "Login successful",
+                message: result.message || "Credentials verified. OTP sent to your email.",
                 data: {
-                    token: result.token,
-                    user: result.user
+                    username: result.username,
+                    requiresOtp: true
                 }
             });
-            // return res.status(200).json({
-            //     success: true,
-            //     message: "Credentials verified",
-            //     data: result
-            // });
         }
         catch (error) {
             return res.status(401).json({
@@ -92,6 +76,7 @@ class AuthController {
                 success: true,
                 message: "OTP verified successfully",
                 data: {
+                    token: result.token,
                     user: result.user
                 }
             });

@@ -110,6 +110,10 @@ export interface CreateRegimenProtocolDto {
     notes?: string | null;
     no_of_days?: number | null;
     days?: RegimenProtocolDayInput[];
+    active_status?: number | null;
+    created_by?: string | null;
+    updated_by?: string | null;
+    review_date?: string | Date | null;
     items: RegimenProtocolItemDto[];
     discharge_instructions?: RegimenProtocolDischargeInstructionInput[];
     dilutions?: RegimenProtocolDilutionInput[];
@@ -133,6 +137,9 @@ export interface UpdateRegimenProtocolDto {
     dilutions?: RegimenProtocolDilutionInput[];
     no_of_days?: number | null;
     days?: RegimenProtocolDayInput[];
+    active_status?: number | null;
+    updated_by?: string | null;
+    review_date?: string | Date | null;
 
 }
 
@@ -149,7 +156,17 @@ export interface RegimenProtocolFilterQuery {
     // available generics. When omitted, only generics are returned.
     organization_id?: string;
     include_details?: boolean;
+    include_inactive?: boolean;
+    active_status?: number;
 
+}
+
+export interface ProtocolPerformanceFilterQuery {
+    date_from?: string;
+    date_to?: string;
+    prev_date_from?: string;
+    prev_date_to?: string;
+    organization_id?: string;
 }
 
 // -------------------------------------------------------------------------

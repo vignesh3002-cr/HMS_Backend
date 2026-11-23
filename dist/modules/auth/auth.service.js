@@ -11,6 +11,7 @@ const prisma_1 = __importDefault(require("../../config/prisma"));
 const idGenerator_1 = require("../../utils/idGenerator");
 const crypto_1 = require("crypto");
 const mail_1 = require("../../utils/mail");
+const sms_1 = require("../../utils/sms");
 const roles_1 = require("../../permissions/roles");
 class AuthService {
     authRepository = new auth_repository_1.AuthRepository();
@@ -31,9 +32,19 @@ class AuthService {
             }
         }
     }
-    resolveEmail(user) {
+    async resolveEmail(user) {
         if (user.role_type === "PATIENT") {
             return user.patient_bio_data?.[0]?.patient_email ?? undefined;
+        }
+        if (user.user_id) {
+            const twoFactor = await prisma_1.default.user_two_factor.findUnique({
+                where: { user_id: user.user_id },
+            });
+            if (twoFactor?.preferred_email_target === "SECONDARY" &&
+                twoFactor.alternate_email_verified &&
+                twoFactor.alternate_email) {
+                return twoFactor.alternate_email;
+            }
         }
         return user.employees?.email ?? undefined;
     }
@@ -75,6 +86,20 @@ class AuthService {
                 emp_status: employee?.emp_status ?? null,
             },
         };
+    }
+    /**
+     * Builds a login session for a user whose second factor has already been
+     * verified (e.g. TOTP / recovery code in the 2FA module). Reuses the exact
+     * same payload/token shape as a password login so downstream consumers
+     * cannot tell the two flows apart.
+     */
+    async buildSessionForUsername(username, rememberMe = false) {
+        const user = await this.authRepository.findUserByUsername(username);
+        if (!user) {
+            throw new Error("User not found");
+        }
+        this.assertAccountUsable(user);
+        return this.buildAuthPayload(user, rememberMe);
     }
     // ---- KPI Preferences ----
     static ALLOWED_KPI_IDS = new Set([
@@ -148,11 +173,13 @@ class AuthService {
             throw new Error("Invalid username or password");
         }
         this.assertAccountUsable(user);
-        // OTP flow temporarily disabled - logging in directly after password check
-        // return {
-        //   username: user.username,
-        // };
-        return this.buildAuthPayload(user, rememberMe);
+        // Send OTP to the user's registered email
+        const otpResult = await this.sendOtp(user.username);
+        return {
+            username: user.username,
+            requiresOtp: true,
+            message: otpResult.message,
+        };
     }
     async sendOtp(username) {
         const user = await this.authRepository.findUserByUsername(username);
@@ -160,7 +187,41 @@ class AuthService {
             throw new Error("User not found");
         }
         this.assertAccountUsable(user);
-        const email = this.resolveEmail(user);
+        const twoFactor = await prisma_1.default.user_two_factor.findUnique({
+            where: { user_id: user.user_id },
+        });
+        const isMobileDefault = twoFactor?.default_login_method === "PRIMARY_MOBILE" ||
+            twoFactor?.default_login_method === "SECONDARY_MOBILE" ||
+            twoFactor?.default_login_method === "ALT_MOBILE";
+        const targetMobile = twoFactor?.default_login_method === "PRIMARY_MOBILE"
+            ? (twoFactor.primary_mobile || user.employees?.mobile_no)
+            : twoFactor?.alternate_mobile;
+        if (isMobileDefault && targetMobile) {
+            const otp = (0, crypto_1.randomInt)(100000, 999999).toString();
+            const expiry = new Date(Date.now() + 5 * 60 * 1000);
+            await prisma_1.default.$transaction(async (tx) => {
+                const id = await (0, idGenerator_1.generateId)(tx, "LOGIN_OTP");
+                await tx.login_otp.create({
+                    data: {
+                        otp_id: id,
+                        user_id: user.user_id,
+                        user_type: user.role_type === "PATIENT" ? "PATIENT" : "EMPLOYEE",
+                        otp_code: otp,
+                        expires_at: expiry,
+                    },
+                });
+            });
+            const message = `Your HMS verification code is ${otp}. It expires in 5 minutes.`;
+            await (0, sms_1.sendSms)({ recipient: targetMobile, message });
+            const compact = targetMobile.replace(/\s+/g, "");
+            const masked = compact.length <= 4
+                ? "*".repeat(compact.length)
+                : `${"*".repeat(compact.length - 4)}${compact.slice(-4)}`;
+            return {
+                message: `OTP sent to ${masked}`,
+            };
+        }
+        const email = await this.resolveEmail(user);
         if (!email) {
             throw new Error("Email address not found");
         }
@@ -190,33 +251,32 @@ class AuthService {
         if (!user) {
             throw new Error("User not found");
         }
-        // OTP verification temporarily disabled
-        // const otpRecord = await prisma.login_otp.findFirst({
-        //   where: {
-        //     user_id: user.user_id!,
-        //     is_verified: false
-        //   },
-        //   orderBy: {
-        //     created_at: "desc"
-        //   }
-        // });
-        // if (!otpRecord) {
-        //   throw new Error("OTP not found. Please request a new one.");
-        // }
-        // if (otpRecord.otp_code !== code) {
-        //   throw new Error("Invalid OTP");
-        // }
-        // if (otpRecord.expires_at < new Date()) {
-        //   throw new Error("OTP has expired");
-        // }
-        // await prisma.login_otp.update({
-        //   where: {
-        //     id: otpRecord.id
-        //   },
-        //   data: {
-        //     is_verified: true
-        //   }
-        // });
+        const otpRecord = await prisma_1.default.login_otp.findFirst({
+            where: {
+                user_id: user.user_id,
+                is_verified: false
+            },
+            orderBy: {
+                created_at: "desc"
+            }
+        });
+        if (!otpRecord) {
+            throw new Error("OTP not found. Please request a new one.");
+        }
+        if (otpRecord.otp_code !== code.trim()) {
+            throw new Error("Invalid OTP code");
+        }
+        if (otpRecord.expires_at < new Date()) {
+            throw new Error("OTP has expired. Please request a new one.");
+        }
+        await prisma_1.default.login_otp.update({
+            where: {
+                id: otpRecord.id
+            },
+            data: {
+                is_verified: true
+            }
+        });
         return this.buildAuthPayload(user, rememberMe);
     }
     // Self-service only - the caller can only ever change their own username,

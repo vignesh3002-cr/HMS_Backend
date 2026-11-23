@@ -616,6 +616,13 @@ const isBranchChange =
             });
         }
 
+        if (data.mobile_no && userId) {
+            await tx.user_two_factor.updateMany({
+                where: { user_id: userId },
+                data: { primary_mobile: data.mobile_no },
+            });
+        }
+
         // Doctor mappings are owned by the transfer workflow (branch changes
         // are rejected by the guard above), so a plain profile edit never
         // rewrites them here — skip this block for doctors entirely.

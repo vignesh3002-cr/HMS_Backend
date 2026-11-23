@@ -113,6 +113,7 @@ export class DoctorLeaveRepository {
 
         const {
             employee_id,
+            branchId,
             status,
             page = 1,
             limit = 10
@@ -122,6 +123,10 @@ export class DoctorLeaveRepository {
 
         if (employee_id) {
             where.employee_id = employee_id;
+        }
+
+        if (branchId) {
+            where.branch_id = branchId;
         }
 
         if (status) {

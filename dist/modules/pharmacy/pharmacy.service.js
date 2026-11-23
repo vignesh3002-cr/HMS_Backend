@@ -46,6 +46,18 @@ const doseOf = (calculated, unit, fallback) => {
         dose_unit: clean(unit)
     };
 };
+// A duration as it prints: the number plus its unit code ("30 D"). A value
+// that already carries the unit is never doubled.
+const durationOf = (value, unit) => {
+    const raw = clean(value);
+    if (!raw)
+        return null;
+    const code = clean(unit);
+    if (!code)
+        return raw;
+    const escaped = code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(^|\\s)${escaped}$`, "i").test(raw) ? raw : `${raw} ${code}`;
+};
 class PharmacyService {
     repository = new pharmacy_repository_1.PharmacyRepository();
     /*
@@ -124,6 +136,7 @@ class PharmacyService {
                 drug_role: clean(item.drug_role) ?? pharmacy_constants_1.PHARMACY_DRUG_ROLE.PRIMARY,
                 route: clean(item.administration_route),
                 frequency: clean(item.frequency),
+                duration: clean(item.duration),
                 instructions: clean(item.administration_detail ?? item.remarks),
                 pharmacy_item_id: pharmMaster?.pharmacy_item_id ?? null
             };
@@ -145,14 +158,14 @@ class PharmacyService {
                 medicine_id: instruction.medicine_id ?? null,
                 drug_name: drugNameOf(instruction.medicine_id, instruction.drug_brand_name, medicine),
                 brand_name: brandName,
-                dosage_form: clean(medicine?.dosage_form),
+                dosage_form: clean(instruction.drug_from ?? medicine?.dosage_form),
                 patient_dose: protoDoseText,
                 dose,
                 dose_unit: doseUnit,
                 quantity: disDefaultQty,
                 drug_role: pharmacy_constants_1.PHARMACY_DRUG_ROLE.DISCHARGE,
                 frequency: clean(instruction.frequency),
-                duration: clean(instruction.duration ?? instruction.duration_days),
+                duration: durationOf(instruction.duration, instruction.duration_days),
                 instructions: clean(instruction.administration_detail ?? instruction.comment),
                 pharmacy_item_id: pharmMaster?.pharmacy_item_id ?? null
             });
@@ -332,6 +345,12 @@ class PharmacyService {
             throw new Error(`This pharmacy slip has already been issued (${existing.pharmacy_slip_id}) and is read-only. Cancel it from the Orders page to create a replacement.`);
         }
         const lines = this.normalizeOrderLines(dto.items);
+        const removedRowKeys = Array.isArray(dto.removed_row_keys)
+            ? dto.removed_row_keys
+                .map((key) => clean(key))
+                .filter((key) => Boolean(key))
+                .slice(0, 500)
+            : [];
         const protocolName = plan.protocol_name
             ?? plan.chemotherapy_regimen_protocol?.regimen_name
             ?? null;
@@ -348,6 +367,7 @@ class PharmacyService {
                     cycle_day: header.cycle_day,
                     protocol_name: protocolName,
                     regimen_name: regimenName,
+                    removed_row_keys: removedRowKeys,
                     updated_by: actingUserId
                 });
                 await this.repository.deleteSlipItems(tx, pharmacySlipId, []);
@@ -365,6 +385,7 @@ class PharmacyService {
                     cycle_day: header.cycle_day,
                     protocol_name: protocolName,
                     regimen_name: regimenName,
+                    removed_row_keys: removedRowKeys,
                     slip_status: pharmacy_constants_1.PHARMACY_SLIP_STATUS.DRAFT,
                     created_by: actingUserId,
                     updated_by: actingUserId
@@ -388,7 +409,10 @@ class PharmacyService {
                 frequency: line.frequency ?? null,
                 duration: line.duration ?? null,
                 instructions: line.instructions ?? null,
-                pharmacy_item_id: line.pharmacy_item_id ?? null
+                pharmacy_item_id: line.pharmacy_item_id ?? null,
+                source_row_key: line.source_row_key ?? null,
+                is_top_up: line.is_top_up ?? false,
+                extra_suppressed: line.extra_suppressed ?? false
             })));
             await (0, audit_service_1.logAudit)(tx, {
                 entity_type: AUDIT_ENTITY,
@@ -446,7 +470,10 @@ class PharmacyService {
                 frequency: clean(item.frequency),
                 duration: clean(item.duration),
                 instructions: clean(item.instructions),
-                pharmacy_item_id: clean(item.pharmacy_item_id)
+                pharmacy_item_id: clean(item.pharmacy_item_id),
+                source_row_key: clean(item.source_row_key),
+                is_top_up: Boolean(item.is_top_up),
+                extra_suppressed: Boolean(item.extra_suppressed)
             });
         }
         return lines;
@@ -571,6 +598,18 @@ class PharmacyService {
                 patch.dose_unit = clean(item.dose_unit);
             if (item.drug_role !== undefined)
                 patch.drug_role = clean(item.drug_role);
+            if (item.dosage_form !== undefined)
+                patch.dosage_form = clean(item.dosage_form);
+            if (item.patient_dose !== undefined)
+                patch.patient_dose = clean(item.patient_dose);
+            if (item.route !== undefined)
+                patch.route = clean(item.route);
+            if (item.frequency !== undefined)
+                patch.frequency = clean(item.frequency);
+            if (item.duration !== undefined)
+                patch.duration = clean(item.duration);
+            if (item.instructions !== undefined)
+                patch.instructions = clean(item.instructions);
             const resolvedPharmItemId = await this.resolveOrCreatePharmacyMasterItem(tx, {
                 medicine_id: prev.medicine_id,
                 drug_name: prev.drug_name,
@@ -613,6 +652,8 @@ class PharmacyService {
                         medicine_id: clean(item.medicine_id),
                         drug_name: (0, caseFormatters_1.toProperCase)(clean(item.drug_name)),
                         brand_name: (0, caseFormatters_1.toProperCase)(clean(item.brand_name)),
+                        dosage_form: clean(item.dosage_form),
+                        patient_dose: clean(item.patient_dose),
                         dose: clean(item.dose),
                         dose_unit: clean(item.dose_unit),
                         quantity: item.quantity ?? null,

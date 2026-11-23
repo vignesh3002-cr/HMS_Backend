@@ -13,6 +13,7 @@ const encounter_constants_1 = require("../encounter/encounter.constants");
 const ipd_repository_1 = require("./ipd.repository");
 const ipd_types_1 = require("./ipd.types");
 const ipd_constants_1 = require("./ipd.constants");
+const timezone_1 = require("../../utils/timezone");
 const encounterRepository = new encounter_repository_1.EncounterRepository();
 const httpError = (message, status) => {
     const err = new Error(message);
@@ -20,19 +21,48 @@ const httpError = (message, status) => {
     return err;
 };
 const DAY_MS = 24 * 60 * 60 * 1000;
-/** yyyy-MM-dd of the given instant in IST. */
-const istDateString = (at) => new Date(at.getTime() + ipd_constants_1.IST_OFFSET_MS).toISOString().slice(0, 10);
-/** The UTC instant at which an IST calendar day (yyyy-MM-dd) begins. */
-const startOfIstDay = (istDate) => new Date(Date.parse(`${istDate}T00:00:00.000Z`) - ipd_constants_1.IST_OFFSET_MS);
-/** Whole days from IST date `from` to IST date `to` (negative if earlier). */
-const istDayDiff = (from, to) => Math.round((Date.parse(`${to}T00:00:00.000Z`) - Date.parse(`${from}T00:00:00.000Z`)) / DAY_MS);
-/** UTC instant of an IST date (yyyy-MM-dd) + time (HH:mm). */
-const istSlotToUtc = (istDate, time) => {
+// ---------------------------------------------------------------------------
+// Branch-timezone day math (branch.timezone) - replaces the old fixed-IST
+// helpers so every boundary below follows the BRANCH's own location.
+// ---------------------------------------------------------------------------
+/** Calendar day of an INSTANT in the branch's zone (never the server's). */
+const dateInTz = (at, tz) => (0, timezone_1.getDateIn)(tz, at);
+/** Calendar day of a pure @db.Date value (UTC-midnight anchored): read the
+ *  date exactly as stored - applying a zone would shift it a day for
+ *  branches west of UTC. */
+const dateOnlyIso = (d) => `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+/** The UTC instant at which calendar day `dateStr` begins in `tz`
+ *  (local midnight, DST-aware: the zone's offset is re-read at the resolved
+ *  instant so a transition day still lands on the right side). */
+const startOfDayInTz = (dateStr, tz) => {
+    const midnightUtc = Date.parse(`${dateStr}T00:00:00.000Z`);
+    let instant = midnightUtc - (0, timezone_1.getTimezoneOffsetMs)(tz, new Date(midnightUtc));
+    for (let i = 0; i < 2; i++) {
+        const next = midnightUtc - (0, timezone_1.getTimezoneOffsetMs)(tz, new Date(instant));
+        if (next === instant)
+            break;
+        instant = next;
+    }
+    return new Date(instant);
+};
+/** Whole days from date `from` to date `to` (negative if earlier) - pure
+ *  calendar-date arithmetic, no timezone involved. */
+const dayDiff = (from, to) => Math.round((Date.parse(`${to}T00:00:00.000Z`) - Date.parse(`${from}T00:00:00.000Z`)) / DAY_MS);
+/** UTC instant of an calendar date (yyyy-MM-dd) + wall-clock time (HH:mm) in `tz`. */
+const slotToUtc = (dateStr, time, tz) => {
     const t = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(String(time ?? "").trim());
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(istDate ?? "")) || !t) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateStr ?? "")) || !t) {
         throw new Error("A valid date and time slot are required");
     }
-    return new Date(Date.parse(`${istDate}T${t[1].padStart(2, "0")}:${t[2]}:00.000Z`) - ipd_constants_1.IST_OFFSET_MS);
+    const wallUtc = Date.parse(`${dateStr}T${t[1].padStart(2, "0")}:${t[2]}:00.000Z`);
+    let instant = wallUtc - (0, timezone_1.getTimezoneOffsetMs)(tz, new Date(wallUtc));
+    for (let i = 0; i < 2; i++) {
+        const next = wallUtc - (0, timezone_1.getTimezoneOffsetMs)(tz, new Date(instant));
+        if (next === instant)
+            break;
+        instant = next;
+    }
+    return new Date(instant);
 };
 // Emergency admissions are admitted on the spot and may start without a
 // doctor / department (assigned afterwards from the IPD list).
@@ -631,9 +661,10 @@ class IpdService {
     }
     /*
      * Holds a bed for a PLANNED admission until the end of its planned day
-     * (IST). Only for requests dated within RESERVATION_MAX_DAYS_AHEAD, so a
-     * booking weeks out can't sit on an empty bed. One bed per request:
-     * reserving another bed gives the previous one back.
+     * (the BRANCH's local day). Only for requests dated within
+     * RESERVATION_MAX_DAYS_AHEAD, so a booking weeks out can't sit on an
+     * empty bed. One bed per request: reserving another bed gives the
+     * previous one back.
      */
     async reserveBed(id, actor, data = {}) {
         const existing = await this.getAdmissionForActor(id, actor);
@@ -645,16 +676,18 @@ class IpdService {
         if (!wardId || !bedId) {
             throw new Error("Select a ward and bed to reserve");
         }
-        const todayIst = istDateString(new Date());
-        const plannedIst = istDateString(new Date(existing.admission_date));
-        const daysAhead = istDayDiff(todayIst, plannedIst);
+        // Day boundaries follow the BRANCH's timezone, never a fixed offset.
+        const tz = await (0, timezone_1.getBranchTimezone)(existing.branch_id);
+        const todayLocal = dateInTz(new Date(), tz);
+        const plannedLocal = dateOnlyIso(new Date(existing.admission_date));
+        const daysAhead = dayDiff(todayLocal, plannedLocal);
         if (daysAhead > ipd_constants_1.RESERVATION_MAX_DAYS_AHEAD) {
-            throw new Error(`A bed can be reserved at most ${ipd_constants_1.RESERVATION_MAX_DAYS_AHEAD} day(s) before the planned date (${plannedIst})`);
+            throw new Error(`A bed can be reserved at most ${ipd_constants_1.RESERVATION_MAX_DAYS_AHEAD} day(s) before the planned date (${plannedLocal})`);
         }
         // Held until the end of the planned day -- or of today, if the
         // request is already overdue (it may still be admitted in the grace
         // period before it turns NO_SHOW).
-        const reservedUntil = startOfIstDay(daysAhead < 0 ? todayIst : plannedIst);
+        const reservedUntil = startOfDayInTz(daysAhead < 0 ? todayLocal : plannedLocal, tz);
         reservedUntil.setTime(reservedUntil.getTime() + DAY_MS);
         await this.validateAdmissionContext({
             branchId: existing.branch_id,
@@ -712,8 +745,9 @@ class IpdService {
         if (existing.status !== ipd_types_1.IPD_STATUS.PLANNED) {
             throw new Error(`Only a planned admission can be ${verb} (this one is ${existing.status})`);
         }
+        const tz = await (0, timezone_1.getBranchTimezone)(existing.branch_id);
         if (status === ipd_types_1.IPD_STATUS.NO_SHOW &&
-            istDayDiff(istDateString(new Date()), istDateString(new Date(existing.admission_date))) > 0) {
+            dayDiff(dateInTz(new Date(), tz), dateOnlyIso(new Date(existing.admission_date))) > 0) {
             throw new Error("A planned admission can't be marked as no-show before its planned date");
         }
         await prisma_1.default.$transaction(async (tx) => {
@@ -797,19 +831,24 @@ class IpdService {
         });
     }
     /*
-     * Daycare sessions (planned or running) in a ward that touch one IST day.
-     * A session runs from admission_date for expected_stay_days; one without a
-     * duration is assumed to run to the end of that day.
+     * Daycare sessions (planned or running) in a ward that touch one
+     * branch-local day. A session runs from admission_date for
+     * expected_stay_days; one without a duration is assumed to run to the
+     * end of that day.
      */
-    async daycareSlotsForDay(client, wardId, istDate) {
-        const dayStart = startOfIstDay(istDate);
-        const dayEnd = new Date(dayStart.getTime() + DAY_MS);
+    async daycareSlotsForDay(client, wardId, day, tz) {
+        const dayStart = startOfDayInTz(day, tz);
+        // admission_date is a pure calendar date (@db.Date): the window ends
+        // at the NEXT calendar day's UTC-midnight anchor, which is exact in
+        // every timezone (a next-local-midnight instant would over-include
+        // day+1 for branches west of UTC).
+        const nextDayAnchor = new Date(`${dateOnlyIso(new Date(Date.parse(`${day}T00:00:00.000Z`) + DAY_MS))}T00:00:00.000Z`);
         const rows = await client.admission.findMany({
             where: {
                 ward_id: wardId,
                 is_daycare: true,
                 status: { in: [ipd_types_1.IPD_STATUS.PLANNED, ipd_types_1.IPD_STATUS.ADMITTED] },
-                admission_date: { lt: dayEnd },
+                admission_date: { lt: nextDayAnchor },
             },
             select: {
                 admission_id: true,
@@ -825,28 +864,29 @@ class IpdService {
             const stay = Number(r.expected_stay_days) || 0;
             const end = stay > 0
                 ? new Date(start.getTime() + stay * DAY_MS)
-                : new Date(startOfIstDay(istDateString(start)).getTime() + DAY_MS);
+                : new Date(startOfDayInTz(dateOnlyIso(start), tz).getTime() + DAY_MS);
             return { admission_id: r.admission_id, ip_number: r.ip_number, status: r.status, start, end };
         })
             .filter((s) => s.end > dayStart);
     }
-    /** Capacity and booked sessions of a daycare ward on one IST day (booking form). */
-    async getDaycareOccupancy(wardId, istDate, actor) {
+    /** Capacity and booked sessions of a daycare ward on one branch-local day (booking form). */
+    async getDaycareOccupancy(wardId, day, actor) {
         const ward = await this.ipdRepository.findWardById(wardId);
         if (!ward) {
             throw httpError("Ward not found", 404);
         }
         await this.assertBranchAccess(actor, ward.branch_id);
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(istDate ?? ""))) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(day ?? ""))) {
             throw new Error("A valid date (yyyy-MM-dd) is required");
         }
+        const tz = await (0, timezone_1.getBranchTimezone)(ward.branch_id);
         const [capacity, slots] = await Promise.all([
             this.countDaycareCapacity(prisma_1.default, wardId),
-            this.daycareSlotsForDay(prisma_1.default, wardId, istDate),
+            this.daycareSlotsForDay(prisma_1.default, wardId, day, tz),
         ]);
         return {
             ward_id: wardId,
-            date: istDate,
+            date: day,
             capacity,
             bookings: slots.map((s) => ({
                 ip_number: s.ip_number,
@@ -883,7 +923,8 @@ class IpdService {
         if (!(stay > 0) || stay > 1) {
             throw new Error("Daycare duration must be more than 0 and at most 24 hours");
         }
-        const start = istSlotToUtc(data.appointment_date, data.appointment_time);
+        const tz = await (0, timezone_1.getBranchTimezone)(branchId);
+        const start = slotToUtc(data.appointment_date, data.appointment_time, tz);
         const end = new Date(start.getTime() + stay * DAY_MS);
         const patient = await prisma_1.default.patient_bio_data.findUnique({
             where: { patient_id: patientId },
@@ -908,7 +949,7 @@ class IpdService {
             if (capacity === 0) {
                 throw new Error("This ward has no usable beds for daycare");
             }
-            const slots = await this.daycareSlotsForDay(tx, wardId, data.appointment_date);
+            const slots = await this.daycareSlotsForDay(tx, wardId, data.appointment_date, tz);
             if (peakDaycareOverlap(slots, start, end) >= capacity) {
                 throw new Error("The ward is full for this time -- pick another slot or ward");
             }
@@ -954,7 +995,7 @@ class IpdService {
      * for a discharge); DECEASED forces the patient status and drops the
      * review date.
      */
-    normalizeClinicalDischarge(data, reference) {
+    normalizeClinicalDischarge(data, reference, tz) {
         const isDeceased = data?.discharge_type === ipd_constants_1.DISCHARGE_TYPE.DECEASED;
         let reviewDate = null;
         if (data?.review_date && !isDeceased) {
@@ -962,8 +1003,14 @@ class IpdService {
             if (Number.isNaN(reviewDate.getTime())) {
                 throw new Error("Invalid review date");
             }
-            // Compare by calendar day (IST) -- a review "today" is fine.
-            if (istDateString(reviewDate) < istDateString(reference)) {
+            // Compare by calendar day in the BRANCH's timezone -- a review
+            // "today" is fine. A date-only input (exactly UTC midnight, the
+            // yyyy-MM-dd the form posts) is the calendar day as entered, so
+            // it is never shifted; a real instant converts to the branch day.
+            const reviewDay = reviewDate.getTime() % DAY_MS === 0
+                ? dateOnlyIso(reviewDate)
+                : dateInTz(reviewDate, tz);
+            if (reviewDay < dateInTz(reference, tz)) {
                 throw new Error("Review date must be on or after the discharge date");
             }
         }
@@ -1082,7 +1129,7 @@ class IpdService {
         await this.assertDischargeType(data.discharge_type);
         // The review date is the Follow Up step's Next Visit Date (kept in
         // sync on the admission by EncounterService) -- not entered here.
-        const fields = this.normalizeClinicalDischarge({ ...data, review_date: undefined }, new Date());
+        const fields = this.normalizeClinicalDischarge({ ...data, review_date: undefined }, new Date(), await (0, timezone_1.getBranchTimezone)(existing.branch_id));
         const followUp = encounter.follow_up_date ?? existing.review_date ?? null;
         fields.review_date = fields.discharge_type === ipd_constants_1.DISCHARGE_TYPE.DECEASED || !followUp ? null : new Date(followUp);
         await this.ipdRepository.updateAdmissionTx(prisma_1.default, existing.admission_id, {
@@ -1113,6 +1160,8 @@ class IpdService {
         const closedBy = actor.user_id;
         const dischargeDate = new Date();
         const isNurse = String(actor.role ?? "").toUpperCase() === "NURSE";
+        // Review-date and stay-day boundaries follow the BRANCH's timezone.
+        const tz = await (0, timezone_1.getBranchTimezone)(existing.branch_id);
         let clinical = {};
         if (isNurse) {
             const merged = {
@@ -1125,7 +1174,7 @@ class IpdService {
             };
             if (data?.discharge_type)
                 await this.assertDischargeType(data.discharge_type);
-            clinical = this.normalizeClinicalDischarge(merged, dischargeDate);
+            clinical = this.normalizeClinicalDischarge(merged, dischargeDate, tz);
         }
         else if (!existing.discharge_details_at) {
             throw new Error("Doctor has not completed the discharge details yet");
@@ -1173,7 +1222,7 @@ class IpdService {
                 updated_by: closedBy,
                 updated_at: dischargeDate,
             };
-            const stayStart = startOfIstDay(istDateString(new Date(existing.admission_date)));
+            const stayStart = startOfDayInTz(dateOnlyIso(new Date(existing.admission_date)), tz);
             const historyRow = await tx.patient_history.findFirst({
                 where: { patient_id: existing.patient_id, visit_date: { gte: stayStart } },
                 orderBy: { id: "desc" },
@@ -1265,7 +1314,8 @@ class IpdService {
         }
     }
     async getAdmittedPatientsToday(branchId) {
-        const today = new Date().toISOString().slice(0, 10);
+        // "Today" is the BRANCH's calendar day, not the server's/UTC date.
+        const today = (0, timezone_1.getTodayIn)(await (0, timezone_1.getBranchTimezone)(branchId));
         const todayDate = new Date(`${today}T00:00:00.000Z`);
         return prisma_1.default.admission.count({
             where: {

@@ -3060,6 +3060,7 @@ model pharmacy_slip {
   last_amended_at     DateTime?            @db.Timestamp(6)
   last_amended_by     String?              @db.VarChar(100)
   last_amend_reason   String?              @db.VarChar(500)
+  removed_row_keys    Json?
   branch              branch               @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_branch")
   encounter           encounter?           @relation(fields: [encounter_no], references: [encounter_no], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_encounter")
   patient_bio_data    patient_bio_data     @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_patient")
@@ -3094,6 +3095,9 @@ model pharmacy_slip_item {
   pharmacy_item_id      String?          @db.VarChar(100)
   dosage_form           String?          @db.VarChar(100)
   patient_dose          String?          @db.VarChar(100)
+  source_row_key        String?          @db.VarChar(160)
+  is_top_up             Boolean          @default(false)
+  extra_suppressed      Boolean          @default(false)
   medicine_master       medicine_master? @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_item_medicine")
   pharmacy_master       pharmacy_master? @relation(fields: [pharmacy_item_id], references: [pharmacy_item_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pharmacy_slip_item_pharmacy_master")
   pharmacy_slip         pharmacy_slip    @relation(fields: [pharmacy_slip_id], references: [pharmacy_slip_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pharmacy_slip_item_slip")

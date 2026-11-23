@@ -16,6 +16,8 @@ router.get("/masters/general-examination-findings", auth_middleware_1.authentica
 router.post("/masters/general-examination-findings/custom", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), consultation_validation_1.createCustomMasterValidation, controller.createCustomGeneralExaminationFinding.bind(controller));
 router.get("/masters/treatment-types", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), consultation_validation_1.listMasterValidation, controller.getTreatmentTypes.bind(controller));
 router.post("/masters/treatment-types/custom", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), consultation_validation_1.createCustomMasterValidation, controller.createCustomTreatmentType.bind(controller));
+router.get("/masters/line-of-therapies", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), consultation_validation_1.listMasterValidation, controller.getLineOfTherapies.bind(controller));
+router.post("/masters/line-of-therapies/custom", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.update"), consultation_validation_1.createCustomMasterValidation, controller.createCustomLineOfTherapy.bind(controller));
 router.get("/masters/molecular-tests", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), controller.getMolecularTestOptions.bind(controller));
 router.get("/masters/diet-types", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), controller.getDietTypes.bind(controller));
 router.get("/masters/relative-types", auth_middleware_1.authenticate, (0, authorize_1.authorize)("encounter.read"), controller.getRelativeTypes.bind(controller));

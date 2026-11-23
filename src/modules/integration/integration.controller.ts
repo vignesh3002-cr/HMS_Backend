@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { IntegrationService } from "./integration.service";
+import { sendSMS } from "./smsService";
+import { sendOtpEmailWithConfig } from "../../utils/mail";
 import {
   CreateIntegrationProviderInput,
   UpdateIntegrationProviderInput,
@@ -133,5 +135,72 @@ export class IntegrationController {
     } catch (err) {
       next(err);
     }
+  }
+
+  async sendSMSOTP(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { deviceId, recipients, message } = req.body;
+      if (!deviceId || !recipients || !message) {
+        return res.status(400).json({ message: "deviceId, recipients, and message are required" });
+      }
+      const result = await service.sendSMSOTP(deviceId, recipients, message);
+      res.json({ data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async testEmail(req: Request, res: Response, next: NextFunction) {
+    try {
+      const config = req.body ?? {};
+      const to = config.to || config.auth?.user || config.from;
+      if (!to) {
+        return res.status(400).json({ message: "A recipient email is required" });
+      }
+      await sendOtpEmailWithConfig(config, String(to), "123456");
+      res.json({ success: true, message: `Test email sent to ${to}` });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async testSms(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { deviceId, to, recipients, message, apiKey, apiUrl } = req.body ?? {};
+      let target = to || (Array.isArray(recipients) ? recipients[0] : recipients);
+
+      if (!deviceId) {
+        return res.status(400).json({ message: "deviceId is required" });
+      }
+
+      if (!target) {
+        const userId = getUserId(req);
+        if (userId) {
+          target = await service.getUserMobile(userId);
+        }
+      }
+
+      if (!target) {
+        return res.status(400).json({
+          message:
+            "No test recipient available. Add a mobile number in Settings → Security or pass a recipient explicitly.",
+        });
+      }
+
+      const result = await sendSMS({
+        deviceId,
+        recipients: [String(target)],
+        message: message || "Test SMS from HMS",
+        apiKey,
+        apiUrl,
+      });
+      res.json({ success: true, message: `Test SMS sent to ${target}`, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async testWhatsApp(_req: Request, res: Response) {
+    res.status(501).json({ message: "WhatsApp delivery is not configured" });
   }
 }

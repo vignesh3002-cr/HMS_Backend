@@ -172,6 +172,7 @@ export const upsertIhcValidation = [
     body("ki67_percent").optional({ nullable: true }).isInt(PERCENT_RULE),
     body("pdl1_tps").optional({ nullable: true }).isInt(PERCENT_RULE),
     body("pdl1_cps").optional({ nullable: true }).isInt({ min: 0 }),
+    body("p16_percent").optional({ nullable: true }).isInt(PERCENT_RULE),
     body("her2_fish_ratio").optional({ nullable: true }).isFloat({ min: 0 }),
     body("her2_avg_copy").optional({ nullable: true }).isFloat({ min: 0 })
 

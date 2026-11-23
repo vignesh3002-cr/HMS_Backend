@@ -45,6 +45,7 @@ const referral_routes_1 = __importDefault(require("./modules/referral/referral.r
 const priorityFlags_routes_1 = __importDefault(require("./modules/priority-flags/priorityFlags.routes"));
 const ai_chat_routes_1 = __importDefault(require("./modules/ai/ai-chat.routes"));
 const patientDocument_routes_1 = __importDefault(require("./modules/patient-document/patientDocument.routes"));
+const genomics_routes_1 = __importDefault(require("./modules/genomics/genomics.routes"));
 const integration_routes_1 = __importDefault(require("./modules/integration/integration.routes"));
 const bcrypt_1 = require("./utils/bcrypt");
 // Fix BigInt serialization - Prisma returns BigInt types
@@ -141,6 +142,7 @@ app.use("/api/consultation", consultation_routes_1.default);
 app.use("/api/permissions", permission_routes_1.default);
 app.use("/api/roles", role_routes_1.default);
 app.use("/api/oncology", oncology_routes_1.default);
+app.use("/api/genomics", genomics_routes_1.default);
 app.use("/api/audit", audit_routes_1.default);
 app.use("/api/export", export_routes_1.default);
 app.use("/api/doctors", doctorTransfer_routes_1.default);

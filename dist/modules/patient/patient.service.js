@@ -112,7 +112,20 @@ class PatientService {
         });
     }
     async getPatients(query) {
-        return repository.getPatients(query);
+        const result = await repository.getPatients(query);
+        /* Diagnosis shown against each patient on the admin Patients page.
+           Strict rule: ONLY an open treatment plan counts -
+             ACTIVE or PLANNED -> that plan's cancer type (e.g. "Breast")
+           everything else (COMPLETED treatment, no plan at all) -> null,
+           which the UI renders as "Not recorded". No other source is used. */
+        const patients = result.patients.map((patient) => {
+            const { chemotherapy_plan, ...rest } = patient;
+            return {
+                ...rest,
+                diagnosis_name: chemotherapy_plan?.cancer_type ?? null
+            };
+        });
+        return { ...result, patients };
     }
     async getPatientById(patientId) {
         const patient = await repository.getPatientById(patientId);

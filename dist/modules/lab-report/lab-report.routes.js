@@ -9,6 +9,7 @@ const controller = new lab_report_controller_1.LabReportController();
 router.use(auth_middleware_1.authenticate);
 router.get("/", (req, res) => controller.getAll(req, res));
 router.post("/", (req, res) => controller.create(req, res));
+router.get("/by-order-item/:itemId", (req, res) => controller.getByOrderItem(req, res));
 router.get("/order/:orderId", (req, res) => controller.getByOrderId(req, res));
 router.get("/:id", (req, res) => controller.getById(req, res));
 router.put("/:id/transfer", (req, res) => controller.transfer(req, res));

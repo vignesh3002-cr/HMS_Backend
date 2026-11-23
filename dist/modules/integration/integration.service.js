@@ -5,6 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IntegrationService = void 0;
 const integration_repository_1 = require("./integration.repository");
+const smsService_1 = require("./smsService");
+const prisma_1 = __importDefault(require("../../config/prisma"));
 const repository = new integration_repository_1.IntegrationRepository();
 class IntegrationService {
     async getProviders(branchId) {
@@ -51,6 +53,32 @@ class IntegrationService {
         const provider = await this.getProviderByType(providerType, branchId);
         return provider?.config;
     }
+    /**
+     * Sends an ad-hoc SMS through the configured TextBee device. Used by the
+     * Settings -> Integration "Test SMS" button; recipient/message are always
+     * supplied by the caller so nothing about a send is hardcoded here.
+     */
+    async sendSMSOTP(deviceId, recipients, message) {
+        const config = await this.getProviderConfig("SMS");
+        return (0, smsService_1.sendSMS)({
+            deviceId,
+            recipients,
+            message,
+            apiKey: config?.apiKey,
+            apiUrl: config?.apiUrl,
+        });
+    }
+    /**
+     * Best available mobile number for the signed-in user, used as the default
+     * recipient when an admin runs the "Test SMS" action without typing one.
+     */
+    async getUserMobile(userId) {
+        const [twoFactor, employee] = await Promise.all([
+            prisma_1.default.user_two_factor.findUnique({ where: { user_id: userId } }),
+            prisma_1.default.employees.findUnique({ where: { user_id: userId } }),
+        ]);
+        return twoFactor?.primary_mobile || employee?.mobile_no || null;
+    }
     async unsetDefaultProvider(providerType, branchId) {
         const where = {
             provider_type: providerType,
@@ -69,4 +97,3 @@ class IntegrationService {
     }
 }
 exports.IntegrationService = IntegrationService;
-const prisma_1 = __importDefault(require("../../config/prisma"));

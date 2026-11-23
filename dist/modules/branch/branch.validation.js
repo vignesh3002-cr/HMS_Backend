@@ -2,9 +2,21 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.assignAdminValidation = exports.getAssignableAdminsValidation = exports.updateBranchValidation = exports.createBranchValidation = void 0;
 const express_validator_1 = require("express-validator");
+const timezone_1 = require("../../utils/timezone");
 // Normalizes missing or empty values to null (not the string "null") so the
 // DB column is actually cleared instead of silently keeping its old value.
 const nullIfEmpty = (value) => value === undefined || value === null || value === "" ? null : value;
+// IANA zone id ("Asia/Kolkata" / "America/New_York") - validated against the
+// runtime's own zone database, so unknown/garbage ids are rejected at the API
+// boundary instead of poisoning a branch row. Empty/null = "leave it alone".
+const validateIanaTimeZone = (value) => {
+    if (value === null || value === undefined)
+        return true;
+    if (!(0, timezone_1.isValidTimeZone)(value)) {
+        throw new Error("Timezone must be a valid IANA zone id (e.g. Asia/Kolkata, America/New_York)");
+    }
+    return true;
+};
 exports.createBranchValidation = [
     (0, express_validator_1.body)("branch_code")
         .optional()
@@ -43,6 +55,11 @@ exports.createBranchValidation = [
     (0, express_validator_1.body)("district").optional({ values: "null" }).customSanitizer(nullIfEmpty),
     (0, express_validator_1.body)("state_name").optional({ values: "null" }).customSanitizer(nullIfEmpty),
     (0, express_validator_1.body)("country").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+    (0, express_validator_1.body)("city").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+    (0, express_validator_1.body)("timezone")
+        .optional({ values: "null" })
+        .customSanitizer(nullIfEmpty)
+        .custom(validateIanaTimeZone),
     (0, express_validator_1.body)("license_number").optional({ values: "null" }).customSanitizer(nullIfEmpty),
     (0, express_validator_1.body)("total_no_emp").optional({ values: "null" }).customSanitizer(nullIfEmpty),
     (0, express_validator_1.body)("fax_no").optional({ values: "null" }).customSanitizer(nullIfEmpty),
@@ -117,6 +134,11 @@ exports.updateBranchValidation = [
     (0, express_validator_1.body)("district").optional({ values: "null" }).customSanitizer(nullIfEmpty),
     (0, express_validator_1.body)("state_name").optional({ values: "null" }).customSanitizer(nullIfEmpty),
     (0, express_validator_1.body)("country").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+    (0, express_validator_1.body)("city").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+    (0, express_validator_1.body)("timezone")
+        .optional({ values: "null" })
+        .customSanitizer(nullIfEmpty)
+        .custom(validateIanaTimeZone),
     (0, express_validator_1.body)("license_number").optional({ values: "null" }).customSanitizer(nullIfEmpty),
     (0, express_validator_1.body)("total_no_emp").optional({ values: "null" }).customSanitizer(nullIfEmpty),
     (0, express_validator_1.body)("fax_no").optional({ values: "null" }).customSanitizer(nullIfEmpty),

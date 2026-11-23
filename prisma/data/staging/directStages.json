@@ -1,0 +1,1122 @@
+[
+ {
+  "direct_stage_id": "SDfa84988c43",
+  "schema_id": "S31",
+  "stage_code": "IA1",
+  "definition": "Non-aggressive histology limited to a polyp or confined to the endometrium",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD2d2833ce8e",
+  "schema_id": "S31",
+  "stage_code": "IA2",
+  "definition": "Non-aggressive histology, <50% myometrial invasion, no or focal LVSI",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDa5f1be36bb",
+  "schema_id": "S31",
+  "stage_code": "IA3",
+  "definition": "Low-grade endometrioid carcinoma limited to uterus and ovary (synchronous, criteria met)",
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDbe0d2f159b",
+  "schema_id": "S31",
+  "stage_code": "IB",
+  "definition": "Non-aggressive histology, ≥50% myometrial invasion, no or focal LVSI",
+  "display_order": 4,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD335f48d56e",
+  "schema_id": "S31",
+  "stage_code": "IC",
+  "definition": "Aggressive histology limited to a polyp or confined to the endometrium",
+  "display_order": 5,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDc5e7e558f7",
+  "schema_id": "S31",
+  "stage_code": "IIA",
+  "definition": "Invasion of cervical stroma, non-aggressive histology",
+  "display_order": 6,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD7cddcafb2b",
+  "schema_id": "S31",
+  "stage_code": "IIB",
+  "definition": "Substantial LVSI, non-aggressive histology",
+  "display_order": 7,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD0aa809b9cd",
+  "schema_id": "S31",
+  "stage_code": "IIC",
+  "definition": "Aggressive histology with any myometrial involvement",
+  "display_order": 8,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDc0e4b370d9",
+  "schema_id": "S31",
+  "stage_code": "IIIA1",
+  "definition": "Spread to ovary or fallopian tube (except IA3)",
+  "display_order": 9,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDfa5f64c447",
+  "schema_id": "S31",
+  "stage_code": "IIIA2",
+  "definition": "Involvement of uterine subserosa or spread through uterine serosa",
+  "display_order": 10,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD895c1412e1",
+  "schema_id": "S31",
+  "stage_code": "IIIB1",
+  "definition": "Metastasis or direct spread to vagina and/or parametria",
+  "display_order": 11,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD0465e3edad",
+  "schema_id": "S31",
+  "stage_code": "IIIB2",
+  "definition": "Metastasis to pelvic peritoneum",
+  "display_order": 12,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD8facf14337",
+  "schema_id": "S31",
+  "stage_code": "IIIC1i",
+  "definition": "Pelvic node micrometastasis",
+  "display_order": 13,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDc692287f52",
+  "schema_id": "S31",
+  "stage_code": "IIIC1ii",
+  "definition": "Pelvic node macrometastasis",
+  "display_order": 14,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD357494c770",
+  "schema_id": "S31",
+  "stage_code": "IIIC2i",
+  "definition": "Para-aortic node micrometastasis (up to renal vessels) ± pelvic",
+  "display_order": 15,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD934f47a1d8",
+  "schema_id": "S31",
+  "stage_code": "IIIC2ii",
+  "definition": "Para-aortic node macrometastasis ± pelvic",
+  "display_order": 16,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD3ab1241619",
+  "schema_id": "S31",
+  "stage_code": "IVA",
+  "definition": "Invasion of bladder and/or intestinal mucosa",
+  "display_order": 17,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD66750ad3c0",
+  "schema_id": "S31",
+  "stage_code": "IVB",
+  "definition": "Abdominal peritoneal metastasis beyond the pelvis",
+  "display_order": 18,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDda8eb04ac9",
+  "schema_id": "S31",
+  "stage_code": "IVC",
+  "definition": "Distant metastasis, incl. inguinal or intra-abdominal nodes above renal vessels, lung, liver, brain or bone",
+  "display_order": 19,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDf7ea844198",
+  "schema_id": "S31",
+  "stage_code": "IAmPOLEmut",
+  "definition": "Molecular modifier: stage I–II with pathogenic POLE mutation (from Genomics)",
+  "display_order": 20,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDe67390af2b",
+  "schema_id": "S31",
+  "stage_code": "IICmp53abn",
+  "definition": "Molecular modifier: stage I–II with p53 abnormal (from IHC) and myometrial invasion",
+  "display_order": 21,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD4a90403ebb",
+  "schema_id": "S32",
+  "stage_code": "IA",
+  "definition": "Confined to vulva and/or perineum, ≤2 cm, stromal invasion ≤1 mm, nodes negative",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD0700ea6afb",
+  "schema_id": "S32",
+  "stage_code": "IB",
+  "definition": "Confined to vulva and/or perineum, >2 cm or stromal invasion >1 mm, nodes negative",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDa5becded5f",
+  "schema_id": "S32",
+  "stage_code": "II",
+  "definition": "Any size, extending to lower one-third of urethra, vagina or anus, nodes negative",
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD94648dccbe",
+  "schema_id": "S32",
+  "stage_code": "IIIA",
+  "definition": "Extension to upper two-thirds of urethra or vagina, bladder or rectal mucosa; or regional node metastases ≤5 mm",
+  "display_order": 4,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDf932a324ad",
+  "schema_id": "S32",
+  "stage_code": "IIIB",
+  "definition": "Regional node metastases >5 mm",
+  "display_order": 5,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDed2300b1c6",
+  "schema_id": "S32",
+  "stage_code": "IIIC",
+  "definition": "Regional node metastases with extranodal extension",
+  "display_order": 6,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD8321f92b68",
+  "schema_id": "S32",
+  "stage_code": "IVA",
+  "definition": "Fixed to pelvic bone, or fixed or ulcerated regional node metastases",
+  "display_order": 7,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDdf5a5963eb",
+  "schema_id": "S32",
+  "stage_code": "IVB",
+  "definition": "Distant metastasis",
+  "display_order": 8,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD3dd21d973e",
+  "schema_id": "S44",
+  "stage_code": "I",
+  "definition": "Stage I (per AJCC V9 site chapter)",
+  "display_order": 1,
+  "flag": "Load site tables"
+ },
+ {
+  "direct_stage_id": "SD8abdf0adb4",
+  "schema_id": "S44",
+  "stage_code": "II",
+  "definition": "Stage II",
+  "display_order": 2,
+  "flag": "Load site tables"
+ },
+ {
+  "direct_stage_id": "SDf7dd91e270",
+  "schema_id": "S44",
+  "stage_code": "III",
+  "definition": "Stage III",
+  "display_order": 3,
+  "flag": "Load site tables"
+ },
+ {
+  "direct_stage_id": "SDe8beb5b735",
+  "schema_id": "S44",
+  "stage_code": "IV",
+  "definition": "Stage IV (distant metastasis)",
+  "display_order": 4,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDafb207b233",
+  "schema_id": "N01",
+  "stage_code": "I",
+  "definition": "One node or a group of adjacent nodes",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDeea3f5f83c",
+  "schema_id": "N01",
+  "stage_code": "IE",
+  "definition": "Single extranodal lesion without nodal involvement",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD8eb8f3353d",
+  "schema_id": "N01",
+  "stage_code": "II",
+  "definition": "Two or more nodal groups on the same side of the diaphragm",
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD0e5c64a303",
+  "schema_id": "N01",
+  "stage_code": "IIE",
+  "definition": "Stage I or II nodal extent with limited contiguous extranodal involvement",
+  "display_order": 4,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD0bece37d86",
+  "schema_id": "N01",
+  "stage_code": "II bulky",
+  "definition": "Stage II with bulky disease",
+  "display_order": 5,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD323510bffa",
+  "schema_id": "N01",
+  "stage_code": "III",
+  "definition": "Nodes on both sides of the diaphragm, or nodes above the diaphragm with spleen involvement",
+  "display_order": 6,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD1ec0ab7a62",
+  "schema_id": "N01",
+  "stage_code": "IV",
+  "definition": "Additional non-contiguous extralymphatic involvement",
+  "display_order": 7,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD6d31f06a5c",
+  "schema_id": "N02",
+  "stage_code": "I",
+  "definition": "Low risk – 0 points",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDcf91a67a9a",
+  "schema_id": "N02",
+  "stage_code": "II",
+  "definition": "Low-intermediate – 0.5 to 1 point",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD47da0526af",
+  "schema_id": "N02",
+  "stage_code": "III",
+  "definition": "Intermediate-high – 1.5 to 2.5 points",
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD612ac43257",
+  "schema_id": "N02",
+  "stage_code": "IV",
+  "definition": "High risk – 3 to 5 points",
+  "display_order": 4,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDa2db4ca960",
+  "schema_id": "N03",
+  "stage_code": "0",
+  "definition": "Lymphocytosis only – low risk",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD00361af63f",
+  "schema_id": "N03",
+  "stage_code": "I",
+  "definition": "Lymphocytosis with lymphadenopathy – intermediate risk",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDc0ea262105",
+  "schema_id": "N03",
+  "stage_code": "II",
+  "definition": "Lymphocytosis with splenomegaly and/or hepatomegaly – intermediate risk",
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD1e7a08e959",
+  "schema_id": "N03",
+  "stage_code": "III",
+  "definition": "Lymphocytosis with Hb <11 g/dL – high risk",
+  "display_order": 4,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD3c629ace24",
+  "schema_id": "N03",
+  "stage_code": "IV",
+  "definition": "Lymphocytosis with platelets <100 × 10⁹/L – high risk",
+  "display_order": 5,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDea2096421b",
+  "schema_id": "N04",
+  "stage_code": "A",
+  "definition": "<3 lymphoid areas; Hb ≥10 g/dL and platelets ≥100 × 10⁹/L",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDc6128a94d0",
+  "schema_id": "N04",
+  "stage_code": "B",
+  "definition": "≥3 lymphoid areas; Hb ≥10 g/dL and platelets ≥100 × 10⁹/L",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD2864fea1f7",
+  "schema_id": "N04",
+  "stage_code": "C",
+  "definition": "Hb <10 g/dL and/or platelets <100 × 10⁹/L",
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD6f25d11714",
+  "schema_id": "N05",
+  "stage_code": "Grade 1",
+  "definition": "WHO CNS grade 1",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDd48623ccc4",
+  "schema_id": "N05",
+  "stage_code": "Grade 2",
+  "definition": "WHO CNS grade 2",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD2b1ea8f7ec",
+  "schema_id": "N05",
+  "stage_code": "Grade 3",
+  "definition": "WHO CNS grade 3",
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD00d4f77eb4",
+  "schema_id": "N05",
+  "stage_code": "Grade 4",
+  "definition": "WHO CNS grade 4",
+  "display_order": 4,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD5fda12f2c2",
+  "schema_id": "N06",
+  "stage_code": "M0",
+  "definition": "No metastasis",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD26e91dedd8",
+  "schema_id": "N06",
+  "stage_code": "M1",
+  "definition": "Tumour cells in CSF only",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD74e8b25e12",
+  "schema_id": "N06",
+  "stage_code": "M2",
+  "definition": "Gross nodular seeding in intracranial subarachnoid space or ventricles",
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDa741ec9dfb",
+  "schema_id": "N06",
+  "stage_code": "M3",
+  "definition": "Gross nodular seeding in spinal subarachnoid space",
+  "display_order": 4,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDf6d6dcef3a",
+  "schema_id": "N06",
+  "stage_code": "M4",
+  "definition": "Metastasis outside the CNS",
+  "display_order": 5,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD95f85a1e33",
+  "schema_id": "N07",
+  "stage_code": "L1",
+  "definition": "Localised tumour not involving vital structures (no IDRFs), confined to one body compartment",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD36e76dde29",
+  "schema_id": "N07",
+  "stage_code": "L2",
+  "definition": "Locoregional tumour with one or more IDRFs",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDab89aaa5de",
+  "schema_id": "N07",
+  "stage_code": "M",
+  "definition": "Distant metastatic disease (except MS)",
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD74d666a982",
+  "schema_id": "N07",
+  "stage_code": "MS",
+  "definition": "Metastatic disease in children <18 months confined to skin, liver and/or bone marrow (<10%)",
+  "display_order": 4,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD24509f6fe8",
+  "schema_id": "N08",
+  "stage_code": "I",
+  "definition": "Limited to kidney, completely resected, capsule intact, no biopsy or rupture",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDf0f514a3f4",
+  "schema_id": "N08",
+  "stage_code": "II",
+  "definition": "Extends beyond kidney, completely resected with negative margins",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD266dcb5ac7",
+  "schema_id": "N08",
+  "stage_code": "III",
+  "definition": "Residual non-haematogenous tumour in abdomen: positive nodes, positive margins, peritoneal spread, spillage, pre-operative biopsy or piecemeal excision",
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD0a06ad3875",
+  "schema_id": "N08",
+  "stage_code": "IV",
+  "definition": "Haematogenous metastases (lung, liver, bone, brain) or nodes beyond the abdominopelvic region",
+  "display_order": 4,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD13142e1bac",
+  "schema_id": "N08",
+  "stage_code": "V",
+  "definition": "Bilateral renal tumours at diagnosis",
+  "display_order": 5,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDfe814d4f3a",
+  "schema_id": "N09",
+  "stage_code": "I",
+  "definition": "Localised disease, completely resected",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD07d2282b13",
+  "schema_id": "N09",
+  "stage_code": "II",
+  "definition": "Grossly resected with microscopic residual and/or resected regional nodes",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDf34f53852c",
+  "schema_id": "N09",
+  "stage_code": "III",
+  "definition": "Incomplete resection or biopsy with gross residual disease",
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDba4e41291d",
+  "schema_id": "N09",
+  "stage_code": "IV",
+  "definition": "Distant metastasis at diagnosis",
+  "display_order": 4,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDe0ef2608ac",
+  "schema_id": "N10",
+  "stage_code": "0",
+  "definition": "Very early: single ≤2 cm, PS 0, preserved liver function",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDd1c3ea39c9",
+  "schema_id": "N10",
+  "stage_code": "A",
+  "definition": "Early: single, or ≤3 nodules each ≤3 cm, PS 0, preserved liver function",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDf695a1b4c5",
+  "schema_id": "N10",
+  "stage_code": "B",
+  "definition": "Intermediate: multinodular, PS 0, preserved liver function",
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD11efd086be",
+  "schema_id": "N10",
+  "stage_code": "C",
+  "definition": "Advanced: portal invasion and/or extrahepatic spread, PS 1–2",
+  "display_order": 4,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD0c00eadf24",
+  "schema_id": "N10",
+  "stage_code": "D",
+  "definition": "End-stage: PS 3–4 or end-stage liver function",
+  "display_order": 5,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDae59c6de5c",
+  "schema_id": "N11",
+  "stage_code": "Favourable",
+  "definition": "e.g. t(8;21), inv(16), mutated NPM1 without FLT3-ITD, in-frame bZIP CEBPA",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD83007e4838",
+  "schema_id": "N11",
+  "stage_code": "Intermediate",
+  "definition": "e.g. NPM1 with FLT3-ITD, t(9;11), others not favourable or adverse",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD113692d1bc",
+  "schema_id": "N11",
+  "stage_code": "Adverse",
+  "definition": "e.g. TP53 mutation, complex/monosomal karyotype, -5/del(5q), -7, t(6;9), inv(3), ASXL1/RUNX1 and other MDS-related mutations",
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDf7386b938d",
+  "schema_id": "N12",
+  "stage_code": "Very low",
+  "definition": null,
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDf85deb3431",
+  "schema_id": "N12",
+  "stage_code": "Low",
+  "definition": null,
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD8c1f7c1678",
+  "schema_id": "N12",
+  "stage_code": "Moderate low",
+  "definition": null,
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDe22e10063e",
+  "schema_id": "N12",
+  "stage_code": "Moderate high",
+  "definition": null,
+  "display_order": 4,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDeed3de1666",
+  "schema_id": "N12",
+  "stage_code": "High",
+  "definition": null,
+  "display_order": 5,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDa5bfc5c8a1",
+  "schema_id": "N12",
+  "stage_code": "Very high",
+  "definition": null,
+  "display_order": 6,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD64041d5566",
+  "schema_id": "N13",
+  "stage_code": "Chronic",
+  "definition": "Chronic phase",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDdc42f82826",
+  "schema_id": "N13",
+  "stage_code": "Accelerated",
+  "definition": "Accelerated phase (ICC 2022)",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDe23eab226a",
+  "schema_id": "N13",
+  "stage_code": "Blast",
+  "definition": "Blast phase",
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD8f829167f8",
+  "schema_id": "N14",
+  "stage_code": "Good",
+  "definition": "Good prognosis",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD4086b3f164",
+  "schema_id": "N14",
+  "stage_code": "Intermediate",
+  "definition": "Intermediate prognosis",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD366e2c001e",
+  "schema_id": "N14",
+  "stage_code": "Poor",
+  "definition": "Poor prognosis (non-seminoma only)",
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD60db17e5df",
+  "schema_id": "N15",
+  "stage_code": "I",
+  "definition": "Confined to uterus",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD7731848b09",
+  "schema_id": "N15",
+  "stage_code": "II",
+  "definition": "Extends to adnexa or vagina",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD7aef05d8e4",
+  "schema_id": "N15",
+  "stage_code": "III",
+  "definition": "Lung metastases",
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD4ff7722e93",
+  "schema_id": "N15",
+  "stage_code": "IV",
+  "definition": "Other distant metastases",
+  "display_order": 4,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDe1d26ee177",
+  "schema_id": "N16",
+  "stage_code": "G1",
+  "definition": "NET G1: Ki-67 <3%",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD37e191cb90",
+  "schema_id": "N16",
+  "stage_code": "G2",
+  "definition": "NET G2: Ki-67 3–20%",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDaa0fbfda59",
+  "schema_id": "N16",
+  "stage_code": "G3",
+  "definition": "NET G3: Ki-67 >20%",
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDfbdb3d426e",
+  "schema_id": "N16",
+  "stage_code": "NEC",
+  "definition": "Neuroendocrine carcinoma (small or large cell)",
+  "display_order": 4,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD73a6c26225",
+  "schema_id": "N17",
+  "stage_code": "Favourable subset",
+  "definition": "Fits a defined favourable CUP subset (e.g. women with peritoneal or axillary node disease)",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD08dbac8c32",
+  "schema_id": "N17",
+  "stage_code": "Unfavourable",
+  "definition": "All other CUP",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD7701aaf74a",
+  "schema_id": "N18",
+  "stage_code": "Standard",
+  "definition": "Standard risk",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD9718829fa5",
+  "schema_id": "N18",
+  "stage_code": "High",
+  "definition": "High risk",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD2b919931d8",
+  "schema_id": "N18",
+  "stage_code": "Very high",
+  "definition": "Very high risk",
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD3d326bacea",
+  "schema_id": "N19",
+  "stage_code": "Very low",
+  "definition": null,
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD58499ee6d9",
+  "schema_id": "N19",
+  "stage_code": "Low",
+  "definition": null,
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD1f1f347ce0",
+  "schema_id": "N19",
+  "stage_code": "Intermediate",
+  "definition": null,
+  "display_order": 3,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD04bccc68c1",
+  "schema_id": "N19",
+  "stage_code": "High",
+  "definition": null,
+  "display_order": 4,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD4e479391f8",
+  "schema_id": "N19",
+  "stage_code": "Very high",
+  "definition": null,
+  "display_order": 5,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD2d70897bf0",
+  "schema_id": "N20",
+  "stage_code": "Limited",
+  "definition": "Confined to one hemithorax and regional nodes, encompassable in one radiation field",
+  "display_order": 1,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SD9322e58b83",
+  "schema_id": "N20",
+  "stage_code": "Extensive",
+  "definition": "Beyond limited stage",
+  "display_order": 2,
+  "flag": null
+ },
+ {
+  "direct_stage_id": "SDd3f8d0a185",
+  "schema_id": "S14",
+  "stage_code": "0",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 1,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD7eb25c39bb",
+  "schema_id": "S14",
+  "stage_code": "I",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 2,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SDbd06782646",
+  "schema_id": "S14",
+  "stage_code": "IA",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 3,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD6241b82014",
+  "schema_id": "S14",
+  "stage_code": "IB",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 4,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD12bbfbe76d",
+  "schema_id": "S14",
+  "stage_code": "IC",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 5,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD7ce2af07c8",
+  "schema_id": "S14",
+  "stage_code": "II",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 6,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD5812487433",
+  "schema_id": "S14",
+  "stage_code": "IIA",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 7,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD6815214ddf",
+  "schema_id": "S14",
+  "stage_code": "IIB",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 8,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD6b4852fffe",
+  "schema_id": "S14",
+  "stage_code": "III",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 9,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD879199a127",
+  "schema_id": "S14",
+  "stage_code": "IIIA",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 10,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SDb8dffe53b5",
+  "schema_id": "S14",
+  "stage_code": "IIIB",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 11,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD866abc46cc",
+  "schema_id": "S14",
+  "stage_code": "IVA",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 12,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD7cd18f1044",
+  "schema_id": "S14",
+  "stage_code": "IVB",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 13,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD8a23fa696b",
+  "schema_id": "S15",
+  "stage_code": "0",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 1,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SDb782b8874e",
+  "schema_id": "S15",
+  "stage_code": "I",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 2,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD9d55269b86",
+  "schema_id": "S15",
+  "stage_code": "IA",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 3,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD9be8bfd519",
+  "schema_id": "S15",
+  "stage_code": "IB",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 4,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD72508667cc",
+  "schema_id": "S15",
+  "stage_code": "IC",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 5,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD4d9ec7a47b",
+  "schema_id": "S15",
+  "stage_code": "II",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 6,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SDb7371b4b79",
+  "schema_id": "S15",
+  "stage_code": "IIA",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 7,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD151c0e5c82",
+  "schema_id": "S15",
+  "stage_code": "IIB",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 8,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SDead350437e",
+  "schema_id": "S15",
+  "stage_code": "III",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 9,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD99f89baba3",
+  "schema_id": "S15",
+  "stage_code": "IIIA",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 10,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SDcb71c6a00b",
+  "schema_id": "S15",
+  "stage_code": "IIIB",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 11,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD786e4b1f25",
+  "schema_id": "S15",
+  "stage_code": "IVA",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 12,
+  "flag": "Direct entry for p / yp context"
+ },
+ {
+  "direct_stage_id": "SD1eeba89d1a",
+  "schema_id": "S15",
+  "stage_code": "IVB",
+  "definition": "Pathological / post-neoadjuvant stage as reported (AJCC 8th pTNM/ypTNM)",
+  "display_order": 13,
+  "flag": "Direct entry for p / yp context"
+ }
+]

@@ -121,6 +121,59 @@ class OncologyController {
             return handleError(res, error);
         }
     }
+    async getCancerScoreVariables(req, res) {
+        try {
+            const data = await service.listCancerScoreVariables(req.params.scoreId);
+            return res.json({ success: true, message: "Score variables fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async getCancerScoreGroups(req, res) {
+        try {
+            const data = await service.listCancerScoreGroups(req.params.scoreId);
+            return res.json({ success: true, message: "Score groups fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async getCancerScoreDetail(req, res) {
+        try {
+            const data = await service.getCancerScoreDetail(req.params.scoreId);
+            return res.json({ success: true, message: "Score detail fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async updateCancerScore(req, res) {
+        try {
+            /* Only the fields actually sent are changed, so a caller may send
+               one metadata column without clearing the rest. */
+            const editable = [
+                "purpose",
+                "when_to_record",
+                "score_range",
+                "risk_groups",
+                "score_status",
+                "score_reference",
+                "developer_note"
+            ];
+            const patch = {};
+            for (const key of editable) {
+                if (Object.prototype.hasOwnProperty.call(req.body ?? {}, key)) {
+                    patch[key] = req.body[key] ?? null;
+                }
+            }
+            const data = await service.updateCancerScore(req.params.scoreId, patch);
+            return res.json({ success: true, message: "Score updated successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
     async getInvestigationParameters(req, res) {
         try {
             const data = await service.listInvestigationParameters(req.params.cancerTypeId);

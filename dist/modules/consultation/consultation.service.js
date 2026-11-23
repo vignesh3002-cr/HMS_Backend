@@ -117,6 +117,26 @@ class ConsultationService {
             created_by: createdBy ?? null
         });
     }
+    async listLineOfTherapies(query) {
+        return repository.getLineOfTherapies(query);
+    }
+    async createCustomLineOfTherapy(data, createdBy) {
+        const name = (data.name ?? "").trim();
+        if (!name) {
+            throw new Error("Line of therapy name is required");
+        }
+        const existing = await repository.findLineOfTherapyByName(name);
+        if (existing) {
+            return existing;
+        }
+        return repository.createLineOfTherapy({
+            code: await uniqueCode("LOT", name, (code) => repository.findLineOfTherapyByCode(code)),
+            name,
+            description: data.description ?? null,
+            is_active: true,
+            created_by: createdBy ?? null
+        });
+    }
     listDietTypes() {
         return consultation_constants_1.DIET_TYPES;
     }

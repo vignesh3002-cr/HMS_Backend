@@ -70,11 +70,28 @@ class ExportService {
     async buildPatientsCsv(query) {
         const patients = await prisma_1.default.patient_bio_data.findMany({
             where: query.branchId ? { branch_id: query.branchId } : {},
-            include: { branch: { select: { branch_name: true, branch_area: true } } },
+            include: {
+                branch: { select: { branch_name: true, branch_area: true } },
+                // Same strict rule as patient.service.getPatients: only an
+                // OPEN (PLANNED/ACTIVE) plan contributes a cancer type;
+                // COMPLETED / no plan exports as an empty diagnosis.
+                chemotherapy_plan: {
+                    where: {
+                        treatment_status: { in: ["ACTIVE", "PLANNED"] },
+                        active_status: 1,
+                        deleted_flag: false,
+                    },
+                    select: { cancer_type: true },
+                },
+            },
             orderBy: { id: "asc" },
         });
-        const { rows, columns } = toCsvRows(patients, ["branch"], [
+        const { rows, columns } = toCsvRows(patients, ["branch", "chemotherapy_plan"], [
             { key: "branch_name", value: (p) => formatBranchName(p.branch) },
+            {
+                key: "diagnosis_name",
+                value: (p) => p.chemotherapy_plan?.cancer_type ?? "",
+            },
         ]);
         return (0, csv_1.toCsv)(rows, columns);
     }

@@ -63,6 +63,7 @@ export const ENTITY_TARGET: Record<string, { table: string; column: string; padT
     DISCHARGE_TYPE: { table: "discharge_type_master", column: "discharge_type_id", padTo: 4 },
     DISEASE_STATUS: { table: "disease_status_master", column: "disease_status_id", padTo: 4 },
     TNM_STAGE: { table: "tnm_stage_master", column: "tnm_id", padTo: 4 },
+    STAGE_RECORD: { table: "oncology_stage_record", column: "stage_record_id", padTo: 4 },
     ADMISSION: { table: "admission", column: "ip_number" },
     WARD: { table: "ward_master", column: "ward_id" },
     BED: { table: "bed_master", column: "bed_id" },

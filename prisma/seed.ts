@@ -63,6 +63,8 @@ const PERMISSIONS = [
   { key: "system.config", name: "System Configuration", description: "Manage system settings", category: "system" },
   { key: "system.audit", name: "View Audit Logs", description: "View system audit logs", category: "system" },
   { key: "permission.manage", name: "Manage Permissions", description: "Grant/revoke role permissions", category: "system" },
+  { key: "integration.read", name: "View Integrations", description: "View third-party integration providers", category: "system" },
+  { key: "integration.write", name: "Manage Integrations", description: "Create and update third-party integration providers", category: "system" },
 
   // Lab
   { key: "lab.order", name: "Order Lab Tests", description: "Create lab orders", category: "lab" },

@@ -45,7 +45,9 @@ exports.createRegimenProtocolValidation = [
     (0, express_validator_1.body)("items.*.drug_sequence").isInt({ min: 1 }).withMessage("Each protocol item requires a drug_sequence >= 1"),
     (0, express_validator_1.body)("items.*.drug_role").optional().isIn(Object.values(chemotherapy_constants_1.DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(chemotherapy_constants_1.DRUG_ROLE).join(", ")}`),
     (0, express_validator_1.body)("dilutions").optional({ nullable: true }).isArray(),
-    (0, express_validator_1.body)("discharge_instructions").optional({ nullable: true }).isArray()
+    (0, express_validator_1.body)("discharge_instructions").optional({ nullable: true }).isArray(),
+    (0, express_validator_1.body)("active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 }),
+    (0, express_validator_1.body)("review_date").optional({ nullable: true })
 ];
 exports.updateRegimenProtocolValidation = [
     (0, express_validator_1.param)("protocolId").notEmpty(),
@@ -67,7 +69,9 @@ exports.updateRegimenProtocolValidation = [
     (0, express_validator_1.body)("days.*.same_as_day_one").optional({ nullable: true }).isBoolean(),
     (0, express_validator_1.body)("days.*.active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 }),
     (0, express_validator_1.body)("dilutions").optional({ nullable: true }).isArray(),
-    (0, express_validator_1.body)("discharge_instructions").optional({ nullable: true }).isArray()
+    (0, express_validator_1.body)("discharge_instructions").optional({ nullable: true }).isArray(),
+    (0, express_validator_1.body)("active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 }),
+    (0, express_validator_1.body)("review_date").optional({ nullable: true })
 ];
 // ---------------- Personalized regimen protocols ----------------
 exports.protocolIdParamValidation = [
@@ -417,6 +421,7 @@ exports.addPlanDischargeMedicineValidation = [
     ...drugIdentityRules(""),
     (0, express_validator_1.body)("drug_sequence").isInt({ min: 1 }).withMessage("A discharge medicine requires a drug_sequence >= 1"),
     (0, express_validator_1.body)("drug_type").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)("formulation").optional({ nullable: true }).isString().isLength({ max: 100 }),
     (0, express_validator_1.body)("dosage").optional({ nullable: true }).isFloat({ min: 0 }).withMessage("Dose must be a number"),
     (0, express_validator_1.body)("dosage_unit").optional({ nullable: true }).isString().isLength({ max: 100 }),
     (0, express_validator_1.body)("frequency").optional({ nullable: true }).isString().isLength({ max: 100 }),
@@ -436,6 +441,7 @@ exports.updatePlanDischargeMedicineValidation = [
     (0, express_validator_1.body)("drug_name").optional({ nullable: true }).isString().isLength({ max: 200 }).withMessage("Drug name must be at most 200 characters"),
     (0, express_validator_1.body)("drug_sequence").optional().isInt({ min: 1 }),
     (0, express_validator_1.body)("drug_type").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    (0, express_validator_1.body)("formulation").optional({ nullable: true }).isString().isLength({ max: 100 }),
     (0, express_validator_1.body)("dosage").optional({ nullable: true }).isFloat({ min: 0 }).withMessage("Dose must be a number"),
     (0, express_validator_1.body)("dosage_unit").optional({ nullable: true }).isString().isLength({ max: 100 }),
     (0, express_validator_1.body)("frequency").optional({ nullable: true }).isString().isLength({ max: 100 }),

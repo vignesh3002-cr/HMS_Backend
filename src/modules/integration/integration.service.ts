@@ -1,4 +1,6 @@
 import { IntegrationRepository } from "./integration.repository";
+import { sendSMS, SendSmsResponse } from "./smsService";
+import prisma from "../../config/prisma";
 import {
   IntegrationProviderResponse,
   UserIntegrationSettingsResponse,
@@ -83,6 +85,40 @@ export class IntegrationService {
     return provider?.config as IntegrationProviderConfig | null;
   }
 
+  /**
+   * Sends an ad-hoc SMS through the configured TextBee device. Used by the
+   * Settings -> Integration "Test SMS" button; recipient/message are always
+   * supplied by the caller so nothing about a send is hardcoded here.
+   */
+  async sendSMSOTP(
+    deviceId: string,
+    recipients: string | string[],
+    message: string
+  ): Promise<SendSmsResponse> {
+    const config = await this.getProviderConfig("SMS");
+
+    return sendSMS({
+      deviceId,
+      recipients,
+      message,
+      apiKey: config?.apiKey,
+      apiUrl: config?.apiUrl,
+    });
+  }
+
+  /**
+   * Best available mobile number for the signed-in user, used as the default
+   * recipient when an admin runs the "Test SMS" action without typing one.
+   */
+  async getUserMobile(userId: string): Promise<string | null> {
+    const [twoFactor, employee] = await Promise.all([
+      prisma.user_two_factor.findUnique({ where: { user_id: userId } }),
+      prisma.employees.findUnique({ where: { user_id: userId } }),
+    ]);
+
+    return twoFactor?.primary_mobile || employee?.mobile_no || null;
+  }
+
   private async unsetDefaultProvider(
     providerType: ProviderType,
     branchId?: string | null
@@ -102,5 +138,3 @@ export class IntegrationService {
     });
   }
 }
-
-import prisma from "../../config/prisma";

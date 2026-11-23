@@ -56,9 +56,12 @@ exports.MANUAL_BED_STATUSES = [
 // releases lapsed reservations and turns PLANNED admissions whose planned
 // day has passed into NO_SHOW.
 exports.RESERVATION_MAX_DAYS_AHEAD = 1;
-// The hospital runs on IST (UTC+05:30, no DST) -- same fixed offset as the
-// appointment job, so day boundaries don't depend on the server timezone.
-exports.IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
+// The hospital's reference fixed offset (IST, UTC+05:30, no DST) - now
+// re-exported from the single shared timezone utility so exactly one
+// definition exists. Branch-aware day boundaries should prefer
+// getTodayIn(getBranchTimezone(...)) from utils/timezone.
+var timezone_1 = require("../../utils/timezone");
+Object.defineProperty(exports, "IST_OFFSET_MS", { enumerable: true, get: function () { return timezone_1.IST_OFFSET_MS; } });
 exports.PAYMENT_MODE_VALUES = [
     "CASH",
     "CARD",

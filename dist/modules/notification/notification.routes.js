@@ -12,4 +12,6 @@ router.put("/lab/read-all", controller.markAllLabRead.bind(controller));
 router.get("/", auth_middleware_1.authenticate, controller.getNotifications.bind(controller));
 // Mark all of the doctor's in-app notifications as read
 router.put("/read-all", auth_middleware_1.authenticate, controller.markAllRead.bind(controller));
+// Sends an email directly over SMTP (no mail app opens on the client)
+router.post("/send-email", auth_middleware_1.authenticate, controller.sendEmail.bind(controller));
 exports.default = router;

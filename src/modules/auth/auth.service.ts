@@ -5,6 +5,7 @@ import prisma from "../../config/prisma";
 import { generateId } from "../../utils/idGenerator";
 import { randomInt } from "crypto";
 import { sendOtpEmail } from "../../utils/mail";
+import { sendSms } from "../../utils/sms";
 import { TOP_LEVEL_ADMIN_ROLES } from "../../permissions/roles";
 import { Prisma } from "@prisma/client";
 
@@ -49,14 +50,26 @@ const activeMappings = user.user_branch_mapping?.filter(
 
   }
 
-  private resolveEmail(user: AuthUser): string | undefined {
-
+  private async resolveEmail(user: AuthUser): Promise<string | undefined> {
     if (user.role_type === "PATIENT") {
       return (user as any).patient_bio_data?.[0]?.patient_email ?? undefined;
     }
 
-    return user.employees?.email ?? undefined;
+    if (user.user_id) {
+      const twoFactor = await prisma.user_two_factor.findUnique({
+        where: { user_id: user.user_id },
+      });
 
+      if (
+        twoFactor?.preferred_email_target === "SECONDARY" &&
+        twoFactor.alternate_email_verified &&
+        twoFactor.alternate_email
+      ) {
+        return twoFactor.alternate_email;
+      }
+    }
+
+    return user.employees?.email ?? undefined;
   }
 
   private buildAuthPayload(user: AuthUser, rememberMe: boolean = false) {
@@ -106,6 +119,24 @@ const activeMappings = user.user_branch_mapping?.filter(
       },
     };
 
+  }
+
+  /**
+   * Builds a login session for a user whose second factor has already been
+   * verified (e.g. TOTP / recovery code in the 2FA module). Reuses the exact
+   * same payload/token shape as a password login so downstream consumers
+   * cannot tell the two flows apart.
+   */
+  async buildSessionForUsername(username: string, rememberMe: boolean = false) {
+    const user = await this.authRepository.findUserByUsername(username);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    this.assertAccountUsable(user);
+
+    return this.buildAuthPayload(user, rememberMe);
   }
 
   // ---- KPI Preferences ----
@@ -195,12 +226,14 @@ const activeMappings = user.user_branch_mapping?.filter(
 
     this.assertAccountUsable(user);
 
-    // OTP flow temporarily disabled - logging in directly after password check
-    // return {
-    //   username: user.username,
-    // };
+    // Send OTP to the user's registered email
+    const otpResult = await this.sendOtp(user.username!);
 
-    return this.buildAuthPayload(user, rememberMe);
+    return {
+      username: user.username,
+      requiresOtp: true,
+      message: otpResult.message,
+    };
 
   }
 
@@ -288,7 +321,52 @@ const activeMappings = user.user_branch_mapping?.filter(
 
     this.assertAccountUsable(user);
 
-    const email = this.resolveEmail(user);
+    const twoFactor = await prisma.user_two_factor.findUnique({
+      where: { user_id: user.user_id! },
+    });
+
+    const isMobileDefault =
+      twoFactor?.default_login_method === "PRIMARY_MOBILE" ||
+      twoFactor?.default_login_method === "SECONDARY_MOBILE" ||
+      twoFactor?.default_login_method === "ALT_MOBILE";
+
+    const targetMobile =
+      twoFactor?.default_login_method === "PRIMARY_MOBILE"
+        ? (twoFactor.primary_mobile || user.employees?.mobile_no)
+        : twoFactor?.alternate_mobile;
+
+    if (isMobileDefault && targetMobile) {
+      const otp = randomInt(100000, 999999).toString();
+      const expiry = new Date(Date.now() + 5 * 60 * 1000);
+
+      await prisma.$transaction(async (tx) => {
+        const id = await generateId(tx, "LOGIN_OTP");
+        await tx.login_otp.create({
+          data: {
+            otp_id: id,
+            user_id: user.user_id!,
+            user_type: user.role_type === "PATIENT" ? "PATIENT" : "EMPLOYEE",
+            otp_code: otp,
+            expires_at: expiry,
+          },
+        });
+      });
+
+      const message = `Your HMS verification code is ${otp}. It expires in 5 minutes.`;
+      await sendSms({ recipient: targetMobile, message });
+
+      const compact = targetMobile.replace(/\s+/g, "");
+      const masked =
+        compact.length <= 4
+          ? "*".repeat(compact.length)
+          : `${"*".repeat(compact.length - 4)}${compact.slice(-4)}`;
+
+      return {
+        message: `OTP sent to ${masked}`,
+      };
+    }
+
+    const email = await this.resolveEmail(user);
 
     if (!email) {
       throw new Error("Email address not found");
@@ -329,37 +407,36 @@ const activeMappings = user.user_branch_mapping?.filter(
       throw new Error("User not found");
     }
 
-    // OTP verification temporarily disabled
-    // const otpRecord = await prisma.login_otp.findFirst({
-    //   where: {
-    //     user_id: user.user_id!,
-    //     is_verified: false
-    //   },
-    //   orderBy: {
-    //     created_at: "desc"
-    //   }
-    // });
+    const otpRecord = await prisma.login_otp.findFirst({
+      where: {
+        user_id: user.user_id!,
+        is_verified: false
+      },
+      orderBy: {
+        created_at: "desc"
+      }
+    });
 
-    // if (!otpRecord) {
-    //   throw new Error("OTP not found. Please request a new one.");
-    // }
+    if (!otpRecord) {
+      throw new Error("OTP not found. Please request a new one.");
+    }
 
-    // if (otpRecord.otp_code !== code) {
-    //   throw new Error("Invalid OTP");
-    // }
+    if (otpRecord.otp_code !== code.trim()) {
+      throw new Error("Invalid OTP code");
+    }
 
-    // if (otpRecord.expires_at < new Date()) {
-    //   throw new Error("OTP has expired");
-    // }
+    if (otpRecord.expires_at < new Date()) {
+      throw new Error("OTP has expired. Please request a new one.");
+    }
 
-    // await prisma.login_otp.update({
-    //   where: {
-    //     id: otpRecord.id
-    //   },
-    //   data: {
-    //     is_verified: true
-    //   }
-    // });
+    await prisma.login_otp.update({
+      where: {
+        id: otpRecord.id
+      },
+      data: {
+        is_verified: true
+      }
+    });
 
     return this.buildAuthPayload(user, rememberMe);
 

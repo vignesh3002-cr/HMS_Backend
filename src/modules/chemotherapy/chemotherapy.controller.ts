@@ -108,10 +108,32 @@ export class ChemotherapyController {
                 cancer_type_ids: csv(req.query.cancer_type_ids),
                 subtype_ids: csv(req.query.subtype_ids),
                 organization_id: (req as any).user?.hospital_id ?? null,
-                include_details: req.query.include_details === "true" || req.query.include_details === "1"
+                include_details: req.query.include_details === "true" || req.query.include_details === "1",
+                include_inactive: req.query.include_inactive === "true" || req.query.include_inactive === "1",
+                active_status: req.query.active_status !== undefined ? Number(req.query.active_status) : undefined
             });
 
             return res.json({ success: true, message: "Regimen protocols fetched successfully", data });
+
+        } catch (error: any) {
+            return handleError(res, error);
+        }
+
+    }
+
+    async getProtocolPerformance(req: Request, res: Response) {
+
+        try {
+
+            const data = await service.getProtocolPerformance({
+                date_from: req.query.date_from as string | undefined,
+                date_to: req.query.date_to as string | undefined,
+                prev_date_from: req.query.prev_date_from as string | undefined,
+                prev_date_to: req.query.prev_date_to as string | undefined,
+                organization_id: (req as any).user?.hospital_id ?? undefined
+            });
+
+            return res.json({ success: true, message: "Protocol performance fetched successfully", data });
 
         } catch (error: any) {
             return handleError(res, error);
