@@ -98,6 +98,7 @@ class DoctorLeaveController {
         try {
             const result = await this.service.getDoctorLeaves({
                 employee_id: req.query.employee_id,
+                branchId: req.query.branchId,
                 status: req.query.status,
                 page: req.query.page
                     ? Number(req.query.page)

@@ -25,4 +25,11 @@ router.put(
     controller.markAllRead.bind(controller)
 );
 
+// Sends an email directly over SMTP (no mail app opens on the client)
+router.post(
+    "/send-email",
+    authenticate,
+    controller.sendEmail.bind(controller)
+);
+
 export default router;

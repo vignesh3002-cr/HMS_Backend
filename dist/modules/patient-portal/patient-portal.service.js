@@ -8,6 +8,7 @@ const client_1 = require("@prisma/client");
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const lab_report_service_1 = require("../lab-report/lab-report.service");
 const appointment_service_1 = require("../appointment/appointment.service");
+const chemotherapy_schedule_1 = require("../chemotherapy/chemotherapy.schedule");
 class PatientPortalService {
     appointmentService = new appointment_service_1.AppointmentService();
     /**
@@ -242,6 +243,7 @@ class PatientPortalService {
                 orderBy: [{ treatment_status: "asc" }, { created_at: "desc" }],
                 select: {
                     chemotherapy_plan_id: true,
+                    source_protocol_id: true,
                     regimen_name: true,
                     protocol_name: true,
                     treatment_status: true,
@@ -294,12 +296,27 @@ class PatientPortalService {
         // Resolve active chemotherapy summary for dashboard
         let activeChemoSummary = null;
         if (activeChemoPlan) {
-            const nextCycle = activeChemoPlan.chemotherapy_cycle?.find((c) => c.cycle_status !== "COMPLETED" && c.completion_status !== "COMPLETED") || activeChemoPlan.chemotherapy_cycle?.[activeChemoPlan.chemotherapy_cycle.length - 1];
+            let schedule = [];
+            try {
+                schedule = await (0, chemotherapy_schedule_1.computePlanSchedule)(prisma_1.default, activeChemoPlan);
+            }
+            catch (err) {
+                console.error("Failed to compute dashboard chemo plan schedule:", err?.message ?? err);
+            }
+            const formattedCycles = (activeChemoPlan.chemotherapy_cycle || []).map((c) => {
+                const scheduledDayOne = schedule.find((s) => s.cycle_number === c.cycle_number && s.cycle_day === 1);
+                return {
+                    ...c,
+                    planned_date: c.rescheduled_date || scheduledDayOne?.planned_date || c.planned_date,
+                };
+            });
+            const nextCycle = formattedCycles.find((c) => c.cycle_status !== "COMPLETED" && c.completion_status !== "COMPLETED") || formattedCycles[formattedCycles.length - 1];
             const docName = activeChemoPlan.employees
                 ? `Dr. ${[activeChemoPlan.employees.first_name, activeChemoPlan.employees.last_name].filter(Boolean).join(" ")}`
                 : null;
             const totalPlanned = activeChemoPlan.planned_cycles || 0;
-            const completedCount = activeChemoPlan.chemotherapy_cycle?.filter((c) => c.cycle_status === "COMPLETED" || c.completion_status === "COMPLETED").length || activeChemoPlan.completed_cycles || 0;
+            const completedCount = formattedCycles.filter((c) => c.cycle_status === "COMPLETED" || c.completion_status === "COMPLETED").length || activeChemoPlan.completed_cycles || 0;
+            const firstDate = schedule[0]?.planned_date || activeChemoPlan.treatment_start_date;
             activeChemoSummary = {
                 chemotherapy_plan_id: activeChemoPlan.chemotherapy_plan_id,
                 regimen_name: activeChemoPlan.regimen_name,
@@ -311,14 +328,14 @@ class PatientPortalService {
                 planned_cycles: totalPlanned,
                 completed_cycles: completedCount,
                 cycle_interval_days: activeChemoPlan.cycle_interval_days,
-                treatment_start_date: activeChemoPlan.treatment_start_date,
+                treatment_start_date: firstDate,
                 doctor_name: docName,
                 specialization: activeChemoPlan.employees?.specialization || "Medical Oncology",
                 progress_percentage: totalPlanned > 0 ? Math.round((completedCount / totalPlanned) * 100) : 0,
                 next_cycle: nextCycle
                     ? {
                         cycle_number: nextCycle.cycle_number,
-                        planned_date: nextCycle.rescheduled_date || nextCycle.planned_date,
+                        planned_date: nextCycle.planned_date,
                         cycle_status: nextCycle.cycle_status,
                         treatment_delay: nextCycle.treatment_delay,
                     }
@@ -594,6 +611,107 @@ class PatientPortalService {
             return tb - ta;
         });
         return resultList;
+    }
+    /**
+     * List all allergies and clinical alerts for this patient
+     */
+    async getAllergies(patientId) {
+        const [structuredAllergies, pastHistories] = await Promise.all([
+            prisma_1.default.patient_allergy.findMany({
+                where: { patient_id: patientId },
+                include: {
+                    allergy_master: {
+                        select: {
+                            code: true,
+                            substance_name: true,
+                            substance_type: true,
+                            description: true,
+                            severity_level: true,
+                        },
+                    },
+                    employees: {
+                        select: {
+                            first_name: true,
+                            last_name: true,
+                        },
+                    },
+                },
+                orderBy: { identified_at: "desc" },
+            }),
+            prisma_1.default.patient_history.findMany({
+                where: {
+                    patient_id: patientId,
+                    allergy_history: { not: null },
+                },
+                select: {
+                    patient_history_id: true,
+                    encounter_no: true,
+                    visit_date: true,
+                    treating_doctor_name: true,
+                    allergy_history: true,
+                },
+                orderBy: { visit_date: "desc" },
+            }),
+        ]);
+        const formattedAllergies = structuredAllergies.map((pa) => ({
+            id: pa.id ? pa.id.toString() : String(Math.random()),
+            allergy_id: pa.allergy_id ? pa.allergy_id.toString() : null,
+            substance_name: pa.allergy_master?.substance_name || "Unknown Allergen",
+            substance_code: pa.allergy_master?.code || null,
+            substance_type: pa.allergy_master?.substance_type || "OTHER",
+            severity: pa.severity || pa.allergy_master?.severity_level || "MODERATE",
+            reaction: pa.reaction || null,
+            status: pa.status || "ACTIVE",
+            clinical_notes: pa.clinical_notes || null,
+            identified_at: pa.identified_at ? pa.identified_at.toISOString() : null,
+            duration_value: pa.duration_value,
+            duration_unit: pa.duration_unit,
+            doctor_name: pa.employees
+                ? `Dr. ${pa.employees.first_name || ""} ${pa.employees.last_name || ""}`.trim()
+                : null,
+            source: "STRUCTURED",
+        }));
+        const knownNames = new Set(formattedAllergies.map((a) => a.substance_name.toLowerCase().trim()));
+        const historyAllergies = [];
+        for (const ph of pastHistories) {
+            if (!ph.allergy_history || !ph.allergy_history.trim())
+                continue;
+            const rawText = ph.allergy_history.trim();
+            const lower = rawText.toLowerCase();
+            if (lower === "nil" ||
+                lower === "none" ||
+                lower === "no" ||
+                lower === "nka" ||
+                lower === "nkda" ||
+                lower === "no known allergies" ||
+                lower === "no allergies" ||
+                lower === "na" ||
+                lower === "n/a") {
+                continue;
+            }
+            const alreadyIncluded = Array.from(knownNames).some((name) => lower.includes(name) || name.includes(lower));
+            if (!alreadyIncluded) {
+                historyAllergies.push({
+                    id: `hist_${ph.patient_history_id || ph.encounter_no || Math.random()}`,
+                    substance_name: rawText,
+                    substance_type: "CONSULTATION_NOTE",
+                    severity: "MODERATE",
+                    reaction: "Recorded during clinical consultation",
+                    status: "ACTIVE",
+                    clinical_notes: `Noted during consultation on ${ph.visit_date ? new Date(ph.visit_date).toLocaleDateString() : "past visit"}`,
+                    identified_at: ph.visit_date ? new Date(ph.visit_date).toISOString() : null,
+                    doctor_name: ph.treating_doctor_name || null,
+                    source: "CLINICAL_NOTE",
+                });
+                knownNames.add(lower);
+            }
+        }
+        const all = [...formattedAllergies, ...historyAllergies];
+        return {
+            total: all.length,
+            active_count: all.filter((a) => a.status?.toUpperCase() === "ACTIVE").length,
+            allergies: all,
+        };
     }
     formatEncounterVitals(enc) {
         if (!enc)
@@ -1050,6 +1168,42 @@ class PatientPortalService {
                         address: true,
                     },
                 },
+                chemotherapy_plan_items: {
+                    where: { drug_role: "DISCHARGE", active_status: 1 },
+                    orderBy: { drug_sequence: "asc" },
+                    include: {
+                        medicine_master: {
+                            select: {
+                                medicine_name: true,
+                                generic_name: true,
+                                dosage_form: true,
+                                route: true,
+                                unit: true,
+                                strength: true,
+                            },
+                        },
+                    },
+                },
+                chemotherapy_regimen_protocol: {
+                    include: {
+                        chemotherapy_discharge_instructions: {
+                            where: { active_status: 1 },
+                            orderBy: { drug_sequence: "asc" },
+                            include: {
+                                medicine_master: {
+                                    select: {
+                                        medicine_name: true,
+                                        generic_name: true,
+                                        dosage_form: true,
+                                        route: true,
+                                        unit: true,
+                                        strength: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
                 chemotherapy_cycle: {
                     where: { active_status: 1 },
                     orderBy: { cycle_number: "asc" },
@@ -1076,6 +1230,12 @@ class PatientPortalService {
                                         dilution_volume: true,
                                         cycle_day: true,
                                         remarks: true,
+                                        medicine_master: {
+                                            select: {
+                                                medicine_name: true,
+                                                generic_name: true,
+                                            },
+                                        },
                                     },
                                 },
                                 chemotherapy_plan_order_investigation: {
@@ -1093,30 +1253,355 @@ class PatientPortalService {
                             },
                         },
                         chemotherapy_administration: {
-                            orderBy: { administration_date: "desc" },
-                            take: 5,
-                            select: {
-                                administration_id: true,
-                                administration_date: true,
-                                administration_start_time: true,
-                                infusion_completed: true,
-                                iv_access_type: true,
-                                administered_by: true,
+                            where: { active_status: 1 },
+                            orderBy: [
+                                { administration_date: "asc" },
+                                { administration_id: "asc" },
+                            ],
+                            include: {
+                                chemotherapy_plan_items: {
+                                    include: {
+                                        medicine_master: {
+                                            select: {
+                                                medicine_name: true,
+                                                generic_name: true,
+                                                dosage_form: true,
+                                                route: true,
+                                                unit: true,
+                                                strength: true,
+                                            },
+                                        },
+                                    },
+                                },
+                                employees_chemotherapy_administration_administered_byToemployees: {
+                                    select: {
+                                        first_name: true,
+                                        last_name: true,
+                                    },
+                                },
                             },
                         },
                     },
                 },
             },
         });
-        return plans.map((plan) => {
+        const plansWithSchedules = await Promise.all(plans.map(async (plan) => {
+            let schedule = [];
+            try {
+                schedule = await (0, chemotherapy_schedule_1.computePlanSchedule)(prisma_1.default, plan);
+            }
+            catch (err) {
+                console.error("Failed to compute plan schedule:", err?.message ?? err);
+            }
+            // Resolve discharge / take-home supportive medications for this plan
+            let dischargeMeds = [];
+            // 1. Patient plan-specific discharge items (customized by doctor for this patient)
+            if (plan.chemotherapy_plan_items && plan.chemotherapy_plan_items.length > 0) {
+                dischargeMeds = plan.chemotherapy_plan_items.map((it) => {
+                    const medName = it.drug_name ||
+                        it.medicine_master?.medicine_name ||
+                        it.medicine_master?.generic_name ||
+                        "Supportive Medication";
+                    return {
+                        id: it.chemotherapy_plan_item_id,
+                        medicine_name: medName,
+                        brand_name: it.medicine_master?.medicine_name || it.drug_name || null,
+                        generic_name: it.medicine_master?.generic_name || null,
+                        dosage_form: it.drug_type || it.formulation || it.medicine_master?.dosage_form || "Tablet",
+                        dose: it.calculated_dose != null
+                            ? Number(it.calculated_dose)
+                            : it.protocol_dose != null
+                                ? Number(it.protocol_dose)
+                                : null,
+                        dose_unit: it.calculated_dose_unit ||
+                            it.protocol_dose_unit ||
+                            it.medicine_master?.unit ||
+                            "mg",
+                        frequency: it.frequency || "As directed",
+                        administration_route: it.administration_route || it.medicine_master?.route || "Oral",
+                        administration_detail: it.administration_detail || "After Food",
+                        duration: it.duration || "Until next cycle",
+                        instructions: it.remarks || null,
+                        source: "PATIENT_PLAN",
+                    };
+                });
+            }
+            else if (plan.chemotherapy_regimen_protocol?.chemotherapy_discharge_instructions &&
+                plan.chemotherapy_regimen_protocol.chemotherapy_discharge_instructions.length > 0) {
+                // 2. Standard discharge instructions configured on the linked regimen protocol
+                dischargeMeds = plan.chemotherapy_regimen_protocol.chemotherapy_discharge_instructions.map((inst) => {
+                    const medName = inst.drug_brand_name ||
+                        inst.medicine_master?.medicine_name ||
+                        inst.generic_name ||
+                        "Supportive Medication";
+                    return {
+                        id: inst.discharge_instruction_id,
+                        medicine_name: medName,
+                        brand_name: inst.drug_brand_name || inst.medicine_master?.medicine_name || null,
+                        generic_name: inst.generic_name || inst.medicine_master?.generic_name || null,
+                        dosage_form: inst.drug_from || inst.medicine_master?.dosage_form || "Tablet",
+                        dose: inst.patient_dose != null ? Number(inst.patient_dose) : null,
+                        dose_unit: inst.patient_dose_unit || inst.medicine_master?.unit || "mg",
+                        frequency: inst.frequency || "Once daily",
+                        administration_route: inst.medicine_master?.route || "Oral",
+                        administration_detail: inst.administration_detail || "After Food",
+                        duration: inst.duration ||
+                            (inst.duration_days ? `${inst.duration_days} Days` : "Until next cycle"),
+                        instructions: inst.comment || null,
+                        source: "PROTOCOL_STANDARD",
+                    };
+                });
+            }
+            else if (plan.source_protocol_id || plan.regimen_name) {
+                // 3. Fallback: Query discharge instructions by protocol_id or regimen_name
+                try {
+                    const fallbackInstructions = await prisma_1.default.chemotherapy_discharge_instructions.findMany({
+                        where: {
+                            active_status: 1,
+                            OR: [
+                                ...(plan.source_protocol_id ? [{ protocol_id: plan.source_protocol_id }] : []),
+                                ...(plan.regimen_name
+                                    ? [{ chemotherapy_regimen_protocol: { regimen_name: plan.regimen_name } }]
+                                    : []),
+                            ],
+                        },
+                        orderBy: { drug_sequence: "asc" },
+                        include: {
+                            medicine_master: {
+                                select: {
+                                    medicine_name: true,
+                                    generic_name: true,
+                                    dosage_form: true,
+                                    route: true,
+                                    unit: true,
+                                    strength: true,
+                                },
+                            },
+                        },
+                    });
+                    if (fallbackInstructions.length > 0) {
+                        dischargeMeds = fallbackInstructions.map((inst) => {
+                            const medName = inst.drug_brand_name ||
+                                inst.medicine_master?.medicine_name ||
+                                inst.generic_name ||
+                                "Supportive Medication";
+                            return {
+                                id: inst.discharge_instruction_id,
+                                medicine_name: medName,
+                                brand_name: inst.drug_brand_name || inst.medicine_master?.medicine_name || null,
+                                generic_name: inst.generic_name || inst.medicine_master?.generic_name || null,
+                                dosage_form: inst.drug_from || inst.medicine_master?.dosage_form || "Tablet",
+                                dose: inst.patient_dose != null ? Number(inst.patient_dose) : null,
+                                dose_unit: inst.patient_dose_unit || inst.medicine_master?.unit || "mg",
+                                frequency: inst.frequency || "Once daily",
+                                administration_route: inst.medicine_master?.route || "Oral",
+                                administration_detail: inst.administration_detail || "After Food",
+                                duration: inst.duration ||
+                                    (inst.duration_days ? `${inst.duration_days} Days` : "Until next cycle"),
+                                instructions: inst.comment || null,
+                                source: "PROTOCOL_STANDARD",
+                            };
+                        });
+                    }
+                }
+                catch (e) {
+                    console.error("Failed to query fallback discharge instructions:", e?.message);
+                }
+            }
+            return { plan, schedule, dischargeMeds };
+        }));
+        return plansWithSchedules.map(({ plan, schedule, dischargeMeds }) => {
             const docName = plan.employees
                 ? `Dr. ${[plan.employees.first_name, plan.employees.last_name].filter(Boolean).join(" ")}`
                 : null;
             const cycles = plan.chemotherapy_cycle || [];
             const completedCount = cycles.filter((c) => c.cycle_status === "COMPLETED" || c.completion_status === "COMPLETED").length;
-            // Find current / next upcoming cycle
-            const upcomingCycles = cycles.filter((c) => c.cycle_status !== "COMPLETED" && c.completion_status !== "COMPLETED");
+            const formatOrders = (orders, cycleNumber) => (orders || []).map((o) => {
+                const cNum = o.cycle_number || cycleNumber;
+                const scheduledOrder = schedule.find((s) => s.cycle_number === cNum && s.cycle_day === o.cycle_day);
+                const orderPlannedDate = o.planned_date || scheduledOrder?.planned_date || null;
+                return {
+                    plan_order_id: o.plan_order_id,
+                    cycle_day: o.cycle_day,
+                    planned_date: orderPlannedDate,
+                    chemo_instructions: o.chemo_instructions,
+                    additional_notes: o.additional_notes,
+                    items: (o.chemotherapy_plan_items || []).map((it) => ({
+                        chemotherapy_plan_item_id: it.chemotherapy_plan_item_id,
+                        drug_name: it.drug_name ||
+                            it.medicine_master?.medicine_name ||
+                            it.medicine_master?.generic_name ||
+                            "Chemotherapy Agent",
+                        drug_role: it.drug_role,
+                        calculated_dose: it.calculated_dose != null ? Number(it.calculated_dose) : null,
+                        calculated_dose_unit: it.calculated_dose_unit,
+                        protocol_dose: it.protocol_dose != null ? Number(it.protocol_dose) : null,
+                        protocol_dose_unit: it.protocol_dose_unit,
+                        administration_route: it.administration_route,
+                        administration_detail: it.administration_detail,
+                        duration: it.duration,
+                        infusion_duration_minutes: it.infusion_duration_minutes,
+                        dilution_solution: it.dilution_solution,
+                        dilution_volume: it.dilution_volume,
+                        cycle_day: it.cycle_day,
+                        remarks: it.remarks,
+                    })),
+                    investigations: (o.chemotherapy_plan_order_investigation || []).map((inv) => ({
+                        investigation_id: inv.investigation_id,
+                        investigation_name: inv.investigation_name,
+                        investigation_type: inv.investigation_type,
+                        investigation_category: inv.investigation_category,
+                        priority: inv.priority,
+                        target_date: inv.target_date,
+                        clinical_notes: inv.clinical_notes,
+                        item_status: inv.item_status,
+                    })),
+                };
+            });
+            const formatChemoAdmin = (a) => {
+                const administeredByName = a.employees_chemotherapy_administration_administered_byToemployees
+                    ? `Nurse ${[a.employees_chemotherapy_administration_administered_byToemployees.first_name, a.employees_chemotherapy_administration_administered_byToemployees.last_name].filter(Boolean).join(" ")}`.trim()
+                    : a.administered_by || null;
+                const drugName = a.chemotherapy_plan_items?.drug_name ||
+                    a.chemotherapy_plan_items?.medicine_master?.medicine_name ||
+                    a.chemotherapy_plan_items?.medicine_master?.generic_name ||
+                    "Chemotherapy Agent";
+                return {
+                    administration_id: a.administration_id,
+                    chemotherapy_cycle_id: a.chemotherapy_cycle_id,
+                    chemotherapy_plan_item_id: a.chemotherapy_plan_item_id,
+                    plan_order_id: a.plan_order_id,
+                    administration_date: a.administration_date,
+                    administration_start_time: a.administration_start_time,
+                    administration_end_time: a.administration_end_time,
+                    administration_status: a.administration_status || "PENDING",
+                    administered_dose: a.administered_dose != null ? Number(a.administered_dose) : null,
+                    administered_dose_unit: a.administered_dose_unit ||
+                        a.chemotherapy_plan_items?.calculated_dose_unit ||
+                        a.chemotherapy_plan_items?.protocol_dose_unit ||
+                        null,
+                    administration_route: a.administration_route || a.chemotherapy_plan_items?.administration_route || null,
+                    infusion_completed: a.infusion_completed ?? false,
+                    iv_access_type: a.iv_access_type || null,
+                    iv_site: a.iv_site || null,
+                    cannula_size: a.cannula_size || null,
+                    drug_name: drugName,
+                    drug_role: a.chemotherapy_plan_items?.drug_role || "SUPPORTIVE",
+                    medicine_name: a.chemotherapy_plan_items?.medicine_master?.medicine_name || drugName,
+                    generic_name: a.chemotherapy_plan_items?.medicine_master?.generic_name || null,
+                    dosage_form: a.chemotherapy_plan_items?.medicine_master?.dosage_form || null,
+                    administered_by: a.administered_by,
+                    administered_by_name: administeredByName,
+                    verified_by: a.verified_by,
+                    nursing_notes: a.nursing_notes,
+                    remarks: a.remarks,
+                    status_reason: a.status_reason,
+                };
+            };
+            const formattedCycles = cycles.map((c) => {
+                const scheduledDayOne = schedule.find((s) => s.cycle_number === c.cycle_number && s.cycle_day === 1);
+                const cyclePlannedDate = c.rescheduled_date || scheduledDayOne?.planned_date || c.planned_date;
+                return {
+                    chemotherapy_cycle_id: c.chemotherapy_cycle_id,
+                    cycle_number: c.cycle_number,
+                    cycle_day: c.cycle_day,
+                    planned_date: cyclePlannedDate,
+                    actual_date: c.actual_date,
+                    cycle_status: c.cycle_status,
+                    completion_status: c.completion_status,
+                    treatment_delay: c.treatment_delay,
+                    delay_days: c.delay_days,
+                    delay_reason: c.delay_reason,
+                    rescheduled_date: c.rescheduled_date,
+                    remarks: c.remarks,
+                    physician_approved: c.physician_approved,
+                    approval_date: c.approval_date,
+                    orders: formatOrders(c.chemotherapy_plan_order, c.cycle_number),
+                    administrations: (c.chemotherapy_administration || []).map(formatChemoAdmin),
+                };
+            });
+            // All administrations across all cycles of the plan
+            const allPlanAdmins = formattedCycles.flatMap((c) => c.administrations || []);
+            // Correlate discharge / take-home supportive medications with administration records
+            let enrichedDischargeMeds = dischargeMeds.map((med) => {
+                const targetName = (med.medicine_name || med.brand_name || "").toLowerCase().trim();
+                const targetGeneric = (med.generic_name || "").toLowerCase().trim();
+                const matchedAdmin = allPlanAdmins.find((a) => {
+                    if (med.id && a.chemotherapy_plan_item_id && med.id === a.chemotherapy_plan_item_id) {
+                        return true;
+                    }
+                    const adminDrug = (a.drug_name || a.medicine_name || "").toLowerCase().trim();
+                    const adminGeneric = (a.generic_name || "").toLowerCase().trim();
+                    if (targetName && adminDrug && (adminDrug.includes(targetName) || targetName.includes(adminDrug))) {
+                        return true;
+                    }
+                    if (targetGeneric && adminGeneric && (adminGeneric.includes(targetGeneric) || targetGeneric.includes(adminGeneric))) {
+                        return true;
+                    }
+                    if (targetName && adminGeneric && (adminGeneric.includes(targetName) || targetName.includes(adminGeneric))) {
+                        return true;
+                    }
+                    if (targetGeneric && adminDrug && (adminDrug.includes(targetGeneric) || targetGeneric.includes(adminDrug))) {
+                        return true;
+                    }
+                    return false;
+                });
+                const isGiven = matchedAdmin
+                    ? matchedAdmin.administration_status === "GIVEN" || matchedAdmin.administration_status === "Completed"
+                    : false;
+                return {
+                    ...med,
+                    is_administered: isGiven,
+                    administration_status: matchedAdmin ? matchedAdmin.administration_status : "PENDING",
+                    administered_date: matchedAdmin?.administration_date || null,
+                    administered_dose: matchedAdmin?.administered_dose ?? null,
+                    administered_dose_unit: matchedAdmin?.administered_dose_unit || med.dose_unit || null,
+                    administered_route: matchedAdmin?.administration_route || med.administration_route || null,
+                    administered_by_name: matchedAdmin?.administered_by_name || null,
+                    nursing_notes: matchedAdmin?.nursing_notes || matchedAdmin?.remarks || null,
+                    administration_id: matchedAdmin?.administration_id || null,
+                };
+            });
+            // Also append any supportive or discharge medications administered at daycare
+            const existingNames = new Set(enrichedDischargeMeds.map((m) => (m.medicine_name || "").toLowerCase().trim()));
+            for (const a of allPlanAdmins) {
+                if ((a.administration_status === "GIVEN" || a.administration_status === "Completed") &&
+                    (a.drug_role === "DISCHARGE" || a.drug_role === "SUPPORTIVE")) {
+                    const adminName = (a.drug_name || a.medicine_name || "").toLowerCase().trim();
+                    if (!existingNames.has(adminName)) {
+                        existingNames.add(adminName);
+                        enrichedDischargeMeds.push({
+                            id: a.administration_id,
+                            medicine_name: a.drug_name || a.medicine_name,
+                            brand_name: a.medicine_name || null,
+                            generic_name: a.generic_name || null,
+                            dosage_form: a.dosage_form || "Tablet",
+                            dose: a.administered_dose ?? null,
+                            dose_unit: a.administered_dose_unit || "mg",
+                            frequency: "Administered at Center",
+                            administration_route: a.administration_route || "IV",
+                            administration_detail: "Administered during daycare stay",
+                            duration: "Completed",
+                            instructions: a.nursing_notes || a.remarks || "Administered as supportive medication",
+                            source: "ADMINISTRATION_RECORD",
+                            is_administered: true,
+                            administration_status: "GIVEN",
+                            administered_date: a.administration_date,
+                            administered_dose: a.administered_dose,
+                            administered_dose_unit: a.administered_dose_unit,
+                            administered_route: a.administration_route,
+                            administered_by_name: a.administered_by_name,
+                            nursing_notes: a.nursing_notes || a.remarks,
+                            administration_id: a.administration_id,
+                        });
+                    }
+                }
+            }
+            // Find current / next upcoming cycle from the formatted cycles
+            const upcomingCycles = formattedCycles.filter((c) => c.cycle_status !== "COMPLETED" && c.completion_status !== "COMPLETED");
             const nextCycle = upcomingCycles[0] || null;
+            const firstDate = schedule[0]?.planned_date || plan.treatment_start_date;
+            const lastDate = schedule[schedule.length - 1]?.planned_date || plan.expected_end_date;
             return {
                 chemotherapy_plan_id: plan.chemotherapy_plan_id,
                 patient_id: plan.patient_id,
@@ -1131,8 +1616,8 @@ class PatientPortalService {
                 planned_cycles: plan.planned_cycles,
                 completed_cycles: completedCount || plan.completed_cycles || 0,
                 cycle_interval_days: plan.cycle_interval_days,
-                treatment_start_date: plan.treatment_start_date,
-                expected_end_date: plan.expected_end_date,
+                treatment_start_date: firstDate,
+                expected_end_date: lastDate,
                 remarks: plan.remarks,
                 discussion: plan.discussion,
                 dosing_height_cm: plan.dosing_height_cm,
@@ -1149,53 +1634,11 @@ class PatientPortalService {
                     : 0,
                 next_upcoming_cycle: nextCycle
                     ? {
-                        chemotherapy_cycle_id: nextCycle.chemotherapy_cycle_id,
-                        cycle_number: nextCycle.cycle_number,
-                        cycle_day: nextCycle.cycle_day,
-                        planned_date: nextCycle.rescheduled_date || nextCycle.planned_date,
-                        actual_date: nextCycle.actual_date,
-                        cycle_status: nextCycle.cycle_status,
-                        completion_status: nextCycle.completion_status,
-                        treatment_delay: nextCycle.treatment_delay,
-                        delay_days: nextCycle.delay_days,
-                        delay_reason: nextCycle.delay_reason,
-                        rescheduled_date: nextCycle.rescheduled_date,
-                        remarks: nextCycle.remarks,
-                        orders: (nextCycle.chemotherapy_plan_order || []).map((o) => ({
-                            plan_order_id: o.plan_order_id,
-                            cycle_day: o.cycle_day,
-                            chemo_instructions: o.chemo_instructions,
-                            additional_notes: o.additional_notes,
-                            items: o.chemotherapy_plan_items,
-                            investigations: o.chemotherapy_plan_order_investigation,
-                        })),
+                        ...nextCycle,
                     }
                     : null,
-                cycles: cycles.map((c) => ({
-                    chemotherapy_cycle_id: c.chemotherapy_cycle_id,
-                    cycle_number: c.cycle_number,
-                    cycle_day: c.cycle_day,
-                    planned_date: c.planned_date,
-                    actual_date: c.actual_date,
-                    cycle_status: c.cycle_status,
-                    completion_status: c.completion_status,
-                    treatment_delay: c.treatment_delay,
-                    delay_days: c.delay_days,
-                    delay_reason: c.delay_reason,
-                    rescheduled_date: c.rescheduled_date,
-                    remarks: c.remarks,
-                    physician_approved: c.physician_approved,
-                    approval_date: c.approval_date,
-                    orders: (c.chemotherapy_plan_order || []).map((o) => ({
-                        plan_order_id: o.plan_order_id,
-                        cycle_day: o.cycle_day,
-                        chemo_instructions: o.chemo_instructions,
-                        additional_notes: o.additional_notes,
-                        items: o.chemotherapy_plan_items,
-                        investigations: o.chemotherapy_plan_order_investigation,
-                    })),
-                    administrations: c.chemotherapy_administration,
-                })),
+                discharge_medications: enrichedDischargeMeds,
+                cycles: formattedCycles,
             };
         });
     }

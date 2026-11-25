@@ -1,0 +1,7432 @@
+[
+ {
+  "category_id": "SC710cf769ed",
+  "schema_id": "S01",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC533fff0b2b",
+  "schema_id": "S01",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Carcinoma in situ",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC2b6159b3ed",
+  "schema_id": "S01",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "≤2 cm and DOI ≤5 mm",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCd9dea8a8e8",
+  "schema_id": "S01",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": "≤2 cm and DOI >5 mm; or >2 to 4 cm and DOI ≤10 mm",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCd526241e7d",
+  "schema_id": "S01",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": ">2 to 4 cm and DOI >10 mm; or >4 cm and DOI ≤10 mm",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCa5bbeed2c4",
+  "schema_id": "S01",
+  "axis": "T",
+  "shown_code": "T4a",
+  "rule_code": "T4a",
+  "context": "both",
+  "definition": "Moderately advanced: >4 cm and DOI >10 mm; or invades adjacent structures (cortical bone of mandible/maxilla, maxillary sinus, facial skin). Lip: through cortical bone, inferior alveolar nerve, floor of mouth, facial skin",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCffe9624525",
+  "schema_id": "S01",
+  "axis": "T",
+  "shown_code": "T4b",
+  "rule_code": "T4b",
+  "context": "both",
+  "definition": "Very advanced: masticator space, pterygoid plates, skull base and/or encases internal carotid artery",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC7260fbced0",
+  "schema_id": "S01",
+  "axis": "N",
+  "shown_code": "cNX",
+  "rule_code": "NX",
+  "context": "clinical",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC2cfbbf18b8",
+  "schema_id": "S01",
+  "axis": "N",
+  "shown_code": "cN0",
+  "rule_code": "N0",
+  "context": "clinical",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC6039a82910",
+  "schema_id": "S01",
+  "axis": "N",
+  "shown_code": "cN1",
+  "rule_code": "N1",
+  "context": "clinical",
+  "definition": "Single ipsilateral node ≤3 cm, ENE(-)",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC669d3cb05d",
+  "schema_id": "S01",
+  "axis": "N",
+  "shown_code": "cN2a",
+  "rule_code": "N2a",
+  "context": "clinical",
+  "definition": "Single ipsilateral node >3 to 6 cm, ENE(-)",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCe9185c2865",
+  "schema_id": "S01",
+  "axis": "N",
+  "shown_code": "cN2b",
+  "rule_code": "N2b",
+  "context": "clinical",
+  "definition": "Multiple ipsilateral nodes ≤6 cm, ENE(-)",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCc91e00291f",
+  "schema_id": "S01",
+  "axis": "N",
+  "shown_code": "cN2c",
+  "rule_code": "N2c",
+  "context": "clinical",
+  "definition": "Bilateral/contralateral nodes ≤6 cm, ENE(-)",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCba9fa31d99",
+  "schema_id": "S01",
+  "axis": "N",
+  "shown_code": "cN3a",
+  "rule_code": "N3a",
+  "context": "clinical",
+  "definition": "Node >6 cm, ENE(-)",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC99cd387396",
+  "schema_id": "S01",
+  "axis": "N",
+  "shown_code": "cN3b",
+  "rule_code": "N3b",
+  "context": "clinical",
+  "definition": "Any node(s) with clinically overt ENE(+)",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC36766548df",
+  "schema_id": "S01",
+  "axis": "N",
+  "shown_code": "pNX",
+  "rule_code": "NX",
+  "context": "pathological",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 9
+ },
+ {
+  "category_id": "SC733d674125",
+  "schema_id": "S01",
+  "axis": "N",
+  "shown_code": "pN0",
+  "rule_code": "N0",
+  "context": "pathological",
+  "definition": "No regional node metastasis",
+  "display_order": 10
+ },
+ {
+  "category_id": "SC017af35fb1",
+  "schema_id": "S01",
+  "axis": "N",
+  "shown_code": "pN1",
+  "rule_code": "N1",
+  "context": "pathological",
+  "definition": "Single ipsilateral node ≤3 cm, ENE(-)",
+  "display_order": 11
+ },
+ {
+  "category_id": "SC7ad3a18e9b",
+  "schema_id": "S01",
+  "axis": "N",
+  "shown_code": "pN2a",
+  "rule_code": "N2a",
+  "context": "pathological",
+  "definition": "Single ipsilateral node ≤3 cm ENE(+); or >3 to 6 cm ENE(-)",
+  "display_order": 12
+ },
+ {
+  "category_id": "SCfc414d9df6",
+  "schema_id": "S01",
+  "axis": "N",
+  "shown_code": "pN2b",
+  "rule_code": "N2b",
+  "context": "pathological",
+  "definition": "Multiple ipsilateral nodes ≤6 cm, ENE(-)",
+  "display_order": 13
+ },
+ {
+  "category_id": "SC4bcc2d1bfb",
+  "schema_id": "S01",
+  "axis": "N",
+  "shown_code": "pN2c",
+  "rule_code": "N2c",
+  "context": "pathological",
+  "definition": "Bilateral/contralateral nodes ≤6 cm, ENE(-)",
+  "display_order": 14
+ },
+ {
+  "category_id": "SCa7172b2ecd",
+  "schema_id": "S01",
+  "axis": "N",
+  "shown_code": "pN3a",
+  "rule_code": "N3a",
+  "context": "pathological",
+  "definition": "Node >6 cm, ENE(-)",
+  "display_order": 15
+ },
+ {
+  "category_id": "SCe27aebbfbe",
+  "schema_id": "S01",
+  "axis": "N",
+  "shown_code": "pN3b",
+  "rule_code": "N3b",
+  "context": "pathological",
+  "definition": "Node >3 cm ENE(+); or multiple ipsilateral/contralateral/bilateral nodes with any ENE(+)",
+  "display_order": 16
+ },
+ {
+  "category_id": "SCad49fa130d",
+  "schema_id": "S01",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCc9c435cef4",
+  "schema_id": "S01",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC898d971dc5",
+  "schema_id": "S02",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC1a688ab97c",
+  "schema_id": "S02",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Carcinoma in situ",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC2e2a3f42a1",
+  "schema_id": "S02",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "≤2 cm",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCacd5eb4805",
+  "schema_id": "S02",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": ">2 to 4 cm",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC06ddae4472",
+  "schema_id": "S02",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": ">4 cm or extension to lingual surface of epiglottis",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCc4e4ca5530",
+  "schema_id": "S02",
+  "axis": "T",
+  "shown_code": "T4a",
+  "rule_code": "T4a",
+  "context": "both",
+  "definition": "Invades larynx, extrinsic tongue muscle, medial pterygoid, hard palate or mandible",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC55e4372149",
+  "schema_id": "S02",
+  "axis": "T",
+  "shown_code": "T4b",
+  "rule_code": "T4b",
+  "context": "both",
+  "definition": "Lateral pterygoid, pterygoid plates, lateral nasopharynx, skull base or encases carotid",
+  "display_order": 7
+ },
+ {
+  "category_id": "SCb91e1e9e0b",
+  "schema_id": "S02",
+  "axis": "N",
+  "shown_code": "cNX",
+  "rule_code": "NX",
+  "context": "clinical",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCad363da309",
+  "schema_id": "S02",
+  "axis": "N",
+  "shown_code": "cN0",
+  "rule_code": "N0",
+  "context": "clinical",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC9115a3118d",
+  "schema_id": "S02",
+  "axis": "N",
+  "shown_code": "cN1",
+  "rule_code": "N1",
+  "context": "clinical",
+  "definition": "Single ipsilateral node ≤3 cm, ENE(-)",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC8d323718e9",
+  "schema_id": "S02",
+  "axis": "N",
+  "shown_code": "cN2a",
+  "rule_code": "N2a",
+  "context": "clinical",
+  "definition": "Single ipsilateral node >3 to 6 cm, ENE(-)",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC9350ad6086",
+  "schema_id": "S02",
+  "axis": "N",
+  "shown_code": "cN2b",
+  "rule_code": "N2b",
+  "context": "clinical",
+  "definition": "Multiple ipsilateral nodes ≤6 cm, ENE(-)",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCd949bc3b1e",
+  "schema_id": "S02",
+  "axis": "N",
+  "shown_code": "cN2c",
+  "rule_code": "N2c",
+  "context": "clinical",
+  "definition": "Bilateral/contralateral nodes ≤6 cm, ENE(-)",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCd22d49930c",
+  "schema_id": "S02",
+  "axis": "N",
+  "shown_code": "cN3a",
+  "rule_code": "N3a",
+  "context": "clinical",
+  "definition": "Node >6 cm, ENE(-)",
+  "display_order": 7
+ },
+ {
+  "category_id": "SCba7c4c25ab",
+  "schema_id": "S02",
+  "axis": "N",
+  "shown_code": "cN3b",
+  "rule_code": "N3b",
+  "context": "clinical",
+  "definition": "Any node(s) with clinically overt ENE(+)",
+  "display_order": 8
+ },
+ {
+  "category_id": "SCa46989479e",
+  "schema_id": "S02",
+  "axis": "N",
+  "shown_code": "pNX",
+  "rule_code": "NX",
+  "context": "pathological",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 9
+ },
+ {
+  "category_id": "SC2c8bb537de",
+  "schema_id": "S02",
+  "axis": "N",
+  "shown_code": "pN0",
+  "rule_code": "N0",
+  "context": "pathological",
+  "definition": "No regional node metastasis",
+  "display_order": 10
+ },
+ {
+  "category_id": "SC84bfd0814c",
+  "schema_id": "S02",
+  "axis": "N",
+  "shown_code": "pN1",
+  "rule_code": "N1",
+  "context": "pathological",
+  "definition": "Single ipsilateral node ≤3 cm, ENE(-)",
+  "display_order": 11
+ },
+ {
+  "category_id": "SCf3e2395347",
+  "schema_id": "S02",
+  "axis": "N",
+  "shown_code": "pN2a",
+  "rule_code": "N2a",
+  "context": "pathological",
+  "definition": "Single ipsilateral node ≤3 cm ENE(+); or >3 to 6 cm ENE(-)",
+  "display_order": 12
+ },
+ {
+  "category_id": "SCde9831625d",
+  "schema_id": "S02",
+  "axis": "N",
+  "shown_code": "pN2b",
+  "rule_code": "N2b",
+  "context": "pathological",
+  "definition": "Multiple ipsilateral nodes ≤6 cm, ENE(-)",
+  "display_order": 13
+ },
+ {
+  "category_id": "SC4cb4e6ea72",
+  "schema_id": "S02",
+  "axis": "N",
+  "shown_code": "pN2c",
+  "rule_code": "N2c",
+  "context": "pathological",
+  "definition": "Bilateral/contralateral nodes ≤6 cm, ENE(-)",
+  "display_order": 14
+ },
+ {
+  "category_id": "SCb62293fd6f",
+  "schema_id": "S02",
+  "axis": "N",
+  "shown_code": "pN3a",
+  "rule_code": "N3a",
+  "context": "pathological",
+  "definition": "Node >6 cm, ENE(-)",
+  "display_order": 15
+ },
+ {
+  "category_id": "SC1a7ee337b5",
+  "schema_id": "S02",
+  "axis": "N",
+  "shown_code": "pN3b",
+  "rule_code": "N3b",
+  "context": "pathological",
+  "definition": "Node >3 cm ENE(+); or multiple ipsilateral/contralateral/bilateral nodes with any ENE(+)",
+  "display_order": 16
+ },
+ {
+  "category_id": "SC96e53f30fe",
+  "schema_id": "S02",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC50fa7960fd",
+  "schema_id": "S02",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCe4745f8c67",
+  "schema_id": "S03",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC69632df1ad",
+  "schema_id": "S03",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Carcinoma in situ",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC348a51d40f",
+  "schema_id": "S03",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "Limited to one subsite and/or ≤2 cm",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC065a1dbd6a",
+  "schema_id": "S03",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": "Invades >1 subsite or adjacent site, or >2 to 4 cm, without hemilarynx fixation",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC8d21bdf3c5",
+  "schema_id": "S03",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": ">4 cm, or hemilarynx fixation, or extension to oesophageal mucosa",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCc3cad53519",
+  "schema_id": "S03",
+  "axis": "T",
+  "shown_code": "T4a",
+  "rule_code": "T4a",
+  "context": "both",
+  "definition": "Thyroid/cricoid cartilage, hyoid, thyroid gland, oesophagus (muscle), central compartment soft tissue",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCb4b985d312",
+  "schema_id": "S03",
+  "axis": "T",
+  "shown_code": "T4b",
+  "rule_code": "T4b",
+  "context": "both",
+  "definition": "Prevertebral fascia, encases carotid, or mediastinal structures",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC95e13a5116",
+  "schema_id": "S03",
+  "axis": "N",
+  "shown_code": "cNX",
+  "rule_code": "NX",
+  "context": "clinical",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC28388e7b82",
+  "schema_id": "S03",
+  "axis": "N",
+  "shown_code": "cN0",
+  "rule_code": "N0",
+  "context": "clinical",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCb5529532c0",
+  "schema_id": "S03",
+  "axis": "N",
+  "shown_code": "cN1",
+  "rule_code": "N1",
+  "context": "clinical",
+  "definition": "Single ipsilateral node ≤3 cm, ENE(-)",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCcc61762138",
+  "schema_id": "S03",
+  "axis": "N",
+  "shown_code": "cN2a",
+  "rule_code": "N2a",
+  "context": "clinical",
+  "definition": "Single ipsilateral node >3 to 6 cm, ENE(-)",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC8578c29aa6",
+  "schema_id": "S03",
+  "axis": "N",
+  "shown_code": "cN2b",
+  "rule_code": "N2b",
+  "context": "clinical",
+  "definition": "Multiple ipsilateral nodes ≤6 cm, ENE(-)",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC6f97fcf839",
+  "schema_id": "S03",
+  "axis": "N",
+  "shown_code": "cN2c",
+  "rule_code": "N2c",
+  "context": "clinical",
+  "definition": "Bilateral/contralateral nodes ≤6 cm, ENE(-)",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCfc71a8eed9",
+  "schema_id": "S03",
+  "axis": "N",
+  "shown_code": "cN3a",
+  "rule_code": "N3a",
+  "context": "clinical",
+  "definition": "Node >6 cm, ENE(-)",
+  "display_order": 7
+ },
+ {
+  "category_id": "SCfc48ceea51",
+  "schema_id": "S03",
+  "axis": "N",
+  "shown_code": "cN3b",
+  "rule_code": "N3b",
+  "context": "clinical",
+  "definition": "Any node(s) with clinically overt ENE(+)",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC4540ce9531",
+  "schema_id": "S03",
+  "axis": "N",
+  "shown_code": "pNX",
+  "rule_code": "NX",
+  "context": "pathological",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 9
+ },
+ {
+  "category_id": "SC795eaa9107",
+  "schema_id": "S03",
+  "axis": "N",
+  "shown_code": "pN0",
+  "rule_code": "N0",
+  "context": "pathological",
+  "definition": "No regional node metastasis",
+  "display_order": 10
+ },
+ {
+  "category_id": "SC0f95d1b6d7",
+  "schema_id": "S03",
+  "axis": "N",
+  "shown_code": "pN1",
+  "rule_code": "N1",
+  "context": "pathological",
+  "definition": "Single ipsilateral node ≤3 cm, ENE(-)",
+  "display_order": 11
+ },
+ {
+  "category_id": "SCd7adf98cc8",
+  "schema_id": "S03",
+  "axis": "N",
+  "shown_code": "pN2a",
+  "rule_code": "N2a",
+  "context": "pathological",
+  "definition": "Single ipsilateral node ≤3 cm ENE(+); or >3 to 6 cm ENE(-)",
+  "display_order": 12
+ },
+ {
+  "category_id": "SC35e9eb9a31",
+  "schema_id": "S03",
+  "axis": "N",
+  "shown_code": "pN2b",
+  "rule_code": "N2b",
+  "context": "pathological",
+  "definition": "Multiple ipsilateral nodes ≤6 cm, ENE(-)",
+  "display_order": 13
+ },
+ {
+  "category_id": "SC830a13dba7",
+  "schema_id": "S03",
+  "axis": "N",
+  "shown_code": "pN2c",
+  "rule_code": "N2c",
+  "context": "pathological",
+  "definition": "Bilateral/contralateral nodes ≤6 cm, ENE(-)",
+  "display_order": 14
+ },
+ {
+  "category_id": "SC6750a9d380",
+  "schema_id": "S03",
+  "axis": "N",
+  "shown_code": "pN3a",
+  "rule_code": "N3a",
+  "context": "pathological",
+  "definition": "Node >6 cm, ENE(-)",
+  "display_order": 15
+ },
+ {
+  "category_id": "SCf77eaaedbb",
+  "schema_id": "S03",
+  "axis": "N",
+  "shown_code": "pN3b",
+  "rule_code": "N3b",
+  "context": "pathological",
+  "definition": "Node >3 cm ENE(+); or multiple ipsilateral/contralateral/bilateral nodes with any ENE(+)",
+  "display_order": 16
+ },
+ {
+  "category_id": "SC32ed3f2c3e",
+  "schema_id": "S03",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC95c9184d14",
+  "schema_id": "S03",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCd8e316dd1e",
+  "schema_id": "S04",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCfe70100aaa",
+  "schema_id": "S04",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No primary identified (p16+ cervical node)",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC2c6db81740",
+  "schema_id": "S04",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "≤2 cm",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC8b837baf40",
+  "schema_id": "S04",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": ">2 to 4 cm",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC5de0fbbaa8",
+  "schema_id": "S04",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": ">4 cm or extension to lingual surface of epiglottis",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC0100f1d6af",
+  "schema_id": "S04",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": "Moderately advanced: invades larynx, extrinsic tongue muscle, medial pterygoid, hard palate, mandible or beyond",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC6f97064375",
+  "schema_id": "S04",
+  "axis": "N",
+  "shown_code": "cNX",
+  "rule_code": "NX",
+  "context": "clinical",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC91f7d68e9c",
+  "schema_id": "S04",
+  "axis": "N",
+  "shown_code": "cN0",
+  "rule_code": "N0",
+  "context": "clinical",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC8654d7eaea",
+  "schema_id": "S04",
+  "axis": "N",
+  "shown_code": "cN1",
+  "rule_code": "N1",
+  "context": "clinical",
+  "definition": "Ipsilateral node(s), all ≤6 cm, without unequivocal imaging/clinical ENE",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCa9e75bf131",
+  "schema_id": "S04",
+  "axis": "N",
+  "shown_code": "cN2",
+  "rule_code": "N2",
+  "context": "clinical",
+  "definition": "Ipsilateral node(s) ≤6 cm WITH unequivocal imaging/clinical ENE; or contralateral/bilateral node(s) ≤6 cm without ENE",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC3828d439f2",
+  "schema_id": "S04",
+  "axis": "N",
+  "shown_code": "cN3",
+  "rule_code": "N3",
+  "context": "clinical",
+  "definition": "Any node >6 cm; or contralateral/bilateral node(s) with unequivocal imaging/clinical ENE",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCb35db6cf13",
+  "schema_id": "S04",
+  "axis": "N",
+  "shown_code": "pNX",
+  "rule_code": "NX",
+  "context": "pathological",
+  "definition": "Regional nodes cannot be assessed (or <6 nodes examined and none positive)",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC311c611bf4",
+  "schema_id": "S04",
+  "axis": "N",
+  "shown_code": "pN0",
+  "rule_code": "N0",
+  "context": "pathological",
+  "definition": "No regional node metastasis (≥6 nodes examined)",
+  "display_order": 7
+ },
+ {
+  "category_id": "SCb708967716",
+  "schema_id": "S04",
+  "axis": "N",
+  "shown_code": "pN1a",
+  "rule_code": "N1a",
+  "context": "pathological",
+  "definition": "1 positive node, no definitive pathological ENE",
+  "display_order": 8
+ },
+ {
+  "category_id": "SCc9a99965e6",
+  "schema_id": "S04",
+  "axis": "N",
+  "shown_code": "pN1b",
+  "rule_code": "N1b",
+  "context": "pathological",
+  "definition": "2–4 positive nodes, no definitive pathological ENE",
+  "display_order": 9
+ },
+ {
+  "category_id": "SCaef450646e",
+  "schema_id": "S04",
+  "axis": "N",
+  "shown_code": "pN2",
+  "rule_code": "N2",
+  "context": "pathological",
+  "definition": "1–4 positive nodes WITH pathological ENE; or >4 nodes without ENE",
+  "display_order": 10
+ },
+ {
+  "category_id": "SC11a611b8de",
+  "schema_id": "S04",
+  "axis": "N",
+  "shown_code": "pN3",
+  "rule_code": "N3",
+  "context": "pathological",
+  "definition": ">4 positive nodes with pathological ENE",
+  "display_order": 11
+ },
+ {
+  "category_id": "SCbf7ec8d4dc",
+  "schema_id": "S04",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCe9ed64f15c",
+  "schema_id": "S04",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC7390017eb1",
+  "schema_id": "S05",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC6c9e52c34a",
+  "schema_id": "S05",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No tumour identified, but EBV-positive cervical node(s)",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC70ff74c601",
+  "schema_id": "S05",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "Confined to nasopharynx, or extends to oropharynx and/or nasal cavity without parapharyngeal involvement",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC7d6b509d6f",
+  "schema_id": "S05",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": "Parapharyngeal space and/or adjacent soft tissue (medial pterygoid, lateral pterygoid, prevertebral muscles)",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCd8a078b5d4",
+  "schema_id": "S05",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "Unequivocal bone infiltration: skull base (incl. pterygoid structures), paranasal sinuses, cervical vertebrae",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCf7a9441298",
+  "schema_id": "S05",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": "Intracranial extension, unequivocal cranial nerve involvement, hypopharynx, orbit (incl. inferior orbital fissure), parotid gland and/or extensive soft-tissue infiltration beyond the anterolateral surface of the lateral pterygoid",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC8b0ec11e5c",
+  "schema_id": "S05",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCc653335244",
+  "schema_id": "S05",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC35c9f8390e",
+  "schema_id": "S05",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "Unilateral cervical and/or unilateral or bilateral retropharyngeal nodes, ≤6 cm, above caudal border of cricoid, without advanced ENE",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCa029294987",
+  "schema_id": "S05",
+  "axis": "N",
+  "shown_code": "N2",
+  "rule_code": "N2",
+  "context": "both",
+  "definition": "Bilateral cervical nodes, ≤6 cm, above caudal border of cricoid, without advanced ENE",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC6c1e829105",
+  "schema_id": "S05",
+  "axis": "N",
+  "shown_code": "N3",
+  "rule_code": "N3",
+  "context": "both",
+  "definition": "Cervical node(s) >6 cm, and/or below caudal border of cricoid, and/or advanced radiological ENE (adjacent muscles, skin, neurovascular bundle)",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCd2b4dc471e",
+  "schema_id": "S05",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC4cd1893808",
+  "schema_id": "S05",
+  "axis": "M",
+  "shown_code": "M1a",
+  "rule_code": "M1a",
+  "context": "both",
+  "definition": "≤3 metastatic lesions in one or more organs/sites",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC476297483f",
+  "schema_id": "S05",
+  "axis": "M",
+  "shown_code": "M1b",
+  "rule_code": "M1b",
+  "context": "both",
+  "definition": ">3 metastatic lesions in one or more organs/sites",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC0158f55685",
+  "schema_id": "S06",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC9c5fe1883a",
+  "schema_id": "S06",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Carcinoma in situ",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCcf53446144",
+  "schema_id": "S06",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "One subsite, normal vocal cord mobility",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCd560a3411e",
+  "schema_id": "S06",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": "Mucosa of >1 adjacent subsite of supraglottis/glottis or region outside supraglottis, no fixation",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC615a7a18a6",
+  "schema_id": "S06",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "Limited to larynx with cord fixation and/or postcricoid, pre-epiglottic or paraglottic space, and/or inner thyroid cortex",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC86d457f567",
+  "schema_id": "S06",
+  "axis": "T",
+  "shown_code": "T4a",
+  "rule_code": "T4a",
+  "context": "both",
+  "definition": "Through outer cortex of thyroid cartilage and/or beyond larynx (trachea, neck soft tissue, strap muscles, thyroid, oesophagus)",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCce5ecbdac6",
+  "schema_id": "S06",
+  "axis": "T",
+  "shown_code": "T4b",
+  "rule_code": "T4b",
+  "context": "both",
+  "definition": "Prevertebral space, mediastinal structures, encases carotid",
+  "display_order": 7
+ },
+ {
+  "category_id": "SCd4f7c3050d",
+  "schema_id": "S06",
+  "axis": "N",
+  "shown_code": "cNX",
+  "rule_code": "NX",
+  "context": "clinical",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC9578cecb4d",
+  "schema_id": "S06",
+  "axis": "N",
+  "shown_code": "cN0",
+  "rule_code": "N0",
+  "context": "clinical",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCe0615f57c0",
+  "schema_id": "S06",
+  "axis": "N",
+  "shown_code": "cN1",
+  "rule_code": "N1",
+  "context": "clinical",
+  "definition": "Single ipsilateral node ≤3 cm, ENE(-)",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC4a0e78fe9d",
+  "schema_id": "S06",
+  "axis": "N",
+  "shown_code": "cN2a",
+  "rule_code": "N2a",
+  "context": "clinical",
+  "definition": "Single ipsilateral node >3 to 6 cm, ENE(-)",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCcee17efb47",
+  "schema_id": "S06",
+  "axis": "N",
+  "shown_code": "cN2b",
+  "rule_code": "N2b",
+  "context": "clinical",
+  "definition": "Multiple ipsilateral nodes ≤6 cm, ENE(-)",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCee284db14f",
+  "schema_id": "S06",
+  "axis": "N",
+  "shown_code": "cN2c",
+  "rule_code": "N2c",
+  "context": "clinical",
+  "definition": "Bilateral/contralateral nodes ≤6 cm, ENE(-)",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCe5c202893f",
+  "schema_id": "S06",
+  "axis": "N",
+  "shown_code": "cN3a",
+  "rule_code": "N3a",
+  "context": "clinical",
+  "definition": "Node >6 cm, ENE(-)",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC3ca0f5fb14",
+  "schema_id": "S06",
+  "axis": "N",
+  "shown_code": "cN3b",
+  "rule_code": "N3b",
+  "context": "clinical",
+  "definition": "Any node(s) with clinically overt ENE(+)",
+  "display_order": 8
+ },
+ {
+  "category_id": "SCac76b0008b",
+  "schema_id": "S06",
+  "axis": "N",
+  "shown_code": "pNX",
+  "rule_code": "NX",
+  "context": "pathological",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 9
+ },
+ {
+  "category_id": "SCf9c158b684",
+  "schema_id": "S06",
+  "axis": "N",
+  "shown_code": "pN0",
+  "rule_code": "N0",
+  "context": "pathological",
+  "definition": "No regional node metastasis",
+  "display_order": 10
+ },
+ {
+  "category_id": "SC9b2989ef47",
+  "schema_id": "S06",
+  "axis": "N",
+  "shown_code": "pN1",
+  "rule_code": "N1",
+  "context": "pathological",
+  "definition": "Single ipsilateral node ≤3 cm, ENE(-)",
+  "display_order": 11
+ },
+ {
+  "category_id": "SCd24b8e3d30",
+  "schema_id": "S06",
+  "axis": "N",
+  "shown_code": "pN2a",
+  "rule_code": "N2a",
+  "context": "pathological",
+  "definition": "Single ipsilateral node ≤3 cm ENE(+); or >3 to 6 cm ENE(-)",
+  "display_order": 12
+ },
+ {
+  "category_id": "SCa64cbeab76",
+  "schema_id": "S06",
+  "axis": "N",
+  "shown_code": "pN2b",
+  "rule_code": "N2b",
+  "context": "pathological",
+  "definition": "Multiple ipsilateral nodes ≤6 cm, ENE(-)",
+  "display_order": 13
+ },
+ {
+  "category_id": "SCc30b091344",
+  "schema_id": "S06",
+  "axis": "N",
+  "shown_code": "pN2c",
+  "rule_code": "N2c",
+  "context": "pathological",
+  "definition": "Bilateral/contralateral nodes ≤6 cm, ENE(-)",
+  "display_order": 14
+ },
+ {
+  "category_id": "SC66e746e249",
+  "schema_id": "S06",
+  "axis": "N",
+  "shown_code": "pN3a",
+  "rule_code": "N3a",
+  "context": "pathological",
+  "definition": "Node >6 cm, ENE(-)",
+  "display_order": 15
+ },
+ {
+  "category_id": "SCffae5a8602",
+  "schema_id": "S06",
+  "axis": "N",
+  "shown_code": "pN3b",
+  "rule_code": "N3b",
+  "context": "pathological",
+  "definition": "Node >3 cm ENE(+); or multiple ipsilateral/contralateral/bilateral nodes with any ENE(+)",
+  "display_order": 16
+ },
+ {
+  "category_id": "SC2e5f7a8b12",
+  "schema_id": "S06",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC91849d9071",
+  "schema_id": "S06",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC9351e446ed",
+  "schema_id": "S07",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC039a5d009a",
+  "schema_id": "S07",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Carcinoma in situ",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC04ebb827d5",
+  "schema_id": "S07",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": "Limited to one vocal cord, normal mobility",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC13907697f1",
+  "schema_id": "S07",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": "Both vocal cords involved, normal mobility",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC007cff0bbc",
+  "schema_id": "S07",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": "Extends to supraglottis and/or subglottis and/or impaired cord mobility",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC0c82662a8c",
+  "schema_id": "S07",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "Limited to larynx with cord fixation and/or paraglottic space and/or inner cortex of thyroid cartilage",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCe64e1d1b34",
+  "schema_id": "S07",
+  "axis": "T",
+  "shown_code": "T4a",
+  "rule_code": "T4a",
+  "context": "both",
+  "definition": "Through outer cortex of thyroid cartilage and/or beyond larynx (trachea, neck soft tissue, strap muscles, thyroid, oesophagus)",
+  "display_order": 7
+ },
+ {
+  "category_id": "SCf68b7c8bae",
+  "schema_id": "S07",
+  "axis": "T",
+  "shown_code": "T4b",
+  "rule_code": "T4b",
+  "context": "both",
+  "definition": "Prevertebral space, mediastinal structures, encases carotid",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC25a9e77f42",
+  "schema_id": "S07",
+  "axis": "N",
+  "shown_code": "cNX",
+  "rule_code": "NX",
+  "context": "clinical",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCe4caded3d0",
+  "schema_id": "S07",
+  "axis": "N",
+  "shown_code": "cN0",
+  "rule_code": "N0",
+  "context": "clinical",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCda6191a7ad",
+  "schema_id": "S07",
+  "axis": "N",
+  "shown_code": "cN1",
+  "rule_code": "N1",
+  "context": "clinical",
+  "definition": "Single ipsilateral node ≤3 cm, ENE(-)",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC44688ff293",
+  "schema_id": "S07",
+  "axis": "N",
+  "shown_code": "cN2a",
+  "rule_code": "N2a",
+  "context": "clinical",
+  "definition": "Single ipsilateral node >3 to 6 cm, ENE(-)",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC7158df550e",
+  "schema_id": "S07",
+  "axis": "N",
+  "shown_code": "cN2b",
+  "rule_code": "N2b",
+  "context": "clinical",
+  "definition": "Multiple ipsilateral nodes ≤6 cm, ENE(-)",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCc51dc6a163",
+  "schema_id": "S07",
+  "axis": "N",
+  "shown_code": "cN2c",
+  "rule_code": "N2c",
+  "context": "clinical",
+  "definition": "Bilateral/contralateral nodes ≤6 cm, ENE(-)",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC931e06490f",
+  "schema_id": "S07",
+  "axis": "N",
+  "shown_code": "cN3a",
+  "rule_code": "N3a",
+  "context": "clinical",
+  "definition": "Node >6 cm, ENE(-)",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC209e06f9dc",
+  "schema_id": "S07",
+  "axis": "N",
+  "shown_code": "cN3b",
+  "rule_code": "N3b",
+  "context": "clinical",
+  "definition": "Any node(s) with clinically overt ENE(+)",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC9ef08f2051",
+  "schema_id": "S07",
+  "axis": "N",
+  "shown_code": "pNX",
+  "rule_code": "NX",
+  "context": "pathological",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 9
+ },
+ {
+  "category_id": "SC28d53ed05d",
+  "schema_id": "S07",
+  "axis": "N",
+  "shown_code": "pN0",
+  "rule_code": "N0",
+  "context": "pathological",
+  "definition": "No regional node metastasis",
+  "display_order": 10
+ },
+ {
+  "category_id": "SCe501fd82d7",
+  "schema_id": "S07",
+  "axis": "N",
+  "shown_code": "pN1",
+  "rule_code": "N1",
+  "context": "pathological",
+  "definition": "Single ipsilateral node ≤3 cm, ENE(-)",
+  "display_order": 11
+ },
+ {
+  "category_id": "SC711f666e73",
+  "schema_id": "S07",
+  "axis": "N",
+  "shown_code": "pN2a",
+  "rule_code": "N2a",
+  "context": "pathological",
+  "definition": "Single ipsilateral node ≤3 cm ENE(+); or >3 to 6 cm ENE(-)",
+  "display_order": 12
+ },
+ {
+  "category_id": "SC7498c0f644",
+  "schema_id": "S07",
+  "axis": "N",
+  "shown_code": "pN2b",
+  "rule_code": "N2b",
+  "context": "pathological",
+  "definition": "Multiple ipsilateral nodes ≤6 cm, ENE(-)",
+  "display_order": 13
+ },
+ {
+  "category_id": "SC1a83fe3fef",
+  "schema_id": "S07",
+  "axis": "N",
+  "shown_code": "pN2c",
+  "rule_code": "N2c",
+  "context": "pathological",
+  "definition": "Bilateral/contralateral nodes ≤6 cm, ENE(-)",
+  "display_order": 14
+ },
+ {
+  "category_id": "SC3a32652fd0",
+  "schema_id": "S07",
+  "axis": "N",
+  "shown_code": "pN3a",
+  "rule_code": "N3a",
+  "context": "pathological",
+  "definition": "Node >6 cm, ENE(-)",
+  "display_order": 15
+ },
+ {
+  "category_id": "SC542c923dad",
+  "schema_id": "S07",
+  "axis": "N",
+  "shown_code": "pN3b",
+  "rule_code": "N3b",
+  "context": "pathological",
+  "definition": "Node >3 cm ENE(+); or multiple ipsilateral/contralateral/bilateral nodes with any ENE(+)",
+  "display_order": 16
+ },
+ {
+  "category_id": "SCb732980c4b",
+  "schema_id": "S07",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCcb2267b0c8",
+  "schema_id": "S07",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCf017909f5f",
+  "schema_id": "S08",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC45a1d3e53e",
+  "schema_id": "S08",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Carcinoma in situ",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCa64d877e27",
+  "schema_id": "S08",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "Limited to subglottis",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC519e61889b",
+  "schema_id": "S08",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": "Extends to vocal cord(s), normal or impaired mobility",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC847903004c",
+  "schema_id": "S08",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "Limited to larynx with cord fixation",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC708a7839f5",
+  "schema_id": "S08",
+  "axis": "T",
+  "shown_code": "T4a",
+  "rule_code": "T4a",
+  "context": "both",
+  "definition": "Through outer cortex of thyroid cartilage and/or beyond larynx (trachea, neck soft tissue, strap muscles, thyroid, oesophagus)",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC54234ae754",
+  "schema_id": "S08",
+  "axis": "T",
+  "shown_code": "T4b",
+  "rule_code": "T4b",
+  "context": "both",
+  "definition": "Prevertebral space, mediastinal structures, encases carotid",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC510ca18032",
+  "schema_id": "S08",
+  "axis": "N",
+  "shown_code": "cNX",
+  "rule_code": "NX",
+  "context": "clinical",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCffd373f860",
+  "schema_id": "S08",
+  "axis": "N",
+  "shown_code": "cN0",
+  "rule_code": "N0",
+  "context": "clinical",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCafcb36ca40",
+  "schema_id": "S08",
+  "axis": "N",
+  "shown_code": "cN1",
+  "rule_code": "N1",
+  "context": "clinical",
+  "definition": "Single ipsilateral node ≤3 cm, ENE(-)",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCd4ebee50d6",
+  "schema_id": "S08",
+  "axis": "N",
+  "shown_code": "cN2a",
+  "rule_code": "N2a",
+  "context": "clinical",
+  "definition": "Single ipsilateral node >3 to 6 cm, ENE(-)",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC0c6acedf1e",
+  "schema_id": "S08",
+  "axis": "N",
+  "shown_code": "cN2b",
+  "rule_code": "N2b",
+  "context": "clinical",
+  "definition": "Multiple ipsilateral nodes ≤6 cm, ENE(-)",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCf8f507607f",
+  "schema_id": "S08",
+  "axis": "N",
+  "shown_code": "cN2c",
+  "rule_code": "N2c",
+  "context": "clinical",
+  "definition": "Bilateral/contralateral nodes ≤6 cm, ENE(-)",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCc0c9726166",
+  "schema_id": "S08",
+  "axis": "N",
+  "shown_code": "cN3a",
+  "rule_code": "N3a",
+  "context": "clinical",
+  "definition": "Node >6 cm, ENE(-)",
+  "display_order": 7
+ },
+ {
+  "category_id": "SCf065472349",
+  "schema_id": "S08",
+  "axis": "N",
+  "shown_code": "cN3b",
+  "rule_code": "N3b",
+  "context": "clinical",
+  "definition": "Any node(s) with clinically overt ENE(+)",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC7ad7a33b3b",
+  "schema_id": "S08",
+  "axis": "N",
+  "shown_code": "pNX",
+  "rule_code": "NX",
+  "context": "pathological",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 9
+ },
+ {
+  "category_id": "SC5e442081ad",
+  "schema_id": "S08",
+  "axis": "N",
+  "shown_code": "pN0",
+  "rule_code": "N0",
+  "context": "pathological",
+  "definition": "No regional node metastasis",
+  "display_order": 10
+ },
+ {
+  "category_id": "SC9b9ef76351",
+  "schema_id": "S08",
+  "axis": "N",
+  "shown_code": "pN1",
+  "rule_code": "N1",
+  "context": "pathological",
+  "definition": "Single ipsilateral node ≤3 cm, ENE(-)",
+  "display_order": 11
+ },
+ {
+  "category_id": "SC92f1e1e0be",
+  "schema_id": "S08",
+  "axis": "N",
+  "shown_code": "pN2a",
+  "rule_code": "N2a",
+  "context": "pathological",
+  "definition": "Single ipsilateral node ≤3 cm ENE(+); or >3 to 6 cm ENE(-)",
+  "display_order": 12
+ },
+ {
+  "category_id": "SCaae76c3ee8",
+  "schema_id": "S08",
+  "axis": "N",
+  "shown_code": "pN2b",
+  "rule_code": "N2b",
+  "context": "pathological",
+  "definition": "Multiple ipsilateral nodes ≤6 cm, ENE(-)",
+  "display_order": 13
+ },
+ {
+  "category_id": "SCb0937729d2",
+  "schema_id": "S08",
+  "axis": "N",
+  "shown_code": "pN2c",
+  "rule_code": "N2c",
+  "context": "pathological",
+  "definition": "Bilateral/contralateral nodes ≤6 cm, ENE(-)",
+  "display_order": 14
+ },
+ {
+  "category_id": "SCca070ec9b9",
+  "schema_id": "S08",
+  "axis": "N",
+  "shown_code": "pN3a",
+  "rule_code": "N3a",
+  "context": "pathological",
+  "definition": "Node >6 cm, ENE(-)",
+  "display_order": 15
+ },
+ {
+  "category_id": "SC2c2e90ff5c",
+  "schema_id": "S08",
+  "axis": "N",
+  "shown_code": "pN3b",
+  "rule_code": "N3b",
+  "context": "pathological",
+  "definition": "Node >3 cm ENE(+); or multiple ipsilateral/contralateral/bilateral nodes with any ENE(+)",
+  "display_order": 16
+ },
+ {
+  "category_id": "SCae2d848030",
+  "schema_id": "S08",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCb6709ec478",
+  "schema_id": "S08",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCbe0eef5aff",
+  "schema_id": "S09",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCb7dd780b24",
+  "schema_id": "S09",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCe3a70393cb",
+  "schema_id": "S09",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Carcinoma in situ",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCa8d764278d",
+  "schema_id": "S09",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "≤2 cm without extraparenchymal extension (EPE)",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC85ce16ebf2",
+  "schema_id": "S09",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": ">2 to 4 cm without EPE",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC384b807448",
+  "schema_id": "S09",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": ">4 cm and/or gross EPE (microscopic EPE alone does not count)",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC68388d5e83",
+  "schema_id": "S09",
+  "axis": "T",
+  "shown_code": "T4a",
+  "rule_code": "T4a",
+  "context": "both",
+  "definition": "Invades immediately adjacent structures: skin, bone, cartilage, solid organ parenchyma, oesophagus, trachea or a named nerve",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC76b75979f2",
+  "schema_id": "S09",
+  "axis": "T",
+  "shown_code": "T4b",
+  "rule_code": "T4b",
+  "context": "both",
+  "definition": "Carotid encasement, skull base (except nasopharynx), spinal column, intracranial, orbital apex, prevertebral space, mediastinal structures or masticator space",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC93e9dc35b1",
+  "schema_id": "S09",
+  "axis": "N",
+  "shown_code": "cNX",
+  "rule_code": "NX",
+  "context": "clinical",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCb4d5ad9dda",
+  "schema_id": "S09",
+  "axis": "N",
+  "shown_code": "cN0",
+  "rule_code": "N0",
+  "context": "clinical",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCf776596854",
+  "schema_id": "S09",
+  "axis": "N",
+  "shown_code": "cN1",
+  "rule_code": "N1",
+  "context": "clinical",
+  "definition": "1–3 nodes, without unequivocal imaging/clinical ENE",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC179e02f4a9",
+  "schema_id": "S09",
+  "axis": "N",
+  "shown_code": "cN2",
+  "rule_code": "N2",
+  "context": "clinical",
+  "definition": ">3 nodes, or any node with unequivocal imaging/clinical ENE",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC86d86fec1c",
+  "schema_id": "S09",
+  "axis": "N",
+  "shown_code": "pNX",
+  "rule_code": "NX",
+  "context": "pathological",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC3895821612",
+  "schema_id": "S09",
+  "axis": "N",
+  "shown_code": "pN0",
+  "rule_code": "N0",
+  "context": "pathological",
+  "definition": "No regional node metastasis",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC413ff5df2a",
+  "schema_id": "S09",
+  "axis": "N",
+  "shown_code": "pN1",
+  "rule_code": "N1",
+  "context": "pathological",
+  "definition": "1–3 nodes, without definitive pathological ENE",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC4ddeb0347c",
+  "schema_id": "S09",
+  "axis": "N",
+  "shown_code": "pN2",
+  "rule_code": "N2",
+  "context": "pathological",
+  "definition": ">3 nodes, or any node with definitive pathological ENE",
+  "display_order": 8
+ },
+ {
+  "category_id": "SCe6ed005232",
+  "schema_id": "S09",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCbf3dea8052",
+  "schema_id": "S09",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCa27908b26e",
+  "schema_id": "S10",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC3a36cb7b56",
+  "schema_id": "S10",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Carcinoma in situ",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCd92c0d08b9",
+  "schema_id": "S10",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "<2 cm",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCf3cbc82120",
+  "schema_id": "S10",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": "≥2 to <4 cm",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC22d4fdbed4",
+  "schema_id": "S10",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "≥4 cm, or minor bone erosion, or perineural invasion, or deep invasion (>6 mm / beyond subcutaneous fat)",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC7b6e626484",
+  "schema_id": "S10",
+  "axis": "T",
+  "shown_code": "T4a",
+  "rule_code": "T4a",
+  "context": "both",
+  "definition": "Gross cortical bone/marrow invasion",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC38e095abee",
+  "schema_id": "S10",
+  "axis": "T",
+  "shown_code": "T4b",
+  "rule_code": "T4b",
+  "context": "both",
+  "definition": "Skull base invasion and/or skull base foramen involvement",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC4f670270bb",
+  "schema_id": "S10",
+  "axis": "N",
+  "shown_code": "cNX",
+  "rule_code": "NX",
+  "context": "clinical",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCa70405614b",
+  "schema_id": "S10",
+  "axis": "N",
+  "shown_code": "cN0",
+  "rule_code": "N0",
+  "context": "clinical",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCadcfd907e8",
+  "schema_id": "S10",
+  "axis": "N",
+  "shown_code": "cN1",
+  "rule_code": "N1",
+  "context": "clinical",
+  "definition": "Single ipsilateral node ≤3 cm, ENE(-)",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCd6195c14ab",
+  "schema_id": "S10",
+  "axis": "N",
+  "shown_code": "cN2a",
+  "rule_code": "N2a",
+  "context": "clinical",
+  "definition": "Single ipsilateral node >3 to 6 cm, ENE(-)",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCac8452c998",
+  "schema_id": "S10",
+  "axis": "N",
+  "shown_code": "cN2b",
+  "rule_code": "N2b",
+  "context": "clinical",
+  "definition": "Multiple ipsilateral nodes ≤6 cm, ENE(-)",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC5d9981b1e5",
+  "schema_id": "S10",
+  "axis": "N",
+  "shown_code": "cN2c",
+  "rule_code": "N2c",
+  "context": "clinical",
+  "definition": "Bilateral/contralateral nodes ≤6 cm, ENE(-)",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCede1738b24",
+  "schema_id": "S10",
+  "axis": "N",
+  "shown_code": "cN3a",
+  "rule_code": "N3a",
+  "context": "clinical",
+  "definition": "Node >6 cm, ENE(-)",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC65d367957f",
+  "schema_id": "S10",
+  "axis": "N",
+  "shown_code": "cN3b",
+  "rule_code": "N3b",
+  "context": "clinical",
+  "definition": "Any node(s) with clinically overt ENE(+)",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC934f699edd",
+  "schema_id": "S10",
+  "axis": "N",
+  "shown_code": "pNX",
+  "rule_code": "NX",
+  "context": "pathological",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 9
+ },
+ {
+  "category_id": "SC57be13ffbb",
+  "schema_id": "S10",
+  "axis": "N",
+  "shown_code": "pN0",
+  "rule_code": "N0",
+  "context": "pathological",
+  "definition": "No regional node metastasis",
+  "display_order": 10
+ },
+ {
+  "category_id": "SCfedb40e116",
+  "schema_id": "S10",
+  "axis": "N",
+  "shown_code": "pN1",
+  "rule_code": "N1",
+  "context": "pathological",
+  "definition": "Single ipsilateral node ≤3 cm, ENE(-)",
+  "display_order": 11
+ },
+ {
+  "category_id": "SC329bb3de88",
+  "schema_id": "S10",
+  "axis": "N",
+  "shown_code": "pN2a",
+  "rule_code": "N2a",
+  "context": "pathological",
+  "definition": "Single ipsilateral node ≤3 cm ENE(+); or >3 to 6 cm ENE(-)",
+  "display_order": 12
+ },
+ {
+  "category_id": "SCaf88018089",
+  "schema_id": "S10",
+  "axis": "N",
+  "shown_code": "pN2b",
+  "rule_code": "N2b",
+  "context": "pathological",
+  "definition": "Multiple ipsilateral nodes ≤6 cm, ENE(-)",
+  "display_order": 13
+ },
+ {
+  "category_id": "SC10909c8b7e",
+  "schema_id": "S10",
+  "axis": "N",
+  "shown_code": "pN2c",
+  "rule_code": "N2c",
+  "context": "pathological",
+  "definition": "Bilateral/contralateral nodes ≤6 cm, ENE(-)",
+  "display_order": 14
+ },
+ {
+  "category_id": "SC185bf02295",
+  "schema_id": "S10",
+  "axis": "N",
+  "shown_code": "pN3a",
+  "rule_code": "N3a",
+  "context": "pathological",
+  "definition": "Node >6 cm, ENE(-)",
+  "display_order": 15
+ },
+ {
+  "category_id": "SC52c2a67dd3",
+  "schema_id": "S10",
+  "axis": "N",
+  "shown_code": "pN3b",
+  "rule_code": "N3b",
+  "context": "pathological",
+  "definition": "Node >3 cm ENE(+); or multiple ipsilateral/contralateral/bilateral nodes with any ENE(+)",
+  "display_order": 16
+ },
+ {
+  "category_id": "SCcad5d13356",
+  "schema_id": "S10",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC3368bce4a0",
+  "schema_id": "S10",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCf9ada9db04",
+  "schema_id": "S11",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC942a93dfef",
+  "schema_id": "S11",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCeaadd52dc0",
+  "schema_id": "S11",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": "≤1 cm, limited to thyroid",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC8c67f19792",
+  "schema_id": "S11",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": ">1 to 2 cm, limited to thyroid",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCb46a7550d1",
+  "schema_id": "S11",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": ">2 to 4 cm, limited to thyroid",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC1e81163143",
+  "schema_id": "S11",
+  "axis": "T",
+  "shown_code": "T3a",
+  "rule_code": "T3a",
+  "context": "both",
+  "definition": ">4 cm, limited to thyroid",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC2a1945aa53",
+  "schema_id": "S11",
+  "axis": "T",
+  "shown_code": "T3b",
+  "rule_code": "T3b",
+  "context": "both",
+  "definition": "Gross extrathyroidal extension into strap muscles (sternohyoid, sternothyroid, thyrohyoid, omohyoid) any size",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC660bf04b42",
+  "schema_id": "S11",
+  "axis": "T",
+  "shown_code": "T4a",
+  "rule_code": "T4a",
+  "context": "both",
+  "definition": "Subcutaneous soft tissue, larynx, trachea, oesophagus or recurrent laryngeal nerve",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC8d0f144765",
+  "schema_id": "S11",
+  "axis": "T",
+  "shown_code": "T4b",
+  "rule_code": "T4b",
+  "context": "both",
+  "definition": "Prevertebral fascia or encasing carotid artery/mediastinal vessels",
+  "display_order": 9
+ },
+ {
+  "category_id": "SCb59368b6e3",
+  "schema_id": "S11",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC6623e3f4a1",
+  "schema_id": "S11",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC5721965485",
+  "schema_id": "S11",
+  "axis": "N",
+  "shown_code": "N1a",
+  "rule_code": "N1a",
+  "context": "both",
+  "definition": "Level VI or VII (pretracheal, paratracheal, prelaryngeal, upper mediastinal)",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCfc690a9542",
+  "schema_id": "S11",
+  "axis": "N",
+  "shown_code": "N1b",
+  "rule_code": "N1b",
+  "context": "both",
+  "definition": "Unilateral, bilateral or contralateral levels I-V or retropharyngeal",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCd903aa7844",
+  "schema_id": "S11",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC08c461e86d",
+  "schema_id": "S11",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC2012b0d119",
+  "schema_id": "S12",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCfeea3a679b",
+  "schema_id": "S12",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCb34f523636",
+  "schema_id": "S12",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": "≤1 cm, limited to thyroid",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC4f8184da4b",
+  "schema_id": "S12",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": ">1 to 2 cm, limited to thyroid",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC1a1611b230",
+  "schema_id": "S12",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": ">2 to 4 cm, limited to thyroid",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC370acfdafa",
+  "schema_id": "S12",
+  "axis": "T",
+  "shown_code": "T3a",
+  "rule_code": "T3a",
+  "context": "both",
+  "definition": ">4 cm, limited to thyroid",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC68cea906a1",
+  "schema_id": "S12",
+  "axis": "T",
+  "shown_code": "T3b",
+  "rule_code": "T3b",
+  "context": "both",
+  "definition": "Gross extrathyroidal extension into strap muscles (sternohyoid, sternothyroid, thyrohyoid, omohyoid) any size",
+  "display_order": 7
+ },
+ {
+  "category_id": "SCfd14a88e57",
+  "schema_id": "S12",
+  "axis": "T",
+  "shown_code": "T4a",
+  "rule_code": "T4a",
+  "context": "both",
+  "definition": "Subcutaneous soft tissue, larynx, trachea, oesophagus or recurrent laryngeal nerve",
+  "display_order": 8
+ },
+ {
+  "category_id": "SCa10acaba1d",
+  "schema_id": "S12",
+  "axis": "T",
+  "shown_code": "T4b",
+  "rule_code": "T4b",
+  "context": "both",
+  "definition": "Prevertebral fascia or encasing carotid artery/mediastinal vessels",
+  "display_order": 9
+ },
+ {
+  "category_id": "SCfd5860cd96",
+  "schema_id": "S12",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCd9ff7e3fd8",
+  "schema_id": "S12",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC7edc714d8e",
+  "schema_id": "S12",
+  "axis": "N",
+  "shown_code": "N1a",
+  "rule_code": "N1a",
+  "context": "both",
+  "definition": "Level VI or VII (pretracheal, paratracheal, prelaryngeal, upper mediastinal)",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC34aab9302c",
+  "schema_id": "S12",
+  "axis": "N",
+  "shown_code": "N1b",
+  "rule_code": "N1b",
+  "context": "both",
+  "definition": "Unilateral, bilateral or contralateral levels I-V or retropharyngeal",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC63f1c278bc",
+  "schema_id": "S12",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCe1f419bae9",
+  "schema_id": "S12",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCdb1d5a4c1b",
+  "schema_id": "S13",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCb4d79a891b",
+  "schema_id": "S13",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC948c93fefc",
+  "schema_id": "S13",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": "≤1 cm, limited to thyroid",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC3a1fcbd0b6",
+  "schema_id": "S13",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": ">1 to 2 cm, limited to thyroid",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCcb965ee878",
+  "schema_id": "S13",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": ">2 to 4 cm, limited to thyroid",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC316f6d1bad",
+  "schema_id": "S13",
+  "axis": "T",
+  "shown_code": "T3a",
+  "rule_code": "T3a",
+  "context": "both",
+  "definition": ">4 cm, limited to thyroid",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCe44a4b1eac",
+  "schema_id": "S13",
+  "axis": "T",
+  "shown_code": "T3b",
+  "rule_code": "T3b",
+  "context": "both",
+  "definition": "Gross extrathyroidal extension into strap muscles (sternohyoid, sternothyroid, thyrohyoid, omohyoid) any size",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC0ab5d5bc65",
+  "schema_id": "S13",
+  "axis": "T",
+  "shown_code": "T4a",
+  "rule_code": "T4a",
+  "context": "both",
+  "definition": "Subcutaneous soft tissue, larynx, trachea, oesophagus or recurrent laryngeal nerve",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC89506fb24a",
+  "schema_id": "S13",
+  "axis": "T",
+  "shown_code": "T4b",
+  "rule_code": "T4b",
+  "context": "both",
+  "definition": "Prevertebral fascia or encasing carotid artery/mediastinal vessels",
+  "display_order": 9
+ },
+ {
+  "category_id": "SC5df8be38ad",
+  "schema_id": "S13",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC9f7b4b2823",
+  "schema_id": "S13",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCfb26c140fd",
+  "schema_id": "S13",
+  "axis": "N",
+  "shown_code": "N1a",
+  "rule_code": "N1a",
+  "context": "both",
+  "definition": "Level VI or VII (pretracheal, paratracheal, prelaryngeal, upper mediastinal)",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCd2d07a21ae",
+  "schema_id": "S13",
+  "axis": "N",
+  "shown_code": "N1b",
+  "rule_code": "N1b",
+  "context": "both",
+  "definition": "Unilateral, bilateral or contralateral levels I-V or retropharyngeal",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC66878f61ce",
+  "schema_id": "S13",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC6279f394ad",
+  "schema_id": "S13",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCfd36fc4831",
+  "schema_id": "S14",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC64c7acc96a",
+  "schema_id": "S14",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCa95a80ff78",
+  "schema_id": "S14",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "High-grade dysplasia",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC8f29e0ea01",
+  "schema_id": "S14",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": "Lamina propria or muscularis mucosae",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC2fc5e50e3c",
+  "schema_id": "S14",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": "Submucosa",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC76d2c1f611",
+  "schema_id": "S14",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": "Muscularis propria",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCd7f58da544",
+  "schema_id": "S14",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "Adventitia",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC0141927796",
+  "schema_id": "S14",
+  "axis": "T",
+  "shown_code": "T4a",
+  "rule_code": "T4a",
+  "context": "both",
+  "definition": "Pleura, pericardium, azygos vein, diaphragm or peritoneum",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC8f27e75e6f",
+  "schema_id": "S14",
+  "axis": "T",
+  "shown_code": "T4b",
+  "rule_code": "T4b",
+  "context": "both",
+  "definition": "Other adjacent structures: aorta, vertebral body, trachea",
+  "display_order": 9
+ },
+ {
+  "category_id": "SC3d8632202b",
+  "schema_id": "S14",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC226ef4403e",
+  "schema_id": "S14",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC02e5b8a99a",
+  "schema_id": "S14",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "1-2 regional nodes",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCaa625bb502",
+  "schema_id": "S14",
+  "axis": "N",
+  "shown_code": "N2",
+  "rule_code": "N2",
+  "context": "both",
+  "definition": "3-6 regional nodes",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCb36cba925c",
+  "schema_id": "S14",
+  "axis": "N",
+  "shown_code": "N3",
+  "rule_code": "N3",
+  "context": "both",
+  "definition": "≥7 regional nodes",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCe53578263d",
+  "schema_id": "S14",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC334ce5fb6f",
+  "schema_id": "S14",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC1e100c0c6b",
+  "schema_id": "S15",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCa8e0639abd",
+  "schema_id": "S15",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC81e62a6583",
+  "schema_id": "S15",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "High-grade dysplasia",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC40ff4e0efa",
+  "schema_id": "S15",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": "Lamina propria or muscularis mucosae",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC71f269d88f",
+  "schema_id": "S15",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": "Submucosa",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC24d54460b2",
+  "schema_id": "S15",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": "Muscularis propria",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC44834b75b4",
+  "schema_id": "S15",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "Adventitia",
+  "display_order": 7
+ },
+ {
+  "category_id": "SCe66f5ea358",
+  "schema_id": "S15",
+  "axis": "T",
+  "shown_code": "T4a",
+  "rule_code": "T4a",
+  "context": "both",
+  "definition": "Pleura, pericardium, azygos vein, diaphragm or peritoneum",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC1c94e22c9a",
+  "schema_id": "S15",
+  "axis": "T",
+  "shown_code": "T4b",
+  "rule_code": "T4b",
+  "context": "both",
+  "definition": "Other adjacent structures: aorta, vertebral body, trachea",
+  "display_order": 9
+ },
+ {
+  "category_id": "SCb5e76243b6",
+  "schema_id": "S15",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC37f5db6704",
+  "schema_id": "S15",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC3749ac9305",
+  "schema_id": "S15",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "1-2 regional nodes",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCbfb1864efe",
+  "schema_id": "S15",
+  "axis": "N",
+  "shown_code": "N2",
+  "rule_code": "N2",
+  "context": "both",
+  "definition": "3-6 regional nodes",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC0ddeffd841",
+  "schema_id": "S15",
+  "axis": "N",
+  "shown_code": "N3",
+  "rule_code": "N3",
+  "context": "both",
+  "definition": "≥7 regional nodes",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC552ceda520",
+  "schema_id": "S15",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC1abc99bee9",
+  "schema_id": "S15",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC5d7ad7d066",
+  "schema_id": "S16",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCf5274b01c0",
+  "schema_id": "S16",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCaaf31c891c",
+  "schema_id": "S16",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Carcinoma in situ",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC7c530f043a",
+  "schema_id": "S16",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": "Lamina propria or muscularis mucosae",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC40c9570978",
+  "schema_id": "S16",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": "Submucosa",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCac539b0864",
+  "schema_id": "S16",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": "Muscularis propria",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCaf4454ad3e",
+  "schema_id": "S16",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "Subserosa",
+  "display_order": 7
+ },
+ {
+  "category_id": "SCea02832bd8",
+  "schema_id": "S16",
+  "axis": "T",
+  "shown_code": "T4a",
+  "rule_code": "T4a",
+  "context": "both",
+  "definition": "Serosa (visceral peritoneum)",
+  "display_order": 8
+ },
+ {
+  "category_id": "SCc8f64ac5cf",
+  "schema_id": "S16",
+  "axis": "T",
+  "shown_code": "T4b",
+  "rule_code": "T4b",
+  "context": "both",
+  "definition": "Adjacent structures",
+  "display_order": 9
+ },
+ {
+  "category_id": "SC06946ba57c",
+  "schema_id": "S16",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC511520bb23",
+  "schema_id": "S16",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCee5654a336",
+  "schema_id": "S16",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "1-2 regional nodes",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCcf63e3d12d",
+  "schema_id": "S16",
+  "axis": "N",
+  "shown_code": "N2",
+  "rule_code": "N2",
+  "context": "both",
+  "definition": "3-6 regional nodes",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC7da86d85b7",
+  "schema_id": "S16",
+  "axis": "N",
+  "shown_code": "N3a",
+  "rule_code": "N3a",
+  "context": "both",
+  "definition": "7-15 regional nodes",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCa969e2b8ba",
+  "schema_id": "S16",
+  "axis": "N",
+  "shown_code": "N3b",
+  "rule_code": "N3b",
+  "context": "both",
+  "definition": "≥16 regional nodes",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC8254fabb95",
+  "schema_id": "S16",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC45aac9e1b5",
+  "schema_id": "S16",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCe5282dfb84",
+  "schema_id": "S17",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC66c07adb3a",
+  "schema_id": "S17",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC41fd4c97b1",
+  "schema_id": "S17",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Intramucosal carcinoma (lamina propria/muscularis mucosae)",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCd53d00aa21",
+  "schema_id": "S17",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "Submucosa",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC301e83a8af",
+  "schema_id": "S17",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": "Muscularis propria",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCc0fc34b233",
+  "schema_id": "S17",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "Through muscularis propria into pericolorectal tissues",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC3cfea7a2ef",
+  "schema_id": "S17",
+  "axis": "T",
+  "shown_code": "T4a",
+  "rule_code": "T4a",
+  "context": "both",
+  "definition": "Visceral peritoneum",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC05efc9214e",
+  "schema_id": "S17",
+  "axis": "T",
+  "shown_code": "T4b",
+  "rule_code": "T4b",
+  "context": "both",
+  "definition": "Directly invades/adherent to other organs or structures",
+  "display_order": 8
+ },
+ {
+  "category_id": "SCf2cc4fef32",
+  "schema_id": "S17",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC18fba3ce58",
+  "schema_id": "S17",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC2db82b4eaf",
+  "schema_id": "S17",
+  "axis": "N",
+  "shown_code": "N1a",
+  "rule_code": "N1a",
+  "context": "both",
+  "definition": "1 regional node",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCa5d1f86a42",
+  "schema_id": "S17",
+  "axis": "N",
+  "shown_code": "N1b",
+  "rule_code": "N1b",
+  "context": "both",
+  "definition": "2-3 regional nodes",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCd6b3cd9509",
+  "schema_id": "S17",
+  "axis": "N",
+  "shown_code": "N1c",
+  "rule_code": "N1c",
+  "context": "both",
+  "definition": "Tumour deposit(s) without regional nodes",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCf9c75a9a76",
+  "schema_id": "S17",
+  "axis": "N",
+  "shown_code": "N2a",
+  "rule_code": "N2a",
+  "context": "both",
+  "definition": "4-6 regional nodes",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC716984b124",
+  "schema_id": "S17",
+  "axis": "N",
+  "shown_code": "N2b",
+  "rule_code": "N2b",
+  "context": "both",
+  "definition": "≥7 regional nodes",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC3baab2ccce",
+  "schema_id": "S17",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC5581849867",
+  "schema_id": "S17",
+  "axis": "M",
+  "shown_code": "M1a",
+  "rule_code": "M1a",
+  "context": "both",
+  "definition": "Metastasis to one site/organ, no peritoneal metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCa1708581cd",
+  "schema_id": "S17",
+  "axis": "M",
+  "shown_code": "M1b",
+  "rule_code": "M1b",
+  "context": "both",
+  "definition": "Metastasis to ≥2 sites/organs, no peritoneal metastasis",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC3cb7db7bbe",
+  "schema_id": "S17",
+  "axis": "M",
+  "shown_code": "M1c",
+  "rule_code": "M1c",
+  "context": "both",
+  "definition": "Peritoneal metastasis ± other site/organ",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCdf26861355",
+  "schema_id": "S18",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCa8b54c2495",
+  "schema_id": "S18",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC38d871893c",
+  "schema_id": "S18",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "≤2 cm",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCec1320adc8",
+  "schema_id": "S18",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": ">2 to 5 cm",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC2c64f3c86d",
+  "schema_id": "S18",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": ">5 cm",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCaa97451ddd",
+  "schema_id": "S18",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": "Invades adjacent organ(s) such as vagina, urethra or bladder (not rectal wall, perianal skin, subcutaneous tissue or sphincter muscle alone)",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCa03903d291",
+  "schema_id": "S18",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC37dbcf27ec",
+  "schema_id": "S18",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCa716c275a3",
+  "schema_id": "S18",
+  "axis": "N",
+  "shown_code": "N1a",
+  "rule_code": "N1a",
+  "context": "both",
+  "definition": "Inguinal, mesorectal, internal iliac and/or obturator nodes",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCa3e9ebca06",
+  "schema_id": "S18",
+  "axis": "N",
+  "shown_code": "N1b",
+  "rule_code": "N1b",
+  "context": "both",
+  "definition": "External iliac nodes",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCb87a508370",
+  "schema_id": "S18",
+  "axis": "N",
+  "shown_code": "N1c",
+  "rule_code": "N1c",
+  "context": "both",
+  "definition": "External iliac with any N1a nodes",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC9b91d9d963",
+  "schema_id": "S18",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC7f83c6258b",
+  "schema_id": "S18",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCf11a686f17",
+  "schema_id": "S19",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC2751f4f3c4",
+  "schema_id": "S19",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCb5934a617b",
+  "schema_id": "S19",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": "Solitary ≤2 cm",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCf0df49ad2a",
+  "schema_id": "S19",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": "Solitary >2 cm without vascular invasion",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC0cf466f3db",
+  "schema_id": "S19",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": "Solitary >2 cm with vascular invasion; or multiple tumours, none >5 cm",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCdada477876",
+  "schema_id": "S19",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "Multiple tumours, at least one >5 cm",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCb301f2a724",
+  "schema_id": "S19",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": "Tumour(s) involving a major branch of portal/hepatic vein, or direct invasion of adjacent organs other than gallbladder, or perforation of visceral peritoneum",
+  "display_order": 7
+ },
+ {
+  "category_id": "SCabfb705bf0",
+  "schema_id": "S19",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC7b299fd192",
+  "schema_id": "S19",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC10ddaaa3ea",
+  "schema_id": "S19",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "Regional node metastasis",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCfc00befc2c",
+  "schema_id": "S19",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC4bfb9886ac",
+  "schema_id": "S19",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC85daa724ec",
+  "schema_id": "S20",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCb11310abed",
+  "schema_id": "S20",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC63d8085f5e",
+  "schema_id": "S20",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Carcinoma in situ (intraductal tumour)",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCa60b9083b5",
+  "schema_id": "S20",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": "Solitary ≤5 cm without vascular invasion",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC0b9dc59da6",
+  "schema_id": "S20",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": "Solitary >5 cm without vascular invasion",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC1a8fa2e7c7",
+  "schema_id": "S20",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": "Solitary with intrahepatic vascular invasion, or multiple tumours with/without vascular invasion",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC21ceaa27df",
+  "schema_id": "S20",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "Perforation of visceral peritoneum",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC7171d05676",
+  "schema_id": "S20",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": "Direct invasion of local extrahepatic structures",
+  "display_order": 8
+ },
+ {
+  "category_id": "SCf9666d0110",
+  "schema_id": "S20",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCb20eaa4d67",
+  "schema_id": "S20",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC28dbbf6a31",
+  "schema_id": "S20",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "Regional node metastasis",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC47e1e45d2f",
+  "schema_id": "S20",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC9489d1c24a",
+  "schema_id": "S20",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC4fe55c8de8",
+  "schema_id": "S21",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCf94b4b745c",
+  "schema_id": "S21",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC5e965aa457",
+  "schema_id": "S21",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Carcinoma in situ/high-grade dysplasia",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC33b4305bd1",
+  "schema_id": "S21",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "Confined to bile duct",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC39e2d4970e",
+  "schema_id": "S21",
+  "axis": "T",
+  "shown_code": "T2a",
+  "rule_code": "T2a",
+  "context": "both",
+  "definition": "Beyond wall into surrounding adipose tissue",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC1e7c497f77",
+  "schema_id": "S21",
+  "axis": "T",
+  "shown_code": "T2b",
+  "rule_code": "T2b",
+  "context": "both",
+  "definition": "Invades adjacent hepatic parenchyma",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC1d6d887af0",
+  "schema_id": "S21",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "Unilateral branches of portal vein or hepatic artery",
+  "display_order": 7
+ },
+ {
+  "category_id": "SCa326788b1f",
+  "schema_id": "S21",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": "Main portal vein or bilateral branches; common hepatic artery; or bilateral second-order biliary radicles; or unilateral radicles with contralateral portal/hepatic artery involvement",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC0a67c712f5",
+  "schema_id": "S21",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCdb8b8dee53",
+  "schema_id": "S21",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC8ddc78c36a",
+  "schema_id": "S21",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "1-3 positive nodes",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC79e7b717ce",
+  "schema_id": "S21",
+  "axis": "N",
+  "shown_code": "N2",
+  "rule_code": "N2",
+  "context": "both",
+  "definition": "≥4 positive nodes",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCe21e9d73b8",
+  "schema_id": "S21",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC946cc64cfa",
+  "schema_id": "S21",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC626629665f",
+  "schema_id": "S22",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC782e518c0f",
+  "schema_id": "S22",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC15725363b8",
+  "schema_id": "S22",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Carcinoma in situ/high-grade dysplasia",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC3fe4f8a1bf",
+  "schema_id": "S22",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "Invasion <5 mm",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC198a162dc5",
+  "schema_id": "S22",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": "Invasion 5-12 mm",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC3e9ee2f27b",
+  "schema_id": "S22",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "Invasion >12 mm",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCd1a86ce653",
+  "schema_id": "S22",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": "Celiac axis, superior mesenteric artery and/or common hepatic artery",
+  "display_order": 7
+ },
+ {
+  "category_id": "SCc09ea362d1",
+  "schema_id": "S22",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCeff22efc2e",
+  "schema_id": "S22",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC4186183259",
+  "schema_id": "S22",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "1-3 positive nodes",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC0d7a6a627d",
+  "schema_id": "S22",
+  "axis": "N",
+  "shown_code": "N2",
+  "rule_code": "N2",
+  "context": "both",
+  "definition": "≥4 positive nodes",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCdf05c05ae4",
+  "schema_id": "S22",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCc234a2b6bf",
+  "schema_id": "S22",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCa3ba7c859d",
+  "schema_id": "S23",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCa5a1d1818a",
+  "schema_id": "S23",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC0b334354c0",
+  "schema_id": "S23",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Carcinoma in situ",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC2865eed32a",
+  "schema_id": "S23",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": "Lamina propria",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCb0111ecdd4",
+  "schema_id": "S23",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": "Muscular layer",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCd3160b73a0",
+  "schema_id": "S23",
+  "axis": "T",
+  "shown_code": "T2a",
+  "rule_code": "T2a",
+  "context": "both",
+  "definition": "Peritoneal side, no liver involvement",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC342f7a8403",
+  "schema_id": "S23",
+  "axis": "T",
+  "shown_code": "T2b",
+  "rule_code": "T2b",
+  "context": "both",
+  "definition": "Hepatic side, no liver involvement",
+  "display_order": 7
+ },
+ {
+  "category_id": "SCbff27a46f3",
+  "schema_id": "S23",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "Perforates serosa and/or directly invades liver and/or one other adjacent organ",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC728be86386",
+  "schema_id": "S23",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": "Main portal vein or hepatic artery, or ≥2 extrahepatic organs",
+  "display_order": 9
+ },
+ {
+  "category_id": "SCe2def98a11",
+  "schema_id": "S23",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC649be55e2c",
+  "schema_id": "S23",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC71d16216e8",
+  "schema_id": "S23",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "1-3 positive nodes",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCf92b75b04f",
+  "schema_id": "S23",
+  "axis": "N",
+  "shown_code": "N2",
+  "rule_code": "N2",
+  "context": "both",
+  "definition": "≥4 positive nodes",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCa2d88a53cf",
+  "schema_id": "S23",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC0b5efbefd5",
+  "schema_id": "S23",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC5aa763d275",
+  "schema_id": "S24",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCc390d1a67a",
+  "schema_id": "S24",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCdcec9b609a",
+  "schema_id": "S24",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Carcinoma in situ (incl. high-grade PanIN, IPMN/MCN with HGD)",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCc66f1438db",
+  "schema_id": "S24",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": "≤0.5 cm",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC260796d72b",
+  "schema_id": "S24",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": ">0.5 to <1 cm",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC3e62b56088",
+  "schema_id": "S24",
+  "axis": "T",
+  "shown_code": "T1c",
+  "rule_code": "T1c",
+  "context": "both",
+  "definition": "1 to 2 cm",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCc9232e995d",
+  "schema_id": "S24",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": ">2 to 4 cm",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC4dbcc1b67f",
+  "schema_id": "S24",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": ">4 cm",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC55ced38ef7",
+  "schema_id": "S24",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": "Involves celiac axis, superior mesenteric artery and/or common hepatic artery (irrespective of size)",
+  "display_order": 9
+ },
+ {
+  "category_id": "SC57d2d5e9b3",
+  "schema_id": "S24",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCb148e4bba3",
+  "schema_id": "S24",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCacc952a4bc",
+  "schema_id": "S24",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "1-3 regional nodes",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC88a483b9a9",
+  "schema_id": "S24",
+  "axis": "N",
+  "shown_code": "N2",
+  "rule_code": "N2",
+  "context": "both",
+  "definition": "≥4 regional nodes",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCaf1062399b",
+  "schema_id": "S24",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC4a856ede6f",
+  "schema_id": "S24",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC46d24adcfa",
+  "schema_id": "S25",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed, or tumour proven by malignant cells in sputum/washings but not visualised",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC310234362d",
+  "schema_id": "S25",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCd3018fc533",
+  "schema_id": "S25",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Carcinoma in situ (adenocarcinoma in situ or squamous carcinoma in situ)",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC3364bbb290",
+  "schema_id": "S25",
+  "axis": "T",
+  "shown_code": "T1mi",
+  "rule_code": "T1mi",
+  "context": "both",
+  "definition": "Minimally invasive adenocarcinoma",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCa4caaab349",
+  "schema_id": "S25",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": "≤1 cm",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCaf50944716",
+  "schema_id": "S25",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": ">1 to 2 cm",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCe2f99293f4",
+  "schema_id": "S25",
+  "axis": "T",
+  "shown_code": "T1c",
+  "rule_code": "T1c",
+  "context": "both",
+  "definition": ">2 to 3 cm",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC23df62b72b",
+  "schema_id": "S25",
+  "axis": "T",
+  "shown_code": "T2a",
+  "rule_code": "T2a",
+  "context": "both",
+  "definition": ">3 to 4 cm; or visceral pleura invasion, main bronchus involvement (not carina), atelectasis to hilum",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC3ec34ad2dc",
+  "schema_id": "S25",
+  "axis": "T",
+  "shown_code": "T2b",
+  "rule_code": "T2b",
+  "context": "both",
+  "definition": ">4 to 5 cm",
+  "display_order": 9
+ },
+ {
+  "category_id": "SC8bee492e7a",
+  "schema_id": "S25",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": ">5 to 7 cm; or invades chest wall, parietal pleura, phrenic nerve, parietal pericardium; or separate nodule(s) same lobe",
+  "display_order": 10
+ },
+ {
+  "category_id": "SCa54d0f7ee7",
+  "schema_id": "S25",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": ">7 cm; or invades diaphragm, mediastinum, heart, great vessels, trachea, recurrent laryngeal nerve, oesophagus, vertebral body, carina; or separate nodule(s) different ipsilateral lobe",
+  "display_order": 11
+ },
+ {
+  "category_id": "SC595dfe3b76",
+  "schema_id": "S25",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCb15d07d16e",
+  "schema_id": "S25",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC24d21b29cc",
+  "schema_id": "S25",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "Ipsilateral peribronchial/hilar/intrapulmonary nodes",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC06f3ead4ea",
+  "schema_id": "S25",
+  "axis": "N",
+  "shown_code": "N2a",
+  "rule_code": "N2a",
+  "context": "both",
+  "definition": "Ipsilateral mediastinal/subcarinal – single station",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC9d238f5800",
+  "schema_id": "S25",
+  "axis": "N",
+  "shown_code": "N2b",
+  "rule_code": "N2b",
+  "context": "both",
+  "definition": "Ipsilateral mediastinal/subcarinal – multiple stations",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC5273cef77c",
+  "schema_id": "S25",
+  "axis": "N",
+  "shown_code": "N3",
+  "rule_code": "N3",
+  "context": "both",
+  "definition": "Contralateral mediastinal/hilar, or any scalene/supraclavicular",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC73c2d0c959",
+  "schema_id": "S25",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC99bc2445af",
+  "schema_id": "S25",
+  "axis": "M",
+  "shown_code": "M1a",
+  "rule_code": "M1a",
+  "context": "both",
+  "definition": "Separate tumour nodule(s) in contralateral lobe; pleural/pericardial nodules or malignant pleural/pericardial effusion",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCb0dcd22184",
+  "schema_id": "S25",
+  "axis": "M",
+  "shown_code": "M1b",
+  "rule_code": "M1b",
+  "context": "both",
+  "definition": "Single extrathoracic metastasis in a single organ",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC634c0d1786",
+  "schema_id": "S25",
+  "axis": "M",
+  "shown_code": "M1c1",
+  "rule_code": "M1c1",
+  "context": "both",
+  "definition": "Multiple extrathoracic metastases in one organ system",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC46aefa9f0d",
+  "schema_id": "S25",
+  "axis": "M",
+  "shown_code": "M1c2",
+  "rule_code": "M1c2",
+  "context": "both",
+  "definition": "Multiple extrathoracic metastases in multiple organ systems",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCf68981034d",
+  "schema_id": "S26",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCf6c5707a87",
+  "schema_id": "S26",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC1441a803f4",
+  "schema_id": "S26",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "Ipsilateral pleura only, no fissure involvement; cT: Psum ≤12 mm and Fmax ≤5 mm. pT: no fissure involvement",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC3743b6f4b0",
+  "schema_id": "S26",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": "cT: Psum ≤12 mm with fissure (Fmax >5 mm), mediastinal fat or solitary chest-wall soft-tissue invasion; or Psum >12 to ≤30 mm. pT: fissure, lung parenchyma or non-transmural diaphragm",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC8623029f6f",
+  "schema_id": "S26",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "cT: Psum >30 mm. pT: mediastinal fat, pericardial surface, endothoracic fascia or solitary chest-wall soft-tissue focus",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC7b7bbc916f",
+  "schema_id": "S26",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": "Diffuse chest-wall or rib involvement, mediastinal organs (oesophagus, trachea, heart, great vessels, spine), through diaphragm or pericardium, contralateral pleura or malignant pericardial effusion",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC271e7b1d5d",
+  "schema_id": "S26",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC0380a2fe0c",
+  "schema_id": "S26",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCc3c125ccd5",
+  "schema_id": "S26",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "Ipsilateral intrathoracic nodes",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCb3f93cbd2f",
+  "schema_id": "S26",
+  "axis": "N",
+  "shown_code": "N2",
+  "rule_code": "N2",
+  "context": "both",
+  "definition": "Contralateral intrathoracic nodes, or ipsilateral/contralateral supraclavicular nodes",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCd71b89eb44",
+  "schema_id": "S26",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC56e2621c24",
+  "schema_id": "S26",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCb77196224f",
+  "schema_id": "S27",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCc4003d8848",
+  "schema_id": "S27",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCeb3d367028",
+  "schema_id": "S27",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": "Encapsulated or unencapsulated, ± extension into mediastinal fat or mediastinal pleura, ≤5 cm",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC660672899b",
+  "schema_id": "S27",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": "As T1a, >5 cm",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC3118454b2f",
+  "schema_id": "S27",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": "Direct invasion of pericardium (partial or full thickness), lung or phrenic nerve",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC8ab3598c50",
+  "schema_id": "S27",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "Brachiocephalic vein, superior vena cava, chest wall or extrapericardial pulmonary arteries/veins",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC533354254b",
+  "schema_id": "S27",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": "Aorta, arch vessels, intrapericardial pulmonary artery/veins, myocardium, trachea or oesophagus",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC2afdf11468",
+  "schema_id": "S27",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC3b92e3ad34",
+  "schema_id": "S27",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCf93eac1fb3",
+  "schema_id": "S27",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "Anterior (perithymic) nodes",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCacae044c4f",
+  "schema_id": "S27",
+  "axis": "N",
+  "shown_code": "N2",
+  "rule_code": "N2",
+  "context": "both",
+  "definition": "Deep intrathoracic or cervical nodes",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCea2e5ddf60",
+  "schema_id": "S27",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No pleural, pericardial or distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCd4632eb7d6",
+  "schema_id": "S27",
+  "axis": "M",
+  "shown_code": "M1a",
+  "rule_code": "M1a",
+  "context": "both",
+  "definition": "Separate pleural or pericardial nodule(s)",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC623530bed9",
+  "schema_id": "S27",
+  "axis": "M",
+  "shown_code": "M1b",
+  "rule_code": "M1b",
+  "context": "both",
+  "definition": "Pulmonary intraparenchymal nodule (not abutting pleura) or distant organ metastasis",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC37bc92f6c8",
+  "schema_id": "S28",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC23b3e002db",
+  "schema_id": "S28",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC0ace18cbec",
+  "schema_id": "S28",
+  "axis": "T",
+  "shown_code": "Tis (DCIS)",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Ductal carcinoma in situ",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC1d7af83722",
+  "schema_id": "S28",
+  "axis": "T",
+  "shown_code": "Tis (Paget)",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Paget disease of nipple not associated with invasive/in situ carcinoma in underlying parenchyma",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC8d3b613cb0",
+  "schema_id": "S28",
+  "axis": "T",
+  "shown_code": "T1mi",
+  "rule_code": "T1mi",
+  "context": "both",
+  "definition": "≤1 mm",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC1f8ae5dd0b",
+  "schema_id": "S28",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": ">1 to 5 mm",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC0e4123ea1e",
+  "schema_id": "S28",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": ">5 to 10 mm",
+  "display_order": 7
+ },
+ {
+  "category_id": "SCe39cc38124",
+  "schema_id": "S28",
+  "axis": "T",
+  "shown_code": "T1c",
+  "rule_code": "T1c",
+  "context": "both",
+  "definition": ">10 to 20 mm",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC17b22a3b65",
+  "schema_id": "S28",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": ">20 to 50 mm",
+  "display_order": 9
+ },
+ {
+  "category_id": "SC8ba45dade0",
+  "schema_id": "S28",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": ">50 mm",
+  "display_order": 10
+ },
+ {
+  "category_id": "SC4ca2668754",
+  "schema_id": "S28",
+  "axis": "T",
+  "shown_code": "T4a",
+  "rule_code": "T4a",
+  "context": "both",
+  "definition": "Chest wall invasion (not pectoralis alone)",
+  "display_order": 11
+ },
+ {
+  "category_id": "SCe0a5cd8f8b",
+  "schema_id": "S28",
+  "axis": "T",
+  "shown_code": "T4b",
+  "rule_code": "T4b",
+  "context": "both",
+  "definition": "Skin ulceration and/or ipsilateral macroscopic satellite nodules and/or oedema (peau d'orange), not meeting inflammatory criteria",
+  "display_order": 12
+ },
+ {
+  "category_id": "SC2b0ca14487",
+  "schema_id": "S28",
+  "axis": "T",
+  "shown_code": "T4c",
+  "rule_code": "T4c",
+  "context": "both",
+  "definition": "T4a + T4b",
+  "display_order": 13
+ },
+ {
+  "category_id": "SC343299f227",
+  "schema_id": "S28",
+  "axis": "T",
+  "shown_code": "T4d",
+  "rule_code": "T4d",
+  "context": "both",
+  "definition": "Inflammatory carcinoma",
+  "display_order": 14
+ },
+ {
+  "category_id": "SC6b4e8156b2",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "cNX",
+  "rule_code": "NX",
+  "context": "clinical",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC05558cb11b",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "cN0",
+  "rule_code": "N0",
+  "context": "clinical",
+  "definition": "No regional node metastasis (imaging or examination)",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC366a43fbeb",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "cN1",
+  "rule_code": "N1",
+  "context": "clinical",
+  "definition": "Movable ipsilateral level I-II axillary node(s)",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCe44f9b66db",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "cN2a",
+  "rule_code": "N2",
+  "context": "clinical",
+  "definition": "Fixed/matted ipsilateral level I-II nodes",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC20d4c5da29",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "cN2b",
+  "rule_code": "N2",
+  "context": "clinical",
+  "definition": "Ipsilateral internal mammary nodes without axillary nodes",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC8246bea32a",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "cN3a",
+  "rule_code": "N3",
+  "context": "clinical",
+  "definition": "Ipsilateral infraclavicular (level III) nodes",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC8f4b31ea3a",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "cN3b",
+  "rule_code": "N3",
+  "context": "clinical",
+  "definition": "Internal mammary + level I-II axillary nodes",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC5b4dbcc792",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "cN3c",
+  "rule_code": "N3",
+  "context": "clinical",
+  "definition": "Ipsilateral supraclavicular nodes",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC70776a3fb9",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "pNX",
+  "rule_code": "NX",
+  "context": "pathological",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 9
+ },
+ {
+  "category_id": "SC19c3504bf9",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "pN0",
+  "rule_code": "N0",
+  "context": "pathological",
+  "definition": "No regional node metastasis, or ITCs only",
+  "display_order": 10
+ },
+ {
+  "category_id": "SC0d910c2240",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "pN0(mol+)",
+  "rule_code": "N0",
+  "context": "pathological",
+  "definition": "RT-PCR positive, no ITCs detected",
+  "display_order": 11
+ },
+ {
+  "category_id": "SC16b0c01078",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "pN0(i+)",
+  "rule_code": "N0",
+  "context": "pathological",
+  "definition": "ITC only (≤0.2 mm)",
+  "display_order": 12
+ },
+ {
+  "category_id": "SC5f62070548",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "pN1mi",
+  "rule_code": "N1mi",
+  "context": "pathological",
+  "definition": "Micrometastasis >0.2 to 2 mm",
+  "display_order": 13
+ },
+ {
+  "category_id": "SC5ea451f0c0",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "pN1a",
+  "rule_code": "N1",
+  "context": "pathological",
+  "definition": "1-3 axillary nodes, at least one >2 mm",
+  "display_order": 14
+ },
+ {
+  "category_id": "SCc7d2471346",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "pN1b",
+  "rule_code": "N1",
+  "context": "pathological",
+  "definition": "Internal mammary sentinel nodes (micro/macro), no axillary",
+  "display_order": 15
+ },
+ {
+  "category_id": "SC3f0a0a5b1d",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "pN1c",
+  "rule_code": "N1",
+  "context": "pathological",
+  "definition": "pN1a + pN1b",
+  "display_order": 16
+ },
+ {
+  "category_id": "SC821f4e4c38",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "pN2a",
+  "rule_code": "N2",
+  "context": "pathological",
+  "definition": "4-9 axillary nodes, at least one >2 mm",
+  "display_order": 17
+ },
+ {
+  "category_id": "SCfc1d9ea085",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "pN2b",
+  "rule_code": "N2",
+  "context": "pathological",
+  "definition": "Clinically detected internal mammary nodes, axillary negative",
+  "display_order": 18
+ },
+ {
+  "category_id": "SC5ee567096a",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "pN3a",
+  "rule_code": "N3",
+  "context": "pathological",
+  "definition": "≥10 axillary nodes (>2 mm) or infraclavicular nodes",
+  "display_order": 19
+ },
+ {
+  "category_id": "SC0793075563",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "pN3b",
+  "rule_code": "N3",
+  "context": "pathological",
+  "definition": "pN1a/pN2a + cN2b; or pN2a + pN1b",
+  "display_order": 20
+ },
+ {
+  "category_id": "SC55e86e400f",
+  "schema_id": "S28",
+  "axis": "N",
+  "shown_code": "pN3c",
+  "rule_code": "N3",
+  "context": "pathological",
+  "definition": "Ipsilateral supraclavicular nodes",
+  "display_order": 21
+ },
+ {
+  "category_id": "SCcf2648a623",
+  "schema_id": "S28",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No clinical or radiographic evidence of distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC8c1eab8418",
+  "schema_id": "S28",
+  "axis": "M",
+  "shown_code": "cM0(i+)",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "Tumour cells ≤0.2 mm in blood, marrow or non-regional node, no symptoms",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCff65cfac95",
+  "schema_id": "S28",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCc9dd424bb6",
+  "schema_id": "S29",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC4f4fa06a98",
+  "schema_id": "S29",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC5db03c3c44",
+  "schema_id": "S29",
+  "axis": "T",
+  "shown_code": "T1a1",
+  "rule_code": "T1a1",
+  "context": "both",
+  "definition": "Stromal invasion ≤3 mm depth",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC3188737b90",
+  "schema_id": "S29",
+  "axis": "T",
+  "shown_code": "T1a2",
+  "rule_code": "T1a2",
+  "context": "both",
+  "definition": ">3 to ≤5 mm depth",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCf9e9fc7db8",
+  "schema_id": "S29",
+  "axis": "T",
+  "shown_code": "T1b1",
+  "rule_code": "T1b1",
+  "context": "both",
+  "definition": "Invasion >5 mm depth, ≤2 cm greatest dimension",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCa4c0a6e373",
+  "schema_id": "S29",
+  "axis": "T",
+  "shown_code": "T1b2",
+  "rule_code": "T1b2",
+  "context": "both",
+  "definition": ">2 to ≤4 cm",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC3625f3db93",
+  "schema_id": "S29",
+  "axis": "T",
+  "shown_code": "T1b3",
+  "rule_code": "T1b3",
+  "context": "both",
+  "definition": ">4 cm",
+  "display_order": 7
+ },
+ {
+  "category_id": "SCa864df2cb9",
+  "schema_id": "S29",
+  "axis": "T",
+  "shown_code": "T2a1",
+  "rule_code": "T2a1",
+  "context": "both",
+  "definition": "Upper 2/3 vagina, no parametrium, ≤4 cm",
+  "display_order": 8
+ },
+ {
+  "category_id": "SCdf748c69fc",
+  "schema_id": "S29",
+  "axis": "T",
+  "shown_code": "T2a2",
+  "rule_code": "T2a2",
+  "context": "both",
+  "definition": "Upper 2/3 vagina, no parametrium, >4 cm",
+  "display_order": 9
+ },
+ {
+  "category_id": "SC2cf7536811",
+  "schema_id": "S29",
+  "axis": "T",
+  "shown_code": "T2b",
+  "rule_code": "T2b",
+  "context": "both",
+  "definition": "Parametrial invasion, not to pelvic wall",
+  "display_order": 10
+ },
+ {
+  "category_id": "SCc8275344a1",
+  "schema_id": "S29",
+  "axis": "T",
+  "shown_code": "T3a",
+  "rule_code": "T3a",
+  "context": "both",
+  "definition": "Lower 1/3 vagina, no pelvic wall extension",
+  "display_order": 11
+ },
+ {
+  "category_id": "SCbf162ddd80",
+  "schema_id": "S29",
+  "axis": "T",
+  "shown_code": "T3b",
+  "rule_code": "T3b",
+  "context": "both",
+  "definition": "Pelvic wall extension and/or hydronephrosis/non-functioning kidney",
+  "display_order": 12
+ },
+ {
+  "category_id": "SC2cea83be4a",
+  "schema_id": "S29",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": "Invades bladder/rectal mucosa or extends beyond true pelvis",
+  "display_order": 13
+ },
+ {
+  "category_id": "SCe57280a805",
+  "schema_id": "S29",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC9f3f26fb76",
+  "schema_id": "S29",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC7db55b5c30",
+  "schema_id": "S29",
+  "axis": "N",
+  "shown_code": "N0(i+)",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "Isolated tumour cells ≤0.2 mm",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCf691f6ecd5",
+  "schema_id": "S29",
+  "axis": "N",
+  "shown_code": "N1mi",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "Pelvic node micrometastasis >0.2 to 2 mm (FIGO IIIC1)",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC3116a2f5da",
+  "schema_id": "S29",
+  "axis": "N",
+  "shown_code": "N1a",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "Pelvic node metastasis >2 mm (FIGO IIIC1)",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC990a7b44a4",
+  "schema_id": "S29",
+  "axis": "N",
+  "shown_code": "N2mi",
+  "rule_code": "N2",
+  "context": "both",
+  "definition": "Para-aortic node micrometastasis ± pelvic (FIGO IIIC2)",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC30ed146537",
+  "schema_id": "S29",
+  "axis": "N",
+  "shown_code": "N2a",
+  "rule_code": "N2",
+  "context": "both",
+  "definition": "Para-aortic node metastasis >2 mm ± pelvic (FIGO IIIC2)",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC562f776a3f",
+  "schema_id": "S29",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC2437cae31f",
+  "schema_id": "S29",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC4e03bd9804",
+  "schema_id": "S30",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC0f2f77e933",
+  "schema_id": "S30",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC424ab45c68",
+  "schema_id": "S30",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": "Limited to one ovary/tube, capsule intact, no surface tumour, no malignant cells in ascites/washings",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCa8fff8d6c0",
+  "schema_id": "S30",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": "Both ovaries/tubes, as T1a",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC4b216a32ba",
+  "schema_id": "S30",
+  "axis": "T",
+  "shown_code": "T1c1",
+  "rule_code": "T1c1",
+  "context": "both",
+  "definition": "Surgical spill",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC73aa1265af",
+  "schema_id": "S30",
+  "axis": "T",
+  "shown_code": "T1c2",
+  "rule_code": "T1c2",
+  "context": "both",
+  "definition": "Capsule ruptured before surgery or tumour on surface",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC36b62ada3c",
+  "schema_id": "S30",
+  "axis": "T",
+  "shown_code": "T1c3",
+  "rule_code": "T1c3",
+  "context": "both",
+  "definition": "Malignant cells in ascites or peritoneal washings",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC9e8103f443",
+  "schema_id": "S30",
+  "axis": "T",
+  "shown_code": "T2a",
+  "rule_code": "T2a",
+  "context": "both",
+  "definition": "Extension/implants on uterus and/or tube(s)/ovary",
+  "display_order": 8
+ },
+ {
+  "category_id": "SCc157ef4d8a",
+  "schema_id": "S30",
+  "axis": "T",
+  "shown_code": "T2b",
+  "rule_code": "T2b",
+  "context": "both",
+  "definition": "Extension to other pelvic intraperitoneal tissues",
+  "display_order": 9
+ },
+ {
+  "category_id": "SCb54972229c",
+  "schema_id": "S30",
+  "axis": "T",
+  "shown_code": "T3a",
+  "rule_code": "T3a",
+  "context": "both",
+  "definition": "Microscopic extrapelvic peritoneal involvement ± retroperitoneal nodes",
+  "display_order": 10
+ },
+ {
+  "category_id": "SC28dceb7a58",
+  "schema_id": "S30",
+  "axis": "T",
+  "shown_code": "T3b",
+  "rule_code": "T3b",
+  "context": "both",
+  "definition": "Macroscopic extrapelvic peritoneal metastasis ≤2 cm",
+  "display_order": 11
+ },
+ {
+  "category_id": "SCad8b9d8eba",
+  "schema_id": "S30",
+  "axis": "T",
+  "shown_code": "T3c",
+  "rule_code": "T3c",
+  "context": "both",
+  "definition": "Macroscopic extrapelvic peritoneal metastasis >2 cm (incl. extension to liver/spleen capsule)",
+  "display_order": 12
+ },
+ {
+  "category_id": "SCf281559f32",
+  "schema_id": "S30",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC31183ff33b",
+  "schema_id": "S30",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC74f79c55f1",
+  "schema_id": "S30",
+  "axis": "N",
+  "shown_code": "N0(i+)",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "Isolated tumour cells ≤0.2 mm",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC80f701475f",
+  "schema_id": "S30",
+  "axis": "N",
+  "shown_code": "N1a",
+  "rule_code": "N1a",
+  "context": "both",
+  "definition": "Retroperitoneal nodes ≤10 mm",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC01b0abbf8f",
+  "schema_id": "S30",
+  "axis": "N",
+  "shown_code": "N1b",
+  "rule_code": "N1b",
+  "context": "both",
+  "definition": "Retroperitoneal nodes >10 mm",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC3fc0b0cc8d",
+  "schema_id": "S30",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCa9c671625e",
+  "schema_id": "S30",
+  "axis": "M",
+  "shown_code": "M1a",
+  "rule_code": "M1a",
+  "context": "both",
+  "definition": "Pleural effusion with positive cytology",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC515bbe1e50",
+  "schema_id": "S30",
+  "axis": "M",
+  "shown_code": "M1b",
+  "rule_code": "M1b",
+  "context": "both",
+  "definition": "Parenchymal (liver/spleen) metastasis, extra-abdominal organs incl. inguinal/extra-abdominal nodes",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC2952ad6223",
+  "schema_id": "S33",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC205d4d5c7a",
+  "schema_id": "S33",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCf27e4a9f5b",
+  "schema_id": "S33",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": "Confined to vagina, ≤2 cm",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC0e6f8790f1",
+  "schema_id": "S33",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": "Confined to vagina, >2 cm",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC6c6ad80be6",
+  "schema_id": "S33",
+  "axis": "T",
+  "shown_code": "T2a",
+  "rule_code": "T2a",
+  "context": "both",
+  "definition": "Paravaginal tissues, not to pelvic wall, ≤2 cm",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCa7d4d5aba6",
+  "schema_id": "S33",
+  "axis": "T",
+  "shown_code": "T2b",
+  "rule_code": "T2b",
+  "context": "both",
+  "definition": "Paravaginal tissues, not to pelvic wall, >2 cm",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC3f7234b326",
+  "schema_id": "S33",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "Extends to pelvic wall and/or lower third of vagina and/or hydronephrosis",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC0a74227877",
+  "schema_id": "S33",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": "Bladder or rectal mucosa, or beyond true pelvis",
+  "display_order": 8
+ },
+ {
+  "category_id": "SCacf12e7434",
+  "schema_id": "S33",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC22699489b9",
+  "schema_id": "S33",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCb1a80f1f32",
+  "schema_id": "S33",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "Pelvic or inguinal node metastasis",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC376c070dfa",
+  "schema_id": "S33",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCa0a4af8389",
+  "schema_id": "S33",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC1357ac27f5",
+  "schema_id": "S34",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC643b41bf6b",
+  "schema_id": "S34",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCdd316fdd81",
+  "schema_id": "S34",
+  "axis": "T",
+  "shown_code": "cT1a",
+  "rule_code": "T1a",
+  "context": "clinical",
+  "definition": "Incidental, ≤5% of resected tissue (TURP)",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC61dc95a262",
+  "schema_id": "S34",
+  "axis": "T",
+  "shown_code": "cT1b",
+  "rule_code": "T1b",
+  "context": "clinical",
+  "definition": "Incidental, >5%",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCcd3c5036a7",
+  "schema_id": "S34",
+  "axis": "T",
+  "shown_code": "cT1c",
+  "rule_code": "T1c",
+  "context": "clinical",
+  "definition": "Identified by needle biopsy for elevated PSA",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC6afd2428cb",
+  "schema_id": "S34",
+  "axis": "T",
+  "shown_code": "cT2a",
+  "rule_code": "T2a",
+  "context": "clinical",
+  "definition": "Involves ≤1/2 of one lobe",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCa3b02912a7",
+  "schema_id": "S34",
+  "axis": "T",
+  "shown_code": "cT2b",
+  "rule_code": "T2b",
+  "context": "clinical",
+  "definition": "Involves >1/2 of one lobe",
+  "display_order": 7
+ },
+ {
+  "category_id": "SCe798022ed0",
+  "schema_id": "S34",
+  "axis": "T",
+  "shown_code": "cT2c",
+  "rule_code": "T2c",
+  "context": "clinical",
+  "definition": "Both lobes",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC4a4f8efbae",
+  "schema_id": "S34",
+  "axis": "T",
+  "shown_code": "cT3a",
+  "rule_code": "T3a",
+  "context": "clinical",
+  "definition": "Extraprostatic extension",
+  "display_order": 9
+ },
+ {
+  "category_id": "SC4c29023726",
+  "schema_id": "S34",
+  "axis": "T",
+  "shown_code": "cT3b",
+  "rule_code": "T3b",
+  "context": "clinical",
+  "definition": "Seminal vesicle invasion",
+  "display_order": 10
+ },
+ {
+  "category_id": "SCac20b3aba8",
+  "schema_id": "S34",
+  "axis": "T",
+  "shown_code": "cT4",
+  "rule_code": "T4",
+  "context": "clinical",
+  "definition": "Fixed or invades adjacent structures other than seminal vesicles",
+  "display_order": 11
+ },
+ {
+  "category_id": "SCe24072c664",
+  "schema_id": "S34",
+  "axis": "T",
+  "shown_code": "pT2",
+  "rule_code": "T2",
+  "context": "pathological",
+  "definition": "Organ-confined",
+  "display_order": 12
+ },
+ {
+  "category_id": "SC777c07c8c3",
+  "schema_id": "S34",
+  "axis": "T",
+  "shown_code": "pT3a",
+  "rule_code": "T3a",
+  "context": "pathological",
+  "definition": "Extraprostatic extension or bladder neck microscopic invasion",
+  "display_order": 13
+ },
+ {
+  "category_id": "SCf1bcd783e8",
+  "schema_id": "S34",
+  "axis": "T",
+  "shown_code": "pT3b",
+  "rule_code": "T3b",
+  "context": "pathological",
+  "definition": "Seminal vesicle invasion",
+  "display_order": 14
+ },
+ {
+  "category_id": "SC914d5d2a96",
+  "schema_id": "S34",
+  "axis": "T",
+  "shown_code": "pT4",
+  "rule_code": "T4",
+  "context": "pathological",
+  "definition": "Invades bladder, rectum, other adjacent structures",
+  "display_order": 15
+ },
+ {
+  "category_id": "SC083f89b658",
+  "schema_id": "S34",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC5b349624a8",
+  "schema_id": "S34",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No positive regional nodes",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC07cd8ed30b",
+  "schema_id": "S34",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "Regional node metastasis",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC39396d95ff",
+  "schema_id": "S34",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCec103a4250",
+  "schema_id": "S34",
+  "axis": "M",
+  "shown_code": "M1a",
+  "rule_code": "M1a",
+  "context": "both",
+  "definition": "Non-regional lymph node(s)",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC4b870f7e04",
+  "schema_id": "S34",
+  "axis": "M",
+  "shown_code": "M1b",
+  "rule_code": "M1b",
+  "context": "both",
+  "definition": "Bone",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC3615fdf41f",
+  "schema_id": "S34",
+  "axis": "M",
+  "shown_code": "M1c",
+  "rule_code": "M1c",
+  "context": "both",
+  "definition": "Other site(s) with or without bone",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCd38328cfd9",
+  "schema_id": "S35",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCeec424fdf7",
+  "schema_id": "S35",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC9e5a5a7cc3",
+  "schema_id": "S35",
+  "axis": "T",
+  "shown_code": "Ta",
+  "rule_code": "Ta",
+  "context": "both",
+  "definition": "Non-invasive papillary carcinoma",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC0f6655c6ef",
+  "schema_id": "S35",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Carcinoma in situ ('flat tumour')",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC20f8b12bc2",
+  "schema_id": "S35",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "Invades lamina propria (subepithelial connective tissue)",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCa6f101f3d9",
+  "schema_id": "S35",
+  "axis": "T",
+  "shown_code": "T2a",
+  "rule_code": "T2a",
+  "context": "both",
+  "definition": "Invades superficial muscularis propria (inner half)",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC9e2dbc80c4",
+  "schema_id": "S35",
+  "axis": "T",
+  "shown_code": "T2b",
+  "rule_code": "T2b",
+  "context": "both",
+  "definition": "Invades deep muscularis propria (outer half)",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC5260ec0f08",
+  "schema_id": "S35",
+  "axis": "T",
+  "shown_code": "T3a",
+  "rule_code": "T3a",
+  "context": "both",
+  "definition": "Microscopic perivesical tissue invasion",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC690e5adca4",
+  "schema_id": "S35",
+  "axis": "T",
+  "shown_code": "T3b",
+  "rule_code": "T3b",
+  "context": "both",
+  "definition": "Macroscopic perivesical tissue invasion (extravesical mass)",
+  "display_order": 9
+ },
+ {
+  "category_id": "SC377f27b232",
+  "schema_id": "S35",
+  "axis": "T",
+  "shown_code": "T4a",
+  "rule_code": "T4a",
+  "context": "both",
+  "definition": "Invades prostatic stroma, seminal vesicles, uterus or vagina",
+  "display_order": 10
+ },
+ {
+  "category_id": "SC8d23a31142",
+  "schema_id": "S35",
+  "axis": "T",
+  "shown_code": "T4b",
+  "rule_code": "T4b",
+  "context": "both",
+  "definition": "Invades pelvic wall or abdominal wall",
+  "display_order": 11
+ },
+ {
+  "category_id": "SC4572468a58",
+  "schema_id": "S35",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC78adda7501",
+  "schema_id": "S35",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC147c0d3175",
+  "schema_id": "S35",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "Single regional node in true pelvis (perivesical, obturator, internal/external iliac, sacral)",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCd5892f4083",
+  "schema_id": "S35",
+  "axis": "N",
+  "shown_code": "N2",
+  "rule_code": "N2",
+  "context": "both",
+  "definition": "Multiple regional nodes in true pelvis",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCcbca368a11",
+  "schema_id": "S35",
+  "axis": "N",
+  "shown_code": "N3",
+  "rule_code": "N3",
+  "context": "both",
+  "definition": "Common iliac node(s)",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCd0c3aef0f0",
+  "schema_id": "S35",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCa39b171da0",
+  "schema_id": "S35",
+  "axis": "M",
+  "shown_code": "M1a",
+  "rule_code": "M1a",
+  "context": "both",
+  "definition": "Distant metastasis limited to lymph nodes beyond common iliacs",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC310fdbb3ea",
+  "schema_id": "S35",
+  "axis": "M",
+  "shown_code": "M1b",
+  "rule_code": "M1b",
+  "context": "both",
+  "definition": "Non-lymph-node distant metastasis",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCa24a806837",
+  "schema_id": "S36",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCf37467b43e",
+  "schema_id": "S36",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCe4207dd489",
+  "schema_id": "S36",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": "≤4 cm, limited to kidney",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC73097198b6",
+  "schema_id": "S36",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": ">4 to 7 cm, limited to kidney",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC2f18d7161a",
+  "schema_id": "S36",
+  "axis": "T",
+  "shown_code": "T2a",
+  "rule_code": "T2a",
+  "context": "both",
+  "definition": ">7 to 10 cm, limited to kidney",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCcf18d79354",
+  "schema_id": "S36",
+  "axis": "T",
+  "shown_code": "T2b",
+  "rule_code": "T2b",
+  "context": "both",
+  "definition": ">10 cm, limited to kidney",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCde60ffb06a",
+  "schema_id": "S36",
+  "axis": "T",
+  "shown_code": "T3a",
+  "rule_code": "T3a",
+  "context": "both",
+  "definition": "Renal vein or segmental branches, pelvicalyceal system, or perirenal/renal sinus fat (not beyond Gerota)",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC658fa857e8",
+  "schema_id": "S36",
+  "axis": "T",
+  "shown_code": "T3b",
+  "rule_code": "T3b",
+  "context": "both",
+  "definition": "Extends into IVC below diaphragm",
+  "display_order": 8
+ },
+ {
+  "category_id": "SCad277db55c",
+  "schema_id": "S36",
+  "axis": "T",
+  "shown_code": "T3c",
+  "rule_code": "T3c",
+  "context": "both",
+  "definition": "Extends into IVC above diaphragm or invades IVC wall",
+  "display_order": 9
+ },
+ {
+  "category_id": "SCf3d4ab6417",
+  "schema_id": "S36",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": "Beyond Gerota fascia, incl. contiguous extension into ipsilateral adrenal gland",
+  "display_order": 10
+ },
+ {
+  "category_id": "SC2aa829563a",
+  "schema_id": "S36",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC82f9505059",
+  "schema_id": "S36",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCd04665d6d6",
+  "schema_id": "S36",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "Regional node metastasis",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC0d13343aea",
+  "schema_id": "S36",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCe0f97cdcd4",
+  "schema_id": "S36",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC01da6dbd9d",
+  "schema_id": "S37",
+  "axis": "T",
+  "shown_code": "pTX",
+  "rule_code": "TX",
+  "context": "pathological",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC6e67de2ce1",
+  "schema_id": "S37",
+  "axis": "T",
+  "shown_code": "pT0",
+  "rule_code": "T0",
+  "context": "pathological",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCc29bb78328",
+  "schema_id": "S37",
+  "axis": "T",
+  "shown_code": "pTis",
+  "rule_code": "Tis",
+  "context": "pathological",
+  "definition": "Germ cell neoplasia in situ",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC27aec72bf5",
+  "schema_id": "S37",
+  "axis": "T",
+  "shown_code": "pT1a",
+  "rule_code": "T1a",
+  "context": "pathological",
+  "definition": "<3 cm, limited to testis (± rete testis, tunica albuginea), no LVI",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC964bf91730",
+  "schema_id": "S37",
+  "axis": "T",
+  "shown_code": "pT1b",
+  "rule_code": "T1b",
+  "context": "pathological",
+  "definition": "≥3 cm, as above",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCb4397e443e",
+  "schema_id": "S37",
+  "axis": "T",
+  "shown_code": "pT2",
+  "rule_code": "T2",
+  "context": "pathological",
+  "definition": "LVI, or hilar soft tissue/epididymis invasion, or tunica vaginalis penetration",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC082ace8bc4",
+  "schema_id": "S37",
+  "axis": "T",
+  "shown_code": "pT3",
+  "rule_code": "T3",
+  "context": "pathological",
+  "definition": "Spermatic cord invasion",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC4ad62c7054",
+  "schema_id": "S37",
+  "axis": "T",
+  "shown_code": "pT4",
+  "rule_code": "T4",
+  "context": "pathological",
+  "definition": "Scrotum invasion",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC3272913470",
+  "schema_id": "S37",
+  "axis": "N",
+  "shown_code": "cNX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC8b6d0bbb1b",
+  "schema_id": "S37",
+  "axis": "N",
+  "shown_code": "cN0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC3a1371262d",
+  "schema_id": "S37",
+  "axis": "N",
+  "shown_code": "cN1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "Node(s) ≤2 cm, ≤5 nodes positive",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC5a9a9c0300",
+  "schema_id": "S37",
+  "axis": "N",
+  "shown_code": "cN2",
+  "rule_code": "N2",
+  "context": "both",
+  "definition": "Node mass >2 to 5 cm, or >5 nodes ≤5 cm, or ENE",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCd3edd96714",
+  "schema_id": "S37",
+  "axis": "N",
+  "shown_code": "cN3",
+  "rule_code": "N3",
+  "context": "both",
+  "definition": "Node mass >5 cm",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCa2717ccb2c",
+  "schema_id": "S37",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC649e27f5e3",
+  "schema_id": "S37",
+  "axis": "M",
+  "shown_code": "M1a",
+  "rule_code": "M1a",
+  "context": "both",
+  "definition": "Non-regional nodal or pulmonary metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC8eedece259",
+  "schema_id": "S37",
+  "axis": "M",
+  "shown_code": "M1b",
+  "rule_code": "M1b",
+  "context": "both",
+  "definition": "Non-pulmonary visceral metastasis",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC5b7bec4729",
+  "schema_id": "S37",
+  "axis": "S",
+  "shown_code": "SX",
+  "rule_code": "SX",
+  "context": "both",
+  "definition": "Markers not available or not performed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCe9e70cfa9e",
+  "schema_id": "S37",
+  "axis": "S",
+  "shown_code": "S0",
+  "rule_code": "S0",
+  "context": "both",
+  "definition": "Markers normal",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC211d4edaf8",
+  "schema_id": "S37",
+  "axis": "S",
+  "shown_code": "S1",
+  "rule_code": "S1",
+  "context": "both",
+  "definition": "LDH <1.5x ULN and hCG <5000 and AFP <1000",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC16e054e145",
+  "schema_id": "S37",
+  "axis": "S",
+  "shown_code": "S2",
+  "rule_code": "S2",
+  "context": "both",
+  "definition": "LDH 1.5-10x ULN or hCG 5000-50000 or AFP 1000-10000",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC8a86b88781",
+  "schema_id": "S37",
+  "axis": "S",
+  "shown_code": "S3",
+  "rule_code": "S3",
+  "context": "both",
+  "definition": "LDH >10x ULN or hCG >50000 or AFP >10000",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC7ddea951d9",
+  "schema_id": "S38",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCc4f09dac9d",
+  "schema_id": "S38",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC1b0b9f0128",
+  "schema_id": "S38",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Carcinoma in situ",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC4c3aa5f808",
+  "schema_id": "S38",
+  "axis": "T",
+  "shown_code": "Ta",
+  "rule_code": "Ta",
+  "context": "both",
+  "definition": "Non-invasive localised SCC",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC00c3b02e5f",
+  "schema_id": "S38",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": "Invades subepithelial connective tissue, no LVI/PNI, not high grade",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCdf688968c8",
+  "schema_id": "S38",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": "Invades subepithelial connective tissue with LVI/PNI or high grade (G3-4)",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC333c52ca1c",
+  "schema_id": "S38",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": "Invades corpus spongiosum ± urethra",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC8fc892442a",
+  "schema_id": "S38",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "Invades corpus cavernosum ± urethra",
+  "display_order": 8
+ },
+ {
+  "category_id": "SCf503c18d5a",
+  "schema_id": "S38",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": "Invades other adjacent structures (scrotum, prostate, pubic bone)",
+  "display_order": 9
+ },
+ {
+  "category_id": "SC676b89f269",
+  "schema_id": "S38",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCcd0060195f",
+  "schema_id": "S38",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCfcbdd27895",
+  "schema_id": "S38",
+  "axis": "N",
+  "shown_code": "cN1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "Palpable mobile unilateral inguinal node",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCe59df3e969",
+  "schema_id": "S38",
+  "axis": "N",
+  "shown_code": "cN2",
+  "rule_code": "N2",
+  "context": "both",
+  "definition": "Palpable mobile multiple or bilateral inguinal nodes",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCbfe8e5f56e",
+  "schema_id": "S38",
+  "axis": "N",
+  "shown_code": "cN3",
+  "rule_code": "N3",
+  "context": "both",
+  "definition": "Fixed inguinal nodal mass or pelvic lymphadenopathy",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC1e3c8d784a",
+  "schema_id": "S38",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC396257f468",
+  "schema_id": "S38",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC2ed248e17e",
+  "schema_id": "S39",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour thickness cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC2d812a1137",
+  "schema_id": "S39",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour (unknown primary or regressed)",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCa78923ff0b",
+  "schema_id": "S39",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "Melanoma in situ",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC7db30bc844",
+  "schema_id": "S39",
+  "axis": "T",
+  "shown_code": "T1a",
+  "rule_code": "T1a",
+  "context": "both",
+  "definition": "<0.8 mm, no ulceration",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC100ba0d19c",
+  "schema_id": "S39",
+  "axis": "T",
+  "shown_code": "T1b",
+  "rule_code": "T1b",
+  "context": "both",
+  "definition": "<0.8 mm with ulceration, or 0.8-1.0 mm ± ulceration",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC96c5a29ce7",
+  "schema_id": "S39",
+  "axis": "T",
+  "shown_code": "T2a",
+  "rule_code": "T2a",
+  "context": "both",
+  "definition": ">1.0-2.0 mm, no ulceration",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC329b65f8a6",
+  "schema_id": "S39",
+  "axis": "T",
+  "shown_code": "T2b",
+  "rule_code": "T2b",
+  "context": "both",
+  "definition": ">1.0-2.0 mm, ulceration",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC0ee0f449a6",
+  "schema_id": "S39",
+  "axis": "T",
+  "shown_code": "T3a",
+  "rule_code": "T3a",
+  "context": "both",
+  "definition": ">2.0-4.0 mm, no ulceration",
+  "display_order": 8
+ },
+ {
+  "category_id": "SC95842f0d16",
+  "schema_id": "S39",
+  "axis": "T",
+  "shown_code": "T3b",
+  "rule_code": "T3b",
+  "context": "both",
+  "definition": ">2.0-4.0 mm, ulceration",
+  "display_order": 9
+ },
+ {
+  "category_id": "SC3813fa8126",
+  "schema_id": "S39",
+  "axis": "T",
+  "shown_code": "T4a",
+  "rule_code": "T4a",
+  "context": "both",
+  "definition": ">4.0 mm, no ulceration",
+  "display_order": 10
+ },
+ {
+  "category_id": "SCdb7f1e7a88",
+  "schema_id": "S39",
+  "axis": "T",
+  "shown_code": "T4b",
+  "rule_code": "T4b",
+  "context": "both",
+  "definition": ">4.0 mm, ulceration",
+  "display_order": 11
+ },
+ {
+  "category_id": "SC298ed37d78",
+  "schema_id": "S39",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC75e986b317",
+  "schema_id": "S39",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC09cc3edec4",
+  "schema_id": "S39",
+  "axis": "N",
+  "shown_code": "N1a",
+  "rule_code": "N1a",
+  "context": "both",
+  "definition": "1 clinically occult node, no in-transit/satellite/microsatellite",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC7bf9cd3c92",
+  "schema_id": "S39",
+  "axis": "N",
+  "shown_code": "N1b",
+  "rule_code": "N1b",
+  "context": "both",
+  "definition": "1 clinically detected node",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC8841a0d124",
+  "schema_id": "S39",
+  "axis": "N",
+  "shown_code": "N1c",
+  "rule_code": "N1c",
+  "context": "both",
+  "definition": "No regional nodes, in-transit/satellite/microsatellite present",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC21cf5f7b15",
+  "schema_id": "S39",
+  "axis": "N",
+  "shown_code": "N2a",
+  "rule_code": "N2a",
+  "context": "both",
+  "definition": "2-3 clinically occult nodes",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCaa389949c7",
+  "schema_id": "S39",
+  "axis": "N",
+  "shown_code": "N2b",
+  "rule_code": "N2b",
+  "context": "both",
+  "definition": "2-3 nodes, at least one clinically detected",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC81dfa95133",
+  "schema_id": "S39",
+  "axis": "N",
+  "shown_code": "N2c",
+  "rule_code": "N2c",
+  "context": "both",
+  "definition": "1 node + in-transit/satellite/microsatellite",
+  "display_order": 8
+ },
+ {
+  "category_id": "SCbabc32bdbe",
+  "schema_id": "S39",
+  "axis": "N",
+  "shown_code": "N3a",
+  "rule_code": "N3a",
+  "context": "both",
+  "definition": "≥4 clinically occult nodes",
+  "display_order": 9
+ },
+ {
+  "category_id": "SCb93c57f94d",
+  "schema_id": "S39",
+  "axis": "N",
+  "shown_code": "N3b",
+  "rule_code": "N3b",
+  "context": "both",
+  "definition": "≥4 nodes, at least one clinically detected, or matted nodes",
+  "display_order": 10
+ },
+ {
+  "category_id": "SC4acd0cb721",
+  "schema_id": "S39",
+  "axis": "N",
+  "shown_code": "N3c",
+  "rule_code": "N3c",
+  "context": "both",
+  "definition": "≥2 nodes + in-transit/satellite/microsatellite",
+  "display_order": 11
+ },
+ {
+  "category_id": "SC232dc21b98",
+  "schema_id": "S39",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC8f84f7ed14",
+  "schema_id": "S39",
+  "axis": "M",
+  "shown_code": "M1a",
+  "rule_code": "M1a",
+  "context": "both",
+  "definition": "Distant skin, soft tissue, muscle and/or non-regional nodes",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC649544aa05",
+  "schema_id": "S39",
+  "axis": "M",
+  "shown_code": "M1b",
+  "rule_code": "M1b",
+  "context": "both",
+  "definition": "Lung metastasis",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCa52b8c4b3c",
+  "schema_id": "S39",
+  "axis": "M",
+  "shown_code": "M1c",
+  "rule_code": "M1c",
+  "context": "both",
+  "definition": "Distant non-CNS visceral metastasis",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCcd0a4eb822",
+  "schema_id": "S39",
+  "axis": "M",
+  "shown_code": "M1d",
+  "rule_code": "M1d",
+  "context": "both",
+  "definition": "CNS metastasis",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC8955232dfc",
+  "schema_id": "S40",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCc998c6e943",
+  "schema_id": "S40",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCd76539d109",
+  "schema_id": "S40",
+  "axis": "T",
+  "shown_code": "Tis",
+  "rule_code": "Tis",
+  "context": "both",
+  "definition": "In situ primary tumour",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC8c7879d38b",
+  "schema_id": "S40",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "≤2 cm",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC20f36aab59",
+  "schema_id": "S40",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": ">2 to 5 cm",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCc135daa493",
+  "schema_id": "S40",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": ">5 cm",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCc7e626aceb",
+  "schema_id": "S40",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": "Invades fascia, muscle, cartilage or bone",
+  "display_order": 7
+ },
+ {
+  "category_id": "SC0f90dc1642",
+  "schema_id": "S40",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC78749f80b3",
+  "schema_id": "S40",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC3e8aaaed1f",
+  "schema_id": "S40",
+  "axis": "N",
+  "shown_code": "cN1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "Metastasis in regional node(s)",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCc4c2ee5c85",
+  "schema_id": "S40",
+  "axis": "N",
+  "shown_code": "cN2",
+  "rule_code": "N2",
+  "context": "both",
+  "definition": "In-transit metastasis without nodal metastasis",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC2803e9223d",
+  "schema_id": "S40",
+  "axis": "N",
+  "shown_code": "cN3",
+  "rule_code": "N3",
+  "context": "both",
+  "definition": "In-transit metastasis with nodal metastasis",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC733a93b7e3",
+  "schema_id": "S40",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC4212e2dd2f",
+  "schema_id": "S40",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC7b665f7171",
+  "schema_id": "S41",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCd9a696de1a",
+  "schema_id": "S41",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCedd0101adb",
+  "schema_id": "S41",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "≤5 cm",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC6761005a8f",
+  "schema_id": "S41",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": ">5 to 10 cm",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC874d3606ac",
+  "schema_id": "S41",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": ">10 to 15 cm",
+  "display_order": 5
+ },
+ {
+  "category_id": "SCc35303404b",
+  "schema_id": "S41",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": ">15 cm",
+  "display_order": 6
+ },
+ {
+  "category_id": "SCead7864afc",
+  "schema_id": "S41",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC9d68d61430",
+  "schema_id": "S41",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCaede679059",
+  "schema_id": "S41",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "Regional node metastasis",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC8373bdf072",
+  "schema_id": "S41",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCb3df832532",
+  "schema_id": "S41",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC28bad05f12",
+  "schema_id": "S42",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC3a67dad4af",
+  "schema_id": "S42",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC5f597477de",
+  "schema_id": "S42",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "≤8 cm",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC1c73861bb1",
+  "schema_id": "S42",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": ">8 cm",
+  "display_order": 4
+ },
+ {
+  "category_id": "SC9babaa93c0",
+  "schema_id": "S42",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": "Discontinuous tumours in primary bone site",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC08a8c5c22c",
+  "schema_id": "S42",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC85933ebf48",
+  "schema_id": "S42",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC8326c160ad",
+  "schema_id": "S42",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "Regional node metastasis",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC09afb168b6",
+  "schema_id": "S42",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC2855c68e93",
+  "schema_id": "S42",
+  "axis": "M",
+  "shown_code": "M1a",
+  "rule_code": "M1a",
+  "context": "both",
+  "definition": "Lung",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC55af7c3e27",
+  "schema_id": "S42",
+  "axis": "M",
+  "shown_code": "M1b",
+  "rule_code": "M1b",
+  "context": "both",
+  "definition": "Other distant sites",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCfb389903dc",
+  "schema_id": "S43",
+  "axis": "T",
+  "shown_code": "TX",
+  "rule_code": "TX",
+  "context": "both",
+  "definition": "Primary tumour cannot be assessed",
+  "display_order": 1
+ },
+ {
+  "category_id": "SCf7f72e9fe3",
+  "schema_id": "S43",
+  "axis": "T",
+  "shown_code": "T0",
+  "rule_code": "T0",
+  "context": "both",
+  "definition": "No evidence of primary tumour",
+  "display_order": 2
+ },
+ {
+  "category_id": "SCd3482ba768",
+  "schema_id": "S43",
+  "axis": "T",
+  "shown_code": "T1",
+  "rule_code": "T1",
+  "context": "both",
+  "definition": "≤2 cm",
+  "display_order": 3
+ },
+ {
+  "category_id": "SCc22917c7ed",
+  "schema_id": "S43",
+  "axis": "T",
+  "shown_code": "T2",
+  "rule_code": "T2",
+  "context": "both",
+  "definition": ">2 to 5 cm",
+  "display_order": 4
+ },
+ {
+  "category_id": "SCde8262cecb",
+  "schema_id": "S43",
+  "axis": "T",
+  "shown_code": "T3",
+  "rule_code": "T3",
+  "context": "both",
+  "definition": ">5 to 10 cm",
+  "display_order": 5
+ },
+ {
+  "category_id": "SC7b2b2e2aa1",
+  "schema_id": "S43",
+  "axis": "T",
+  "shown_code": "T4",
+  "rule_code": "T4",
+  "context": "both",
+  "definition": ">10 cm",
+  "display_order": 6
+ },
+ {
+  "category_id": "SC801c5dd146",
+  "schema_id": "S43",
+  "axis": "N",
+  "shown_code": "NX",
+  "rule_code": "NX",
+  "context": "both",
+  "definition": "Regional nodes cannot be assessed (counted as N0)",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC2e98be2946",
+  "schema_id": "S43",
+  "axis": "N",
+  "shown_code": "N0",
+  "rule_code": "N0",
+  "context": "both",
+  "definition": "No regional node metastasis",
+  "display_order": 2
+ },
+ {
+  "category_id": "SC22ec222373",
+  "schema_id": "S43",
+  "axis": "N",
+  "shown_code": "N1",
+  "rule_code": "N1",
+  "context": "both",
+  "definition": "Regional node metastasis",
+  "display_order": 3
+ },
+ {
+  "category_id": "SC3060e2a768",
+  "schema_id": "S43",
+  "axis": "M",
+  "shown_code": "M0",
+  "rule_code": "M0",
+  "context": "both",
+  "definition": "No distant metastasis",
+  "display_order": 1
+ },
+ {
+  "category_id": "SC3ff36fc7a1",
+  "schema_id": "S43",
+  "axis": "M",
+  "shown_code": "M1",
+  "rule_code": "M1",
+  "context": "both",
+  "definition": "Distant metastasis",
+  "display_order": 2
+ }
+]

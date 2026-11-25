@@ -1,9 +1,23 @@
 import { body, query } from "express-validator";
+import { isValidTimeZone } from "../../utils/timezone";
 
 // Normalizes missing or empty values to null (not the string "null") so the
 // DB column is actually cleared instead of silently keeping its old value.
 const nullIfEmpty = (value: unknown) =>
   value === undefined || value === null || value === "" ? null : value;
+
+// IANA zone id ("Asia/Kolkata" / "America/New_York") - validated against the
+// runtime's own zone database, so unknown/garbage ids are rejected at the API
+// boundary instead of poisoning a branch row. Empty/null = "leave it alone".
+const validateIanaTimeZone = (value: unknown) => {
+  if (value === null || value === undefined) return true;
+  if (!isValidTimeZone(value)) {
+    throw new Error(
+      "Timezone must be a valid IANA zone id (e.g. Asia/Kolkata, America/New_York)"
+    );
+  }
+  return true;
+};
 
 export const createBranchValidation = [
   body("branch_code")
@@ -50,6 +64,11 @@ export const createBranchValidation = [
   body("district").optional({ values: "null" }).customSanitizer(nullIfEmpty),
   body("state_name").optional({ values: "null" }).customSanitizer(nullIfEmpty),
   body("country").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("city").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("timezone")
+    .optional({ values: "null" })
+    .customSanitizer(nullIfEmpty)
+    .custom(validateIanaTimeZone),
   body("license_number").optional({ values: "null" }).customSanitizer(nullIfEmpty),
   body("total_no_emp").optional({ values: "null" }).customSanitizer(nullIfEmpty),
   body("fax_no").optional({ values: "null" }).customSanitizer(nullIfEmpty),
@@ -138,6 +157,11 @@ export const updateBranchValidation = [
   body("district").optional({ values: "null" }).customSanitizer(nullIfEmpty),
   body("state_name").optional({ values: "null" }).customSanitizer(nullIfEmpty),
   body("country").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("city").optional({ values: "null" }).customSanitizer(nullIfEmpty),
+  body("timezone")
+    .optional({ values: "null" })
+    .customSanitizer(nullIfEmpty)
+    .custom(validateIanaTimeZone),
   body("license_number").optional({ values: "null" }).customSanitizer(nullIfEmpty),
   body("total_no_emp").optional({ values: "null" }).customSanitizer(nullIfEmpty),
   body("fax_no").optional({ values: "null" }).customSanitizer(nullIfEmpty),

@@ -10,6 +10,9 @@ export interface CreateBranchDto {
   district?: string | null;
   state_name?: string | null;
   country?: string | null;
+  city?: string | null;
+  // IANA zone id ("Asia/Kolkata"). Optional on create; DB default fills it.
+  timezone?: string;
   area?: string | null;
   pincode?: number | null;
   license_number?: string | null;
@@ -21,6 +24,9 @@ export interface CreateBranchDto {
   pan_no?: string | null;
   website_address?: string | null;
   date_of_establish?: string | null;
+
+  // Hospital this branch belongs to (Super Admin can specify; others inherit from JWT)
+  hospital_id?: string;
 
   // Admin Mode: "EXISTING" | "NEW"
   admin_mode: "EXISTING" | "NEW";
@@ -75,6 +81,10 @@ export interface UpdateBranchDto {
   district?: string | null;
   state_name?: string | null;
   country?: string | null;
+  city?: string | null;
+  // IANA zone id ("Asia/Kolkata"); null/absent = leave the stored zone alone
+  // (the column is NOT NULL, so it is never cleared to null).
+  timezone?: string | null;
   area?: string | null;
   pincode?: number | null;
   license_number?: string | null;

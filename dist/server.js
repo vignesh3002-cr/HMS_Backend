@@ -31,6 +31,7 @@ const doctorSchedule_routes_1 = __importDefault(require("./modules/doctor-schedu
 const doctorLeave_routes_1 = __importDefault(require("./modules/doctorLeave/doctorLeave.routes"));
 const lab_test_category_routes_1 = __importDefault(require("./modules/lab-test-category/lab-test-category.routes"));
 const lab_test_master_routes_1 = __importDefault(require("./modules/lab-test-master/lab-test-master.routes"));
+const hospital_routes_1 = __importDefault(require("./modules/hospital/hospital.routes"));
 const lab_order_routes_1 = __importDefault(require("./modules/lab-order/lab-order-routes"));
 const lab_order_item_routes_1 = __importDefault(require("./modules/lab-order-item/lab-order-item.routes"));
 const lab_result_routes_1 = __importDefault(require("./modules/lab-result/lab-result.routes"));
@@ -45,6 +46,7 @@ const referral_routes_1 = __importDefault(require("./modules/referral/referral.r
 const priorityFlags_routes_1 = __importDefault(require("./modules/priority-flags/priorityFlags.routes"));
 const ai_chat_routes_1 = __importDefault(require("./modules/ai/ai-chat.routes"));
 const patientDocument_routes_1 = __importDefault(require("./modules/patient-document/patientDocument.routes"));
+const genomics_routes_1 = __importDefault(require("./modules/genomics/genomics.routes"));
 const integration_routes_1 = __importDefault(require("./modules/integration/integration.routes"));
 const patient_portal_routes_1 = __importDefault(require("./modules/patient-portal/patient-portal.routes"));
 const bcrypt_1 = require("./utils/bcrypt");
@@ -142,6 +144,7 @@ app.use("/api/consultation", consultation_routes_1.default);
 app.use("/api/permissions", permission_routes_1.default);
 app.use("/api/roles", role_routes_1.default);
 app.use("/api/oncology", oncology_routes_1.default);
+app.use("/api/genomics", genomics_routes_1.default);
 app.use("/api/audit", audit_routes_1.default);
 app.use("/api/export", export_routes_1.default);
 app.use("/api/doctors", doctorTransfer_routes_1.default);
@@ -160,6 +163,7 @@ app.use("/api/ai-chat", ai_chat_routes_1.default);
 app.use("/api/patient-documents", patientDocument_routes_1.default);
 app.use("/api/integrations", integration_routes_1.default);
 app.use("/api/patient-portal", patient_portal_routes_1.default);
+app.use("/api/hospitals", hospital_routes_1.default);
 app.use("/api/hashpassword", async (req, res) => {
     const { password } = req.body;
     const hashedPassword = await (0, bcrypt_1.hashPassword)(password);

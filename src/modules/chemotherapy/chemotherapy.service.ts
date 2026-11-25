@@ -52,6 +52,7 @@ import {
     UpdateRegimenProtocolDto,
   UpdateRegimenProtocolItemDto,
     RegimenProtocolFilterQuery,
+    ProtocolPerformanceFilterQuery,
     PersonalizeRegimenProtocolDto,
     UpdatePersonalizedProtocolDto,
     PersonalizationDayInput,
@@ -70,7 +71,8 @@ import {
     SavePlanOrderDto,
     UpdateAdministrationStatusDto
 } from "./chemotherapy.types";
-import { getTodayInIST, parseDateOnly } from "../appointment/appointment.utils";
+import { parseDateOnly } from "../appointment/appointment.utils";
+import { getBranchTimezone, getDateIn, getTodayIn } from "../../utils/timezone";
 import { logAudit, diffFields, summarizeCreate, summarizeStatusChange } from "../audit/audit.service";
 import { AUDIT_ACTION } from "../audit/audit.types";
 import { computePlanSchedule, type PlanScheduleDay } from "./chemotherapy.schedule";
@@ -407,10 +409,11 @@ function pickCurrentOrder<T extends { order_status: string; chemotherapy_cycle: 
 
 }
 
-// Today's date in IST (the hospital's timezone) for @db.Date columns.
-function istToday(): Date {
+// Today's date in the branch's own IANA zone (branch.timezone) for @db.Date
+// columns - never a hardcoded offset, so DST zones get their own correct day.
+function todayInTz(tz: string): Date {
 
-    return parseDateOnly(getTodayInIST());
+    return parseDateOnly(getTodayIn(tz));
 
 }
 
@@ -435,10 +438,10 @@ function toNumber(value: Prisma.Decimal | number | string | null | undefined): n
 
 }
 
-// The IST calendar date of a timestamp, as YYYY-MM-DD.
-function istDateOf(value: Date): string {
+// The calendar date of a timestamp in the given IANA zone, as YYYY-MM-DD.
+function dateOfInTz(value: Date, tz: string): string {
 
-    return new Date(value.getTime() + (5 * 60 + 30) * 60 * 1000).toISOString().slice(0, 10);
+    return getDateIn(tz, value);
 
 }
 
@@ -665,6 +668,12 @@ export class ChemotherapyService {
     async listRegimenProtocols(filters: RegimenProtocolFilterQuery) {
 
         return this.repository.listRegimenProtocols(filters);
+
+    }
+
+    async getProtocolPerformance(filters: ProtocolPerformanceFilterQuery) {
+
+        return this.repository.getProtocolPerformance(filters);
 
     }
 
@@ -1112,7 +1121,10 @@ export class ChemotherapyService {
                 cycle_interval_days: dto.cycle_interval_days ?? null,
                 guideline_source: dto.guideline_source ?? null,
                 notes: dto.notes ?? null,
-                no_of_days: dto.no_of_days ?? 1
+                no_of_days: dto.no_of_days ?? 1,
+                created_by: actingUserId,
+                updated_by: actingUserId,
+                review_date: dto.review_date ? new Date(dto.review_date) : null
             });
 
             await this.repository.syncProtocolCancers(tx, newProtocolId, cancerTypeIds, subtypeIds);
@@ -1233,7 +1245,10 @@ export class ChemotherapyService {
             ...(dto.cycle_interval_days !== undefined ? { cycle_interval_days: dto.cycle_interval_days } : {}),
             ...(dto.guideline_source !== undefined ? { guideline_source: dto.guideline_source } : {}),
             ...(dto.notes !== undefined ? { notes: dto.notes } : {}),
-            ...(dto.no_of_days !== undefined ? { no_of_days: dto.no_of_days } : {})
+            ...(dto.no_of_days !== undefined ? { no_of_days: dto.no_of_days } : {}),
+            ...(dto.active_status !== undefined ? { active_status: dto.active_status } : {}),
+            updated_by: actingUserId,
+            ...(dto.review_date !== undefined ? { review_date: dto.review_date ? new Date(dto.review_date) : null } : {})
         };
 
         await prisma.$transaction(async (tx) => {
@@ -2250,6 +2265,8 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 composition: dto.composition ?? source.composition,
                 additional_notes: dto.additional_notes ?? source.additional_notes,
                 no_of_days: dto.no_of_days ?? source.no_of_days,
+                created_by: actingUserId,
+                updated_by: actingUserId,
                 day_care_referred: dto.day_care_referred ?? source.day_care_referred,
                 create_day_care_appointment: dto.create_day_care_appointment ?? source.create_day_care_appointment,
                 // A fresh personalized copy starts as an inactive draft - it
@@ -2992,7 +3009,9 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                 no_of_days: current.no_of_days,
                 day_care_referred: current.day_care_referred,
                 create_day_care_appointment: current.create_day_care_appointment,
-                active_status: PROTOCOL_ACTIVE_STATUS.INACTIVE
+                active_status: PROTOCOL_ACTIVE_STATUS.INACTIVE,
+                created_by: actingUserId,
+                updated_by: actingUserId
             });
 
             await this.applyStructure(tx, versionProtocolId, { days, items }, [], [], actingUserId);
@@ -3003,6 +3022,8 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
             await this.repository.updateRegimenProtocol(tx, current.protocol_id, {
                 active_status: PROTOCOL_ACTIVE_STATUS.INACTIVE,
+                created_by: actingUserId,
+                updated_by: actingUserId,
                 notes: appendNote(current.notes, supersedeNote)
             });
 
@@ -5080,7 +5101,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             }
 
             const now = new Date();
-            const treatmentDate = istToday();
+            const treatmentDate = todayInTz(await getBranchTimezone(lockedPlan.branch_id));
 
             if (lockedPlan.treatment_status === PLAN_STATUS.PLANNED) {
 
@@ -5219,7 +5240,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             return status;
         }
 
-        const startDate = cycle.actual_date ?? istToday();
+        const startDate = cycle.actual_date ?? todayInTz(await getBranchTimezone(plan.branch_id));
         const interval = cycle.cycle_interval_days ?? plan.cycle_interval_days ?? 0;
         const nextCycleDate = status === CYCLE_STATUS.COMPLETED && interval > 0 && cycle.cycle_number < plan.planned_cycles
             ? addDays(startDate, interval)
@@ -6024,7 +6045,10 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
             cancelled: count(ADMINISTRATION_STATUS.CANCELLED)
         };
 
-        const today = getTodayInIST();
+        // Day boundaries (which cycle-day is "today") follow the PLAN'S BRANCH
+        // timezone (branch.timezone), never the server's or a fixed offset.
+        const branchTz = await getBranchTimezone(plan.branch_id);
+        const today = getTodayIn(branchTz);
         const inAdministration = day?.order_status === PLAN_ORDER_STATUS.IN_ADMINISTRATION;
 
         const treatmentStatus = !day
@@ -6040,7 +6064,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
         const treatmentDate = rows.length > 0
             ? dateOnly(rows[0].administration_date)
             : day?.completed_at ?? day?.created_at
-                ? istDateOf((day.completed_at ?? day.created_at) as Date)
+                ? dateOfInTz((day.completed_at ?? day.created_at) as Date, branchTz)
                 : null;
 
         // What completing this day would close, for the confirmation.
@@ -6166,7 +6190,7 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
                     chemotherapy_cycle_id: cycle.chemotherapy_cycle_id,
                     cycle_number: cycle.cycle_number,
                     cycle_status: cycle.cycle_status,
-                    completion_date: cycle.completion_date ? istDateOf(cycle.completion_date) : dateOnly(cycle.actual_date),
+                    completion_date: cycle.completion_date ? dateOfInTz(cycle.completion_date, branchTz) : dateOnly(cycle.actual_date),
                     protocol_name: protocolName
                 })),
             post_medications: dischargeItems.map((item) => ({

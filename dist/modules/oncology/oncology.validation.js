@@ -147,6 +147,7 @@ exports.upsertIhcValidation = [
     (0, express_validator_1.body)("ki67_percent").optional({ nullable: true }).isInt(PERCENT_RULE),
     (0, express_validator_1.body)("pdl1_tps").optional({ nullable: true }).isInt(PERCENT_RULE),
     (0, express_validator_1.body)("pdl1_cps").optional({ nullable: true }).isInt({ min: 0 }),
+    (0, express_validator_1.body)("p16_percent").optional({ nullable: true }).isInt(PERCENT_RULE),
     (0, express_validator_1.body)("her2_fish_ratio").optional({ nullable: true }).isFloat({ min: 0 }),
     (0, express_validator_1.body)("her2_avg_copy").optional({ nullable: true }).isFloat({ min: 0 })
 ];

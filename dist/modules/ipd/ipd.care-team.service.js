@@ -12,6 +12,7 @@ const dutyRoster_service_1 = require("./duty-roster/dutyRoster.service");
 const ipd_types_1 = require("./ipd.types");
 const ipd_constants_1 = require("./ipd.constants");
 const employee_repository_1 = require("../employee/employee.repository");
+const timezone_1 = require("../../utils/timezone");
 const httpError = (message, status) => {
     const err = new Error(message);
     err.status = status;
@@ -23,8 +24,6 @@ const BULK_TX_OPTIONS = { timeout: 20000 };
 // Roles that may re-roster a whole ward at a staff change (a charge nurse or
 // an admin). A doctor can still hand over their own patients one by one.
 const BULK_ROLES = [...roles_1.TOP_LEVEL_ADMIN_ROLES, roles_1.BRANCH_ADMIN, roles_1.ADMIN, roles_1.NURSE];
-/** The IST calendar day (yyyy-MM-dd) of an instant. */
-const istDate = (at) => new Date(at.getTime() + ipd_constants_1.IST_OFFSET_MS).toISOString().slice(0, 10);
 const fullName = (e) => [e?.first_name, e?.middle_name, e?.last_name].filter(Boolean).join(" ");
 /*
  * Duty doctor / primary nurse allocation and handover. Times are tracked
@@ -79,9 +78,11 @@ class CareTeamService {
         // approved leave today. (Duty schedule is managed via staff_duty_roster,
         // independent of OPD clinic consultation slots in doctor_schedule).
         if (checkAvailability) {
-            // DATE columns: compare against today's IST calendar day at UTC midnight,
-            // not the current UTC instant (which is yesterday before 05:30 IST).
-            const today = new Date(`${istDate(new Date())}T00:00:00.000Z`);
+            // DATE columns: compare against today's calendar day IN THE
+            // BRANCH'S timezone, anchored at UTC midnight - not the server's
+            // zone or the raw UTC instant (which is "yesterday" before local
+            // midnight in zones behind UTC).
+            const today = new Date(`${(0, timezone_1.getTodayIn)(await (0, timezone_1.getBranchTimezone)(branchId))}T00:00:00.000Z`);
             const onLeave = await prisma_1.default.doctor_leave.findFirst({
                 where: {
                     employee_id: employeeId,

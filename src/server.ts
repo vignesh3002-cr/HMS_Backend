@@ -28,6 +28,7 @@ import doctorScheduleRoutes from "./modules/doctor-schedule/doctorSchedule.route
 import doctorLeaveRoutes from "./modules/doctorLeave/doctorLeave.routes";
 import labTestCategoryRoutes from "./modules/lab-test-category/lab-test-category.routes";
 import labTestMasterRoutes from "./modules/lab-test-master/lab-test-master.routes";
+import hospitalRoutes from "./modules/hospital/hospital.routes";
 import labOrderRoutes from "./modules/lab-order/lab-order-routes";
 import labOrderItemRoutes from "./modules/lab-order-item/lab-order-item.routes";
 import labResultRoutes from "./modules/lab-result/lab-result.routes";
@@ -42,6 +43,7 @@ import referralRoutes from "./modules/referral/referral.routes";
 import priorityFlagsRoutes from "./modules/priority-flags/priorityFlags.routes";
 import aiChatRoutes from "./modules/ai/ai-chat.routes";
 import patientDocumentRoutes from "./modules/patient-document/patientDocument.routes";
+import genomicsRoutes from "./modules/genomics/genomics.routes";
 import integrationRoutes from "./modules/integration/integration.routes";
 import patientPortalRoutes from "./modules/patient-portal/patient-portal.routes";
 
@@ -156,6 +158,7 @@ app.use("/api/consultation", consultationRoutes);
 app.use("/api/permissions", permissionRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/oncology", oncologyRoutes);
+app.use("/api/genomics", genomicsRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/export", exportRoutes);
 
@@ -179,6 +182,7 @@ app.use("/api/ai-chat", aiChatRoutes);
 app.use("/api/patient-documents", patientDocumentRoutes);
 app.use("/api/integrations", integrationRoutes);
 app.use("/api/patient-portal", patientPortalRoutes);
+app.use("/api/hospitals", hospitalRoutes);
 
 app.use("/api/hashpassword", async (req, res) => {
   const { password } = req.body;

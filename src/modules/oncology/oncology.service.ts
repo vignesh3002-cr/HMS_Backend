@@ -77,7 +77,10 @@ function mapIhcRowToInput(row: any | null | undefined): IhcInput {
         mmr_overall: row.mmr_overall ?? null,
         p53_ihc: row.p53_ihc ?? null,
         ar_status: row.ar_status ?? null,
-        mlh1_methylation: row.mlh1_methylation ?? null
+        mlh1_methylation: row.mlh1_methylation ?? null,
+        p16_status: row.p16_status ?? null,
+        p16_percent: row.p16_percent ?? null,
+        p40_status: row.p40_status ?? null
     };
 
 }
@@ -1148,6 +1151,19 @@ export class OncologyService {
 
             await this.repository.upsertDerivedFields(tx, newId, derivedPersistPayload(derived));
 
+            // NGS reports captured earlier in this visit were saved with
+            // staging_detail_id = null (the diagnosis did not exist yet);
+            // attach them now that this visit has its staging detail.
+            await tx.genomic_test.updateMany({
+                where: {
+                    patient_id: dto.patient_id,
+                    encounter_no: encounterNo,
+                    staging_detail_id: null,
+                    is_deleted: false
+                },
+                data: { staging_detail_id: newId, updated_at: new Date() }
+            });
+
             await logAudit(tx, {
                 entity_type: "oncology_staging_detail",
                 entity_id: newId,
@@ -1346,6 +1362,20 @@ export class OncologyService {
             }
 
             await this.repository.upsertDerivedFields(tx, stagingDetailId, derivedPersistPayload(derived));
+
+            // Attach any NGS report captured for this visit before the
+            // diagnosis was saved (see createStagingDetail above).
+            if (existing.encounter_no) {
+                await tx.genomic_test.updateMany({
+                    where: {
+                        patient_id: existing.patient_id,
+                        encounter_no: existing.encounter_no,
+                        staging_detail_id: null,
+                        is_deleted: false
+                    },
+                    data: { staging_detail_id: stagingDetailId, updated_at: new Date() }
+                });
+            }
 
             // form_state is the form's UI snapshot of the same values; the
             // clinical columns already carry the audited changes.

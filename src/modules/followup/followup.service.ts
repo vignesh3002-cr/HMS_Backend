@@ -1,5 +1,5 @@
 import { FollowupRepository } from "./followup.repository";
-import { getTodayInIST } from "../appointment/appointment.utils";
+import { getBranchTimezone, getTodayIn } from "../../utils/timezone";
 import { APPOINTMENT_STATUS } from "../appointment/appointment.constants";
 import {
     BRANCH_ADMIN,
@@ -75,9 +75,13 @@ export class FollowupService {
             return { alerts: [], unreadCount: 0, window_days: FOLLOWUP_ALERT_DAYS };
         }
 
-        // Visits from the last 30 days, today included (encounter_ts is IST
-        // wall-clock time).
-        const today = dateOnly(getTodayInIST());
+        // Visits from the last 30 days, today included. "Today" is the
+        // calendar day in the BRANCH's own timezone (branch.timezone); a
+        // single-branch scope (the common case) uses that branch's zone, while
+        // "all branches" or several mixed-zone branches use the default zone.
+        const today = dateOnly(getTodayIn(await getBranchTimezone(
+            Array.isArray(scope) && scope.length === 1 ? scope[0] : undefined
+        )));
         const from = addDays(today, -(FOLLOWUP_ALERT_DAYS - 1));
         const before = addDays(today, 1);
 

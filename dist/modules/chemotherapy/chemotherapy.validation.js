@@ -45,7 +45,9 @@ exports.createRegimenProtocolValidation = [
     (0, express_validator_1.body)("items.*.drug_sequence").isInt({ min: 1 }).withMessage("Each protocol item requires a drug_sequence >= 1"),
     (0, express_validator_1.body)("items.*.drug_role").optional().isIn(Object.values(chemotherapy_constants_1.DRUG_ROLE)).withMessage(`drug_role must be one of: ${Object.values(chemotherapy_constants_1.DRUG_ROLE).join(", ")}`),
     (0, express_validator_1.body)("dilutions").optional({ nullable: true }).isArray(),
-    (0, express_validator_1.body)("discharge_instructions").optional({ nullable: true }).isArray()
+    (0, express_validator_1.body)("discharge_instructions").optional({ nullable: true }).isArray(),
+    (0, express_validator_1.body)("active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 }),
+    (0, express_validator_1.body)("review_date").optional({ nullable: true })
 ];
 exports.updateRegimenProtocolValidation = [
     (0, express_validator_1.param)("protocolId").notEmpty(),
@@ -67,7 +69,9 @@ exports.updateRegimenProtocolValidation = [
     (0, express_validator_1.body)("days.*.same_as_day_one").optional({ nullable: true }).isBoolean(),
     (0, express_validator_1.body)("days.*.active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 }),
     (0, express_validator_1.body)("dilutions").optional({ nullable: true }).isArray(),
-    (0, express_validator_1.body)("discharge_instructions").optional({ nullable: true }).isArray()
+    (0, express_validator_1.body)("discharge_instructions").optional({ nullable: true }).isArray(),
+    (0, express_validator_1.body)("active_status").optional({ nullable: true }).isInt({ min: 0, max: 1 }),
+    (0, express_validator_1.body)("review_date").optional({ nullable: true })
 ];
 // ---------------- Personalized regimen protocols ----------------
 exports.protocolIdParamValidation = [

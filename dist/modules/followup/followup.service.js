@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FollowupService = exports.FOLLOWUP_ALERT_DAYS = void 0;
 const followup_repository_1 = require("./followup.repository");
-const appointment_utils_1 = require("../appointment/appointment.utils");
+const timezone_1 = require("../../utils/timezone");
 const appointment_constants_1 = require("../appointment/appointment.constants");
 const roles_1 = require("../../permissions/roles");
 const repository = new followup_repository_1.FollowupRepository();
@@ -50,9 +50,11 @@ class FollowupService {
         if (scope === "none") {
             return { alerts: [], unreadCount: 0, window_days: exports.FOLLOWUP_ALERT_DAYS };
         }
-        // Visits from the last 30 days, today included (encounter_ts is IST
-        // wall-clock time).
-        const today = dateOnly((0, appointment_utils_1.getTodayInIST)());
+        // Visits from the last 30 days, today included. "Today" is the
+        // calendar day in the BRANCH's own timezone (branch.timezone); a
+        // single-branch scope (the common case) uses that branch's zone, while
+        // "all branches" or several mixed-zone branches use the default zone.
+        const today = dateOnly((0, timezone_1.getTodayIn)(await (0, timezone_1.getBranchTimezone)(Array.isArray(scope) && scope.length === 1 ? scope[0] : undefined)));
         const from = addDays(today, -(exports.FOLLOWUP_ALERT_DAYS - 1));
         const before = addDays(today, 1);
         const encounters = await repository.findEncountersWithFollowUp(from, before, scope);

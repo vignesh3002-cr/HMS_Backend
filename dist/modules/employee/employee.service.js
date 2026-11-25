@@ -10,6 +10,7 @@ const employee_repository_1 = require("./employee.repository");
 const idGenerator_1 = require("../../utils/idGenerator");
 const roles_1 = require("../../permissions/roles");
 const permission_service_1 = require("../permission/permission.service");
+const timezone_1 = require("../../utils/timezone");
 const repository = new employee_repository_1.EmployeeRepository();
 let employeeId;
 // doctor_schedule.start_time/end_time are @db.Time columns with no timezone.
@@ -23,9 +24,11 @@ function timeStringToUtcDate(time) {
     const [hours, minutes] = time.split(":").map(Number);
     return new Date(Date.UTC(1970, 0, 1, hours, minutes, 0, 0));
 }
-function todayDateOnly() {
-    const now = new Date();
-    return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+// Today's calendar day in the BRANCH's timezone, anchored at UTC midnight for
+// @db.Date columns (effective_from) - never the SERVER machine's local date,
+// which differs between local dev and the deployed host.
+async function todayDateOnly(tz) {
+    return new Date(`${(0, timezone_1.getTodayIn)(await (0, timezone_1.getBranchTimezone)(tz))}T00:00:00.000Z`);
 }
 function normalizeDayOfWeek(day) {
     return day.trim().toUpperCase();
@@ -254,7 +257,7 @@ class EmployeeService {
                         status: 1,
                         // Doctor assignments record when they started (effective_from);
                         // other roles keep their existing create behavior unchanged.
-                        ...(data.role_type === "DOCTOR" ? { effective_from: todayDateOnly() } : {}),
+                        ...(data.role_type === "DOCTOR" ? { effective_from: await todayDateOnly(branchId) } : {}),
                     }
                 });
             }
@@ -289,7 +292,7 @@ class EmployeeService {
                         end_time: timeStringToUtcDate(schedule.end_time),
                         consultation_minutes: data.consultation_minutes ?? 20,
                         is_active: true,
-                        effective_from: todayDateOnly()
+                        effective_from: await todayDateOnly(schedule.branch_id)
                     }
                 });
             }
@@ -437,6 +440,12 @@ class EmployeeService {
                 await tx.user_table.update({
                     where: { user_id: userId },
                     data: userUpdateData,
+                });
+            }
+            if (data.mobile_no && userId) {
+                await tx.user_two_factor.updateMany({
+                    where: { user_id: userId },
+                    data: { primary_mobile: data.mobile_no },
                 });
             }
             // Doctor mappings are owned by the transfer workflow (branch changes
@@ -590,7 +599,7 @@ class EmployeeService {
                             end_time: timeStringToUtcDate(schedule.end_time),
                             consultation_minutes: data.consultation_minutes ?? 20,
                             is_active: true,
-                            effective_from: todayDateOnly(),
+                            effective_from: await todayDateOnly(schedule.branch_id),
                         },
                     });
                 }
@@ -626,8 +635,9 @@ class EmployeeService {
             // working hours to serve them. Direct the admin to the doctor's
             // Schedule page, where cancellation runs through the transfer flow
             // (transfer / reschedule / cancel choices per appointment).
-            const todayStart = new Date();
-            todayStart.setHours(0, 0, 0, 0);
+            // "Today" is the BRANCH's calendar day (UTC-midnight anchored), not
+            // the server machine's local midnight.
+            const todayStart = new Date(`${(0, timezone_1.getTodayIn)(await (0, timezone_1.getBranchTimezone)(schedule.branch_id))}T00:00:00.000Z`);
             const upcomingAppointments = await tx.appointment_history.findMany({
                 where: {
                     schedule_id: scheduleId,
@@ -666,8 +676,8 @@ class EmployeeService {
             // RESCHEDULE_REQUIRED, unlinked from the doctor and queued so an
             // admin can reassign them later (via the edit appointment form or
             // the reschedule queue).
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+            // "Today" is the BRANCH's calendar day, never the server's local date.
+            const today = new Date(`${(0, timezone_1.getTodayIn)(await (0, timezone_1.getBranchTimezone)(employee.branch_id))}T00:00:00.000Z`);
             const futureAppointments = await repository.findFutureAppointmentsTx(tx, employeeId, today);
             affectedAppointments = futureAppointments.length;
             for (const appointment of futureAppointments) {

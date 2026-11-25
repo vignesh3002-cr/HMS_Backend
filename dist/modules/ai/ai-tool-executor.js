@@ -13,6 +13,7 @@ const department_services_1 = require("../department/department.services");
 const notification_service_1 = require("../notification/notification.service");
 const priorityFlags_service_1 = require("../priority-flags/priorityFlags.service");
 const prisma_1 = __importDefault(require("../../config/prisma"));
+const timezone_1 = require("../../utils/timezone");
 const appointmentService = new appointment_service_1.AppointmentService();
 const patientService = new patient_service_1.PatientService();
 const encounterService = new encounter_service_1.EncounterService();
@@ -277,13 +278,15 @@ async function getAppointment(args) {
     return { success: true, output: projectAppointment(appointment) };
 }
 async function getTodayAppointments(args, user) {
-    const today = new Date();
-    const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    // "Today" is the BRANCH's calendar day (branch.timezone), never the
+    // server machine's local date.
+    const branchId = args.branch_id || user.branch_id;
+    const dateStr = (0, timezone_1.getTodayIn)(await (0, timezone_1.getBranchTimezone)(branchId));
     const appointments = await appointmentService.getAppointments({
         employeeId: args.employee_id,
         status: args.status,
         date: dateStr,
-        branchId: args.branch_id || user.branch_id,
+        branchId,
         // Was 50. A single day's roster is the one query where the chatbot
         // genuinely wants volume, but 50 projected rows still costs ~4K tokens
         // and the projection marker tells the model to narrow down if it needs
@@ -652,9 +655,10 @@ async function getPatientEncounters(args, user) {
 // DASHBOARD TOOLS
 // ═══════════════════════════════════════════════════════════════
 async function getDashboardSummary(args, user) {
-    const today = new Date();
-    const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     const branchId = args.branch_id || user.branch_id;
+    // "Today" is the BRANCH's calendar day (branch.timezone), never the
+    // server machine's local date.
+    const dateStr = (0, timezone_1.getTodayIn)(await (0, timezone_1.getBranchTimezone)(branchId));
     const [allAppointments, checkedIn] = await Promise.all([
         appointmentService.getAppointments({
             date: dateStr,

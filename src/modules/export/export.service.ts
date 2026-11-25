@@ -1,5 +1,6 @@
 import prisma from "../../config/prisma";
 import { toCsv } from "../../utils/csv";
+import { buildPatientDiagnoses } from "../patient/patientDiagnoses";
 
 // Secrets / credentials / PII that must never appear in any export.
 const EXCLUDED_COLUMNS = new Set([
@@ -80,13 +81,30 @@ export class ExportService {
     async buildPatientsCsv(query: { branchId?: string }): Promise<string> {
         const patients = await prisma.patient_bio_data.findMany({
             where: query.branchId ? { branch_id: query.branchId } : {},
-            include: { branch: { select: { branch_name: true, branch_area: true } } },
+            include: {
+                branch: { select: { branch_name: true, branch_area: true } },
+            },
             orderBy: { id: "asc" },
         });
 
-        const { rows, columns } = toCsvRows(patients, ["branch"], [
-            { key: "branch_name", value: (p) => formatBranchName(p.branch) },
-        ]);
+        // Same rule as patient.service.getPatients: ALL diagnoses of a patient
+        // (open + completed plans, then staging records), comma-joined.
+        const diagnosesByPatient = await buildPatientDiagnoses(
+            patients.map((p) => p.patient_id)
+        );
+
+        const { rows, columns } = toCsvRows(
+            patients,
+            ["branch", "chemotherapy_plan"],
+            [
+                { key: "branch_name", value: (p) => formatBranchName(p.branch) },
+                {
+                    key: "diagnosis_name",
+                    value: (p) =>
+                        (diagnosesByPatient.get(p.patient_id ?? "") ?? []).join(", "),
+                },
+            ]
+        );
         return toCsv(rows, columns);
     }
 

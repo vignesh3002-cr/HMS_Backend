@@ -84,6 +84,22 @@ class PatientPortalController {
             });
         }
     }
+    async getAllergies(req, res) {
+        try {
+            const patientId = await service.resolvePatientId(req.user);
+            const data = await service.getAllergies(patientId);
+            return res.status(200).json({
+                success: true,
+                data,
+            });
+        }
+        catch (err) {
+            return res.status(500).json({
+                success: false,
+                message: err.message || "Failed to load allergies",
+            });
+        }
+    }
     async getChemotherapyPlans(req, res) {
         try {
             const patientId = await service.resolvePatientId(req.user);

@@ -1,4 +1,27 @@
 import prisma from "../../config/prisma";
+import { Prisma } from "@prisma/client";
+
+const userAuthInclude = {
+  branch: {
+    include: { hospital: true },
+  },
+  employees: {
+    include: {
+      branch: {
+        include: { hospital: true },
+      },
+    },
+  },
+  patient_bio_data: true,
+  user_branch_mapping: {
+    where: { status: 1 },
+    include: {
+      branch: {
+        include: { hospital: true },
+      },
+    },
+  },
+} satisfies Prisma.user_tableInclude;
 
 export class AuthRepository {
 
@@ -33,21 +56,7 @@ export class AuthRepository {
           },
         ],
       },
-      include: {
-        branch: true,
-        employees: {
-          include: {
-            branch: true,
-          },
-        },
-        patient_bio_data: true,
-        user_branch_mapping: {
-          where: { status: 1 },
-          include: {
-            branch: true,
-          },
-        },
-      },
+      include: userAuthInclude,
     });
 
     // If not found or if patient_bio_data was not populated, query patient_bio_data directly
@@ -62,30 +71,17 @@ export class AuthRepository {
         },
         include: {
           user_table: {
-            include: {
-              branch: true,
-              employees: {
-                include: {
-                  branch: true,
-                },
-              },
-              patient_bio_data: true,
-              user_branch_mapping: {
-                where: { status: 1 },
-                include: {
-                  branch: true,
-                },
-              },
-            },
+            include: userAuthInclude,
           },
         },
       });
 
       if (patient?.user_table) {
-        user = patient.user_table;
-        if (!user.patient_bio_data || user.patient_bio_data.length === 0) {
-          (user as any).patient_bio_data = [patient];
+        const resolvedUser = patient.user_table;
+        if (!resolvedUser.patient_bio_data || resolvedUser.patient_bio_data.length === 0) {
+          (resolvedUser as any).patient_bio_data = [patient];
         }
+        user = resolvedUser;
       }
     }
 

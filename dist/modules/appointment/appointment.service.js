@@ -9,6 +9,7 @@ const appointment_repository_1 = require("./appointment.repository");
 const appointment_constants_1 = require("./appointment.constants");
 const appointment_utils_1 = require("./appointment.utils");
 const idGenerator_1 = require("../../utils/idGenerator");
+const timezone_1 = require("../../utils/timezone");
 const doctorLeave_constants_1 = require("../doctorLeave/doctorLeave.constants");
 const ipd_service_1 = require("../ipd/ipd.service");
 const repository = new appointment_repository_1.AppointmentRepository();
@@ -466,8 +467,11 @@ class AppointmentService {
             throw new Error("Patient not found");
         }
         const appointmentDate = (0, appointment_utils_1.parseDateOnly)(data.appointment_date);
+        // "Past date" is judged against TODAY IN THE BRANCH'S OWN timezone
+        // (branch.timezone), never the server's zone or a hardcoded offset.
+        const branchTz = await (0, timezone_1.getBranchTimezone)(data.branch_id);
         if ((0, appointment_utils_1.formatDateOnly)(appointmentDate) <
-            (0, appointment_utils_1.getTodayInIST)()) {
+            (0, timezone_1.getTodayIn)(branchTz)) {
             throw new Error("Appointments cannot be booked for a past date");
         }
         if (data.patient_visit_type === "Lab Visit") {
@@ -562,8 +566,10 @@ class AppointmentService {
                 bookedOnDate.push(...nextDayAppts);
             }
             const activeAppts = bookedOnDate.filter((a) => a.status !== "CANCELLED" && a.status !== "NO_SHOW" && a.appointment_time);
-            const isToday = (0, appointment_utils_1.formatDateOnly)(shiftBaseDate) === (0, appointment_utils_1.getTodayInIST)();
-            const nowMinutes = (0, appointment_utils_1.getNowMinutesInIST)();
+            // "Today"/"now" in the BRANCH's own timezone - the same
+            // zone getAvailableSlots uses, never a hardcoded IST.
+            const isToday = (0, appointment_utils_1.formatDateOnly)(shiftBaseDate) === (0, timezone_1.getTodayIn)(branchTz);
+            const nowMinutes = (0, timezone_1.getNowMinutesIn)(branchTz);
             const baselineStart = isToday ? Math.max(blockStartMinutes, nowMinutes) : blockStartMinutes;
             const priorOrInSlot = activeAppts.filter((a) => {
                 let aStart = (0, appointment_utils_1.timeToMinutes)(a.appointment_time);
@@ -773,10 +779,11 @@ class AppointmentService {
             : existing.appointment_date;
         // Moving an appointment to a past day is never valid (leaving the
         // original date untouched is fine, e.g. editing notes or status).
+        // Past-ness is judged in the branch's own timezone.
         if (data.appointment_date &&
             (0, appointment_utils_1.formatDateOnly)(appointmentDate) !==
                 (0, appointment_utils_1.formatDateOnly)(existing.appointment_date) &&
-            (0, appointment_utils_1.formatDateOnly)(appointmentDate) < (0, appointment_utils_1.getTodayInIST)()) {
+            (0, appointment_utils_1.formatDateOnly)(appointmentDate) < (0, timezone_1.getTodayIn)(await (0, timezone_1.getBranchTimezone)(branchId))) {
             throw new Error("Appointments cannot be moved to a past date");
         }
         const appointmentTimeStr = data.appointment_time ??
@@ -1005,11 +1012,12 @@ class AppointmentService {
             const nextDayAppts = await repository.findBookedAppointmentsForDate(employeeId, (0, appointment_utils_1.addDays)(appointmentDate, 1));
             bookedAppointments.push(...nextDayAppts);
         }
-        // "Today" and "now" are hospital time (IST), independent of the
-        // server's own timezone.
+        // "Today" and "now" are the BRANCH's own time (branch.timezone) -
+        // independent of the server's and the browser's timezone.
+        const branchTz = await (0, timezone_1.getBranchTimezone)(branchId);
         const isToday = (0, appointment_utils_1.formatDateOnly)(appointmentDate) ===
-            (0, appointment_utils_1.getTodayInIST)();
-        const nowMinutes = (0, appointment_utils_1.getNowMinutesInIST)();
+            (0, timezone_1.getTodayIn)(branchTz);
+        const nowMinutes = (0, timezone_1.getNowMinutesIn)(branchTz);
         const allPhases = [];
         let globalPhaseCounter = 1;
         const activeAppts = bookedAppointments.filter((a) => a.status !== "CANCELLED" && a.status !== "NO_SHOW" && a.appointment_time);
@@ -1350,8 +1358,6 @@ class AppointmentService {
      * appointments move forward while preserving each patient's full duration timeframe.
      */
     async recalculateDoctorDailyTimeline(tx, employeeId, appointmentDate) {
-        const isToday = (0, appointment_utils_1.formatDateOnly)(appointmentDate) === (0, appointment_utils_1.getTodayInIST)();
-        const nowMinutes = (0, appointment_utils_1.getNowMinutesInIST)();
         const allDayAppts = await tx.appointment_history.findMany({
             where: {
                 employee_id: employeeId,
@@ -1361,6 +1367,11 @@ class AppointmentService {
                 appointment_time: "asc"
             }
         });
+        // "Today"/"now" judged in the BRANCH's own timezone (falls back to the
+        // hospital default for legacy rows that carry no branch_id).
+        const branchTz = await (0, timezone_1.getBranchTimezone)(allDayAppts.find((a) => a.branch_id)?.branch_id);
+        const isToday = (0, appointment_utils_1.formatDateOnly)(appointmentDate) === (0, timezone_1.getTodayIn)(branchTz);
+        const nowMinutes = (0, timezone_1.getNowMinutesIn)(branchTz);
         const activeAppts = allDayAppts.filter(a => a.status !== "CANCELLED" && a.status !== "NO_SHOW");
         if (activeAppts.length === 0)
             return;
@@ -1466,8 +1477,11 @@ class AppointmentService {
                     appointment_time: "asc"
                 }
             });
-            const isToday = (0, appointment_utils_1.formatDateOnly)(sandwiched.appointment_date) === (0, appointment_utils_1.getTodayInIST)();
-            const nowMinutes = (0, appointment_utils_1.getNowMinutesInIST)();
+            // "Today"/"now" in the BRANCH's own timezone: the appointment's
+            // branch first, else the branch of the schedule it sits on.
+            const branchTz = await (0, timezone_1.getBranchTimezone)(sandwiched.branch_id ?? sandwiched.doctor_schedule?.branch_id);
+            const isToday = (0, appointment_utils_1.formatDateOnly)(sandwiched.appointment_date) === (0, timezone_1.getTodayIn)(branchTz);
+            const nowMinutes = (0, timezone_1.getNowMinutesIn)(branchTz);
             const allDayAppts = await tx.appointment_history.findMany({
                 where: {
                     employee_id: sandwiched.employee_id,

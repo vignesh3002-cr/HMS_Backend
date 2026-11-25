@@ -19,5 +19,6 @@ router.get("/available-slots", auth_middleware_1.authenticate, controller.getAva
 router.get("/lab-reports", auth_middleware_1.authenticate, controller.getLabReports.bind(controller));
 router.get("/prescriptions", auth_middleware_1.authenticate, controller.getPrescriptions.bind(controller));
 router.get("/vitals", auth_middleware_1.authenticate, controller.getVitalsHistory.bind(controller));
+router.get("/allergies", auth_middleware_1.authenticate, controller.getAllergies.bind(controller));
 router.get("/chemotherapy", auth_middleware_1.authenticate, controller.getChemotherapyPlans.bind(controller));
 exports.default = router;

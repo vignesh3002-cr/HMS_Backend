@@ -4,16 +4,28 @@ import { authenticate } from "./auth.middleware";
 import { authorizeRoles } from "../../middleware/authorize";
 import { TOP_LEVEL_ADMIN_ROLES } from "../../permissions/roles";
 import prisma from "../../config/prisma";
-
+import twoFactorRoutes from "./2fa/twoFactor.routes";
+import { twoFactorController } from "./2fa/twoFactor.controller";
 
 const router = Router();
 
 const authController = new AuthController();
 
+// 2FA and Multi-Channel Security Subsystem
+router.use("/2fa", twoFactorRoutes);
+
 router.post(
     "/login",
     authController.login.bind(authController)
 );
+
+// SYSTEM_OWNER only: create a SUPER_ADMIN user
+router.post(
+    "/create-super-admin",
+    authenticate,
+    authController.createSuperAdmin.bind(authController)
+);
+
 router.post(
     "/send-otp",
     authController.sendOtp.bind(authController)
@@ -21,6 +33,20 @@ router.post(
 router.post(
     "/verify-otp",
     authController.verifyOtp.bind(authController)
+);
+
+// Forgot Password Flow (Unauthenticated: Username -> Default Channel OTP -> Reset)
+router.post(
+    "/forgot-password/request-otp",
+    twoFactorController.requestForgotPasswordOtp.bind(twoFactorController)
+);
+router.post(
+    "/forgot-password/verify-otp",
+    twoFactorController.verifyForgotPasswordOtp.bind(twoFactorController)
+);
+router.post(
+    "/forgot-password/reset",
+    twoFactorController.finalizeForgotPassword.bind(twoFactorController)
 );
 router.get(
     "/me",
@@ -47,16 +73,35 @@ router.get(
 
     }
 );
+// Sector 2: Username change disabled from user self-service
 router.patch(
     "/me/username",
     authenticate,
-    authController.changeUsername.bind(authController)
+    (_req, res) => {
+        res.status(403).json({
+            success: false,
+            message: "Username cannot be changed. Please contact your system administrator.",
+        });
+    }
+);
+
+// Sector 3: Password change with Old Password + OTP verification
+router.post(
+    "/me/password/request-otp",
+    authenticate,
+    twoFactorController.requestPasswordChangeOtp.bind(twoFactorController)
+);
+router.post(
+    "/me/password/verify-otp",
+    authenticate,
+    twoFactorController.verifyPasswordChangeOtp.bind(twoFactorController)
 );
 router.patch(
     "/me/password",
     authenticate,
-    authController.changePassword.bind(authController)
+    twoFactorController.finalizePasswordChange.bind(twoFactorController)
 );
+
 router.get(
   "/admin",
   authenticate,

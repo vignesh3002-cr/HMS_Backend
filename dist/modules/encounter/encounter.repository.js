@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EncounterRepository = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const idGenerator_1 = require("../../utils/idGenerator");
-const appointment_utils_1 = require("../appointment/appointment.utils");
+const timezone_1 = require("../../utils/timezone");
 const encounterDetailInclude = {
     patient_bio_data: {
         select: {
@@ -276,8 +276,10 @@ class EncounterRepository {
         });
     }
     async getCheckedInPatientsToday(employeeId, branchId) {
-        // Today is the IST calendar day (appointment_date is a DATE).
-        const todayDate = new Date(`${(0, appointment_utils_1.getTodayInIST)()}T00:00:00.000Z`);
+        // "Today" is the calendar day in the BRANCH's own timezone
+        // (appointment_date is a DATE, UTC-midnight anchored). No branch
+        // filter -> default hospital zone.
+        const todayDate = new Date(`${(0, timezone_1.getTodayIn)(await (0, timezone_1.getBranchTimezone)(branchId))}T00:00:00.000Z`);
         // Distinct patients of today's appointments who came in: checked in,
         // in consultation or already checked out - or whose visit encounter
         // is open (e.g. vitals recorded before the doctor's check-in).

@@ -13,6 +13,7 @@ export const ENTITY_TARGET: Record<string, { table: string; column: string; padT
     DOCTOR: { table: "employees", column: "employee_id" },
     EMPLOYEE: { table: "employees", column: "employee_id" },
     ENCOUNTER: { table: "encounter", column: "encounter_no" },
+    HOSPITAL: { table: "hospital", column: "hospital_id" },
     LOGIN_OTP: { table: "login_otp", column: "otp_id" },
     NOTIFICATION: { table: "appointment_notification", column: "notification_id" },
     PATIENT: { table: "patient_bio_data", column: "patient_id" },
@@ -62,6 +63,7 @@ export const ENTITY_TARGET: Record<string, { table: string; column: string; padT
     DISCHARGE_TYPE: { table: "discharge_type_master", column: "discharge_type_id", padTo: 4 },
     DISEASE_STATUS: { table: "disease_status_master", column: "disease_status_id", padTo: 4 },
     TNM_STAGE: { table: "tnm_stage_master", column: "tnm_id", padTo: 4 },
+    STAGE_RECORD: { table: "oncology_stage_record", column: "stage_record_id", padTo: 4 },
     ADMISSION: { table: "admission", column: "ip_number" },
     WARD: { table: "ward_master", column: "ward_id" },
     BED: { table: "bed_master", column: "bed_id" },
@@ -74,6 +76,9 @@ export const ENTITY_TARGET: Record<string, { table: string; column: string; padT
     BRANCH_SHIFT: { table: "branch_shift_master", column: "shift_id", padTo: 4 },
     DUTY_TEMPLATE: { table: "staff_duty_roster_template", column: "template_id", padTo: 6 },
     DUTY_ROSTER: { table: "staff_duty_roster", column: "roster_id", padTo: 6 },
+    GENOMIC_TEST: { table: "genomic_test", column: "test_id", padTo: 7 },
+    GENOMIC_RESULT: { table: "genomic_result", column: "result_id", padTo: 8 },
+    GENE_MASTER: { table: "gene_master", column: "gene_master_id", padTo: 5 },
 };
 
 function escapeSqlLiteral(value: string): string {

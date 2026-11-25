@@ -345,6 +345,12 @@ class PharmacyService {
             throw new Error(`This pharmacy slip has already been issued (${existing.pharmacy_slip_id}) and is read-only. Cancel it from the Orders page to create a replacement.`);
         }
         const lines = this.normalizeOrderLines(dto.items);
+        const removedRowKeys = Array.isArray(dto.removed_row_keys)
+            ? dto.removed_row_keys
+                .map((key) => clean(key))
+                .filter((key) => Boolean(key))
+                .slice(0, 500)
+            : [];
         const protocolName = plan.protocol_name
             ?? plan.chemotherapy_regimen_protocol?.regimen_name
             ?? null;
@@ -361,6 +367,7 @@ class PharmacyService {
                     cycle_day: header.cycle_day,
                     protocol_name: protocolName,
                     regimen_name: regimenName,
+                    removed_row_keys: removedRowKeys,
                     updated_by: actingUserId
                 });
                 await this.repository.deleteSlipItems(tx, pharmacySlipId, []);
@@ -378,6 +385,7 @@ class PharmacyService {
                     cycle_day: header.cycle_day,
                     protocol_name: protocolName,
                     regimen_name: regimenName,
+                    removed_row_keys: removedRowKeys,
                     slip_status: pharmacy_constants_1.PHARMACY_SLIP_STATUS.DRAFT,
                     created_by: actingUserId,
                     updated_by: actingUserId
@@ -401,7 +409,10 @@ class PharmacyService {
                 frequency: line.frequency ?? null,
                 duration: line.duration ?? null,
                 instructions: line.instructions ?? null,
-                pharmacy_item_id: line.pharmacy_item_id ?? null
+                pharmacy_item_id: line.pharmacy_item_id ?? null,
+                source_row_key: line.source_row_key ?? null,
+                is_top_up: line.is_top_up ?? false,
+                extra_suppressed: line.extra_suppressed ?? false
             })));
             await (0, audit_service_1.logAudit)(tx, {
                 entity_type: AUDIT_ENTITY,
@@ -459,7 +470,10 @@ class PharmacyService {
                 frequency: clean(item.frequency),
                 duration: clean(item.duration),
                 instructions: clean(item.instructions),
-                pharmacy_item_id: clean(item.pharmacy_item_id)
+                pharmacy_item_id: clean(item.pharmacy_item_id),
+                source_row_key: clean(item.source_row_key),
+                is_top_up: Boolean(item.is_top_up),
+                extra_suppressed: Boolean(item.extra_suppressed)
             });
         }
         return lines;

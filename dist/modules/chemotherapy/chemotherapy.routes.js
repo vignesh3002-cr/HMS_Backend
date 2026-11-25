@@ -28,6 +28,7 @@ const upload = (0, multer_1.default)({
 // sub-paths are never swallowed by a param route (same trap documented in
 // branch.routes.ts / appointment.routes.ts).
 router.get("/regimen-protocols", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), chemotherapy_validation_1.listRegimenProtocolsValidation, controller.listRegimenProtocols.bind(controller));
+router.get("/regimen-protocols/performance", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.protocol.read"), controller.getProtocolPerformance.bind(controller));
 // ---------------- Personalized regimen protocols ----------------
 // CRITICAL: all of these MUST be registered before "/regimen-protocols/:protocolId"
 // (and the ":protocolId" PUT) below - otherwise "personalized" would be captured

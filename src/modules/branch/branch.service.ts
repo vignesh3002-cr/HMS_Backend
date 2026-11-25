@@ -3,6 +3,7 @@ import prisma from "../../config/prisma";
 import { BranchRepository } from "./branch.repository";
 import { CreateBranchDto, UpdateBranchDto, NewBranchAdminDto, AssignableAdminDto } from "./branch.types";
 import { generateId } from "../../utils/idGenerator";
+import { invalidateBranchTimezone } from "../../utils/timezone";
 
 const repository = new BranchRepository();
 
@@ -15,6 +16,10 @@ export class BranchService {
       branch_area: branch.branch_area,
       branch_email: branch.branch_email,
       branch_contact_number: branch.emergency_no,
+      // Worldwide selector data: city + IANA zone used by every "today"/
+      // display calculation for this branch.
+      city: branch.city,
+      timezone: branch.timezone,
       hospital_name: branch.hospital?.hospital_name || "Pummy Hospital",
       hospital_id: branch.hospital?.hospital_id || "D002",
     }));
@@ -93,6 +98,10 @@ export class BranchService {
           district: data.district,
           state_name: data.state_name,
           country: data.country,
+          city: data.city,
+          // undefined omits the field -> the DB default ('Asia/Kolkata') fills
+          // it; only an explicitly-confirmed zone is written.
+          timezone: data.timezone ?? undefined,
           emergency_no: data.emergency_number,
           branch_pincode: data.pincode,
           branch_name: data.branch_name,
@@ -289,13 +298,17 @@ export class BranchService {
       if (existingBranchCode) throw new Error("Branch code already exists");
     }
 
-    return await repository.updateBranch(branchId, {
+    const updated = await repository.updateBranch(branchId, {
       branch_type: data.branch_type,
       branch_code: data.branch_code,
       address: data.address,
       district: data.district,
       state_name: data.state_name,
       country: data.country,
+      city: data.city,
+      // timezone is NOT NULL: null/absent simply leaves the stored zone
+      // untouched (never clears it).
+      ...(data.timezone ? { timezone: data.timezone } : {}),
       emergency_no: data.emergency_number,
       branch_pincode: data.pincode,
       branch_name: data.branch_name,
@@ -314,6 +327,12 @@ export class BranchService {
       fax_no: data.fax_no,
       medical_services: data.medical_services,
     });
+
+    // An admin may just have changed branch.timezone - drop the cached zone
+    // so slot maths / day boundaries use the new one from the next request.
+    invalidateBranchTimezone(branchId);
+
+    return updated;
   }
 
   async deleteBranch(branchId: string) {

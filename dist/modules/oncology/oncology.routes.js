@@ -1,7 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const oncology_controller_1 = require("./oncology.controller");
+const staging_routes_1 = __importDefault(require("./staging/staging.routes"));
 const auth_middleware_1 = require("../auth/auth.middleware");
 const authorize_1 = require("../../middleware/authorize");
 const oncology_validation_1 = require("./oncology.validation");
@@ -53,4 +57,7 @@ router.get("/staging-details/:stagingDetailId/derived", auth_middleware_1.authen
 router.get("/investigation-results", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.diagnosis.read"), oncology_validation_1.listInvestigationResultsValidation, controller.listInvestigationResults.bind(controller));
 // Saved with the Diagnosis step, so either of its permissions will do.
 router.put("/investigation-results", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("oncology.diagnosis.create", "oncology.diagnosis.update"), oncology_validation_1.saveInvestigationResultsValidation, controller.saveInvestigationResults.bind(controller));
+// ---------------- TNM staging module ----------------
+// Schemas, live derivation and the per-visit stage records.
+router.use("/staging", staging_routes_1.default);
 exports.default = router;

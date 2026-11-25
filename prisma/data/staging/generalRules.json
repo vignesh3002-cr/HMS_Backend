@@ -1,0 +1,74 @@
+[
+ {
+  "item": "Prefix c",
+  "meaning": "Clinical stage (before treatment)"
+ },
+ {
+  "item": "Prefix p",
+  "meaning": "Pathological stage (after surgery)"
+ },
+ {
+  "item": "Prefix yc / yp",
+  "meaning": "Clinical / pathological stage after neoadjuvant therapy"
+ },
+ {
+  "item": "Prefix r",
+  "meaning": "Recurrent tumour stage"
+ },
+ {
+  "item": "Prefix a",
+  "meaning": "Stage determined at autopsy"
+ },
+ {
+  "item": "X",
+  "meaning": "Cannot be assessed (TX, NX); MX not valid in AJCC 8th"
+ },
+ {
+  "item": "Suffix (sn)",
+  "meaning": "Sentinel node biopsy only"
+ },
+ {
+  "item": "Suffix (f)",
+  "meaning": "FNA/core needle biopsy of node"
+ },
+ {
+  "item": "Suffix (i+/i-)",
+  "meaning": "Isolated tumour cells present/absent (≤0.2 mm)"
+ },
+ {
+  "item": "Suffix (mol±)",
+  "meaning": "Molecular detection (RT-PCR) of nodal tumour"
+ },
+ {
+  "item": "Suffix (m)",
+  "meaning": "Multiple primary tumours in a single site"
+ },
+ {
+  "item": "L / V / Pn",
+  "meaning": "Lymphatic / venous / perineural invasion (0/1/X)"
+ },
+ {
+  "item": "R0 / R1 / R2",
+  "meaning": "No / microscopic / macroscopic residual tumour"
+ },
+ {
+  "item": "G",
+  "meaning": "Histologic grade (GX, G1-G4)"
+ },
+ {
+  "item": "Edition",
+  "meaning": "Always store AJCC edition (7th/8th/9th) with each stage record"
+ },
+ {
+  "item": "Edition per record",
+  "meaning": "Store system + edition (e.g. 'AJCC Version 9 (2025)') with every stage. Never overwrite an old stage when tables are updated."
+ },
+ {
+  "item": "Stage context",
+  "meaning": "Clinical (c), pathological (p), post-therapy (yc / yp) and recurrence (r) are separate stage records for the same diagnosis."
+ },
+ {
+  "item": "Auto vs override",
+  "meaning": "EMR derives the stage group from the rules. The clinician can override with a reason; both values are stored."
+ }
+]

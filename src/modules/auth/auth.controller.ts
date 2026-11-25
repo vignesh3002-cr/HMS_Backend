@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { AuthService } from "./auth.service";
+import { authorize } from "../../middleware/authorize";
+import { SYSTEM_OWNER } from "../../permissions/roles";
 
 const authService = new AuthService();
 
@@ -9,8 +11,8 @@ export class AuthController {
 
         try {
 
-            const { username, password, rememberMe } = req.body;
-            console.log(`[AUTH] Login attempt for username: "${username}"`);
+            const { username, password, rememberMe, directLogin } = req.body;
+            console.log(`[AUTH] Login attempt for username: "${username}" (rememberMe=${Boolean(rememberMe)}, directLogin=${Boolean(directLogin)})`);
 
             if (!username || !password) {
                 return res.status(400).json({
@@ -22,35 +24,38 @@ export class AuthController {
             const result = await authService.login(
                 username,
                 password,
-                rememberMe
+                rememberMe,
+                Boolean(directLogin)
             );
 
-            // OTP flow temporarily disabled - issuing the session cookie directly on login
-            // Cookie lifetime must match the JWT's own expiry (see utils/jwt.ts:
-            // 12h when rememberMe is on, 5m otherwise) - otherwise the cookie
-            // outlives the token (or vice versa) and requests start failing
-            // with 401s well before the user expects to be logged out.
-            res.cookie("token", result.token, {
-                httpOnly: true,
-                secure: false,
-                sameSite: "lax",
-                maxAge: rememberMe ? 12 * 60 * 60 * 1000 : 5 * 60 * 1000
-            });
+            if (!result.requiresOtp && result.token) {
+                res.cookie("token", result.token, {
+                    httpOnly: true,
+                    secure: false,
+                    sameSite: "lax",
+                    maxAge: rememberMe ? 12 * 60 * 60 * 1000 : 5 * 60 * 1000
+                });
+
+                return res.status(200).json({
+                    success: true,
+                    message: result.message || "Login successful",
+                    data: {
+                        username: result.username,
+                        requiresOtp: false,
+                        token: result.token,
+                        user: result.user
+                    }
+                });
+            }
 
             return res.status(200).json({
                 success: true,
-                message: "Login successful",
+                message: result.message || "Credentials verified. OTP sent to your email.",
                 data: {
-                    token: result.token,
-                    user: result.user
+                    username: result.username,
+                    requiresOtp: true
                 }
             });
-
-            // return res.status(200).json({
-            //     success: true,
-            //     message: "Credentials verified",
-            //     data: result
-            // });
 
         } catch (error: any) {
 
@@ -63,6 +68,57 @@ export class AuthController {
 
         }
 
+    }
+
+    // SYSTEM_OWNER only: create a SUPER_ADMIN user
+    async createSuperAdmin(req: Request, res: Response) {
+        try {
+            const authReq = req as any;
+            const callerRole = String(authReq.user?.role ?? "").toUpperCase();
+            if (callerRole !== SYSTEM_OWNER) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Forbidden. Only System Owner can create Super Admin."
+                });
+            }
+
+            const { username, password, email, first_name, last_name } = req.body;
+
+            if (!username || !password) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Username and password are required"
+                });
+            }
+
+            // Check if user already exists
+            const existing = await authService["authRepository"].findUserByUsername(username);
+            if (existing) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Username already exists"
+                });
+            }
+
+            const user = await authService.createSuperAdminUser({
+                username,
+                password,
+                email: email || null,
+                first_name: first_name || null,
+                last_name: last_name || null,
+            });
+
+            return res.status(201).json({
+                success: true,
+                message: "Super Admin created successfully",
+                data: user
+            });
+        } catch (error: any) {
+            return res.status(400).json({
+                success: false,
+                message: error.message || "Failed to create Super Admin"
+            });
+        }
     }
 
     async sendOtp(req: Request, res: Response) {
@@ -129,9 +185,10 @@ export class AuthController {
             success: true,
             message: "OTP verified successfully",
             data: {
+                token: result.token,
                 user: result.user
             }
-    });
+        });
 
     } catch (error: any) {
 

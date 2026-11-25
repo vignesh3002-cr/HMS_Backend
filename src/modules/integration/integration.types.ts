@@ -14,6 +14,8 @@ export interface IntegrationProviderConfig {
   fromNumber?: string;
   apiUrl?: string;
   apiKey?: string;
+  deviceId?: string;
+  smsProviderName?: string;
 }
 
 export interface IntegrationProviderResponse {

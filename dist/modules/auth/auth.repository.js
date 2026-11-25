@@ -5,6 +5,27 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthRepository = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
+const userAuthInclude = {
+    branch: {
+        include: { hospital: true },
+    },
+    employees: {
+        include: {
+            branch: {
+                include: { hospital: true },
+            },
+        },
+    },
+    patient_bio_data: true,
+    user_branch_mapping: {
+        where: { status: 1 },
+        include: {
+            branch: {
+                include: { hospital: true },
+            },
+        },
+    },
+};
 class AuthRepository {
     async findUserById(userId) {
         return prisma_1.default.user_table.findFirst({
@@ -35,21 +56,7 @@ class AuthRepository {
                     },
                 ],
             },
-            include: {
-                branch: true,
-                employees: {
-                    include: {
-                        branch: true,
-                    },
-                },
-                patient_bio_data: true,
-                user_branch_mapping: {
-                    where: { status: 1 },
-                    include: {
-                        branch: true,
-                    },
-                },
-            },
+            include: userAuthInclude,
         });
         // If not found or if patient_bio_data was not populated, query patient_bio_data directly
         if (!user || (!user.patient_bio_data?.length && !user.employees)) {
@@ -63,29 +70,16 @@ class AuthRepository {
                 },
                 include: {
                     user_table: {
-                        include: {
-                            branch: true,
-                            employees: {
-                                include: {
-                                    branch: true,
-                                },
-                            },
-                            patient_bio_data: true,
-                            user_branch_mapping: {
-                                where: { status: 1 },
-                                include: {
-                                    branch: true,
-                                },
-                            },
-                        },
+                        include: userAuthInclude,
                     },
                 },
             });
             if (patient?.user_table) {
-                user = patient.user_table;
-                if (!user.patient_bio_data || user.patient_bio_data.length === 0) {
-                    user.patient_bio_data = [patient];
+                const resolvedUser = patient.user_table;
+                if (!resolvedUser.patient_bio_data || resolvedUser.patient_bio_data.length === 0) {
+                    resolvedUser.patient_bio_data = [patient];
                 }
+                user = resolvedUser;
             }
         }
         return user;

@@ -7,6 +7,7 @@ exports.PatientService = void 0;
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const patient_repository_1 = require("./patient.repository");
+const patientDiagnoses_1 = require("./patientDiagnoses");
 const idGenerator_1 = require("../../utils/idGenerator");
 const repository = new patient_repository_1.PatientRepository();
 class PatientService {
@@ -112,7 +113,24 @@ class PatientService {
         });
     }
     async getPatients(query) {
-        return repository.getPatients(query);
+        const result = await repository.getPatients(query);
+        /* Diagnoses shown against each patient on the admin Patients page.
+           A patient may have 1..n diagnoses, so the API returns a LIST:
+           - `diagnoses`  -> every distinct diagnosis (open + completed plans,
+                             then staging records; see patientDiagnoses.ts);
+           - `diagnosis_name` -> the FIRST diagnosis (primary), kept for
+                             backward compatibility with CSV export / search.
+           Empty list -> the UI renders "Not recorded". */
+        const diagnosesByPatient = await (0, patientDiagnoses_1.buildPatientDiagnoses)(result.patients.map((patient) => patient.patient_id));
+        const patients = result.patients.map((patient) => {
+            const diagnoses = diagnosesByPatient.get(patient.patient_id ?? "") ?? [];
+            return {
+                ...patient,
+                diagnosis_name: diagnoses[0] ?? null,
+                diagnoses
+            };
+        });
+        return { ...result, patients };
     }
     async getPatientById(patientId) {
         const patient = await repository.getPatientById(patientId);

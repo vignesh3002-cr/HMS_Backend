@@ -102,6 +102,10 @@ class PatientRepository {
                         user_status: true
                     }
                 }
+                /* The chemotherapy_plan include that used to live here (open
+                   plan only, one cancer type) was replaced by
+                   buildPatientDiagnoses() in patient.service.ts - the page now
+                   lists ALL diagnoses (all plans + staging) per patient. */
             },
             skip: (page - 1) * limit,
             take: limit,

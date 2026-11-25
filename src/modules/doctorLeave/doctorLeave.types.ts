@@ -25,6 +25,7 @@ export interface QueueRescheduleDto {
 
 export interface GetDoctorLeaveQuery {
     employee_id?: string;
+    branchId?: string;
     status?: typeof LEAVE_STATUS[keyof typeof LEAVE_STATUS];
     from_date?: string;
     to_date?: string;
