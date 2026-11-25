@@ -76,6 +76,57 @@ class LabReportRepository {
             },
         });
     }
+    /* Everything needed to show one order item's report: the item, its
+       lab_result rows (which link it to a lab_report), every report of the
+       parent order and the patient. Read-only; used by the doctor's
+       "View Report" action. */
+    async findByOrderItem(lab_order_item_id) {
+        const item = await prisma_1.default.lab_order_item.findUnique({
+            where: { lab_order_item_id },
+            include: {
+                lab_test_master: true,
+                sample_collection: true,
+                lab_order: {
+                    include: {
+                        patient_history: true,
+                        employees: {
+                            select: {
+                                employee_id: true,
+                                first_name: true,
+                                last_name: true,
+                                designation: true,
+                            },
+                        },
+                        department_master: true,
+                        lab_order_item: {
+                            include: {
+                                lab_test_master: true,
+                                lab_result: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+        if (!item)
+            return null;
+        const [results, orderReports] = await Promise.all([
+            prisma_1.default.lab_result.findMany({
+                where: { lab_order_item_id },
+                orderBy: { id: "desc" },
+                include: { lab_test_parameter: true, lab_report: true },
+            }),
+            prisma_1.default.lab_report.findMany({
+                where: { lab_order_id: item.lab_order_id },
+                orderBy: { id: "desc" },
+            }),
+        ]);
+        const patientId = item.lab_order?.patient_history?.patient_id;
+        const patient = patientId
+            ? await prisma_1.default.patient_bio_data.findUnique({ where: { patient_id: patientId } })
+            : null;
+        return { item, results, orderReports, patient };
+    }
     async findByOrderId(lab_order_id) {
         return prisma_1.default.lab_report.findFirst({
             where: { lab_order_id },
@@ -127,19 +178,38 @@ class LabReportRepository {
                 },
             },
         });
-        // Link any unassigned lab_result rows for this order to the newly created report
-        if (data.lab_order_id && report.lab_report_id) {
-            await prisma_1.default.lab_result.updateMany({
-                where: {
-                    lab_order_item: {
-                        lab_order_id: data.lab_order_id,
+        // Link matching lab_result rows to the newly created report (never contaminate unrelated items in the order)
+        if (report.lab_report_id) {
+            const comment = typeof data.report_comment === "object" ? data.report_comment : {};
+            const repParams = Array.isArray(comment?.parameters) ? comment.parameters : [];
+            const paramResultIds = repParams
+                .map((p) => String(p?.id ?? ""))
+                .filter((id) => id.startsWith("RES"));
+            if (paramResultIds.length > 0) {
+                await prisma_1.default.lab_result
+                    .updateMany({
+                    where: {
+                        lab_result_id: { in: paramResultIds },
                     },
-                    lab_report_id: null,
-                },
-                data: {
-                    lab_report_id: report.lab_report_id,
-                },
-            }).catch(() => { });
+                    data: {
+                        lab_report_id: report.lab_report_id,
+                    },
+                })
+                    .catch(() => { });
+            }
+            else if (data.lab_order_item_id) {
+                await prisma_1.default.lab_result
+                    .updateMany({
+                    where: {
+                        lab_order_item_id: data.lab_order_item_id,
+                        lab_report_id: null,
+                    },
+                    data: {
+                        lab_report_id: report.lab_report_id,
+                    },
+                })
+                    .catch(() => { });
+            }
         }
         return report;
     }

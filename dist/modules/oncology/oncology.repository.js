@@ -111,9 +111,46 @@ class OncologyRepository {
         });
     }
     async findCancerScoresByType(cancerTypeId) {
+        /* A score can serve several cancer types (e.g. MMR/MSI applies to
+           eight). The link table is the source of truth; the primary
+           cancer_type_id is kept for older rows that predate it. */
+        const links = await prisma_1.default.cancer_score_cancer_types.findMany({
+            where: { cancer_type_id: cancerTypeId },
+            select: { score_id: true },
+        });
+        const linkedIds = links.map((link) => link.score_id);
         return prisma_1.default.cancer_score.findMany({
-            where: { cancer_type_id: cancerTypeId, active_status: 1 },
-            orderBy: [{ score_system: "asc" }, { display_order: "asc" }]
+            where: {
+                active_status: 1,
+                OR: [
+                    { cancer_type_id: cancerTypeId },
+                    ...(linkedIds.length > 0
+                        ? [{ score_id: { in: linkedIds } }]
+                        : []),
+                ],
+            },
+            orderBy: [{ display_order: "asc" }, { score_system: "asc" }]
+        });
+    }
+    async findCancerScoreVariablesByScoreId(scoreId) {
+        return prisma_1.default.cancer_score_variable.findMany({
+            where: { score_id: scoreId, active_status: 1 },
+            orderBy: { display_order: "asc" }
+        });
+    }
+    async findCancerScoreGroupsByScoreId(scoreId) {
+        return prisma_1.default.cancer_score_group.findMany({
+            where: { score_id: scoreId, active_status: 1 },
+            orderBy: { sort_order: "asc" }
+        });
+    }
+    async findCancerScoreById(scoreId) {
+        return prisma_1.default.cancer_score.findUnique({ where: { score_id: scoreId } });
+    }
+    async updateCancerScore(scoreId, data) {
+        return prisma_1.default.cancer_score.update({
+            where: { score_id: scoreId },
+            data: data
         });
     }
     // T / N / M values doctors added for a cancer type, on top of the AJCC

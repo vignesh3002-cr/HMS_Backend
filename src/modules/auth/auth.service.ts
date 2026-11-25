@@ -21,7 +21,23 @@ export class AuthService {
   private assertAccountUsable(user: AuthUser) {
 
     const role = user.role_type;
+    const hasPatientBio = Array.isArray(user.patient_bio_data) && user.patient_bio_data.length > 0;
+    const isPatientRole = String(role ?? "").toUpperCase() === "PATIENT";
     const employee = user.employees;
+
+    // A user is a patient if role_type is PATIENT, or has patient_bio_data,
+    // or has no employee record (never an employee profile).
+    const isPatient = isPatientRole || hasPatientBio || (!employee && !TOP_LEVEL_ADMIN_ROLES.some((r) => r.toLowerCase() === String(role ?? "").toLowerCase()));
+
+    if (isPatient) {
+      const patient = user.patient_bio_data?.[0];
+      if (patient) {
+        if (patient.patient_active?.toLowerCase() === "inactive" || user.user_status === 1) {
+          throw new Error("Patient account is inactive. Please contact hospital reception.");
+        }
+      }
+      return;
+    }
 
     const isTopLevelAdmin = TOP_LEVEL_ADMIN_ROLES.some(
       (r) => r.toLowerCase() === String(role ?? "").toLowerCase()
@@ -37,9 +53,9 @@ export class AuthService {
         throw new Error("Account is inactive. Please contact your administrator.");
       }
 
-const activeMappings = user.user_branch_mapping?.filter(
-      (m: UserBranchMapping) => m.status === 1 && m.branch?.branch_status === "Active"
-    );
+      const activeMappings = user.user_branch_mapping?.filter(
+        (m: UserBranchMapping) => m.status === 1 && m.branch?.branch_status === "Active"
+      );
 
       if (!activeMappings || activeMappings.length === 0) {
         throw new Error("No active branch has been assigned to your account. Please contact the Head Admin.");
@@ -51,7 +67,12 @@ const activeMappings = user.user_branch_mapping?.filter(
 
   private resolveEmail(user: AuthUser): string | undefined {
 
-    if (user.role_type === "PATIENT") {
+    const isPatient =
+      String(user.role_type ?? "").toUpperCase() === "PATIENT" ||
+      (Array.isArray(user.patient_bio_data) && user.patient_bio_data.length > 0) ||
+      !user.employees;
+
+    if (isPatient) {
       return (user as any).patient_bio_data?.[0]?.patient_email ?? undefined;
     }
 
@@ -60,6 +81,16 @@ const activeMappings = user.user_branch_mapping?.filter(
   }
 
   private buildAuthPayload(user: AuthUser, rememberMe: boolean = false) {
+
+    const hasPatientBio = Array.isArray(user.patient_bio_data) && user.patient_bio_data.length > 0;
+    const isPatientRole = String(user.role_type ?? "").toUpperCase() === "PATIENT";
+    const isPatient = isPatientRole || hasPatientBio || !user.employees;
+    const effectiveRole = isPatient ? "PATIENT" : user.role_type || "STAFF";
+
+    const patient = user.patient_bio_data?.[0];
+    const patientName = patient
+      ? [patient.patient_first_name, patient.patient_middle_name, patient.patient_last_name].filter(Boolean).join(" ")
+      : user.username;
 
     const employee = user.employees;
 
@@ -76,13 +107,14 @@ const activeMappings = user.user_branch_mapping?.filter(
       : primaryMapping?.branch || employee?.branch || user.branch || null;
     const primaryBranchId = isDoctor
       ? primaryMapping?.branch_id ?? null
-      : primaryMapping?.branch_id || employee?.branch_id || user.branch_id || null;
+      : primaryMapping?.branch_id || employee?.branch_id || user.branch_id || (isPatient ? patient?.branch_id : null);
 
     const token = generateToken({
       username: user.username,
-      role: user.role_type,
+      role: effectiveRole,
       user_id: user.user_id,
       employee_id: employee?.employee_id ?? null,
+      patient_id: patient?.patient_id ?? null,
       hospital_id: primaryBranch?.hospital_id,
     }, rememberMe);
 
@@ -91,9 +123,16 @@ const activeMappings = user.user_branch_mapping?.filter(
       user: {
         user_id: user.user_id,
         username: user.username,
-        role: user.role_type,
-        role_type: user.role_type,
+        role: effectiveRole,
+        role_type: effectiveRole,
         employee_id: employee?.employee_id ?? null,
+        patient_id: patient?.patient_id ?? null,
+        patient_name: isPatient ? patientName : null,
+        patient_uhid: patient?.patient_id ?? null,
+        patient_gender: patient?.patient_gender ?? null,
+        patient_blood_group: patient?.patient_blood_group ?? null,
+        patient_mobile: patient?.patient_primary_mobile ?? null,
+        patient_email: patient?.patient_email ?? null,
         hospital_id: primaryBranch?.hospital_id,
         branch_id: primaryBranchId,
         branch_name: primaryBranch?.branch_name || null,
@@ -178,6 +217,8 @@ const activeMappings = user.user_branch_mapping?.filter(
     const user =
       await this.authRepository.findUserByUsername(username);
 
+    console.log(`[AUTH] User resolved: user_id=${user?.user_id}, username=${user?.username}, role_type=${user?.role_type}, hasPatient=${user?.patient_bio_data?.length}, hasEmployee=${!!user?.employees}`);
+
     if (!user) {
       throw new Error("Invalid username or password");
     }
@@ -204,6 +245,8 @@ const activeMappings = user.user_branch_mapping?.filter(
 
     const user =
       await this.authRepository.findUserByUsername(username);
+
+    console.log(`[AUTH] User resolved: user_id=${user?.user_id}, username=${user?.username}, role_type=${user?.role_type}, hasPatient=${user?.patient_bio_data?.length}, hasEmployee=${!!user?.employees}`);
 
     if (!user) {
       throw new Error("User not found");

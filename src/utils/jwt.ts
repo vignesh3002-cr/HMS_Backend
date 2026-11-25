@@ -10,16 +10,17 @@ export const generateToken = (
  rememberMe:boolean=false
 )=>{
 
- return jwt.sign(
- {
-   id:user.user_id ?? user.id,
-   user_id:user.user_id,
-   employee_id:user.employee_id,
-   username:user.username,
-   role:user.role,
-   hospital_id:user.hospital_id
- },
- process.env.JWT_SECRET!,
+  return jwt.sign(
+  {
+    id:user.user_id ?? user.id,
+    user_id:user.user_id,
+    employee_id:user.employee_id,
+    patient_id:user.patient_id ?? null,
+    username:user.username,
+    role:user.role,
+    hospital_id:user.hospital_id
+  },
+  process.env.JWT_SECRET!,
  {
    expiresIn: rememberMe 
       ? "12h"

@@ -16,7 +16,21 @@ class AuthService {
     authRepository = new auth_repository_1.AuthRepository();
     assertAccountUsable(user) {
         const role = user.role_type;
+        const hasPatientBio = Array.isArray(user.patient_bio_data) && user.patient_bio_data.length > 0;
+        const isPatientRole = String(role ?? "").toUpperCase() === "PATIENT";
         const employee = user.employees;
+        // A user is a patient if role_type is PATIENT, or has patient_bio_data,
+        // or has no employee record (never an employee profile).
+        const isPatient = isPatientRole || hasPatientBio || (!employee && !roles_1.TOP_LEVEL_ADMIN_ROLES.some((r) => r.toLowerCase() === String(role ?? "").toLowerCase()));
+        if (isPatient) {
+            const patient = user.patient_bio_data?.[0];
+            if (patient) {
+                if (patient.patient_active?.toLowerCase() === "inactive" || user.user_status === 1) {
+                    throw new Error("Patient account is inactive. Please contact hospital reception.");
+                }
+            }
+            return;
+        }
         const isTopLevelAdmin = roles_1.TOP_LEVEL_ADMIN_ROLES.some((r) => r.toLowerCase() === String(role ?? "").toLowerCase());
         if (!isTopLevelAdmin) {
             if (!employee) {
@@ -32,12 +46,23 @@ class AuthService {
         }
     }
     resolveEmail(user) {
-        if (user.role_type === "PATIENT") {
+        const isPatient = String(user.role_type ?? "").toUpperCase() === "PATIENT" ||
+            (Array.isArray(user.patient_bio_data) && user.patient_bio_data.length > 0) ||
+            !user.employees;
+        if (isPatient) {
             return user.patient_bio_data?.[0]?.patient_email ?? undefined;
         }
         return user.employees?.email ?? undefined;
     }
     buildAuthPayload(user, rememberMe = false) {
+        const hasPatientBio = Array.isArray(user.patient_bio_data) && user.patient_bio_data.length > 0;
+        const isPatientRole = String(user.role_type ?? "").toUpperCase() === "PATIENT";
+        const isPatient = isPatientRole || hasPatientBio || !user.employees;
+        const effectiveRole = isPatient ? "PATIENT" : user.role_type || "STAFF";
+        const patient = user.patient_bio_data?.[0];
+        const patientName = patient
+            ? [patient.patient_first_name, patient.patient_middle_name, patient.patient_last_name].filter(Boolean).join(" ")
+            : user.username;
         const employee = user.employees;
         // user_branch_mapping (already filtered to status: 1 by findUserByUsername)
         // is the authoritative record of which branch this user is on. For
@@ -52,12 +77,13 @@ class AuthService {
             : primaryMapping?.branch || employee?.branch || user.branch || null;
         const primaryBranchId = isDoctor
             ? primaryMapping?.branch_id ?? null
-            : primaryMapping?.branch_id || employee?.branch_id || user.branch_id || null;
+            : primaryMapping?.branch_id || employee?.branch_id || user.branch_id || (isPatient ? patient?.branch_id : null);
         const token = (0, jwt_1.generateToken)({
             username: user.username,
-            role: user.role_type,
+            role: effectiveRole,
             user_id: user.user_id,
             employee_id: employee?.employee_id ?? null,
+            patient_id: patient?.patient_id ?? null,
             hospital_id: primaryBranch?.hospital_id,
         }, rememberMe);
         return {
@@ -65,9 +91,16 @@ class AuthService {
             user: {
                 user_id: user.user_id,
                 username: user.username,
-                role: user.role_type,
-                role_type: user.role_type,
+                role: effectiveRole,
+                role_type: effectiveRole,
                 employee_id: employee?.employee_id ?? null,
+                patient_id: patient?.patient_id ?? null,
+                patient_name: isPatient ? patientName : null,
+                patient_uhid: patient?.patient_id ?? null,
+                patient_gender: patient?.patient_gender ?? null,
+                patient_blood_group: patient?.patient_blood_group ?? null,
+                patient_mobile: patient?.patient_primary_mobile ?? null,
+                patient_email: patient?.patient_email ?? null,
                 hospital_id: primaryBranch?.hospital_id,
                 branch_id: primaryBranchId,
                 branch_name: primaryBranch?.branch_name || null,
@@ -140,6 +173,7 @@ class AuthService {
     }
     async login(username, password, rememberMe) {
         const user = await this.authRepository.findUserByUsername(username);
+        console.log(`[AUTH] User resolved: user_id=${user?.user_id}, username=${user?.username}, role_type=${user?.role_type}, hasPatient=${user?.patient_bio_data?.length}, hasEmployee=${!!user?.employees}`);
         if (!user) {
             throw new Error("Invalid username or password");
         }
@@ -156,6 +190,7 @@ class AuthService {
     }
     async sendOtp(username) {
         const user = await this.authRepository.findUserByUsername(username);
+        console.log(`[AUTH] User resolved: user_id=${user?.user_id}, username=${user?.username}, role_type=${user?.role_type}, hasPatient=${user?.patient_bio_data?.length}, hasEmployee=${!!user?.employees}`);
         if (!user) {
             throw new Error("User not found");
         }

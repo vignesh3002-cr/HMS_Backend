@@ -2554,10 +2554,10 @@ model oncology_staging_detail {
   relapse_date                        DateTime?                             @db.Date
   score                               String?
   score_system                        String?                               @db.VarChar(255)
-  score_variables Json?                 // { [score_variable_id]: { selected_criterion, selected_points, source_value } }
-  score_result                        String?                             // computed total / category text
-  risk_group                          String?                             // matched group/range meaning
-  score_points                        Decimal?                            @db.Decimal(10, 2)   // total points
+  score_variables                     Json?                                 @db.Json
+  score_result                        String?
+  risk_group                          String?                               @db.VarChar(200)
+  score_points                        Decimal?                              @db.Decimal(10, 2)
   encounter_no                        String?                               @unique(map: "uq_staging_detail_encounter", where: raw("(encounter_no IS NOT NULL)")) @db.VarChar(100)
   suggested_molecular_test            String?                               @db.VarChar(255)
   suggested_molecular_test_date       DateTime?                             @db.Date
@@ -2565,10 +2565,6 @@ model oncology_staging_detail {
   histopathology                      String?                               @db.VarChar(100)
   second_primary_date                 DateTime?                             @db.Date
   form_state                          Json?
-  score_variables                     Json?                                 @db.Json
-  score_result                        String?
-  risk_group                          String?                               @db.VarChar(200)
-  score_points                        Decimal?                              @db.Decimal(10, 2)
   chemotherapy_plan                   chemotherapy_plan[]
   derived_fields                      derived_fields?
   ihc_results                         ihc_results?
@@ -3081,7 +3077,6 @@ model sample_collection {
   user_id              String?        @db.VarChar(100)
   created_at           DateTime?      @default(now()) @db.Timestamp(6)
   updated_at           DateTime?      @default(now()) @db.Timestamp(6)
-  expiry_datetime      DateTime?      @db.Timestamp(6)
   lab_history          lab_history[]
   lab_result           lab_result[]
   branch               branch?        @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_sample_collection_branch")
@@ -3339,62 +3334,6 @@ model user_integration_settings {
   updated_by           String?  @db.VarChar(100)
 
   @@index([user_id], map: "idx_user_integration_settings_user_id")
-}
-
-model cancer_score_cancer_types {
-  id             BigInt    @id @default(autoincrement())
-  score_id       String    @db.VarChar(100)
-  cancer_type_id String    @db.VarChar(100)
-  created_at     DateTime? @default(now()) @db.Timestamp(6)
-
-  @@unique([score_id, cancer_type_id], map: "uq_score_cancer_type")
-  @@index([cancer_type_id], map: "idx_score_cancer_type_type")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model cancer_score_group {
-  id             BigInt  @id @default(autoincrement())
-  score_group_id String  @unique(map: "uq_score_group_id") @db.VarChar(100)
-  score_id       String  @db.VarChar(100)
-  group_range    String  @db.VarChar(200)
-  meaning        String?
-  sort_order     Int     @default(1)
-  active_status  Int?    @default(1) @db.SmallInt
-
-  @@index([score_id], map: "idx_score_group_score")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model cancer_score_variable {
-  id                BigInt    @id @default(autoincrement())
-  score_variable_id String    @unique(map: "uq_score_variable_id") @db.VarChar(100)
-  score_id          String    @db.VarChar(100)
-  variable_name     String    @db.VarChar(200)
-  criterion         String?   @db.VarChar(500)
-  points            String?   @db.VarChar(100)
-  source            String    @db.VarChar(20)
-  auto_filled       Boolean   @default(false)
-  source_field      String?   @db.VarChar(200)
-  display_order     Int       @default(1)
-  active_status     Int?      @default(1) @db.SmallInt
-  created_at        DateTime? @default(now()) @db.Timestamp(6)
-  updated_at        DateTime? @default(now()) @db.Timestamp(6)
-
-  @@index([score_id], map: "idx_score_variable_score")
-}
-
-model line_of_therapy_master {
-  id          BigInt   @id @default(autoincrement())
-  code        String   @unique @db.VarChar(100)
-  name        String   @db.VarChar(100)
-  description String?  @db.VarChar(200)
-  is_active   Boolean  @default(true)
-  created_at  DateTime @default(now()) @db.Timestamp(6)
-  updated_at  DateTime @default(now()) @db.Timestamp(6)
-  created_by  String?  @db.VarChar(100)
-  updated_by  String?  @db.VarChar(100)
-
-  @@index([is_active], map: "idx_line_of_therapy_active")
 }
 
 enum DoctorScheduleChangeMode {

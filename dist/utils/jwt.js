@@ -12,6 +12,7 @@ const generateToken = (user, rememberMe = false) => {
         id: user.user_id ?? user.id,
         user_id: user.user_id,
         employee_id: user.employee_id,
+        patient_id: user.patient_id ?? null,
         username: user.username,
         role: user.role,
         hospital_id: user.hospital_id

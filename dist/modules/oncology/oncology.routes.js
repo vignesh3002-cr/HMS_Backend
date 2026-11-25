@@ -13,6 +13,9 @@ router.get("/reference/cancer-types/:cancerTypeId/subtypes", auth_middleware_1.a
 router.get("/reference/cancer-types/:cancerTypeId/sites", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), oncology_validation_1.getCancerSubtypesValidation, controller.getAnatomicalSites.bind(controller));
 router.get("/reference/cancer-types/:cancerTypeId/grades", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), oncology_validation_1.getCancerSubtypesValidation, controller.getCancerGrades.bind(controller));
 router.get("/reference/cancer-types/:cancerTypeId/scores", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), oncology_validation_1.getCancerSubtypesValidation, controller.getCancerScores.bind(controller));
+router.get("/reference/scores/:scoreId/variables", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), oncology_validation_1.getCancerScoreValidation, controller.getCancerScoreVariables.bind(controller));
+router.get("/reference/scores/:scoreId/groups", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), oncology_validation_1.getCancerScoreValidation, controller.getCancerScoreGroups.bind(controller));
+router.get("/reference/scores/:scoreId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), oncology_validation_1.getCancerScoreValidation, controller.getCancerScoreDetail.bind(controller));
 // The Investigation Results tests (tumour markers etc.) of a cancer type.
 router.get("/reference/cancer-types/:cancerTypeId/investigation-parameters", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), oncology_validation_1.getCancerSubtypesValidation, controller.getInvestigationParameters.bind(controller));
 router.get("/reference/staging", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.read"), oncology_validation_1.getStagingReferenceValidation, controller.getStagingReference.bind(controller));
@@ -31,6 +34,9 @@ router.post("/reference/cancer-types/:cancerTypeId/subtypes", auth_middleware_1.
 router.post("/reference/cancer-types/:cancerTypeId/stages", auth_middleware_1.authenticate, addReferenceAccess, oncology_validation_1.addReferenceValueValidation, controller.addStagingStage.bind(controller));
 router.post("/reference/cancer-types/:cancerTypeId/grades", auth_middleware_1.authenticate, addReferenceAccess, oncology_validation_1.addGradeValidation, controller.addCancerGrade.bind(controller));
 router.post("/reference/cancer-types/:cancerTypeId/scores", auth_middleware_1.authenticate, addReferenceAccess, oncology_validation_1.addScoreValidation, controller.addCancerScore.bind(controller));
+// Catalogue metadata editing (purpose, range, risk-group text, reference...).
+// Admin-level reference management, like the reseed endpoint.
+router.patch("/reference/scores/:scoreId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("oncology.reference.manage"), oncology_validation_1.updateCancerScoreValidation, controller.updateCancerScore.bind(controller));
 router.post("/reference/cancer-types/:cancerTypeId/tnm-stages", auth_middleware_1.authenticate, addReferenceAccess, oncology_validation_1.addTnmStageValidation, controller.addTnmStage.bind(controller));
 // Also reachable from the inpatient discharge card / nurse discharge popup.
 router.post("/reference/disease-statuses", auth_middleware_1.authenticate, (0, authorize_1.authorizeAny)("oncology.diagnosis.create", "oncology.diagnosis.update", "admission.discharge_details", "admission.discharge"), oncology_validation_1.addDiseaseStatusValidation, controller.addDiseaseStatus.bind(controller));

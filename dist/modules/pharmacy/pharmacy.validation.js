@@ -72,6 +72,10 @@ exports.saveFromOrderValidation = [
     (0, express_validator_1.body)("items.*.dose").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("items.*.dose_unit").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("items.*.drug_role").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("items.*.route").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("items.*.frequency").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("items.*.duration").optional({ nullable: true }).isString(),
+    (0, express_validator_1.body)("items.*.instructions").optional({ nullable: true }).isString(),
     (0, express_validator_1.body)("items.*.pharmacy_item_id").optional({ nullable: true }).isString()
 ];
 exports.getSlipByOrderValidation = [
@@ -117,6 +121,24 @@ exports.updateSlipItemsValidation = [
         .optional({ nullable: true })
         .isString(),
     (0, express_validator_1.body)("items.*.medicine_id")
+        .optional({ nullable: true })
+        .isString(),
+    (0, express_validator_1.body)("items.*.drug_role")
+        .optional({ nullable: true })
+        .isString(),
+    (0, express_validator_1.body)("items.*.route")
+        .optional({ nullable: true })
+        .isString(),
+    (0, express_validator_1.body)("items.*.frequency")
+        .optional({ nullable: true })
+        .isString(),
+    (0, express_validator_1.body)("items.*.duration")
+        .optional({ nullable: true })
+        .isString(),
+    (0, express_validator_1.body)("items.*.instructions")
+        .optional({ nullable: true })
+        .isString(),
+    (0, express_validator_1.body)("items.*.pharmacy_item_id")
         .optional({ nullable: true })
         .isString()
 ];

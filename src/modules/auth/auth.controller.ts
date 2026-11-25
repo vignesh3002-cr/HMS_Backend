@@ -10,7 +10,7 @@ export class AuthController {
         try {
 
             const { username, password, rememberMe } = req.body;
-            console.log("Remember Me:", rememberMe);
+            console.log(`[AUTH] Login attempt for username: "${username}"`);
 
             if (!username || !password) {
                 return res.status(400).json({
@@ -53,6 +53,8 @@ export class AuthController {
             // });
 
         } catch (error: any) {
+
+            console.error(`[AUTH] Login failed for "${req.body?.username}":`, error.message);
 
             return res.status(401).json({
                 success: false,

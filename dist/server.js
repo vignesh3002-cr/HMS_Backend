@@ -46,6 +46,7 @@ const priorityFlags_routes_1 = __importDefault(require("./modules/priority-flags
 const ai_chat_routes_1 = __importDefault(require("./modules/ai/ai-chat.routes"));
 const patientDocument_routes_1 = __importDefault(require("./modules/patient-document/patientDocument.routes"));
 const integration_routes_1 = __importDefault(require("./modules/integration/integration.routes"));
+const patient_portal_routes_1 = __importDefault(require("./modules/patient-portal/patient-portal.routes"));
 const bcrypt_1 = require("./utils/bcrypt");
 // Fix BigInt serialization - Prisma returns BigInt types
 // that JSON.stringify can't handle
@@ -158,6 +159,7 @@ app.use("/api/priority-flags", priorityFlags_routes_1.default);
 app.use("/api/ai-chat", ai_chat_routes_1.default);
 app.use("/api/patient-documents", patientDocument_routes_1.default);
 app.use("/api/integrations", integration_routes_1.default);
+app.use("/api/patient-portal", patient_portal_routes_1.default);
 app.use("/api/hashpassword", async (req, res) => {
     const { password } = req.body;
     const hashedPassword = await (0, bcrypt_1.hashPassword)(password);
