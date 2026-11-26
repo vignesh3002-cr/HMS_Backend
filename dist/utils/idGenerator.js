@@ -16,6 +16,7 @@ exports.ENTITY_TARGET = {
     DOCTOR: { table: "employees", column: "employee_id" },
     EMPLOYEE: { table: "employees", column: "employee_id" },
     ENCOUNTER: { table: "encounter", column: "encounter_no" },
+    HOSPITAL: { table: "hospital", column: "hospital_id" },
     LOGIN_OTP: { table: "login_otp", column: "otp_id" },
     NOTIFICATION: { table: "appointment_notification", column: "notification_id" },
     PATIENT: { table: "patient_bio_data", column: "patient_id" },

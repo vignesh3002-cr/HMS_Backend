@@ -2,6 +2,7 @@
 // the app layer, the same way category already is (no DB CHECK constraint,
 // consistent with every other classification column in this schema).
 export const DOCUMENT_TYPE = {
+  PRESCRIPTION: "PRESCRIPTION",
   BIOPSY_REPORT: "BIOPSY_REPORT",
   DISCHARGE_DOCUMENT: "DISCHARGE_DOCUMENT",
   LAB_REPORT: "LAB_REPORT",

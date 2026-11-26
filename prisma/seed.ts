@@ -42,6 +42,11 @@ const PERMISSIONS = [
   { key: "branch.update", name: "Edit Branch", description: "Edit branch information", category: "branch" },
   { key: "branch.delete", name: "Delete Branch", description: "Delete/deactivate branches", category: "branch" },
 
+  // Hospital
+  { key: "hospital.create", name: "Create Hospital", description: "Create new hospitals", category: "hospital" },
+  { key: "hospital.read", name: "View Hospitals", description: "View hospital list and details", category: "hospital" },
+  { key: "hospital.update", name: "Edit Hospital", description: "Edit hospital information", category: "hospital" },
+
   // Doctor
   { key: "doctor.create", name: "Create Doctor", description: "Add new doctors", category: "doctor" },
   { key: "doctor.read", name: "View Doctors", description: "View doctor list and details", category: "doctor" },
@@ -116,7 +121,8 @@ const PERMISSIONS = [
 ];
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
-  // SUPER_ADMIN and HEAD_ADMIN get all permissions
+  // SYSTEM_OWNER, SUPER_ADMIN and HEAD_ADMIN get all permissions
+  SYSTEM_OWNER: PERMISSIONS.map(p => p.key),
   SUPER_ADMIN: PERMISSIONS.map(p => p.key),
   HEAD_ADMIN: PERMISSIONS.map(p => p.key),
 
@@ -168,6 +174,8 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "admission.care_team",
     "ward.manage",
     "bed.manage",
+
+    "hospital.read",
 
   ],
 
@@ -317,6 +325,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 
 // Role metadata only - ID prefixes and numbering live in id_sequences.
 const ROLE_CONFIGS = [
+  { role_type: "SYSTEM_OWNER", description: "System Owner", display_name: "System Owner", sort_order: 0, is_active: true },
   { role_type: "SUPER_ADMIN", description: "Super Administrator", display_name: "Super Admin", sort_order: 1, is_active: true },
   { role_type: "HEAD_ADMIN", description: "Head Administrator", display_name: "Head Admin", sort_order: 2, is_active: true },
   { role_type: "BRANCH_ADMIN", description: "Branch Administrator", display_name: "Branch Admin", sort_order: 3, is_active: true },

@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.exportService = exports.ExportService = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const csv_1 = require("../../utils/csv");
+const patientDiagnoses_1 = require("../patient/patientDiagnoses");
 // Secrets / credentials / PII that must never appear in any export.
 const EXCLUDED_COLUMNS = new Set([
     "username",
@@ -72,25 +73,17 @@ class ExportService {
             where: query.branchId ? { branch_id: query.branchId } : {},
             include: {
                 branch: { select: { branch_name: true, branch_area: true } },
-                // Same strict rule as patient.service.getPatients: only an
-                // OPEN (PLANNED/ACTIVE) plan contributes a cancer type;
-                // COMPLETED / no plan exports as an empty diagnosis.
-                chemotherapy_plan: {
-                    where: {
-                        treatment_status: { in: ["ACTIVE", "PLANNED"] },
-                        active_status: 1,
-                        deleted_flag: false,
-                    },
-                    select: { cancer_type: true },
-                },
             },
             orderBy: { id: "asc" },
         });
+        // Same rule as patient.service.getPatients: ALL diagnoses of a patient
+        // (open + completed plans, then staging records), comma-joined.
+        const diagnosesByPatient = await (0, patientDiagnoses_1.buildPatientDiagnoses)(patients.map((p) => p.patient_id));
         const { rows, columns } = toCsvRows(patients, ["branch", "chemotherapy_plan"], [
             { key: "branch_name", value: (p) => formatBranchName(p.branch) },
             {
                 key: "diagnosis_name",
-                value: (p) => p.chemotherapy_plan?.cancer_type ?? "",
+                value: (p) => (diagnosesByPatient.get(p.patient_id ?? "") ?? []).join(", "),
             },
         ]);
         return (0, csv_1.toCsv)(rows, columns);

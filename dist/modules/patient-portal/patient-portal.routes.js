@@ -1,0 +1,24 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../auth/auth.middleware");
+const patient_portal_controller_1 = require("./patient-portal.controller");
+const router = (0, express_1.Router)();
+const controller = new patient_portal_controller_1.PatientPortalController();
+// All routes require authentication (either role=PATIENT or admin/doctor viewing patient portal)
+router.get("/dashboard", auth_middleware_1.authenticate, controller.getDashboard.bind(controller));
+router.get("/appointments", auth_middleware_1.authenticate, controller.getAppointments.bind(controller));
+router.post("/appointments", auth_middleware_1.authenticate, controller.bookAppointment.bind(controller));
+router.post("/appointments/:appointmentId/cancel", auth_middleware_1.authenticate, controller.cancelAppointment.bind(controller));
+router.post("/appointments/:appointmentId/reschedule", auth_middleware_1.authenticate, controller.rescheduleAppointment.bind(controller));
+router.put("/appointments/:appointmentId/reschedule", auth_middleware_1.authenticate, controller.rescheduleAppointment.bind(controller));
+router.get("/branches", auth_middleware_1.authenticate, controller.getBranches.bind(controller));
+router.get("/departments", auth_middleware_1.authenticate, controller.getDepartments.bind(controller));
+router.get("/doctors", auth_middleware_1.authenticate, controller.getDoctors.bind(controller));
+router.get("/available-slots", auth_middleware_1.authenticate, controller.getAvailableSlots.bind(controller));
+router.get("/lab-reports", auth_middleware_1.authenticate, controller.getLabReports.bind(controller));
+router.get("/prescriptions", auth_middleware_1.authenticate, controller.getPrescriptions.bind(controller));
+router.get("/vitals", auth_middleware_1.authenticate, controller.getVitalsHistory.bind(controller));
+router.get("/allergies", auth_middleware_1.authenticate, controller.getAllergies.bind(controller));
+router.get("/chemotherapy", auth_middleware_1.authenticate, controller.getChemotherapyPlans.bind(controller));
+exports.default = router;

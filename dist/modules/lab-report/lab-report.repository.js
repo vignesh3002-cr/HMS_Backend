@@ -98,6 +98,12 @@ class LabReportRepository {
                             },
                         },
                         department_master: true,
+                        lab_order_item: {
+                            include: {
+                                lab_test_master: true,
+                                lab_result: true,
+                            },
+                        },
                     },
                 },
             },
@@ -172,19 +178,38 @@ class LabReportRepository {
                 },
             },
         });
-        // Link any unassigned lab_result rows for this order to the newly created report
-        if (data.lab_order_id && report.lab_report_id) {
-            await prisma_1.default.lab_result.updateMany({
-                where: {
-                    lab_order_item: {
-                        lab_order_id: data.lab_order_id,
+        // Link matching lab_result rows to the newly created report (never contaminate unrelated items in the order)
+        if (report.lab_report_id) {
+            const comment = typeof data.report_comment === "object" ? data.report_comment : {};
+            const repParams = Array.isArray(comment?.parameters) ? comment.parameters : [];
+            const paramResultIds = repParams
+                .map((p) => String(p?.id ?? ""))
+                .filter((id) => id.startsWith("RES"));
+            if (paramResultIds.length > 0) {
+                await prisma_1.default.lab_result
+                    .updateMany({
+                    where: {
+                        lab_result_id: { in: paramResultIds },
                     },
-                    lab_report_id: null,
-                },
-                data: {
-                    lab_report_id: report.lab_report_id,
-                },
-            }).catch(() => { });
+                    data: {
+                        lab_report_id: report.lab_report_id,
+                    },
+                })
+                    .catch(() => { });
+            }
+            else if (data.lab_order_item_id) {
+                await prisma_1.default.lab_result
+                    .updateMany({
+                    where: {
+                        lab_order_item_id: data.lab_order_item_id,
+                        lab_report_id: null,
+                    },
+                    data: {
+                        lab_report_id: report.lab_report_id,
+                    },
+                })
+                    .catch(() => { });
+            }
         }
         return report;
     }

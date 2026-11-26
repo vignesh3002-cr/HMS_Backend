@@ -3,9 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateLabTestMasterValidation = exports.createLabTestMasterValidation = void 0;
 const express_validator_1 = require("express-validator");
 exports.createLabTestMasterValidation = [
-    (0, express_validator_1.body)("lab_test_category_id")
-        .notEmpty()
-        .withMessage("Lab Test Category is required"),
     (0, express_validator_1.body)("test_name")
         .notEmpty()
         .withMessage("Test Name is required"),
@@ -19,7 +16,11 @@ exports.createLabTestMasterValidation = [
     (0, express_validator_1.body)("tat_hours")
         .optional()
         .isInt()
-        .withMessage("TAT Hours must be a number")
+        .withMessage("TAT Hours must be a number"),
+    (0, express_validator_1.body)("parameters")
+        .optional()
+        .isArray()
+        .withMessage("Parameters must be an array")
 ];
 exports.updateLabTestMasterValidation = [
     (0, express_validator_1.body)("test_name")
@@ -33,5 +34,8 @@ exports.updateLabTestMasterValidation = [
         .isNumeric(),
     (0, express_validator_1.body)("tat_hours")
         .optional()
-        .isInt()
+        .isInt(),
+    (0, express_validator_1.body)("parameters")
+        .optional()
+        .isArray()
 ];

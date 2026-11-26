@@ -47,8 +47,16 @@ class BranchController {
                     errors: errors.array(),
                 });
             }
-            const createdBy = "SA001"; // TODO: from JWT
-            const hospitalId = "HSP001"; // TODO: from JWT
+            // Get hospital_id from request body (Super Admin) or from JWT (others)
+            const hospitalId = req.body.hospital_id || req.user?.hospital_id;
+            if (!hospitalId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Hospital is required. Please select a hospital for this branch.",
+                });
+            }
+            // Get createdBy from JWT
+            const createdBy = req.user?.user_id || req.user?.employee_id || "SYSTEM";
             const result = await service.createBranch(req.body, createdBy, hospitalId);
             return res.status(201).json({
                 success: true,

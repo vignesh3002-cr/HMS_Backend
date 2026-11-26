@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LabReportService = void 0;
+exports.doesReportBelongToItem = doesReportBelongToItem;
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const lab_report_repository_1 = require("./lab-report.repository");
 const repository = new lab_report_repository_1.LabReportRepository();
@@ -49,6 +50,71 @@ const reportCommentText = (value) => {
     const text = comment && typeof comment === "object" ? comment.text : undefined;
     return typeof text === "string" ? text : "";
 };
+const parametersOf = (rep) => {
+    const comment = asComment(rep?.report_comment);
+    return Array.isArray(comment?.parameters) ? comment.parameters : [];
+};
+function doesReportBelongToItem(item, report, orderItems) {
+    if (!report || !item)
+        return false;
+    // Single-item orders: the only test in the order
+    if (!orderItems || orderItems.length <= 1)
+        return true;
+    const comment = asComment(report.report_comment);
+    const repParams = Array.isArray(comment?.parameters) ? comment.parameters : [];
+    const itemResults = Array.isArray(item.lab_result) ? item.lab_result : [];
+    const itemResultIds = new Set(itemResults.map((r) => String(r.lab_result_id)));
+    const itemParamNames = new Set(itemResults
+        .map((r) => String(r.parameter_name || "").toLowerCase().trim())
+        .filter(Boolean));
+    // If the report has parameters saved in comment:
+    if (repParams.length > 0) {
+        // 1. Direct result ID match
+        const hasMatchingResultId = repParams.some((p) => itemResultIds.has(String(p?.id ?? "")));
+        if (hasMatchingResultId)
+            return true;
+        // Check if report parameters belong to other items in this order
+        const otherResultIds = new Set();
+        for (const other of orderItems) {
+            if (other.lab_order_item_id === item.lab_order_item_id)
+                continue;
+            (other.lab_result || []).forEach((r) => {
+                otherResultIds.add(String(r.lab_result_id));
+            });
+        }
+        const hasOtherResultId = repParams.some((p) => otherResultIds.has(String(p?.id ?? "")));
+        if (hasOtherResultId) {
+            // The parameters in this report belong to another item in the order!
+            return false;
+        }
+        // 2. Parameter name match
+        if (itemParamNames.size > 0) {
+            const hasMatchingParam = repParams.some((p) => {
+                const pName = String(p?.parameter || p?.name || "").toLowerCase().trim();
+                return pName && itemParamNames.has(pName);
+            });
+            if (hasMatchingParam)
+                return true;
+        }
+        // Report has specific parameters and none of them belong to this item
+        return false;
+    }
+    // If report has NO parameters in comment (older or file-only report):
+    // 3. Match by item ID suffix in report_number
+    const itemSuffix = String(item.lab_order_item_id || "").slice(-6);
+    const repNum = String(report.report_number || "");
+    if (itemSuffix && itemSuffix.length >= 4 && repNum.includes(itemSuffix)) {
+        if (itemResults.length > 0 || ["REPORT GENERATED", "DELIVERED", "VERIFIED", "COMPLETED"].includes((item.item_status || "").toUpperCase())) {
+            return true;
+        }
+    }
+    // 4. If lab_result has lab_report_id, verify item actually has non-empty results
+    const hasLinkedResult = itemResults.some((r) => r.lab_report_id === report.lab_report_id && r.result_value && r.result_value.trim() !== "");
+    if (hasLinkedResult && itemResults.length > 0) {
+        return true;
+    }
+    return false;
+}
 class LabReportService {
     async getAll() {
         return repository.findAll();
@@ -76,22 +142,14 @@ class LabReportService {
             throw new Error(`Lab order item with id ${labOrderItemId} not found`);
         }
         const { item, results, orderReports, patient } = data;
-        const linkedReports = results
-            .map((result) => result.lab_report)
-            .filter((report) => Boolean(report));
-        const resultIds = new Set(results.map((result) => result.lab_result_id));
-        const parametersOf = (report) => Array.isArray(asComment(report?.report_comment)?.parameters)
-            ? asComment(report?.report_comment)?.parameters
-            : [];
-        /* A report whose saved parameters carry this item's lab_result ids is
-           this item's report even when lab_result.lab_report_id is empty. */
-        const reportByParameters = orderReports.find((report) => parametersOf(report).some((parameter) => resultIds.has(String(parameter?.id ?? ""))));
-        const report = linkedReports.find((candidate) => Boolean(candidate.report_file)) ??
-            linkedReports[0] ??
-            reportByParameters ??
-            (orderReports.length === 1 ? orderReports[0] : null) ??
-            orderReports.find((candidate) => Boolean(candidate.report_file)) ??
-            orderReports[0] ??
+        const orderItems = data.item?.lab_order?.lab_order_item || [item];
+        const itemWithResults = {
+            ...item,
+            lab_result: results,
+        };
+        const candidateReports = orderReports.filter((r) => doesReportBelongToItem(itemWithResults, r, orderItems));
+        const report = candidateReports.find((r) => Boolean(r.report_file)) ??
+            candidateReports[0] ??
             null;
         const reportParameters = parametersOf(report).map((parameter) => ({
             name: parameter?.parameter ?? parameter?.name ?? "",

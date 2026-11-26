@@ -11,6 +11,7 @@
 
 export const HEAD_ADMIN = "HEAD_ADMIN";
 export const SUPER_ADMIN = "SUPER_ADMIN";
+export const SYSTEM_OWNER = "SYSTEM_OWNER";
 export const ADMIN = "ADMIN";
 export const BRANCH_ADMIN = "BRANCH_ADMIN";
 export const DOCTOR = "DOCTOR";
@@ -24,7 +25,7 @@ export const PATIENT = "PATIENT";
 // Roles that bypass per-branch scoping entirely and see every branch.
 // Used by branchScope.ts (default-deny: only these roles get unrestricted
 // access, everything else - known or not - is branch-scoped).
-export const TOP_LEVEL_ADMIN_ROLES = [HEAD_ADMIN, SUPER_ADMIN];
+export const TOP_LEVEL_ADMIN_ROLES = [SYSTEM_OWNER, SUPER_ADMIN, HEAD_ADMIN];
 
 // Top-level admins plus a branch's own admin - for actions a Branch Admin
 // may perform on their own branch (e.g. doctor transfers, appointment
@@ -32,6 +33,6 @@ export const TOP_LEVEL_ADMIN_ROLES = [HEAD_ADMIN, SUPER_ADMIN];
 export const BRANCH_ADMIN_ROLES = [...TOP_LEVEL_ADMIN_ROLES, BRANCH_ADMIN];
 export const ADMIN_ROLES = [...TOP_LEVEL_ADMIN_ROLES, ADMIN];
 
-export const LOGIN_ENABLED_ROLES = [...TOP_LEVEL_ADMIN_ROLES, BRANCH_ADMIN, ADMIN, DOCTOR, NURSE, RECEPTIONIST, PHARMACIST, LAB_TECHNICIAN];
+export const LOGIN_ENABLED_ROLES = [...TOP_LEVEL_ADMIN_ROLES, BRANCH_ADMIN, ADMIN, DOCTOR, NURSE, RECEPTIONIST, PHARMACIST, LAB_TECHNICIAN, PATIENT];
 
 export const BRANCH_RESTRICTED_ROLES = [BRANCH_ADMIN, ADMIN];

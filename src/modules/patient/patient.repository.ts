@@ -140,26 +140,12 @@ export class PatientRepository {
                         role_type: true,
                         user_status: true
                     }
-                },
-
-                /* Only an OPEN plan counts - PLANNED or ACTIVE treatment. The
-                   DB enforces one open plan per patient
-                   (uq_open_chemo_plan_per_patient), while completed/cancelled
-                   plans can pile up, so the filter must live here or we could
-                   resolve the wrong plan for patients with history.
-                   Anything else (COMPLETED, no plan) resolves to "Not
-                   recorded" downstream. */
-                chemotherapy_plan: {
-                    where: {
-                        treatment_status: { in: ["ACTIVE", "PLANNED"] },
-                        active_status: 1,
-                        deleted_flag: false
-                    },
-                    select: {
-                        treatment_status: true,
-                        cancer_type: true
-                    }
                 }
+
+                /* The chemotherapy_plan include that used to live here (open
+                   plan only, one cancer type) was replaced by
+                   buildPatientDiagnoses() in patient.service.ts - the page now
+                   lists ALL diagnoses (all plans + staging) per patient. */
 
             },
 

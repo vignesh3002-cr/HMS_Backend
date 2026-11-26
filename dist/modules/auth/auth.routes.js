@@ -16,6 +16,8 @@ const authController = new auth_controller_1.AuthController();
 // 2FA and Multi-Channel Security Subsystem
 router.use("/2fa", twoFactor_routes_1.default);
 router.post("/login", authController.login.bind(authController));
+// SYSTEM_OWNER only: create a SUPER_ADMIN user
+router.post("/create-super-admin", auth_middleware_1.authenticate, authController.createSuperAdmin.bind(authController));
 router.post("/send-otp", authController.sendOtp.bind(authController));
 router.post("/verify-otp", authController.verifyOtp.bind(authController));
 // Forgot Password Flow (Unauthenticated: Username -> Default Channel OTP -> Reset)

@@ -25,6 +25,9 @@ export interface CreateBranchDto {
   website_address?: string | null;
   date_of_establish?: string | null;
 
+  // Hospital this branch belongs to (Super Admin can specify; others inherit from JWT)
+  hospital_id?: string;
+
   // Admin Mode: "EXISTING" | "NEW"
   admin_mode: "EXISTING" | "NEW";
   admin_user_id?: string;           // required when EXISTING

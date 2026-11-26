@@ -2695,6 +2695,10 @@ model oncology_staging_detail {
   relapse_date                        DateTime?                             @db.Date
   score                               String?
   score_system                        String?                               @db.VarChar(255)
+  score_variables                     Json?                                 @db.Json
+  score_result                        String?
+  risk_group                          String?                               @db.VarChar(200)
+  score_points                        Decimal?                              @db.Decimal(10, 2)
   encounter_no                        String?                               @unique(map: "uq_staging_detail_encounter", where: raw("(encounter_no IS NOT NULL)")) @db.VarChar(100)
   suggested_molecular_test            String?                               @db.VarChar(255)
   suggested_molecular_test_date       DateTime?                             @db.Date
@@ -2702,10 +2706,6 @@ model oncology_staging_detail {
   histopathology                      String?                               @db.VarChar(100)
   second_primary_date                 DateTime?                             @db.Date
   form_state                          Json?
-  score_variables                     Json?                                 @db.Json
-  score_result                        String?
-  risk_group                          String?                               @db.VarChar(200)
-  score_points                        Decimal?                              @db.Decimal(10, 2)
   chemotherapy_plan                   chemotherapy_plan[]
   derived_fields                      derived_fields?
   genomic_test                        genomic_test[]
@@ -3213,6 +3213,7 @@ model sample_collection {
   barcode              String?        @unique @db.VarChar(100)
   container_type       String?        @db.VarChar(100)
   collection_datetime  DateTime?      @default(now()) @db.Timestamp(6)
+  expiry_datetime      DateTime?      @db.Timestamp(6)
   collected_by         String?        @db.VarChar(100)
   collection_site      String?        @db.VarChar(100)
   collected_volume     String?        @db.VarChar(100)
@@ -3223,7 +3224,6 @@ model sample_collection {
   user_id              String?        @db.VarChar(100)
   created_at           DateTime?      @default(now()) @db.Timestamp(6)
   updated_at           DateTime?      @default(now()) @db.Timestamp(6)
-  expiry_datetime      DateTime?      @db.Timestamp(6)
   lab_history          lab_history[]
   lab_result           lab_result[]
   branch               branch?        @relation(fields: [branch_id], references: [branch_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_sample_collection_branch")

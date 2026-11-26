@@ -97,6 +97,12 @@ export class LabReportRepository {
               },
             },
             department_master: true,
+            lab_order_item: {
+              include: {
+                lab_test_master: true,
+                lab_result: true,
+              },
+            },
           },
         },
       },
@@ -192,19 +198,38 @@ export class LabReportRepository {
       },
     });
 
-    // Link any unassigned lab_result rows for this order to the newly created report
-    if (data.lab_order_id && report.lab_report_id) {
-      await prisma.lab_result.updateMany({
-        where: {
-          lab_order_item: {
-            lab_order_id: data.lab_order_id,
-          },
-          lab_report_id: null,
-        },
-        data: {
-          lab_report_id: report.lab_report_id,
-        },
-      }).catch(() => {});
+    // Link matching lab_result rows to the newly created report (never contaminate unrelated items in the order)
+    if (report.lab_report_id) {
+      const comment = typeof data.report_comment === "object" ? data.report_comment : {};
+      const repParams = Array.isArray(comment?.parameters) ? comment.parameters : [];
+      const paramResultIds = repParams
+        .map((p: any) => String(p?.id ?? ""))
+        .filter((id: string) => id.startsWith("RES"));
+
+      if (paramResultIds.length > 0) {
+        await prisma.lab_result
+          .updateMany({
+            where: {
+              lab_result_id: { in: paramResultIds },
+            },
+            data: {
+              lab_report_id: report.lab_report_id,
+            },
+          })
+          .catch(() => {});
+      } else if ((data as any).lab_order_item_id) {
+        await prisma.lab_result
+          .updateMany({
+            where: {
+              lab_order_item_id: (data as any).lab_order_item_id,
+              lab_report_id: null,
+            },
+            data: {
+              lab_report_id: report.lab_report_id,
+            },
+          })
+          .catch(() => {});
+      }
     }
 
     return report;

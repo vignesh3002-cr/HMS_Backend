@@ -37,7 +37,8 @@ async function main() {
         { entity_name: "ADMISSION_TRANSFER", prefix: "TRF" },
         { entity_name: "REVIEW_REMINDER", prefix: "RVW" },
         { entity_name: "FOLLOWUP_LOG", prefix: "FUP" },
-        { entity_name: "CARE_TEAM", prefix: "ACT" }
+        { entity_name: "CARE_TEAM", prefix: "ACT" },
+        { entity_name: "HOSPITAL", prefix: "HSP" }
     ];
 
     for (const seq of sequenceSetup) {

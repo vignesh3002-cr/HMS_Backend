@@ -8,6 +8,7 @@ import {
     GetPatientsQuery
 } from "./patient.types";
 import { CreatePatientHistoryDTO } from "./patient-history.types";
+import { buildPatientDiagnoses } from "./patientDiagnoses";
 import { generateId } from "../../utils/idGenerator";
 
 const repository = new PatientRepository();
@@ -178,18 +179,25 @@ export class PatientService {
 
         const result = await repository.getPatients(query);
 
-        /* Diagnosis shown against each patient on the admin Patients page.
-           Strict rule: ONLY an open treatment plan counts -
-             ACTIVE or PLANNED -> that plan's cancer type (e.g. "Breast")
-           everything else (COMPLETED treatment, no plan at all) -> null,
-           which the UI renders as "Not recorded". No other source is used. */
+        /* Diagnoses shown against each patient on the admin Patients page.
+           A patient may have 1..n diagnoses, so the API returns a LIST:
+           - `diagnoses`  -> every distinct diagnosis (open + completed plans,
+                             then staging records; see patientDiagnoses.ts);
+           - `diagnosis_name` -> the FIRST diagnosis (primary), kept for
+                             backward compatibility with CSV export / search.
+           Empty list -> the UI renders "Not recorded". */
+        const diagnosesByPatient = await buildPatientDiagnoses(
+            result.patients.map((patient) => patient.patient_id)
+        );
+
         const patients = result.patients.map((patient) => {
 
-            const { chemotherapy_plan, ...rest } = patient;
+            const diagnoses = diagnosesByPatient.get(patient.patient_id ?? "") ?? [];
 
             return {
-                ...rest,
-                diagnosis_name: chemotherapy_plan?.cancer_type ?? null
+                ...patient,
+                diagnosis_name: diagnoses[0] ?? null,
+                diagnoses
             };
 
         });

@@ -386,6 +386,37 @@ class EncounterService {
                 data: { review_date: new Date(data.follow_up_date), updated_at: new Date() },
             });
         }
+        // Keep patient_history vitals in sync with encounter vitals
+        if (data.systolic_bp !== undefined ||
+            data.diastolic_bp !== undefined ||
+            data.pulse !== undefined ||
+            data.temperature !== undefined ||
+            data.spo2 !== undefined ||
+            data.weight !== undefined ||
+            data.height !== undefined ||
+            data.blood_sugar !== undefined) {
+            await prisma_1.default.patient_history.updateMany({
+                where: {
+                    OR: [
+                        { encounter_no: encounterNo },
+                        ...(existing.appointment_id ? [{ appointment_id: existing.appointment_id }] : []),
+                    ],
+                },
+                data: {
+                    ...(data.systolic_bp !== undefined ? { systolic_bp: data.systolic_bp } : {}),
+                    ...(data.diastolic_bp !== undefined ? { diastolic_bp: data.diastolic_bp } : {}),
+                    ...(data.pulse !== undefined ? { pulse: data.pulse } : {}),
+                    ...(data.temperature !== undefined ? { temperature: data.temperature } : {}),
+                    ...(data.spo2 !== undefined ? { oxygen_saturation: data.spo2 } : {}),
+                    ...(data.respiratory_rate !== undefined ? { respiratory_rate: data.respiratory_rate } : {}),
+                    ...(data.weight !== undefined ? { weight: data.weight } : {}),
+                    ...(data.height !== undefined ? { height: data.height } : {}),
+                    ...(bmi !== undefined ? { bmi: bmi } : {}),
+                    ...(data.blood_sugar !== undefined ? { blood_sugar: String(data.blood_sugar) } : {}),
+                    updated_at: new Date(),
+                },
+            }).catch((err) => console.warn("Failed to sync vitals to patient_history:", err));
+        }
         return updated;
     }
     async closeEncounter(encounterNo, closedBy) {

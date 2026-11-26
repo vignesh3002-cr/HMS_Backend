@@ -113,20 +113,31 @@ export class LabOrderItemRepository {
 
     }
 
-    async generateBarcodes(items: { lab_order_item_id: string; barcode: string; sample_type?: string; collection_datetime?: string | Date }[]) {
+    async generateBarcodes(items: { lab_order_item_id: string; barcode: string; sample_type?: string; collection_datetime?: string | Date; remarks?: string }[]) {
         const results = [];
-        for (const item of items) {
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
             const collectionDate = item.collection_datetime
                 ? new Date(item.collection_datetime)
                 : new Date();
 
             const existingItem = await prisma.lab_order_item.findUnique({
-                where: { lab_order_item_id: item.lab_order_item_id }
+                where: { lab_order_item_id: item.lab_order_item_id },
+                include: { lab_test_master: true }
             });
             if (!existingItem) continue;
 
+            const expiryHours = Number(existingItem.lab_test_master?.expiry_time_hours) || 2;
+            const expiryDate = new Date(collectionDate.getTime() + expiryHours * 3600 * 1000);
+
+            // Find existing sample_collection by specific barcode first
             const existing = await prisma.sample_collection.findFirst({
-                where: { lab_order_item_id: item.lab_order_item_id }
+                where: {
+                    OR: [
+                        { barcode: item.barcode },
+                        { AND: [{ lab_order_item_id: item.lab_order_item_id }, { barcode: item.barcode }] }
+                    ]
+                }
             });
 
             let sc;
@@ -135,27 +146,30 @@ export class LabOrderItemRepository {
                     where: { sample_collection_id: existing.sample_collection_id },
                     data: {
                         barcode: item.barcode,
-                        container_type: item.sample_type,
+                        container_type: item.sample_type || existing.container_type,
                         collection_status: "Collected",
                         collection_datetime: collectionDate,
-                        remarks: `Barcode: ${item.barcode}`
+                        expiry_datetime: expiryDate,
+                        remarks: item.remarks || existing.remarks || `Barcode: ${item.barcode}`
                     }
                 });
             } else {
                 sc = await prisma.sample_collection.create({
                     data: {
-                        sample_collection_id: `SC${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+                        sample_collection_id: `SC${Date.now()}_${i}_${Math.floor(Math.random() * 10000)}`,
                         lab_order_item_id: item.lab_order_item_id,
                         barcode: item.barcode,
                         container_type: item.sample_type,
                         collection_status: "Collected",
                         collection_datetime: collectionDate,
-                        remarks: `Barcode: ${item.barcode}`,
+                        expiry_datetime: expiryDate,
+                        remarks: item.remarks || `Barcode: ${item.barcode}`,
                         branch_id: existingItem.branch_id || undefined,
                         user_id: existingItem.user_id || undefined
                     }
                 });
             }
+            results.push(sc);
 
             const updatedItem = await prisma.lab_order_item.update({
                 where: { lab_order_item_id: item.lab_order_item_id },

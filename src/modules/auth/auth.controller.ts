@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { AuthService } from "./auth.service";
+import { authorize } from "../../middleware/authorize";
+import { SYSTEM_OWNER } from "../../permissions/roles";
 
 const authService = new AuthService();
 
@@ -10,7 +12,7 @@ export class AuthController {
         try {
 
             const { username, password, rememberMe, directLogin } = req.body;
-            console.log("Remember Me:", rememberMe, "Direct Login:", directLogin);
+            console.log(`[AUTH] Login attempt for username: "${username}" (rememberMe=${Boolean(rememberMe)}, directLogin=${Boolean(directLogin)})`);
 
             if (!username || !password) {
                 return res.status(400).json({
@@ -57,6 +59,8 @@ export class AuthController {
 
         } catch (error: any) {
 
+            console.error(`[AUTH] Login failed for "${req.body?.username}":`, error.message);
+
             return res.status(401).json({
                 success: false,
                 message: error.message
@@ -64,6 +68,57 @@ export class AuthController {
 
         }
 
+    }
+
+    // SYSTEM_OWNER only: create a SUPER_ADMIN user
+    async createSuperAdmin(req: Request, res: Response) {
+        try {
+            const authReq = req as any;
+            const callerRole = String(authReq.user?.role ?? "").toUpperCase();
+            if (callerRole !== SYSTEM_OWNER) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Forbidden. Only System Owner can create Super Admin."
+                });
+            }
+
+            const { username, password, email, first_name, last_name } = req.body;
+
+            if (!username || !password) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Username and password are required"
+                });
+            }
+
+            // Check if user already exists
+            const existing = await authService["authRepository"].findUserByUsername(username);
+            if (existing) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Username already exists"
+                });
+            }
+
+            const user = await authService.createSuperAdminUser({
+                username,
+                password,
+                email: email || null,
+                first_name: first_name || null,
+                last_name: last_name || null,
+            });
+
+            return res.status(201).json({
+                success: true,
+                message: "Super Admin created successfully",
+                data: user
+            });
+        } catch (error: any) {
+            return res.status(400).json({
+                success: false,
+                message: error.message || "Failed to create Super Admin"
+            });
+        }
     }
 
     async sendOtp(req: Request, res: Response) {

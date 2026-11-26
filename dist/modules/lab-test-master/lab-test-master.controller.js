@@ -15,7 +15,11 @@ class LabTestMasterController {
                     errors: errors.array()
                 });
             }
-            const test = await lab_test_master_service_1.default.create(req.body);
+            const authUser = req.user;
+            const test = await lab_test_master_service_1.default.create(req.body, {
+                branch_id: authUser?.branch_id,
+                user_id: authUser?.user_id
+            });
             return res.status(201).json({
                 success: true,
                 message: "Lab Test created successfully",
