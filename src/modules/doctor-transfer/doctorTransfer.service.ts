@@ -1392,7 +1392,9 @@ let closedBranchIds: string[];
             const tokenNumber = await this.appointmentRepository.generateTokenNumber(
                 tx,
                 sched.schedule_id,
-                effectiveDate
+                effectiveDate,
+                replacementEmployeeId,
+                targetTime
             );
 
             const doctorName = `${replacementEmployee.first_name} ${replacementEmployee.last_name}`.trim();
@@ -1544,7 +1546,9 @@ let closedBranchIds: string[];
         const tokenNumber = await this.appointmentRepository.generateTokenNumber(
             tx,
             best.schedule.schedule_id,
-            best.effectiveDate
+            best.effectiveDate,
+            replacementEmployeeId,
+            newAppointmentTime
         );
 
         const doctorName = `${replacementEmployee.first_name} ${replacementEmployee.last_name}`.trim();
@@ -2269,7 +2273,9 @@ let closedBranchIds: string[];
                 const tokenNumber = await this.appointmentRepository.generateTokenNumber(
                     tx,
                     queue.assigned_schedule_id!,
-                    queue.assigned_date!
+                    queue.assigned_date!,
+                    queue.assigned_employee_id,
+                    queue.assigned_time
                 );
 
                 const employee = await this.repository.findDoctorWithRole(queue.assigned_employee_id!);

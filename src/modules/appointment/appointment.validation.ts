@@ -10,7 +10,7 @@ export const createAppointmentValidation = [
         .withMessage("Patient is required"),
 
     body("employee_id")
-        .if((_val: any, { req }: any) => req.body.patient_visit_type !== "Lab Visit")
+        .if((_val: any, { req }: any) => req.body.patient_visit_type !== "Chemotherapy" && req.body.patient_visit_type !== "Daycare")
         .notEmpty()
         .withMessage("Doctor is required"),
 
