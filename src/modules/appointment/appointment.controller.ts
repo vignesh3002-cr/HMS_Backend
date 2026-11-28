@@ -1,4 +1,4 @@
-﻿import { Request, Response } from "express";
+import { Request, Response } from "express";
 import { validationResult } from "express-validator";
 import { AppointmentService } from "./appointment.service";
 
@@ -62,7 +62,8 @@ export class AppointmentController {
                 sortBy: req.query.sortBy as any,
                 sortOrder: req.query.sortOrder as any,
                 page: Number(req.query.page || 1),
-                limit: Number(req.query.limit || 10)
+                limit: Number(req.query.limit || 10),
+                viewMode: req.query.viewMode as string
             });
 
             return res.json({

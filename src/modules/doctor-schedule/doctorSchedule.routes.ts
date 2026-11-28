@@ -37,6 +37,17 @@ router.post(
 );
 
 /**
+ * Batch get all active doctor schedules (1 fast query for schedule grid views)
+ *
+ * GET /active
+ */
+router.get(
+    "/active",
+    authenticate,
+    doctorScheduleController.getAllActiveSchedules
+);
+
+/**
  * Get all recurring weekly schedules for a doctor,
  * including inactive rows
  *

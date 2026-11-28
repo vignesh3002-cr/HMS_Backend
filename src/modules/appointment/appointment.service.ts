@@ -24,7 +24,8 @@ import {
     addDays,
     getWeekRange,
     formatMinutesTo12Hour,
-    minutesToHHmm
+    minutesToHHmm,
+    findEarliestGapInWindow
 } from "./appointment.utils";
 import { generateId } from "../../utils/idGenerator";
 import { getBranchTimezone, getNowMinutesIn, getTodayIn } from "../../utils/timezone";
@@ -899,62 +900,16 @@ export class AppointmentService {
             );
         }
 
-        if (data.patient_visit_type === "Lab Visit") {
-            const appointmentTime = timeStringToDate(data.appointment_time);
-            const branch = await repository.findBranch(data.branch_id);
-            if (!branch) {
-                throw new Error("Branch not found");
+        if (data.patient_visit_type === "Lab Visit" && !data.department_id) {
+            const labDept = await prisma.department_master.findFirst({
+                where: {
+                    branch_id: data.branch_id,
+                    department_name: { contains: "Lab", mode: "insensitive" }
+                }
+            });
+            if (labDept) {
+                data.department_id = labDept.department_id;
             }
-
-            let deptId = data.department_id;
-            if (!deptId) {
-                const labDept = await prisma.department_master.findFirst({
-                    where: {
-                        branch_id: data.branch_id,
-                        department_name: { contains: "Lab", mode: "insensitive" }
-                    }
-                });
-                deptId = labDept?.department_id;
-            }
-
-            return this.transformAppointmentFields(
-                await prisma.$transaction(async (tx) => {
-                    const appointmentId = await repository.generateAppointmentNumber(tx);
-                    const countToday = await tx.appointment_history.count({
-                        where: {
-                            branch_id: data.branch_id,
-                            appointment_date: appointmentDate,
-                        }
-                    });
-                    const tokenNumber = countToday + 1;
-
-                    const appointment = await repository.createAppointment(
-                        tx,
-                        {
-                            appointment_id: appointmentId,
-                            patient_id: data.patient_id,
-                            employee_id: null,
-                            branch_id: data.branch_id,
-                            department_id: deptId,
-                            schedule_id: null,
-                            appointment_date: appointmentDate,
-                            appointment_time: appointmentTime,
-                            duration_minutes: Number(data.duration_minutes) || 10,
-                            token_number: tokenNumber,
-                            status: APPOINTMENT_STATUS.SCHEDULED,
-                            reason_for_visit: data.reason_for_visit || "Lab Visit",
-                            referred_by: data.referred_by,
-                            booking_source: data.booking_source ?? "STAFF",
-                            doctor_name: "-",
-                            created_by: createdBy,
-                            Patient_visit_type: data.patient_visit_type,
-                            Patient_type: data.patient_type,
-                        }
-                    );
-
-                    return appointment;
-                })
-            );
         }
 
         const {
@@ -1057,47 +1012,32 @@ export class AppointmentService {
                     const nowMinutes = getNowMinutesIn(branchTz);
                     const baselineStart = isToday ? Math.max(blockStartMinutes, nowMinutes) : blockStartMinutes;
 
-                    const priorOrInSlot = activeAppts.filter((a) => {
-                        let aStart = timeToMinutes(a.appointment_time!);
-                        const isNext = formatDateOnly(a.appointment_date) !== formatDateOnly(shiftBaseDate);
-                        if (isNext || (aStart < shiftStartMin && shiftEndMin > 1440)) aStart += 1440;
-                        const aEnd = aStart + (a.duration_minutes ?? 10);
-                        return aStart < blockEndMinutes && aEnd > blockStartMinutes;
-                    });
-
-                    const latestPriorEnd = priorOrInSlot.length > 0
-                        ? Math.max(...priorOrInSlot.map((a) => {
+                    const sortedIntervals = activeAppts
+                        .map((a) => {
                             let aStart = timeToMinutes(a.appointment_time!);
                             const isNext = formatDateOnly(a.appointment_date) !== formatDateOnly(shiftBaseDate);
                             if (isNext || (aStart < shiftStartMin && shiftEndMin > 1440)) aStart += 1440;
-                            return aStart + (a.duration_minutes ?? 10);
-                        }))
-                        : blockStartMinutes;
+                            return { start: aStart, end: aStart + (a.duration_minutes ?? 10) };
+                        })
+                        .sort((a, b) => a.start - b.start);
 
-                    const calculatedStartMinutes = Math.max(baselineStart, latestPriorEnd);
+                    const {
+                        candidateStart: calculatedStartMinutes,
+                        contiguousFreeMinutes,
+                        hasSufficientSpace
+                    } = findEarliestGapInWindow(
+                        baselineStart,
+                        blockEndMinutes,
+                        shiftEndMin,
+                        durationMinutes,
+                        sortedIntervals
+                    );
 
                     if (calculatedStartMinutes >= blockEndMinutes) {
                         throw new Error("This 1-hour session window has no remaining available time slots.");
                     }
 
-                    const subsequentAppts = activeAppts.filter((a) => {
-                        let aStart = timeToMinutes(a.appointment_time!);
-                        const isNext = formatDateOnly(a.appointment_date) !== formatDateOnly(shiftBaseDate);
-                        if (isNext || (aStart < shiftStartMin && shiftEndMin > 1440)) aStart += 1440;
-                        return aStart >= calculatedStartMinutes;
-                    });
-
-                    const nextBookedStart = subsequentAppts.length > 0
-                        ? Math.min(...subsequentAppts.map((a) => {
-                            let aStart = timeToMinutes(a.appointment_time!);
-                            const isNext = formatDateOnly(a.appointment_date) !== formatDateOnly(shiftBaseDate);
-                            if (isNext || (aStart < shiftStartMin && shiftEndMin > 1440)) aStart += 1440;
-                            return aStart;
-                        }))
-                        : shiftEndMin;
-
-                    const contiguousFreeMinutes = Math.max(0, nextBookedStart - calculatedStartMinutes);
-                    if (contiguousFreeMinutes < durationMinutes || calculatedStartMinutes + durationMinutes > shiftEndMin) {
+                    if (!hasSufficientSpace || contiguousFreeMinutes < durationMinutes) {
                         throw new Error("The requested consultation duration exceeds the available free time in this session.");
                     }
 
@@ -1140,12 +1080,23 @@ export class AppointmentService {
                             tx
                         );
 
-                    const tokenNumber =
-                        await repository.generateTokenNumber(
+                    const isIpdOrChemo =
+                        String(data.reason_for_visit ?? "").trim().toUpperCase().includes("IPD") ||
+                        String(data.patient_visit_type ?? "").trim().toUpperCase().includes("IPD") ||
+                        String(data.patient_type ?? "").trim().toUpperCase().includes("IPD") ||
+                        String(data.patient_visit_type ?? "").trim().toUpperCase().includes("CHEMO") ||
+                        String(data.patient_visit_type ?? "").trim().toUpperCase().includes("DAYCARE") ||
+                        String(data.patient_type ?? "").trim().toUpperCase().includes("DAYCARE") ||
+                        String(data.patient_visit_type ?? "").trim().toUpperCase().includes("BED");
+
+                    const tokenNumber = isIpdOrChemo
+                        ? null
+                        : await repository.generateTokenNumber(
                             tx,
                             schedule.schedule_id,
                             effectiveAppointmentDate,
-                            data.employee_id
+                            data.employee_id,
+                            finalAppointmentTime
                         );
 
                     const appointment =
@@ -1516,11 +1467,23 @@ export class AppointmentService {
                         schedule.schedule_id
                     );
 
-                    tokenNumber =
-                        await repository.generateTokenNumber(
+                    const isIpdOrChemo =
+                        String(data.reason_for_visit ?? existing.reason_for_visit ?? "").trim().toUpperCase().includes("IPD") ||
+                        String(data.patient_visit_type ?? existing.Patient_visit_type ?? "").trim().toUpperCase().includes("IPD") ||
+                        String(data.patient_type ?? existing.Patient_type ?? "").trim().toUpperCase().includes("IPD") ||
+                        String(data.patient_visit_type ?? existing.Patient_visit_type ?? "").trim().toUpperCase().includes("CHEMO") ||
+                        String(data.patient_visit_type ?? existing.Patient_visit_type ?? "").trim().toUpperCase().includes("DAYCARE") ||
+                        String(data.patient_type ?? existing.Patient_type ?? "").trim().toUpperCase().includes("DAYCARE") ||
+                        String(data.patient_visit_type ?? existing.Patient_visit_type ?? "").trim().toUpperCase().includes("BED");
+
+                    tokenNumber = isIpdOrChemo
+                        ? null
+                        : await repository.generateTokenNumber(
                             tx,
                             schedule.schedule_id,
-                            appointmentDate
+                            appointmentDate,
+                            employeeId,
+                            appointmentTime
                         );
 
                     scheduleId =
@@ -1685,14 +1648,9 @@ export class AppointmentService {
                         cancelledBy || "SYSTEM"
                     );
 
-                    // Recalculate doctor timeline to close the gap and pull subsequent appointments forward
-                    if (existing.employee_id && existing.appointment_date) {
-                        await this.recalculateDoctorDailyTimeline(
-                            tx,
-                            existing.employee_id,
-                            existing.appointment_date
-                        );
-                    }
+                    // Per hourly slot token design: cancellations preserve subsequent patients at their
+                    // original booked times without auto-shifting the doctor's timeline forward.
+                    // The cancelled time slot remains vacant/available for new bookings.
 
                     return updated;
                 })
@@ -1976,6 +1934,15 @@ export class AppointmentService {
                         endMinutes += 1440;
                     }
 
+                    const sortedIntervals = activeAppts
+                        .map((a) => {
+                            let m = timeToMinutes(a.appointment_time!);
+                            const isNext = formatDateOnly(a.appointment_date) !== formatDateOnly(appointmentDate);
+                            if (isNext || (m < startMinutes && endMinutes > 1440)) m += 1440;
+                            return { start: m, end: m + (a.duration_minutes ?? 10) };
+                        })
+                        .sort((a, b) => a.start - b.start);
+
                     const shiftSlots: any[] = [];
                     const SLOT_DURATION = 60; // 1-Hour Default Sessions
 
@@ -1986,46 +1953,17 @@ export class AppointmentService {
                         const isPast = isToday && (pEnd <= nowMinutes);
                         const baselineStart = isToday ? Math.max(pStart, nowMinutes) : pStart;
 
-                        // Appointments overlapping or prior in this shift
-                        const priorOrInSlot = activeAppts.filter((a) => {
-                            let m = timeToMinutes(a.appointment_time!);
-                            const isNext = formatDateOnly(a.appointment_date) !== formatDateOnly(appointmentDate);
-                            if (isNext || (m < startMinutes && endMinutes > 1440)) m += 1440;
-                            const aEnd = m + (a.duration_minutes ?? 10);
-                            return m < pEnd && aEnd > pStart;
-                        });
-
-                        const latestPriorEnd = priorOrInSlot.length > 0
-                            ? Math.max(...priorOrInSlot.map((a) => {
-                                let m = timeToMinutes(a.appointment_time!);
-                                const isNext = formatDateOnly(a.appointment_date) !== formatDateOnly(appointmentDate);
-                                if (isNext || (m < startMinutes && endMinutes > 1440)) m += 1440;
-                                return m + (a.duration_minutes ?? 10);
-                            }))
-                            : pStart;
-
-                        const candidateStart = Math.max(baselineStart, latestPriorEnd);
-
-                        // Find subsequent booked appointment starting at or after candidateStart
-                        const subsequentAppts = activeAppts.filter((a) => {
-                            let m = timeToMinutes(a.appointment_time!);
-                            const isNext = formatDateOnly(a.appointment_date) !== formatDateOnly(appointmentDate);
-                            if (isNext || (m < startMinutes && endMinutes > 1440)) m += 1440;
-                            return m >= candidateStart;
-                        });
-
-                        const nextBookedStart = subsequentAppts.length > 0
-                            ? Math.min(...subsequentAppts.map((a) => {
-                                let m = timeToMinutes(a.appointment_time!);
-                                const isNext = formatDateOnly(a.appointment_date) !== formatDateOnly(appointmentDate);
-                                if (isNext || (m < startMinutes && endMinutes > 1440)) m += 1440;
-                                return m;
-                            }))
-                            : endMinutes;
-
-                        // Contiguous free space starting from candidateStart (including spilling if next slot is empty)
-                        const contiguousFreeMinutes = Math.max(0, nextBookedStart - candidateStart);
-                        const hasSufficientSpace = contiguousFreeMinutes >= requestedDuration && (candidateStart + requestedDuration <= endMinutes);
+                        const {
+                            candidateStart,
+                            contiguousFreeMinutes,
+                            hasSufficientSpace
+                        } = findEarliestGapInWindow(
+                            baselineStart,
+                            pEnd,
+                            endMinutes,
+                            requestedDuration,
+                            sortedIntervals
+                        );
 
                         const isCompleted = isPast || (candidateStart >= pEnd) || !hasSufficientSpace;
                         const isAvailable = !isCompleted;
@@ -2819,6 +2757,9 @@ export class AppointmentService {
 
                 if (isTarget) {
                     updateData.status = APPOINTMENT_STATUS.SCHEDULED;
+                    if (appt.token_number && !appt.token_number.includes("-")) {
+                        updateData.token_number = `${appt.token_number}-1`;
+                    }
                 }
 
                 await tx.appointment_history.update({
@@ -2828,7 +2769,7 @@ export class AppointmentService {
 
                 updatedQueueSummary.push({
                     appointment_id: appt.appointment_id,
-                    token_number: appt.token_number,
+                    token_number: updateData.token_number || appt.token_number,
                     start_time: minutesToHHmm(newStartMin % 1440),
                     duration_minutes: apptDur,
                     status: updateData.status || appt.status

@@ -2,7 +2,7 @@ export interface CreateAppointmentDTO {
 
     patient_id: string;
 
-    employee_id?: string; // doctor (optional for Lab Visit)
+    employee_id?: string; // doctor (required for OPD & Lab Visit)
 
     branch_id: string;
 
@@ -85,6 +85,8 @@ export interface GetAppointmentsQuery {
     page?: number;
 
     limit?: number;
+
+    viewMode?: string;
 
 }
 

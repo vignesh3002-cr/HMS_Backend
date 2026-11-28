@@ -194,7 +194,7 @@ model appointment_history {
   department                      String?                           @db.VarChar(100)
   appointment_date                DateTime                          @db.Date
   appointment_time                DateTime                          @db.Time(6)
-  token_number                    Int?
+  token_number                    String?                           @db.VarChar
   booking_source                  String?                           @db.VarChar(100)
   appointment_status              String?                           @db.VarChar(100)
   chief_complaint                 String?
