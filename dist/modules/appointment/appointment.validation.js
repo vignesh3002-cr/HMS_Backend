@@ -9,7 +9,7 @@ exports.createAppointmentValidation = [
         .notEmpty()
         .withMessage("Patient is required"),
     (0, express_validator_1.body)("employee_id")
-        .if((_val, { req }) => req.body.patient_visit_type !== "Lab Visit")
+        .if((_val, { req }) => req.body.patient_visit_type !== "Chemotherapy" && req.body.patient_visit_type !== "Daycare")
         .notEmpty()
         .withMessage("Doctor is required"),
     (0, express_validator_1.body)("branch_id")
@@ -47,6 +47,10 @@ exports.createAppointmentValidation = [
     (0, express_validator_1.body)("patient_visit_type")
         .optional()
         .isString(),
+    (0, express_validator_1.body)("duration_minutes")
+        .optional()
+        .isInt({ min: 5, max: 240 })
+        .withMessage("Duration must be between 5 and 240 minutes"),
     (0, express_validator_1.body)("schedule_id")
         .optional()
         .isString()
@@ -87,6 +91,10 @@ exports.updateAppointmentValidation = [
     (0, express_validator_1.body)("patient_visit_type")
         .optional()
         .isString(),
+    (0, express_validator_1.body)("duration_minutes")
+        .optional()
+        .isInt({ min: 5, max: 240 })
+        .withMessage("Duration must be between 5 and 240 minutes"),
     (0, express_validator_1.body)("schedule_id")
         .optional()
         .isString()

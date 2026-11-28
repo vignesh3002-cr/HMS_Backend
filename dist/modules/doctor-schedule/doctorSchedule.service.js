@@ -1250,6 +1250,28 @@ class DoctorScheduleService {
             data: { is_active: false, updated_at: new Date() }
         });
     }
+    async getAllActiveSchedules(branchId) {
+        return prisma_1.default.doctor_schedule.findMany({
+            where: {
+                is_active: true,
+                ...(branchId ? { branch_id: branchId } : {})
+            },
+            select: {
+                schedule_id: true,
+                employee_id: true,
+                branch_id: true,
+                day_of_week: true,
+                shift_name: true,
+                start_time: true,
+                end_time: true,
+                consultation_minutes: true
+            },
+            orderBy: [
+                { employee_id: "asc" },
+                { start_time: "asc" }
+            ]
+        });
+    }
 }
 exports.DoctorScheduleService = DoctorScheduleService;
 exports.doctorScheduleService = new DoctorScheduleService();

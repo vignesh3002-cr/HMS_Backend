@@ -972,7 +972,7 @@ class DoctorTransferService {
             const effectiveDate = (0, appointment_utils_1.addDays)(shiftBaseDate, dayOffset);
             const targetTime = (0, appointment_utils_1.timeStringToDate)((0, appointment_utils_1.minutesToHHmm)(matchedShiftMin % 1440));
             await this.appointmentRepository.lockDoctorSchedule(tx, sched.schedule_id);
-            const tokenNumber = await this.appointmentRepository.generateTokenNumber(tx, sched.schedule_id, effectiveDate);
+            const tokenNumber = await this.appointmentRepository.generateTokenNumber(tx, sched.schedule_id, effectiveDate, replacementEmployeeId, targetTime);
             const doctorName = `${replacementEmployee.first_name} ${replacementEmployee.last_name}`.trim();
             await this.repository.updateAppointment(tx, appointment.appointment_id, {
                 employee_id: replacementEmployeeId,
@@ -982,8 +982,7 @@ class DoctorTransferService {
                 appointment_time: targetTime,
                 token_number: tokenNumber,
                 doctor_name: doctorName,
-                assigned_doctor: doctorName,
-                status: "SCHEDULED"
+                assigned_doctor: doctorName
             });
             return {
                 success: true,
@@ -1096,7 +1095,7 @@ class DoctorTransferService {
         const best = validMatches[0];
         const newAppointmentTime = (0, appointment_utils_1.timeStringToDate)((0, appointment_utils_1.minutesToHHmm)(best.candidateStartMinutes));
         await this.appointmentRepository.lockDoctorSchedule(tx, best.schedule.schedule_id);
-        const tokenNumber = await this.appointmentRepository.generateTokenNumber(tx, best.schedule.schedule_id, best.effectiveDate);
+        const tokenNumber = await this.appointmentRepository.generateTokenNumber(tx, best.schedule.schedule_id, best.effectiveDate, replacementEmployeeId, newAppointmentTime);
         const doctorName = `${replacementEmployee.first_name} ${replacementEmployee.last_name}`.trim();
         const deltaStr = best.deltaMinutes === 0
             ? "Exact time"
@@ -1634,7 +1633,7 @@ class DoctorTransferService {
             return prisma_1.default.$transaction(async (tx) => {
                 await this.repository.lockRescheduleQueue(tx, queue.queue_id);
                 await this.appointmentRepository.lockDoctorSchedule(tx, queue.assigned_schedule_id);
-                const tokenNumber = await this.appointmentRepository.generateTokenNumber(tx, queue.assigned_schedule_id, queue.assigned_date);
+                const tokenNumber = await this.appointmentRepository.generateTokenNumber(tx, queue.assigned_schedule_id, queue.assigned_date, queue.assigned_employee_id, queue.assigned_time);
                 const employee = await this.repository.findDoctorWithRole(queue.assigned_employee_id);
                 const doctorName = employee ? `${employee.first_name} ${employee.last_name}`.trim() : undefined;
                 await this.repository.updateAppointment(tx, appointmentId, {

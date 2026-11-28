@@ -329,5 +329,27 @@ class DoctorScheduleController {
             });
         }
     }
+    /**
+     * GET
+     * Batch get all active doctor schedules (1 fast query for schedule grid views)
+     */
+    async getAllActiveSchedules(req, res) {
+        try {
+            const branchId = req.query.branchId;
+            const data = await doctorSchedule_service_1.doctorScheduleService.getAllActiveSchedules(branchId);
+            res.status(200).json({
+                success: true,
+                message: "Active doctor schedules fetched successfully",
+                data
+            });
+        }
+        catch (error) {
+            console.error("Get all active schedules error:", error);
+            res.status(500).json({
+                success: false,
+                message: error.message || "Failed to fetch active doctor schedules"
+            });
+        }
+    }
 }
 exports.doctorScheduleController = new DoctorScheduleController();

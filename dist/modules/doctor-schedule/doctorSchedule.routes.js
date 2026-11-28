@@ -29,6 +29,12 @@ const byChangeRecord = (0, authorize_1.authorizeScheduleChange)(async (req) => {
  */
 router.post("/change", auth_middleware_1.authenticate, byBodyEmployee, doctorSchedule_controller_1.doctorScheduleController.createScheduleChange);
 /**
+ * Batch get all active doctor schedules (1 fast query for schedule grid views)
+ *
+ * GET /active
+ */
+router.get("/active", auth_middleware_1.authenticate, doctorSchedule_controller_1.doctorScheduleController.getAllActiveSchedules);
+/**
  * Get all recurring weekly schedules for a doctor,
  * including inactive rows
  *

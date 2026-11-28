@@ -9,10 +9,8 @@ exports.CONTEXT_LABEL = exports.CONTEXT_PREFIX = exports.CONTEXT_FAMILY = export
 exports.CONTEXT_VALUES = [
     "CLINICAL",
     "PATHOLOGICAL",
-    "YC",
     "YP",
-    "RECURRENCE",
-    "AUTOPSY",
+    "RECURRENCE"
 ];
 exports.CONTEXT_FAMILY = {
     CLINICAL: "clinical",

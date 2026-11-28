@@ -10,6 +10,10 @@ router.post("/upload", auth_middleware_1.authenticate, patientDocument_controlle
 router.get("/patient/:patientId", auth_middleware_1.authenticate, patientDocument_controller_1.patientDocumentController.getPatientDocuments);
 // 2b. Fetch documents attached to one OPD visit / IPD stay (encounter-scoped)
 router.get("/encounter/:encounterNo", auth_middleware_1.authenticate, patientDocument_controller_1.patientDocumentController.getDocumentsByEncounter);
+// 2c. Fetch documents attached to one planned chemotherapy course
+router.get("/plan/:planId", auth_middleware_1.authenticate, patientDocument_controller_1.patientDocumentController.getDocumentsByPlan);
+// 2d. Attach an existing (legacy) patient document to a plan
+router.put("/:documentId/attach-plan", auth_middleware_1.authenticate, patientDocument_controller_1.patientDocumentController.attachDocumentToPlan);
 // 3. View document (inline display / stream) -- opened directly by the
 // browser (<img>/<a>), so a query-token fallback is allowed; a missing or
 // invalid token is still rejected, never silently let through.

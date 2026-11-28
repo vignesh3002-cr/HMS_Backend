@@ -51,7 +51,8 @@ class AppointmentController {
                 sortBy: req.query.sortBy,
                 sortOrder: req.query.sortOrder,
                 page: Number(req.query.page || 1),
-                limit: Number(req.query.limit || 10)
+                limit: Number(req.query.limit || 10),
+                viewMode: req.query.viewMode
             });
             return res.json({
                 success: true,

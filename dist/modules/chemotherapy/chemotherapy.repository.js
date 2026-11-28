@@ -1284,6 +1284,30 @@ class ChemotherapyRepository {
             include: this.planInclude
         });
     }
+    // -----------------------------------------------------------------
+    // Plan consent (one e-signature record per plan)
+    // -----------------------------------------------------------------
+    async findPlanConsent(planId) {
+        return prisma_1.default.chemotherapy_plan_consent.findUnique({
+            where: { chemotherapy_plan_id: planId }
+        });
+    }
+    async upsertPlanConsent(client, planId, patientId, data) {
+        return client.chemotherapy_plan_consent.upsert({
+            where: { chemotherapy_plan_id: planId },
+            create: {
+                ...data,
+                chemotherapy_plan_id: planId,
+                patient_id: patientId,
+                created_at: new Date(),
+                updated_at: new Date()
+            },
+            update: {
+                ...data,
+                updated_at: new Date()
+            }
+        });
+    }
     // Baseline hydration rows (not tied to a cycle day's order).
     async findPlanHydration(planId) {
         return prisma_1.default.chemotherapy_plan_hydration.findMany({

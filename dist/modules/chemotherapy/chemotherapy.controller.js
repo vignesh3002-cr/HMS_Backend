@@ -489,6 +489,26 @@ class ChemotherapyController {
             return handleError(res, error);
         }
     }
+    async getPlanConsent(req, res) {
+        try {
+            const data = await service.getPlanConsent(req.params.planId);
+            return res.json({ success: true, message: "Plan consent fetched successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
+    async savePlanConsent(req, res) {
+        try {
+            if (!checkValidation(req, res))
+                return;
+            const data = await service.savePlanConsent(req.params.planId, req.body, actingUserId(req));
+            return res.json({ success: true, message: "Plan consent saved successfully", data });
+        }
+        catch (error) {
+            return handleError(res, error);
+        }
+    }
     async listPlans(req, res) {
         try {
             const result = await service.listPlans({

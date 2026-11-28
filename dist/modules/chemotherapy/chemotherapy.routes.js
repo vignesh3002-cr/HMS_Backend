@@ -81,6 +81,9 @@ router.get("/plans/latest-for-patient", auth_middleware_1.authenticate, (0, auth
 router.get("/pharmacy-slips", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), controller.getPharmacySlips.bind(controller));
 router.get("/plans/:planId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.planIdParamValidation, controller.getPlan.bind(controller));
 router.put("/plans/:planId", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.updatePlanValidation, controller.updatePlan.bind(controller));
+// ---------------- Plan consent (e-signatures) ----------------
+router.get("/plans/:planId/consent", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.read"), chemotherapy_validation_1.planIdParamValidation, controller.getPlanConsent.bind(controller));
+router.put("/plans/:planId/consent", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.savePlanConsentValidation, controller.savePlanConsent.bind(controller));
 router.patch("/plans/:planId/status", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.planStatusValidation, controller.changePlanStatus.bind(controller));
 // ---------------- Plan items ----------------
 router.post("/plans/:planId/items", auth_middleware_1.authenticate, (0, authorize_1.authorize)("chemo.plan.update"), chemotherapy_validation_1.addPlanItemValidation, controller.addPlanItem.bind(controller));
