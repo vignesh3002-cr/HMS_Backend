@@ -26,6 +26,8 @@ export class PatientDocumentController {
         encounterNo,
         document_type,
         documentType,
+        chemotherapy_plan_id,
+        chemotherapyPlanId,
       } = req.body;
 
       const pid = patient_id || patientId;
@@ -38,6 +40,7 @@ export class PatientDocumentController {
       const upBy = uploaded_by || uploadedBy || (req as any).user?.name || "Doctor";
       const encNo = encounter_no || encounterNo || undefined;
       const docType = document_type || documentType || undefined;
+      const planId = chemotherapy_plan_id || chemotherapyPlanId || undefined;
 
       if (!pid) {
         return res.status(400).json({ success: false, message: "patient_id is required" });
@@ -60,6 +63,7 @@ export class PatientDocumentController {
         uploaded_by: upBy,
         encounter_no: encNo,
         document_type: docType,
+        chemotherapy_plan_id: planId,
       });
 
       return res.status(201).json({
@@ -83,7 +87,18 @@ export class PatientDocumentController {
         return res.status(400).json({ success: false, message: "patientId is required" });
       }
 
-      const docs = await this.service.getDocumentsByPatient(patientId);
+      const docs = await this.service.getDocumentsByPatient(patientId, {
+        document_type:
+          typeof req.query.document_type === "string"
+            ? req.query.document_type
+            : undefined,
+        chemotherapy_plan_id:
+          typeof req.query.chemotherapy_plan_id === "string"
+            ? req.query.chemotherapy_plan_id
+            : undefined,
+        unassigned:
+          String(req.query.unassigned ?? "").toLowerCase() === "true",
+      });
       return res.status(200).json({
         success: true,
         data: docs,
@@ -93,6 +108,63 @@ export class PatientDocumentController {
       return res.status(500).json({
         success: false,
         message: err.message || "Failed to fetch patient documents",
+      });
+    }
+  };
+
+  getDocumentsByPlan = async (req: Request, res: Response) => {
+    try {
+      const planId = String(req.params.planId || "");
+      if (!planId) {
+        return res.status(400).json({ success: false, message: "planId is required" });
+      }
+
+      const docs = await this.service.getDocumentsByPlan(
+        planId,
+        typeof req.query.document_type === "string"
+          ? req.query.document_type
+          : undefined
+      );
+      return res.status(200).json({
+        success: true,
+        data: docs,
+      });
+    } catch (err: any) {
+      console.error("Error fetching plan documents:", err);
+      return res.status(500).json({
+        success: false,
+        message: err.message || "Failed to fetch plan documents",
+      });
+    }
+  };
+
+  attachDocumentToPlan = async (req: Request, res: Response) => {
+    try {
+      const documentId = String(req.params.documentId || "");
+      const planId = String(
+        req.body?.chemotherapy_plan_id || req.body?.chemotherapyPlanId || ""
+      );
+      if (!documentId) {
+        return res.status(400).json({ success: false, message: "documentId is required" });
+      }
+      if (!planId) {
+        return res.status(400).json({
+          success: false,
+          message: "chemotherapy_plan_id is required",
+        });
+      }
+
+      const attached = await this.service.attachDocumentToPlan(documentId, planId);
+      return res.status(200).json({
+        success: true,
+        message: "Consent form attached to the plan",
+        data: attached,
+      });
+    } catch (err: any) {
+      console.error("Error attaching consent form to plan:", err);
+      return res.status(400).json({
+        success: false,
+        message: err.message || "Failed to attach the consent form",
       });
     }
   };

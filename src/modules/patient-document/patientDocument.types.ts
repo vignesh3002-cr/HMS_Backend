@@ -14,6 +14,10 @@ export interface UploadPatientDocumentDTO {
   // Free-text taxonomy (see patientDocument.constants.ts), validated at the
   // service layer.
   document_type?: string;
+  // A planned chemotherapy course this document belongs to. Consent forms
+  // use it so the same plan can find them on later visits, and a new plan
+  // never inherits the previous course's consent.
+  chemotherapy_plan_id?: string;
 }
 
 export interface PatientDocumentMeta {
@@ -30,8 +34,16 @@ export interface PatientDocumentMeta {
   updated_at: Date | null;
   encounter_no: string | null;
   document_type: string | null;
+  chemotherapy_plan_id: string | null;
 }
 
 export interface PatientDocumentFull extends PatientDocumentMeta {
   file_data: string;
+}
+
+export interface PatientDocumentFilter {
+  document_type?: string;
+  chemotherapy_plan_id?: string;
+  /** Only documents not yet attached to any chemotherapy plan. */
+  unassigned?: boolean;
 }

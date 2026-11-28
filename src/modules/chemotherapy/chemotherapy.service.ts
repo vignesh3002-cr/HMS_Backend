@@ -69,7 +69,8 @@ import {
     RegimenProtocolDayInput,
     RegimenProtocolDischargeInstructionInput,
     SavePlanOrderDto,
-    UpdateAdministrationStatusDto
+    UpdateAdministrationStatusDto,
+    SavePlanConsentDto
 } from "./chemotherapy.types";
 import { parseDateOnly } from "../appointment/appointment.utils";
 import { getBranchTimezone, getDateIn, getTodayIn } from "../../utils/timezone";
@@ -3362,6 +3363,157 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
     }
 
+    // ---------------------------------------------------------------
+    // Plan consent (e-signatures captured on the Consultation Summary)
+    // ---------------------------------------------------------------
+
+    // Treatment cannot start without a signed consent form on this plan.
+    // consent_taken is kept in sync by both the e-signature save and the
+    // patient-document upload; the count covers rows saved before the flag
+    // was introduced.
+    private async assertPlanConsent(planId: string, consentTaken: boolean, client: any = prisma) {
+
+        if (consentTaken) return;
+
+        const uploaded = await client.patient_document.count({
+            where: { chemotherapy_plan_id: planId, document_type: "CONSENT_FORM" }
+        });
+
+        if (uploaded === 0) {
+            throw new Error("A signed consent form is required before chemotherapy can start");
+        }
+
+    }
+
+    private normalizeConsentSignature(value: string | null | undefined): string | null {
+
+        const trimmed = String(value ?? "").trim();
+
+        if (!trimmed) return null;
+
+        if (!/^data:image\/(png|jpe?g);base64,/i.test(trimmed)) {
+            throw new Error("Consent signatures must be PNG or JPEG images");
+        }
+
+        // Canvas PNGs are normally 20-80 KB; anything much larger is a wrong
+        // upload and would bloat every plan/consent read.
+        if (trimmed.length > 600_000) {
+            throw new Error("A captured signature is too large. Clear it and capture again.");
+        }
+
+        return trimmed;
+
+    }
+
+    async getPlanConsent(planId: string) {
+
+        const plan = await this.repository.findPlanForUpdate(prisma, planId);
+
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+
+        return this.repository.findPlanConsent(planId);
+
+    }
+
+    async savePlanConsent(planId: string, dto: SavePlanConsentDto, actingUserId: string) {
+
+        const plan = await this.repository.findPlanForUpdate(prisma, planId);
+
+        if (!plan) {
+            throw new Error("Chemotherapy plan not found");
+        }
+
+        if (PLAN_TERMINAL_STATUSES.includes(plan.treatment_status as PlanStatus)) {
+            throw new Error(`Cannot change consent on a plan that is already ${plan.treatment_status}`);
+        }
+
+        const patientSignature = this.normalizeConsentSignature(dto.patient_signature);
+        const witnessSignature = this.normalizeConsentSignature(dto.witness_signature);
+        const doctorSignature = this.normalizeConsentSignature(dto.doctor_signature);
+
+        const status: "DRAFT" | "SIGNED" =
+            patientSignature && witnessSignature && doctorSignature ? "SIGNED" : "DRAFT";
+
+        let consentDate: Date | null = null;
+
+        if (dto.consent_date) {
+
+            const parsed = new Date(dto.consent_date);
+
+            if (Number.isNaN(parsed.getTime())) {
+                throw new Error("consent_date must be a valid date");
+            }
+
+            consentDate = parsed;
+
+        } else if (status === "SIGNED") {
+
+            consentDate = new Date();
+
+        }
+
+        const trimmed = (value?: string | null) => {
+            const text = String(value ?? "").trim();
+            return text || null;
+        };
+
+        await prisma.$transaction(async (tx) => {
+
+            await this.repository.lockPlan(tx, planId);
+
+            const record = await this.repository.upsertPlanConsent(tx, planId, plan.patient_id, {
+                consent_id: `CONSENT-${planId}`,
+                patient_signature: patientSignature,
+                witness_signature: witnessSignature,
+                doctor_signature: doctorSignature,
+                patient_name: trimmed(dto.patient_name),
+                witness_name: trimmed(dto.witness_name),
+                witness_relation: trimmed(dto.witness_relation),
+                doctor_name: trimmed(dto.doctor_name),
+                doctor_reg_no: trimmed(dto.doctor_reg_no),
+                consent_date: consentDate,
+                status,
+                signed_at: status === "SIGNED" ? new Date() : null,
+                signed_by: status === "SIGNED" ? actingUserId : null
+            });
+
+            // A signed uploaded form also makes the plan consented; clearing
+            // every e-signature must not revoke that.
+            const uploadedConsentCount = await (tx as any).patient_document.count({
+                where: { chemotherapy_plan_id: planId, document_type: "CONSENT_FORM" }
+            });
+
+            const consentTaken = status === "SIGNED" || uploadedConsentCount > 0;
+
+            // Clearing e-signatures must not erase the date stamped by an
+            // uploaded signed form.
+            const effectiveConsentDate =
+                consentDate ?? (uploadedConsentCount > 0 ? plan.consent_date : null);
+
+            await this.repository.updatePlan(tx, planId, {
+                consent_taken: consentTaken,
+                consent_date: effectiveConsentDate,
+                updated_by: actingUserId
+            });
+
+            await logAudit(tx, {
+                entity_type: "chemotherapy_plan_consent",
+                entity_id: record.consent_id,
+                action: AUDIT_ACTION.UPDATE,
+                performed_by: actingUserId,
+                patient_id: plan.patient_id,
+                branch_id: plan.branch_id,
+                change_summary: `Consent ${status}: patient=${patientSignature ? "captured" : "missing"}, witness=${witnessSignature ? "captured" : "missing"}, doctor=${doctorSignature ? "captured" : "missing"}`
+            });
+
+        });
+
+        return this.repository.findPlanConsent(planId);
+
+    }
+
     async listPlans(filters: PlanFilterQuery) {
 
         const result = await this.repository.listPlans(filters);
@@ -3729,6 +3881,10 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
         if ((dto.status === PLAN_STATUS.CANCELLED || dto.status === PLAN_STATUS.DISCONTINUED) && !dto.reason?.trim()) {
             throw new Error(`A reason is required to mark a plan as ${dto.status}`);
+        }
+
+        if (current === PLAN_STATUS.PLANNED && dto.status === PLAN_STATUS.ACTIVE) {
+            await this.assertPlanConsent(planId, !!plan.consent_taken);
         }
 
         await prisma.$transaction(async (tx) => {
@@ -5098,6 +5254,11 @@ await this.repository.updateRegimenProtocolItem(tx, protocolItemId, updated);
 
             if (PLAN_TERMINAL_STATUSES.includes(lockedPlan.treatment_status as PlanStatus)) {
                 throw new Error(`Cannot complete an order on a plan that is already ${lockedPlan.treatment_status}`);
+            }
+
+            // Starting the course (PLANNED -> ACTIVE) requires consent.
+            if (lockedPlan.treatment_status === PLAN_STATUS.PLANNED) {
+                await this.assertPlanConsent(planId, !!lockedPlan.consent_taken, tx);
             }
 
             const now = new Date();
