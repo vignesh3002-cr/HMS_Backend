@@ -21,10 +21,8 @@ export type ContextFamily = "clinical" | "pathological";
 export const CONTEXT_VALUES: StageContext[] = [
     "CLINICAL",
     "PATHOLOGICAL",
-    "YC",
     "YP",
-    "RECURRENCE",
-    "AUTOPSY",
+    "RECURRENCE"
 ];
 
 export const CONTEXT_FAMILY: Record<StageContext, ContextFamily> = {

@@ -35,6 +35,7 @@ import {
     recordFollowupValidation,
     cycleIdParamValidation,
     planIdParamValidation,
+    savePlanConsentValidation,
     listRegimenProtocolsValidation,
     getRegimenProtocolValidation,
     createRegimenProtocolValidation,
@@ -446,6 +447,24 @@ router.put(
     authorize("chemo.plan.update"),
     updatePlanValidation,
     controller.updatePlan.bind(controller)
+);
+
+// ---------------- Plan consent (e-signatures) ----------------
+
+router.get(
+    "/plans/:planId/consent",
+    authenticate,
+    authorize("chemo.plan.read"),
+    planIdParamValidation,
+    controller.getPlanConsent.bind(controller)
+);
+
+router.put(
+    "/plans/:planId/consent",
+    authenticate,
+    authorize("chemo.plan.update"),
+    savePlanConsentValidation,
+    controller.savePlanConsent.bind(controller)
 );
 
 router.patch(

@@ -1,5 +1,10 @@
 import prisma from "../../config/prisma";
-import { UploadPatientDocumentDTO, PatientDocumentMeta, PatientDocumentFull } from "./patientDocument.types";
+import {
+  PatientDocumentFilter,
+  PatientDocumentFull,
+  PatientDocumentMeta,
+  UploadPatientDocumentDTO,
+} from "./patientDocument.types";
 
 const METADATA_SELECT = {
   id: true,
@@ -15,6 +20,7 @@ const METADATA_SELECT = {
   updated_at: true,
   encounter_no: true,
   document_type: true,
+  chemotherapy_plan_id: true,
 } as const;
 
 const toMeta = (r: any): PatientDocumentMeta => ({
@@ -31,6 +37,7 @@ const toMeta = (r: any): PatientDocumentMeta => ({
   updated_at: r.updated_at,
   encounter_no: r.encounter_no ?? null,
   document_type: r.document_type ?? null,
+  chemotherapy_plan_id: r.chemotherapy_plan_id ?? null,
 });
 
 export class PatientDocumentRepository {
@@ -46,6 +53,7 @@ export class PatientDocumentRepository {
     uploaded_by?: string;
     encounter_no?: string;
     document_type?: string;
+    chemotherapy_plan_id?: string;
   }): Promise<PatientDocumentMeta> {
     const record = await (prisma as any).patient_document.create({
       data: {
@@ -60,6 +68,7 @@ export class PatientDocumentRepository {
         uploaded_by: data.uploaded_by || null,
         encounter_no: data.encounter_no || null,
         document_type: data.document_type || null,
+        chemotherapy_plan_id: data.chemotherapy_plan_id || null,
       },
       select: METADATA_SELECT,
     });
@@ -67,14 +76,79 @@ export class PatientDocumentRepository {
     return toMeta(record);
   }
 
-  async findByPatientId(patientId: string): Promise<PatientDocumentMeta[]> {
+  async findByPatientId(
+    patientId: string,
+    filter: PatientDocumentFilter = {}
+  ): Promise<PatientDocumentMeta[]> {
     const records = await (prisma as any).patient_document.findMany({
-      where: { patient_id: patientId },
+      where: {
+        patient_id: patientId,
+        ...(filter.document_type ? { document_type: filter.document_type } : {}),
+        ...(filter.chemotherapy_plan_id
+          ? { chemotherapy_plan_id: filter.chemotherapy_plan_id }
+          : {}),
+        ...(filter.unassigned ? { chemotherapy_plan_id: null } : {}),
+      },
       orderBy: { created_at: "desc" },
       select: METADATA_SELECT,
     });
 
     return records.map(toMeta);
+  }
+
+  /** Consent (or other) documents attached to one planned chemotherapy course.
+   *  Documents uploaded before plan tracking (NULL plan) still belong to the
+   *  plan when they were filed against the plan's own encounter. */
+  async findByPlanId(
+    planId: string,
+    documentType?: string
+  ): Promise<PatientDocumentMeta[]> {
+    const plan = await prisma.chemotherapy_plan.findUnique({
+      where: { chemotherapy_plan_id: planId },
+      select: { patient_id: true, encounter_no: true },
+    });
+    if (!plan) return [];
+
+    const records = await (prisma as any).patient_document.findMany({
+      where: {
+        patient_id: plan.patient_id,
+        ...(documentType ? { document_type: documentType } : {}),
+        OR: [
+          { chemotherapy_plan_id: planId },
+          ...(plan.encounter_no
+            ? [{ chemotherapy_plan_id: null, encounter_no: plan.encounter_no }]
+            : []),
+        ],
+      },
+      orderBy: { created_at: "asc" },
+      select: METADATA_SELECT,
+    });
+
+    return records.map(toMeta);
+  }
+
+  async attachToPlan(
+    documentId: string,
+    planId: string
+  ): Promise<PatientDocumentMeta | null> {
+    const records = await (prisma as any).patient_document.updateMany({
+      where: {
+        document_id: documentId,
+        OR: [{ chemotherapy_plan_id: null }, { chemotherapy_plan_id: planId }],
+      },
+      data: {
+        chemotherapy_plan_id: planId,
+        updated_at: new Date(),
+      },
+    });
+    if (records.count === 0) return null;
+    return this.findByDocumentId(documentId);
+  }
+
+  async countByPlanAndType(planId: string, documentType: string): Promise<number> {
+    return (prisma as any).patient_document.count({
+      where: { chemotherapy_plan_id: planId, document_type: documentType },
+    });
   }
 
   /** Documents attached to one OPD visit or IPD stay -- the common link. */

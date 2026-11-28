@@ -754,3 +754,47 @@ export interface RecordFollowupDto {
     physician_id?: string | null;
 
 }
+
+// -------------------------------------------------------------
+// Plan consent (e-signatures captured on the Consultation Summary)
+// -------------------------------------------------------------
+
+export interface PlanConsentSignatureDto {
+    dataUrl?: string | null;
+    width?: number | null;
+    height?: number | null;
+}
+
+export interface SavePlanConsentDto {
+    patient_signature?: string | null;
+    witness_signature?: string | null;
+    doctor_signature?: string | null;
+    patient_name?: string | null;
+    witness_name?: string | null;
+    witness_relation?: string | null;
+    doctor_name?: string | null;
+    doctor_reg_no?: string | null;
+    consent_date?: string | null;
+    // Kept for API compatibility: status is derived from the three signatures.
+    finalize?: boolean | null;
+}
+
+export interface PlanConsentRecord {
+    consent_id: string;
+    chemotherapy_plan_id: string;
+    patient_id: string;
+    patient_signature: string | null;
+    witness_signature: string | null;
+    doctor_signature: string | null;
+    patient_name: string | null;
+    witness_name: string | null;
+    witness_relation: string | null;
+    doctor_name: string | null;
+    doctor_reg_no: string | null;
+    consent_date: string | null;
+    status: "DRAFT" | "SIGNED";
+    signed_at: string | null;
+    signed_by: string | null;
+    created_at: string | null;
+    updated_at: string | null;
+}

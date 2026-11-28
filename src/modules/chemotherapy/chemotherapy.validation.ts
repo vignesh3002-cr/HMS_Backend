@@ -658,6 +658,21 @@ export const planHydrationValidation = [
 
 ];
 
+export const savePlanConsentValidation = [
+
+    param("planId").notEmpty(),
+    body("patient_signature").optional({ nullable: true }).isString().isLength({ max: 1_000_000 }),
+    body("witness_signature").optional({ nullable: true }).isString().isLength({ max: 1_000_000 }),
+    body("doctor_signature").optional({ nullable: true }).isString().isLength({ max: 1_000_000 }),
+    body("patient_name").optional({ nullable: true }).isString().isLength({ max: 255 }),
+    body("witness_name").optional({ nullable: true }).isString().isLength({ max: 255 }),
+    body("witness_relation").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("doctor_name").optional({ nullable: true }).isString().isLength({ max: 255 }),
+    body("doctor_reg_no").optional({ nullable: true }).isString().isLength({ max: 100 }),
+    body("consent_date").optional({ nullable: true }).isString()
+
+];
+
 export const addPlanItemValidation = [
 
     param("planId").notEmpty(),
