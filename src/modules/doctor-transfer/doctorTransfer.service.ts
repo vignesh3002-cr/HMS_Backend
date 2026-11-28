@@ -1407,8 +1407,7 @@ let closedBranchIds: string[];
                 appointment_time: targetTime,
                 token_number: tokenNumber,
                 doctor_name: doctorName,
-                assigned_doctor: doctorName,
-                status: "SCHEDULED"
+                assigned_doctor: doctorName
             });
 
             return {

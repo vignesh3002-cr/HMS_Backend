@@ -58,6 +58,11 @@ export const createAppointmentValidation = [
         .optional()
         .isString(),
 
+    body("duration_minutes")
+        .optional()
+        .isInt({ min: 5, max: 240 })
+        .withMessage("Duration must be between 5 and 240 minutes"),
+
     body("schedule_id")
         .optional()
         .isString()
@@ -110,6 +115,11 @@ export const updateAppointmentValidation = [
     body("patient_visit_type")
         .optional()
         .isString(),
+
+    body("duration_minutes")
+        .optional()
+        .isInt({ min: 5, max: 240 })
+        .withMessage("Duration must be between 5 and 240 minutes"),
 
     body("schedule_id")
         .optional()

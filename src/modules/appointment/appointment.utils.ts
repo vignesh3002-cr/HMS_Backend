@@ -213,68 +213,23 @@ export function computeHourIndexAndRange(
     apptMinutes: number,
     schedules: Array<{ start_time?: Date | string | null; end_time?: Date | string | null }>
 ): { hourIndex: number; hourStartMinutes: number; hourEndMinutes: number } {
-    if (!schedules || schedules.length === 0) {
-        const clockHour = Math.floor(apptMinutes / 60) % 24;
-        const hourIndex = clockHour === 0 ? 12 : (clockHour > 12 ? clockHour - 12 : clockHour);
-        return {
-            hourIndex,
-            hourStartMinutes: clockHour * 60,
-            hourEndMinutes: clockHour * 60 + 60
-        };
-    }
+    // The slot prefix is the appointment's clock hour in 24-hour form
+    // (e.g. 9 AM -> "9A", 9 PM -> "21A"). Using the real clock hour keeps
+    // every hour distinct, so two different hours can never share a prefix,
+    // and the prefix stays anchored to the start time even when a
+    // consultation spills into the next hour.
+    //
+    // `schedules` is kept in the signature for backward compatibility with
+    // existing callers, but the prefix no longer depends on cumulative shift
+    // ordering (which collided when shifts had gaps or overlapped).
+    void schedules;
 
-    const sorted = [...schedules].filter(s => s.start_time && s.end_time).sort((a, b) => {
-        return parseTimeToMinutes(a.start_time) - parseTimeToMinutes(b.start_time);
-    });
-
-    let precedingHours = 0;
-    let matched = null;
-    let matchedShiftStart = 0;
-
-    for (const sched of sorted) {
-        const sStart = parseTimeToMinutes(sched.start_time);
-        let sEnd = parseTimeToMinutes(sched.end_time);
-        if (sEnd <= sStart) sEnd += 1440;
-
-        let checkAppt = apptMinutes;
-        if (sEnd > 1440 && checkAppt < sStart) checkAppt += 1440;
-
-        if (checkAppt >= sStart && checkAppt < sEnd) {
-            matched = sched;
-            matchedShiftStart = sStart;
-            break;
-        } else {
-            const shiftDurationHours = Math.ceil((sEnd - sStart) / 60);
-            precedingHours += shiftDurationHours;
-        }
-    }
-
-    if (!matched) {
-        const firstStart = sorted.length > 0 ? parseTimeToMinutes(sorted[0].start_time) : 9 * 60;
-        const offset = Math.floor(Math.max(0, apptMinutes - firstStart) / 60);
-        const hourIndex = offset + 1;
-        const hourStartMinutes = (firstStart + offset * 60) % 1440;
-        return {
-            hourIndex,
-            hourStartMinutes,
-            hourEndMinutes: hourStartMinutes + 60
-        };
-    }
-
-    let adjustedAppt = apptMinutes;
-    let sEnd = parseTimeToMinutes(matched.end_time);
-    if (sEnd <= matchedShiftStart) sEnd += 1440;
-    if (sEnd > 1440 && adjustedAppt < matchedShiftStart) adjustedAppt += 1440;
-
-    const hourOffset = Math.floor((adjustedAppt - matchedShiftStart) / 60);
-    const hourIndex = precedingHours + hourOffset + 1;
-    const hourStartMinutes = (matchedShiftStart + hourOffset * 60) % 1440;
-    const hourEndMinutes = hourStartMinutes + 60;
+    const clockHour = Math.floor(apptMinutes / 60) % 24;
 
     return {
-        hourIndex,
-        hourStartMinutes,
-        hourEndMinutes
+        hourIndex: clockHour,
+        hourStartMinutes: clockHour * 60,
+        hourEndMinutes: clockHour * 60 + 60
     };
 }
 
@@ -322,5 +277,274 @@ export function findEarliestGapInWindow(
         candidateStart: cursor,
         contiguousFreeMinutes,
         hasSufficientSpace
+    };
+}
+
+export interface SandwichShiftAppt {
+    appointment_id: string;
+    startMin: number;
+    duration: number;
+    status: string | null;
+    token_number: string | null;
+}
+
+export interface SandwichPlanResult {
+    sandwichedStartMin: number;
+    sandwichedToken: string;
+    downstreamUpdates: Array<{
+        appointment_id: string;
+        newStartMin: number;
+        duration: number;
+        status: string | null;
+        token_number: string | null;
+    }>;
+}
+
+/**
+ * Computes a non-collapsing, shift-scoped sandwich insertion plan.
+ * - Never touches appointments before the insertion point.
+ * - Never pulls downstream appointments earlier into vacant/cancelled gaps (newStart >= existingStart).
+ * - Assigns a chronological sub-token (e.g. 5A-1) based on the predecessor in the target hour.
+ */
+export function computeSandwichPlan(params: {
+    targetDuration: number;
+    targetToken: string | null;
+    shiftStartMin: number;
+    isToday: boolean;
+    nowMinutes: number;
+    insertAfterId?: string | null;
+    shiftActiveAppts: SandwichShiftAppt[];
+    daySchedules: Array<{ start_time?: Date | string | null; end_time?: Date | string | null }>;
+}): SandwichPlanResult {
+    const {
+        targetDuration,
+        targetToken,
+        shiftStartMin,
+        isToday,
+        nowMinutes,
+        insertAfterId,
+        shiftActiveAppts,
+        daySchedules
+    } = params;
+
+    const sorted = [...shiftActiveAppts].sort((a, b) => a.startMin - b.startMin);
+
+    let insertIdx = 0;
+    let insertStartMin = shiftStartMin;
+
+    if (insertAfterId && insertAfterId !== "NEXT_IN_LINE") {
+        const anchorIdx = sorted.findIndex((a) => a.appointment_id === insertAfterId);
+        if (anchorIdx !== -1) {
+            insertIdx = anchorIdx + 1;
+            const anchor = sorted[anchorIdx];
+            insertStartMin = anchor.startMin + anchor.duration;
+        } else {
+            insertIdx = sorted.length;
+            if (sorted.length > 0) {
+                const last = sorted[sorted.length - 1];
+                insertStartMin = last.startMin + last.duration;
+            }
+        }
+    } else {
+        let lastFinishedEnd = shiftStartMin;
+        for (let i = 0; i < sorted.length; i++) {
+            const st = sorted[i].status;
+            if (st === "COMPLETED" || st === "IN_CONSULTATION") {
+                insertIdx = i + 1;
+                lastFinishedEnd = Math.max(lastFinishedEnd, sorted[i].startMin + sorted[i].duration);
+            }
+        }
+        insertStartMin = lastFinishedEnd;
+    }
+
+    if (isToday) {
+        insertStartMin = Math.max(insertStartMin, nowMinutes);
+    }
+
+    const sandwichedStartMin = insertStartMin;
+    let cursor = sandwichedStartMin + targetDuration;
+
+    const downstreamUpdates: SandwichPlanResult["downstreamUpdates"] = [];
+    for (let i = insertIdx; i < sorted.length; i++) {
+        const appt = sorted[i];
+        if (appt.status === "COMPLETED" || appt.status === "IN_CONSULTATION") {
+            cursor = Math.max(cursor, appt.startMin + appt.duration);
+            continue;
+        }
+
+        // Never pull a downstream appointment earlier into a vacant gap
+        const pushedStart = Math.max(appt.startMin, cursor);
+        if (pushedStart !== appt.startMin) {
+            downstreamUpdates.push({
+                appointment_id: appt.appointment_id,
+                newStartMin: pushedStart,
+                duration: appt.duration,
+                status: appt.status,
+                token_number: appt.token_number
+            });
+        }
+        cursor = pushedStart + appt.duration;
+    }
+
+    // Determine chronological sub-token at sandwichedStartMin
+    const { hourIndex, hourStartMinutes, hourEndMinutes } = computeHourIndexAndRange(
+        sandwichedStartMin % 1440,
+        daySchedules
+    );
+
+    const existingTokens = new Set<string>();
+    let latestPredecessorBase: string | null = null;
+    const usedIndices = new Set<number>();
+
+    for (let i = 0; i < sorted.length; i++) {
+        const appt = sorted[i];
+        if (!appt.token_number) continue;
+        existingTokens.add(appt.token_number.toUpperCase());
+
+        const parsed = parseHourSlotToken(appt.token_number);
+        if (!parsed || parsed.hourIndex !== hourIndex) continue;
+
+        if (!parsed.suffix) {
+            usedIndices.add(parsed.slotIndex);
+        }
+
+        const normApptStart = appt.startMin % 1440;
+        const normTargetStart = sandwichedStartMin % 1440;
+        const inHour =
+            hourEndMinutes > 1440
+                ? normApptStart >= hourStartMinutes || normApptStart < hourEndMinutes % 1440
+                : normApptStart >= hourStartMinutes && normApptStart < hourEndMinutes;
+
+        // Only appointments strictly before insertIdx are predecessors; downstream appointments
+        // at >= insertIdx may have had their pre-push startMin == sandwichedStartMin.
+        if (i < insertIdx && inHour && normApptStart <= normTargetStart) {
+            latestPredecessorBase = `${parsed.hourIndex}${parsed.letter}`;
+        }
+    }
+
+    let sandwichedToken: string;
+    if (latestPredecessorBase) {
+        let sub = 1;
+        while (existingTokens.has(`${latestPredecessorBase}-${sub}`.toUpperCase())) {
+            sub++;
+        }
+        sandwichedToken = `${latestPredecessorBase}-${sub}`;
+    } else {
+        const parsedTarget = targetToken ? parseHourSlotToken(targetToken) : null;
+        if (parsedTarget && parsedTarget.hourIndex === hourIndex) {
+            const base = `${parsedTarget.hourIndex}${parsedTarget.letter}`;
+            if (parsedTarget.suffix) {
+                sandwichedToken = targetToken!;
+            } else {
+                let sub = 1;
+                while (existingTokens.has(`${base}-${sub}`.toUpperCase())) {
+                    sub++;
+                }
+                sandwichedToken = `${base}-${sub}`;
+            }
+        } else {
+            let nextIndex = 0;
+            while (usedIndices.has(nextIndex)) {
+                nextIndex++;
+            }
+            sandwichedToken = formatHourSlotToken(hourIndex, nextIndex, "1");
+        }
+    }
+
+    return {
+        sandwichedStartMin,
+        sandwichedToken,
+        downstreamUpdates
+    };
+}
+
+export interface SlotResolutionResult {
+    calculatedStartMinutes: number;
+    blockStartMinutes: number;
+    blockEndMinutes: number;
+    dayOffset: number;
+    usedExactPreservedTime: boolean;
+}
+
+/**
+ * Shared 1-hour slot resolution & overlap check used by BOTH bookAppointment and updateAppointment.
+ * - If `preserveExactTimeIfFree` is true (metadata/same-slot edit), keeps `normRequestedMinutes`
+ *   when it fits cleanly inside `[shiftStartMin, shiftEndMin]` with zero overlap.
+ * - Otherwise uses `findEarliestGapInWindow` inside the 1-hour block `[blockStartMinutes, blockEndMinutes)`
+ *   to locate the earliest free gap that fits `durationMinutes`.
+ */
+export function resolveAppointmentSlotInShift(params: {
+    normRequestedMinutes: number;
+    shiftStartMin: number;
+    shiftEndMin: number;
+    isToday: boolean;
+    nowMinutes: number;
+    durationMinutes: number;
+    sortedIntervals: Array<{ start: number; end: number }>;
+    preserveExactTimeIfFree?: boolean;
+}): SlotResolutionResult {
+    const {
+        normRequestedMinutes,
+        shiftStartMin,
+        shiftEndMin,
+        isToday,
+        nowMinutes,
+        durationMinutes,
+        sortedIntervals,
+        preserveExactTimeIfFree = false
+    } = params;
+
+    const slotOffset = Math.floor(Math.max(0, normRequestedMinutes - shiftStartMin) / 60) * 60;
+    const blockStartMinutes = shiftStartMin + slotOffset;
+    const blockEndMinutes = Math.min(blockStartMinutes + 60, shiftEndMin);
+
+    if (preserveExactTimeIfFree) {
+        const reqEnd = normRequestedMinutes + durationMinutes;
+        const overlapsExisting = sortedIntervals.some(
+            (iv) => normRequestedMinutes < iv.end && reqEnd > iv.start
+        );
+        if (
+            !overlapsExisting &&
+            normRequestedMinutes >= shiftStartMin &&
+            reqEnd <= shiftEndMin
+        ) {
+            return {
+                calculatedStartMinutes: normRequestedMinutes,
+                blockStartMinutes,
+                blockEndMinutes,
+                dayOffset: Math.floor(normRequestedMinutes / 1440),
+                usedExactPreservedTime: true
+            };
+        }
+    }
+
+    const baselineStart = isToday ? Math.max(blockStartMinutes, nowMinutes) : blockStartMinutes;
+
+    const {
+        candidateStart: calculatedStartMinutes,
+        contiguousFreeMinutes,
+        hasSufficientSpace
+    } = findEarliestGapInWindow(
+        baselineStart,
+        blockEndMinutes,
+        shiftEndMin,
+        durationMinutes,
+        sortedIntervals
+    );
+
+    if (calculatedStartMinutes >= blockEndMinutes) {
+        throw new Error("This 1-hour session window has no remaining available time slots.");
+    }
+
+    if (!hasSufficientSpace || contiguousFreeMinutes < durationMinutes) {
+        throw new Error("The requested consultation duration exceeds the available free time in this session.");
+    }
+
+    return {
+        calculatedStartMinutes,
+        blockStartMinutes,
+        blockEndMinutes,
+        dayOffset: Math.floor(calculatedStartMinutes / 1440),
+        usedExactPreservedTime: false
     };
 }

@@ -415,7 +415,8 @@ export class AppointmentRepository {
         appointmentDate: Date,
         employeeId?: string | null,
         appointmentTime?: Date | string | null,
-        suffix?: string | null
+        suffix?: string | null,
+        excludeAppointmentId?: string
     ): Promise<string> {
         let empId = employeeId;
         let sched = null;
@@ -426,6 +427,10 @@ export class AppointmentRepository {
             if (sched) {
                 empId = empId || sched.employee_id;
             }
+        } else {
+            sched = await tx.doctor_schedule.findUnique({
+                where: { schedule_id: scheduleId }
+            });
         }
 
         if (!empId) {
@@ -446,19 +451,26 @@ export class AppointmentRepository {
             orderBy: { start_time: "asc" }
         });
 
+        const schedulesForHour =
+            daySchedules.length > 0 && (!sched || daySchedules.some((s) => s.schedule_id === sched!.schedule_id))
+                ? daySchedules
+                : sched
+                ? [sched]
+                : daySchedules;
+
         const apptMin = appointmentTime
             ? parseTimeToMinutes(appointmentTime)
             : (sched?.start_time ? parseTimeToMinutes(sched.start_time) : 9 * 60);
 
         const { hourIndex, hourStartMinutes, hourEndMinutes } = computeHourIndexAndRange(
             apptMin,
-            daySchedules.length > 0 ? daySchedules : (sched ? [sched] : [])
+            schedulesForHour
         );
 
         const hourStartDate = timeStringToDate(minutesToHHmm(hourStartMinutes % 1440));
         const hourEndDate = timeStringToDate(minutesToHHmm(hourEndMinutes % 1440));
 
-        // Find existing active appointments in this hour window
+        // Find existing active appointments in this hour window (excluding self on reschedule)
         const existingHourAppts = await tx.appointment_history.findMany({
             where: {
                 employee_id: empId,
@@ -467,7 +479,8 @@ export class AppointmentRepository {
                     gte: hourStartDate,
                     lt: hourEndDate
                 },
-                status: { notIn: NON_BLOCKING_APPOINTMENT_STATUSES }
+                status: { notIn: NON_BLOCKING_APPOINTMENT_STATUSES },
+                ...(excludeAppointmentId ? { appointment_id: { not: excludeAppointmentId } } : {})
             },
             select: {
                 appointment_id: true,
